@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import '@twilio-labs/serverless-runtime-types';
 import {
   Context,
@@ -20,22 +19,19 @@ type EventBody = {
   workspaceSID: string | null;
 };
 
-const credentials = Buffer.from(
-  `${process.env.ACCOUNT_SID}:${process.env.AUTH_TOKEN}`,
-).toString('base64');
+const credentials = Buffer.from(`${process.env.ACCOUNT_SID}:${process.env.AUTH_TOKEN}`).toString(
+  'base64',
+);
 
 const fetchData = async (workspaceSID: string): Promise<ExpectedResponse> => {
-  const data = await fetch(
-    `https://taskrouter.twilio.com/v1/Workspaces/${workspaceSID}/Workers`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'text/plain',
-        Accept: 'application/json',
-        Authorization: 'Basic ' + credentials,
-      },
+  const data = await fetch(`https://taskrouter.twilio.com/v1/Workspaces/${workspaceSID}/Workers`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'text/plain',
+      Accept: 'application/json',
+      Authorization: `Basic ${credentials}`,
     },
-  );
+  });
 
   const dataJson = await data.json();
 

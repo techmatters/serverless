@@ -39,7 +39,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/* eslint-disable @typescript-eslint/camelcase */
 require("@twilio-labs/serverless-runtime-types");
 var node_fetch_1 = __importDefault(require("node-fetch"));
 var credentials = Buffer.from(process.env.ACCOUNT_SID + ":" + process.env.AUTH_TOKEN).toString('base64');
@@ -52,7 +51,7 @@ var fetchData = function (workspaceSID) { return __awaiter(void 0, void 0, void 
                     headers: {
                         'Content-Type': 'text/plain',
                         Accept: 'application/json',
-                        Authorization: 'Basic ' + credentials,
+                        Authorization: "Basic " + credentials,
                     },
                 })];
             case 1:
