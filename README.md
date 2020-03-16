@@ -27,3 +27,6 @@ To use this utility:
 3- Call the function with the auth token of the Twilio account that is serving the api, the api endpoint (without any url params, those should already be present in params.json) and the intended HTTP method (GET/POST):  
 `AUTH_TOKEN=<auth_token_value> ENDPOINT=<twilio_serverless_api_endpoint> METHOD=<method> node generateSignature.js`  
 The expected signature will be printed in the console. Note this signature will be different for every endpoint, params and method, as documented in Twilio's docs.  
+
+The endpoint can be now tested like (analogous for POST):  
+`curl -X GET '<twilio_serverless_api_endpoint_with_uri_params_if_any>' -H "X-Twilio-Signature: <generated_signature>"`  
