@@ -4,38 +4,9 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
-import fetch from 'node-fetch';
-
-type Worker = {
-  sid: string;
-  friendly_name: string;
-};
-
-type ExpectedResponse = {
-  workers: Worker[];
-};
 
 type EventBody = {
   workspaceSID: string | null;
-};
-
-const credentials = Buffer.from(`${process.env.ACCOUNT_SID}:${process.env.AUTH_TOKEN}`).toString(
-  'base64',
-);
-
-const fetchData = async (workspaceSID: string): Promise<ExpectedResponse> => {
-  const data = await fetch(`https://taskrouter.twilio.com/v1/Workspaces/${workspaceSID}/Workers`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'text/plain',
-      Accept: 'application/json',
-      Authorization: `Basic ${credentials}`,
-    },
-  });
-
-  const dataJson = await data.json();
-
-  return dataJson;
 };
 
 export const handler: ServerlessFunctionSignature = async (
@@ -53,19 +24,19 @@ export const handler: ServerlessFunctionSignature = async (
       return;
     }
 
-    const dataJson = await fetchData(workspaceSID);
+    const workspace = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(workspaceSID)
+      .fetch();
 
-    if (dataJson.workers === undefined) {
-      callback('Error: Workspace not found');
-      return;
-    }
+    const workers = await workspace.workers().list();
 
-    const workers = dataJson.workers.map((w: Worker) => ({
+    const prettyWorkers = workers.map(w => ({
       sid: w.sid,
-      friendly_name: w.friendly_name,
+      friendlyName: w.friendlyName,
     }));
 
-    callback(null, workers);
+    callback(null, prettyWorkers);
   } catch (err) {
     callback(err);
   }
