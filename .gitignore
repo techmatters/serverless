@@ -116,3 +116,5 @@ dist
 
 # serverless toolkit generated .js files
 functions/*.js
+
+utils/params.json
