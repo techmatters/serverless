@@ -27,8 +27,8 @@ info:
     url: 'https://techmatters.org/wp-content/uploads/2018/12/tech-matters-cropped.png'
     altText: Tech Matters logo
   license:
-    name: MIT
-    url: 'https://opensource.org/licenses/MIT'
+    name: GPL 3.0
+    url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
 externalDocs:
   description: Explore our projects.
   url: 'https://github.com/tech-matters'
