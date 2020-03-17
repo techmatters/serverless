@@ -9,7 +9,7 @@
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext .ts .",
     "tr": "twilio-run",
-    "tr:deploy": "tsc && twilio-run deploy"
+    "tr:deploy": "tsc && npm run swagger && twilio-run deploy"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.5",
