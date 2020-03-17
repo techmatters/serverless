@@ -33,25 +33,31 @@ externalDocs:
   description: Explore our projects.
   url: 'https://github.com/tech-matters'
 tags:
-  - name: Councelor
-    description: Councelors (or agents) related functions
+  - name: Functions
+    description: Serverless functions served from Twilio
+  - name: Assets
+    description: Static assets served from Twilio
   # - name: pet_model
   #   x-displayName: The Pet Model
   #   description: |
   #     <SchemaDefinition schemaRef="#/components/schemas/Pet" />
-  # - name: store_model
-  #   x-displayName: The Order Model
-  #   description: |
-  #     <SchemaDefinition schemaRef="#/components/schemas/Order" exampleRef="#/components/examples/Order" showReadOnly={true} showWriteOnly={true} />
-  - name: Assets
-    description: Statically served assets
+  - name: contact_model
+    x-displayName: The contact model
+  - name: contact_api
+    x-displayName: The contact api endpoints
 x-tagGroups:
-  - name: Functions
+  - name: Serverless
     tags:
-      - Councelor
-  - name: Assets
-    tags: 
+      - Functions
       - Assets
+  - name: HRM_models
+    x-displayName: HRM-DB Models
+    tags:
+      - contact_model
+  - name: HRM_api
+    x-displayName: HRM api endpints
+    tags: 
+      - contact_api
   # - name: Models
   #   tags:
   #     - pet_model
@@ -61,8 +67,8 @@ paths:
     get:
       tags:
         - Assets
-      summary: This API specs
-      description: Fetches the html file where the API is described.
+      summary: API specification in OpenApi 3.0 format
+      description: Fetches the html file where the API is described (a.k.a the web you are at right now).
       operationId: swagger
   /populateCouncelor:
     parameters:
@@ -83,14 +89,14 @@ paths:
       #     format: int64
     get:
       tags:
-        - Councelor
-      summary: Retrieves councelors (workers) from a workspace
-      description: Given a valid Twilio's workspace Sid, will return the list of asociated workers.
+        - Functions
+      summary: Retrieves councelors (workers) from a given workspace
+      description: Given a valid Twilio's workspace Sid, will return the list of asociated workers, or error otherwise.
       operationId: populateCouncelor
       parameters:
         - name: workspaceSID
           in: path
-          description: SID of workspace to lookup
+          description: SID of workspace to lookup as url parameter
           required: true
           schema:
             type: string
@@ -206,10 +212,10 @@ components:
       type: apiKey
       name: X-Twilio-Signature
       in: header
-  examples:
-    Order:
-      value:
-        quantity: 1,
-        shipDate: 2018-10-19T16:46:45Z,
-        status: placed,
-        complete: false
+  # examples:
+  #   Order:
+  #     value:
+  #       quantity: 1,
+  #       shipDate: 2018-10-19T16:46:45Z,
+  #       status: placed,
+  #       complete: false
