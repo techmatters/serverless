@@ -7,7 +7,8 @@
     "start": "tsc && twilio-run --env",
     "watch": "tsc && twilio-run start --live",
     "lint": "eslint --ext .ts .",
-    "tr": "twilio-run"
+    "tr": "twilio-run",
+    "tr:deploy": "tsc && twilio-run deploy"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.5",
