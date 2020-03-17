@@ -1,0 +1,224 @@
+openapi: 3.0.0
+servers:
+  - url: /
+    description: Production server
+  - url: /
+    description: Development server
+info:
+  description: |
+    You can find out more about Swagger at
+    [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).
+    # Introduction
+    This API is documented in **OpenAPI format**. 
+    Here we will describe the params of our serverless functions and their return values,
+    as well as their required auth methods.
+    # Authentication
+      - [X-Twilio-Signature](https://www.twilio.com/docs/usage/security):
+      a header including valid credentials for a particular route living on the Twilio's platform.
+    <SecurityDefinitions />
+  version: 1.0.0
+  title: Tech Matters serverless API
+  termsOfService: ''
+  contact:
+    name: Tech Matters
+    email:
+    url: https://techmatters.org/
+  x-logo:
+    url: 'https://techmatters.org/wp-content/uploads/2018/12/tech-matters-cropped.png'
+    altText: Tech Matters logo
+  license:
+    name: GPL 3.0
+    url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+externalDocs:
+  description: Explore our projects.
+  url: 'https://github.com/tech-matters'
+tags:
+  - name: Functions
+    description: Serverless functions served from Twilio
+  - name: Assets
+    description: Static assets served from Twilio
+  # - name: pet_model
+  #   x-displayName: The Pet Model
+  #   description: |
+  #     <SchemaDefinition schemaRef="#/components/schemas/Pet" />
+  - name: contact_model
+    x-displayName: The contact model
+  - name: contact_api
+    x-displayName: The contact api endpoints
+x-tagGroups:
+  - name: Serverless
+    tags:
+      - Functions
+      - Assets
+  - name: HRM_models
+    x-displayName: HRM-DB Models
+    tags:
+      - contact_model
+  - name: HRM_api
+    x-displayName: HRM api endpints
+    tags: 
+      - contact_api
+  # - name: Models
+  #   tags:
+  #     - pet_model
+  #     - store_model
+paths:
+  /swagger.html:
+    get:
+      tags:
+        - Assets
+      summary: API specification in OpenApi 3.0 format
+      description: Fetches the html file where the API is described (a.k.a the web you are at right now).
+      operationId: swagger
+      responses:
+        '200': 
+          description: successful operation
+  /populateCounselors:
+    parameters:
+      # - name: Accept-Language
+      #   in: header
+      #   description: "The language you prefer for messages. Supported values are en-AU, en-CA, en-GB, en-US"
+      #   example: en-US
+      #   required: false
+      #   schema:
+      #     type: string
+      #     default: en-AU
+      # - name: cookieParam
+      #   in: cookie
+      #   description: Some cookie
+      #   required: true
+      #   schema:
+      #     type: integer
+      #     format: int64
+    get:
+      tags:
+        - Functions
+      summary: Retrieves councelors (workers) from a given workspace
+      description: Given a valid Twilio's workspace Sid, will return the list of asociated workers, or error otherwise.
+      operationId: populateCounselors
+      parameters:
+        - name: workspaceSID
+          in: path
+          description: SID of workspace to lookup as url parameter
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    friendlyName: 
+                      type: string
+                      description: name of the councelor
+                    sid: 
+                      type: string
+                      description: unique Twilio's identifier for each councelor
+        '500':
+          description: Invalid input / non-existing workspace
+      security:
+        - X-Twilio-Signature:
+      x-code-samples:
+        - lang: 'Javascript'
+          source: |
+components:
+  # schemas:
+  #   ApiResponse:
+  #     type: object
+  #     properties:
+  #       code:
+  #         type: integer
+  #         format: int32
+  #       type:
+  #         type: string
+  #       message:
+  #         type: string
+  #   Cat:
+  #     description: A representation of a cat
+  #     allOf:
+  #       - $ref: '#/components/schemas/Pet'
+  #       - type: object
+  #         properties:
+  #           huntingSkill:
+  #             type: string
+  #             description: The measured skill for hunting
+  #             default: lazy
+  #             example: adventurous
+  #             enum:
+  #               - clueless
+  #               - lazy
+  #               - adventurous
+  #               - aggressive
+  #         required:
+  #           - huntingSkill
+  #   Category:
+  #     type: object
+  #     properties:
+  #       id:
+  #         description: Category ID
+  #         allOf:
+  #           - $ref: '#/components/schemas/Id'
+  #       name:
+  #         description: Category name
+  #         type: string
+  #         minLength: 1
+  #       sub:
+  #         description: Test Sub Category
+  #         type: object
+  #         properties:
+  #           prop1:
+  #             type: string
+  #             description: Dumb Property
+  #     xml:
+  #       name: Category
+  #   Dog:
+  #     description: A representation of a dog
+  #     allOf:
+  #       - $ref: '#/components/schemas/Pet'
+  #       - type: object
+  #         properties:
+  #           packSize:
+  #             type: integer
+  #             format: int32
+  #             description: The size of the pack the dog is from
+  #             default: 1
+  #             minimum: 1
+  #         required:
+  #           - packSize
+  #   HoneyBee:
+  #     description: A representation of a honey bee
+  #     allOf:
+  #       - $ref: '#/components/schemas/Pet'
+  #       - type: object
+  #         properties:
+  #           honeyPerDay:
+  #             type: number
+  #             description: Average amount of honey produced per day in ounces
+  #             example: 3.14
+  #             multipleOf: .01
+  #         required:
+  #           - honeyPerDay
+  #   Id:
+  #     type: integer
+  #     format: int64
+  #     readOnly: true
+  securitySchemes:
+    X-Twilio-Signature:
+      description: >
+        You have to generate a [valid signature](https://www.twilio.com/docs/usage/security) 
+        for testing the protected routes.
+      type: apiKey
+      name: X-Twilio-Signature
+      in: header
+  # examples:
+  #   Order:
+  #     value:
+  #       quantity: 1,
+  #       shipDate: 2018-10-19T16:46:45Z,
+  #       status: placed,
+  #       complete: false
