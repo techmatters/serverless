@@ -70,6 +70,9 @@ paths:
       summary: API specification in OpenApi 3.0 format
       description: Fetches the html file where the API is described (a.k.a the web you are at right now).
       operationId: swagger
+      responses:
+        '200': 
+          description: successful operation
   /populateCouncelor:
     parameters:
       # - name: Accept-Language
