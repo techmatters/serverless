@@ -6,12 +6,14 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc && twilio-run --env",
     "watch": "tsc && twilio-run start --live",
+    "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext .ts .",
     "tr": "twilio-run",
     "tr:deploy": "tsc && twilio-run deploy"
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.5",
+    "@types/swagger-ui-express": "^4.1.1",
     "@typescript-eslint/eslint-plugin": "^2.23.0",
     "@typescript-eslint/parser": "^2.23.0",
     "eslint": "^6.8.0",
@@ -22,6 +24,7 @@
     "eslint-plugin-import": "^2.20.1",
     "eslint-plugin-prettier": "^3.1.2",
     "prettier": "^1.19.1",
+    "redoc-cli": "^0.9.7",
     "twilio-run": "2.* || >2.0.0-rc",
     "typescript": "^3.8.3"
   },
