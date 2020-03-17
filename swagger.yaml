@@ -73,7 +73,7 @@ paths:
       responses:
         '200': 
           description: successful operation
-  /populateCouncelor:
+  /populateCounselors:
     parameters:
       # - name: Accept-Language
       #   in: header
@@ -95,7 +95,7 @@ paths:
         - Functions
       summary: Retrieves councelors (workers) from a given workspace
       description: Given a valid Twilio's workspace Sid, will return the list of asociated workers, or error otherwise.
-      operationId: populateCouncelor
+      operationId: populateCounselors
       parameters:
         - name: workspaceSID
           in: path
