@@ -14,13 +14,17 @@ export const handler: ServerlessFunctionSignature = async (
   event: {},
   callback: ServerlessCallback,
 ) => {
+  const response = new Twilio.Response();
+  response.appendHeader('Access-Control-Allow-Origin', '*');
+  response.appendHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
+  response.appendHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   try {
     const body = event as EventBody;
     const { workspaceSID } = body;
 
     if (workspaceSID === undefined) {
-      callback('Error: Workspace parameter not provided');
-      return;
+      throw new Error('Error: Workspace parameter not provided');
     }
 
     const workspace = await context
@@ -35,8 +39,16 @@ export const handler: ServerlessFunctionSignature = async (
       friendlyName: w.friendlyName,
     }));
 
-    callback(null, prettyWorkers);
+    response.setStatusCode(200);
+    response.appendHeader('Content-Type', 'application/json');
+    response.setBody({ prettyWorkers });
+    callback(null, response);
   } catch (err) {
-    callback(err);
+    response.setStatusCode(500);
+    response.appendHeader('Content-Type', 'application/json');
+    response.setBody(err);
+    // If there's an error, send an error response
+    // Keep using the response object for CORS purposes
+    callback(null, response);
   }
 };
