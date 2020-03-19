@@ -20,7 +20,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       const body = event as EventBody;
-      console.log(body);
       const { workspaceSID } = body;
 
       if (workspaceSID === undefined) {
