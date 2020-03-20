@@ -20,7 +20,7 @@ To deploy:
 
 ## Testing protected apis
 In order to test protected apis, we must provide a valid [JWT token](https://github.com/twilio/twilio-flex-token-validator) in the api's body call.  
-The signature JWT must be obtained from withing twilio flex.  
+The signature JWT must be obtained from within twilio flex.  
 To run locally:  
 1- `npm start`  
 2- Change your Flex plugin serverless endpoint or hit the route via CURL:  
