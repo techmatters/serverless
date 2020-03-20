@@ -25,9 +25,9 @@ To run locally:
 1- `npm start`  
 2- Change your Flex plugin serverless endpoint or hit the route via CURL:  
 `curl -X GET '<twilio_serverless_api_endpoint_with_uri_params_if_any_and_valid_Token>'`  
-Explanation
-twilio_serverless_api_endpoint = the function endpoint (e.g. http://localhost:3000/yourFunction?)  
-with_uri_params_if_any = append to your endpoint "param1=<value1>&param2=<value2>"  
-and_valid_Token = finally append "Token=<valid_token>"  
+Explanation  
+"twilio_serverless_api_endpoint": the function endpoint (e.g. http://localhost:3000/yourFunction?)  
+"with_uri_params_if_any": append to the uri "param1=<value1>&param2=<value2>"  
+"and_valid_Token": finally append to the uri "Token=<valid_token>"  
 
-Token generator util is work in progress
+Token generator util is a work in progress
