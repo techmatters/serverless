@@ -116,6 +116,7 @@ dist
 
 # serverless toolkit generated .js files
 functions/*.js
+utils/*.js
 
 utils/params.json
 .twilio-functions

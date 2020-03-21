@@ -4,6 +4,7 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+import { send } from '../utils';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
@@ -26,9 +27,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       if (workspaceSID === undefined) {
         const err = { message: 'Error: WorkspaceSID parameter not provided', status: 400 };
-        response.setStatusCode(400);
-        response.setBody(err);
-        callback(null, response);
+        send(response)(400)(err)(callback);
         return;
       }
 
@@ -39,7 +38,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       const workers = await workspace.workers().list();
 
-      const detailedWorkers = workers.map(w => {
+      const withAttributes = workers.map(w => {
         const attributes = JSON.parse(w.attributes);
 
         return {
@@ -48,9 +47,9 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         };
       });
 
-      const workerSummaries = detailedWorkers.map(w => {
-        const fullName = w.attributes.full_name;
-        const wHelpline = w.attributes.helpline;
+      const withHelpline = withAttributes.map(w => {
+        const fullName = w.attributes.full_name as string;
+        const wHelpline = w.attributes.helpline as string;
 
         return {
           sid: w.sid,
@@ -60,22 +59,20 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       });
 
       if (helpline) {
-        const withFilter = workerSummaries.filter(w => w.helpline === helpline);
-        response.setStatusCode(200);
-        response.setBody({ workerSummaries: withFilter });
-        callback(null, response);
+        const filtered = withHelpline.filter(w => w.helpline === helpline);
+        const workerSummaries = filtered.map(({ fullName, sid }) => ({ fullName, sid }));
+
+        send(response)(200)({ workerSummaries })(callback);
         return;
       }
 
-      response.setStatusCode(200);
-      response.setBody({ workerSummaries });
-      callback(null, response);
+      const workerSummaries = withHelpline.map(({ fullName, sid }) => ({ fullName, sid }));
+
+      send(response)(200)({ workerSummaries })(callback);
     } catch (err) {
-      response.setStatusCode(500);
-      response.setBody(err);
       // If there's an error, send an error response
       // Keep using the response object for CORS purposes
-      callback(null, response);
+      send(response)(500)(err)(callback);
     }
   },
 );
