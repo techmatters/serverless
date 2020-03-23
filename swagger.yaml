@@ -208,6 +208,9 @@ components:
   #     format: int64
   #     readOnly: true
   schemas:
+    ErrorString:
+      type: string
+      description: descriptive message about the error.
     ErrorSchema:
       type: object
       properties:
@@ -226,6 +229,10 @@ components:
                 $ref: '#/components/schemas/ErrorSchema'
     UnauthorizedError:
       description: Access token is missing or invalid
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/ErrorString'
     InternalError:
         description: Internal Server Error
         content: 
