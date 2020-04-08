@@ -13,8 +13,6 @@ info:
     Here we will describe the params of our serverless functions and their return values,
     as well as their required auth methods.
     # Authentication
-      - [X-Twilio-Signature](https://www.twilio.com/docs/usage/security):
-      a header including valid credentials for a particular route living on the Twilio's platform.
     <SecurityDefinitions />
   version: 1.0.0
   title: Tech Matters serverless API
@@ -75,54 +73,56 @@ paths:
           description: successful operation
   /populateCounselors:
     parameters:
-      # - name: Accept-Language
-      #   in: header
-      #   description: "The language you prefer for messages. Supported values are en-AU, en-CA, en-GB, en-US"
-      #   example: en-US
-      #   required: false
-      #   schema:
-      #     type: string
-      #     default: en-AU
-      # - name: cookieParam
-      #   in: cookie
-      #   description: Some cookie
-      #   required: true
-      #   schema:
-      #     type: integer
-      #     format: int64
-    get:
+    post:
       tags:
         - Functions
       summary: Retrieves councelors (workers) from a given workspace
-      description: Given a valid Twilio's workspace Sid, will return the list of asociated workers, or error otherwise.
+      description: Given a valid Twilio's workspace Sid [and a helpline optionally] 
+        will return the list of asociated workers, or error otherwise. If helpline is provided, the workers
+        will be filtered to match it, if not all workers will be sent.
       operationId: populateCounselors
-      parameters:
-        - name: workspaceSID
-          in: path
-          description: SID of workspace to lookup as url parameter
-          required: true
-          schema:
-            type: string
+      requestBody:
+        description: user info to be filled
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - workspaceSID
+              properties:
+                workspaceSID:
+                  type: string
+                  description: SID of the target workspace.
+                helpline:
+                  type: string
+                  description: helpline to add as filter.
       responses:
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    friendlyName: 
-                      type: string
-                      description: name of the councelor
-                    sid: 
-                      type: string
-                      description: unique Twilio's identifier for each councelor
+                type: object
+                properties:
+                  workerSummaries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fullName: 
+                          type: string
+                          description: name of the councelor
+                        sid: 
+                          type: string
+                          description: unique Twilio's identifier for each councelor
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/UnauthorizedError'
         '500':
-          description: Invalid input / non-existing workspace
+          $ref: '#/components/responses/InternalError'
       security:
-        - X-Twilio-Signature:
+        - TwilioJWT:
       x-code-samples:
         - lang: 'Javascript'
           source: |
@@ -207,14 +207,45 @@ components:
   #     type: integer
   #     format: int64
   #     readOnly: true
+  schemas:
+    ErrorString:
+      type: string
+      description: descriptive message about the error.
+    ErrorSchema:
+      type: object
+      properties:
+        message:
+          type: string
+          description: descriptive message about the error.
+        status:
+          type: string
+          description: status code of the original error (usefull on 5xx errors).
+  responses:
+    BadRequest:
+        description: Bad request or invalid parameters
+        content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSchema'
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/ErrorString'
+    InternalError:
+        description: Internal Server Error
+        content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorSchema'
   securitySchemes:
-    X-Twilio-Signature:
-      description: >
-        You have to generate a [valid signature](https://www.twilio.com/docs/usage/security) 
-        for testing the protected routes.
+    TwilioJWT:            # arbitrary name for the security scheme
+      description: A valid [Twilio Flex Token](https://www.twilio.com/docs/flex/call-functions-from-plugins#securing-your-twilio-function)
+        that is included in the body, [according to this](https://github.com/twilio/twilio-flex-token-validator).
       type: apiKey
-      name: X-Twilio-Signature
-      in: header
+      in: body
+      name: Token
   # examples:
   #   Order:
   #     value:

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && twilio-run --env",
+    "start": "tsc && npm run swagger && twilio-run --env",
     "watch": "tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext .ts .",
@@ -32,6 +32,7 @@
     "node": "10.17.0"
   },
   "dependencies": {
-    "@twilio-labs/serverless-runtime-types": "^1.1.8"
+    "@twilio-labs/serverless-runtime-types": "^1.1.8",
+    "twilio-flex-token-validator": "^1.5.1"
   }
 }
