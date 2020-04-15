@@ -67,7 +67,9 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       });
 
       if (helpline) {
-        const filtered = withHelpline.filter(w => w.helpline === helpline);
+        const filtered = withHelpline.filter(
+          w => w.helpline === helpline || w.helpline === '' || w.helpline === undefined,
+        );
         const workerSummaries = filtered.map(({ fullName, sid }) => ({ fullName, sid }));
 
         send(response)(200)({ workerSummaries })(callback);
