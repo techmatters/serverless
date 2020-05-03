@@ -16,7 +16,7 @@ const send = (response: TwilioResponse) => (statusCode: number) => (body: string
   callback(null, response);
 };
 
-type EventBody = {
+type Body = {
   workspaceSID: string | undefined;
   helpline: string | undefined;
 };
@@ -30,7 +30,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     response.appendHeader('Content-Type', 'application/json');
 
     try {
-      const body = event as EventBody;
+      const body = event as Body;
       const { workspaceSID, helpline } = body;
 
       if (workspaceSID === undefined) {

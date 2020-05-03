@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsc && npm run swagger && twilio-run --env",
+    "start": "tsc & twilio-run --env",
     "watch": "tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext .ts .",
