@@ -8,12 +8,27 @@ import {
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-const send = (response: TwilioResponse) => (statusCode: number) => (body: string | object) => (
-  callback: ServerlessCallback,
+// TODO: Factor out into lib
+const send = (statusCode: number) => (body: string | object) => (callback: ServerlessCallback) => (
+  response: TwilioResponse,
 ) => {
   response.setStatusCode(statusCode);
   response.setBody(body);
   callback(null, response);
+};
+
+// TODO: Factor out into lib
+const responseWithCors = () => {
+  const response = new Twilio.Response();
+
+  response.setHeaders({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  });
+
+  return response;
 };
 
 type Body = {
@@ -23,11 +38,7 @@ type Body = {
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context, event: {}, callback: ServerlessCallback) => {
-    const response = new Twilio.Response();
-    response.appendHeader('Access-Control-Allow-Origin', '*');
-    response.appendHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
-    response.appendHeader('Access-Control-Allow-Headers', 'Content-Type');
-    response.appendHeader('Content-Type', 'application/json');
+    const response = responseWithCors();
 
     try {
       const body = event as Body;
@@ -35,7 +46,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       if (workspaceSID === undefined) {
         const err = { message: 'Error: WorkspaceSID parameter not provided', status: 400 };
-        send(response)(400)(err)(callback);
+        send(400)(err)(callback)(response);
         return;
       }
 
@@ -72,15 +83,15 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         );
         const workerSummaries = filtered.map(({ fullName, sid }) => ({ fullName, sid }));
 
-        send(response)(200)({ workerSummaries })(callback);
+        send(200)({ workerSummaries })(callback)(response);
         return;
       }
 
       const workerSummaries = withHelpline.map(({ fullName, sid }) => ({ fullName, sid }));
 
-      send(response)(200)({ workerSummaries })(callback);
+      send(200)({ workerSummaries })(callback)(response);
     } catch (err) {
-      send(response)(500)(err)(callback);
+      send(500)(err)(callback)(response);
     }
   },
 );

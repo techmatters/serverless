@@ -49,7 +49,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const translation = Runtime.getAssets()[`/translations/${language}/flexUI.json`].open();
+      const translation = Runtime.getAssets()[`/translations/${language}/messages.json`].open();
 
       send(200)(translation)(callback)(response);
     } catch (err) {

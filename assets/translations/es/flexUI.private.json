@@ -10,5 +10,14 @@
   "AgentStatusUnavailable": "No disponible",
   "AgentStatusOffline": "Offline",
 
-  "TranslateButtonAriaLabel": "Cambiar idioma"
+  "TranslateButtonAriaLabel": "Cambiar idioma",
+
+  "CallType-child": "Menor llamando por su cuenta",
+  "CallType-caller": "Alguien llamando por un menor",
+  "CallType-silent": "Silencioso",
+  "CallType-blank": "Blanco",
+  "CallType-joke": "Broma",
+  "CallType-hangup": "Cuelga",
+  "CallType-wrongnumber": "Número Equivocado",
+  "CallType-abusive": "Abusivo"
 }
