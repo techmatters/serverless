@@ -32,8 +32,8 @@ const responseWithCors = () => {
 };
 
 type Body = {
-  workspaceSID: string | undefined;
-  helpline: string | undefined;
+  workspaceSID?: string;
+  helpline?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(

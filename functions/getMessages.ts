@@ -32,7 +32,7 @@ const responseWithCors = () => {
 };
 
 type Body = {
-  language: string | undefined;
+  language?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(

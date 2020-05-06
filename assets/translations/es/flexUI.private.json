@@ -12,10 +12,6 @@
 
   "TranslateButtonAriaLabel": "Cambiar idioma",
 
-  "QueuesStatusWidgetLabel": "Contactos esperando", 
-  "PressToCollapse": "presione para cerrar", 
-  "PressToExpand": "presione para abrir",
-
   "CallType-child": "Menor llamando por su cuenta",
   "CallType-caller": "Alguien llamando por un menor",
   "CallType-silent": "Silencioso",
