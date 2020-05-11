@@ -1,8 +1,6 @@
 openapi: 3.0.0
 servers:
   - url: /
-    description: Production server
-  - url: /
     description: Development server
 info:
   description: |
@@ -71,15 +69,6 @@ paths:
       responses:
         '200': 
           description: successful operation
-  /translations:
-    get:
-      tags:
-        - Assets
-      summary: Translations for the flexUI and system messages strings.
-      description: Translations for the flexUI and system messages strings. As this is a private asset, the only
-        way of accesing to them is vía the pertinent Twilio functions.
-      operationId: translations
-      responses: null
 
   /populateCounselors:
     parameters:
