@@ -1,8 +1,6 @@
 openapi: 3.0.0
 servers:
   - url: /
-    description: Production server
-  - url: /
     description: Development server
 info:
   description: |
@@ -71,6 +69,7 @@ paths:
       responses:
         '200': 
           description: successful operation
+
   /populateCounselors:
     parameters:
     post:
@@ -123,9 +122,80 @@ paths:
           $ref: '#/components/responses/InternalError'
       security:
         - TwilioJWT:
-      x-code-samples:
-        - lang: 'Javascript'
-          source: |
+  /getTranslation:
+    parameters:
+    post:
+      tags:
+        - Functions
+      summary: Retrieves the translation of flex UI strings for the given language (if pressent)
+      description: Given a valid language code, will return the flex UI translations. 
+        If the translation is missing, the response will contain an internal error status 500.
+      operationId: getTranslation
+      requestBody:
+        description: user info to be filled
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - language
+              properties:
+                language:
+                  type: string
+                  description: lnaguage code that represents the desired translation.
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: JSON representation of the strings object.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security:
+        - TwilioJWT:
+  /getMessages:
+    parameters:
+    post:
+      tags:
+        - Functions
+      summary: Retrieves the translated system strings that are used to send to a chat-type contact.
+      description: Given a valid language code, will return the translated strings used to comunicate with the contact. 
+        If the translation is missing, the response will contain an internal error status 500.
+      operationId: getMessages
+      requestBody:
+        description: user info to be filled
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - language
+              properties:
+                language:
+                  type: string
+                  description: lnaguage code that represents the desired translation.
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+                description: JSON representation of the strings object.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      security:
+        - TwilioJWT:
 components:
   # schemas:
   #   ApiResponse:
