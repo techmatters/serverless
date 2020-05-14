@@ -3,52 +3,39 @@ import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
-  TwilioResponse,
 } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  responseWithCors,
+  bindResolve,
+  error400,
+  error500,
+  success,
+} from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-// TODO: Factor out into lib
-const send = (statusCode: number) => (body: string | object) => (callback: ServerlessCallback) => (
-  response: TwilioResponse,
-) => {
-  response.setStatusCode(statusCode);
-  response.setBody(body);
-  callback(null, response);
-};
-
-// TODO: Factor out into lib
-const responseWithCors = () => {
-  const response = new Twilio.Response();
-
-  response.setHeaders({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  });
-
-  return response;
-};
-
-type Body = {
+type Event = {
   workspaceSID?: string;
   helpline?: string;
 };
 
+type Body = {
+  workspaceSID: string;
+  helpline?: string;
+};
+
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: {}, callback: ServerlessCallback) => {
+  async (context: Context, event: Event, callback: ServerlessCallback) => {
     const response = responseWithCors();
+    const resolve = bindResolve(callback)(response);
 
     try {
-      const body = event as Body;
-      const { workspaceSID, helpline } = body;
-
-      if (workspaceSID === undefined) {
-        const err = { message: 'Error: WorkspaceSID parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+      if (event.workspaceSID === undefined) {
+        resolve(error400('WorkspaceSID'));
         return;
       }
+
+      const { workspaceSID, helpline } = event as Body;
 
       const workspace = await context
         .getTwilioClient()
@@ -83,15 +70,15 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         );
         const workerSummaries = filtered.map(({ fullName, sid }) => ({ fullName, sid }));
 
-        send(200)({ workerSummaries })(callback)(response);
+        resolve(success({ workerSummaries }));
         return;
       }
 
       const workerSummaries = withHelpline.map(({ fullName, sid }) => ({ fullName, sid }));
 
-      send(200)({ workerSummaries })(callback)(response);
+      resolve(success({ workerSummaries }));
     } catch (err) {
-      send(500)(err)(callback)(response);
+      resolve(error500(err));
     }
   },
 );

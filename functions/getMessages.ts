@@ -3,57 +3,41 @@ import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
-  TwilioResponse,
 } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  responseWithCors,
+  bindResolve,
+  error400,
+  error500,
+  success,
+} from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-// TODO: Factor out into lib
-const send = (statusCode: number) => (body: string | object) => (callback: ServerlessCallback) => (
-  response: TwilioResponse,
-) => {
-  response.setStatusCode(statusCode);
-  response.setBody(body);
-  callback(null, response);
-};
-
-// TODO: Factor out into lib
-const responseWithCors = () => {
-  const response = new Twilio.Response();
-
-  response.setHeaders({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  });
-
-  return response;
-};
-
-type Body = {
+type Event = {
   language?: string;
 };
 
+type Body = Required<Event>;
+
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: {}, callback: ServerlessCallback) => {
+  async (context: Context, event: Event, callback: ServerlessCallback) => {
     const response = responseWithCors();
+    const resolve = bindResolve(callback)(response);
 
     try {
-      const body = event as Body;
-      const { language } = body;
-
-      if (language === undefined) {
-        const err = { message: 'Error: language parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+      if (event.language === undefined) {
+        resolve(error400('language'));
         return;
       }
 
+      const { language } = event as Body;
+
       const translation = Runtime.getAssets()[`/translations/${language}/messages.json`].open();
 
-      send(200)(translation)(callback)(response);
+      resolve(success(translation));
     } catch (err) {
-      send(500)(err)(callback)(response);
+      resolve(error500(err));
     }
   },
 );
