@@ -111,6 +111,19 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(taskSid)
           .update({ assignmentStatus: 'completed', reason: 'task transferred' });
+      } else {
+        // Set a custom attribute to prevent channel being closed when task is wrapped
+        const updatedAttributes = {
+          ...JSON.parse(originalTask.attributes),
+          warmTransfer: true,
+        };
+
+        await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(taskSid)
+          .update({
+            attributes: JSON.stringify(updatedAttributes),
+          });
       }
 
       resolve(success({ taskSid: newTask.sid }));
