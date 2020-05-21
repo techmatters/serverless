@@ -94,7 +94,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       if (mode === 'COLD') {
         // Set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
         const updatedAttributes = {
-          ...JSON.parse(originalTask.attributes),
+          ...originalAttributes,
           channelSid: 'CH00000000000000000000000000000000',
           proxySessionSID: 'KC00000000000000000000000000000000',
         };
@@ -102,28 +102,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(taskSid)
-          .update({
-            attributes: JSON.stringify(updatedAttributes),
-          });
+          .update({ attributes: JSON.stringify(updatedAttributes) });
 
         // Close the original Task
         await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(taskSid)
           .update({ assignmentStatus: 'completed', reason: 'task transferred' });
-      } else {
-        // Set a custom attribute to prevent channel being closed when task is wrapped
-        const updatedAttributes = {
-          ...JSON.parse(originalTask.attributes),
-          warmTransfer: true,
-        };
-
-        await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(taskSid)
-          .update({
-            attributes: JSON.stringify(updatedAttributes),
-          });
       }
 
       resolve(success({ taskSid: newTask.sid }));
