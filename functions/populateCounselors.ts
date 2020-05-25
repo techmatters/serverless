@@ -14,28 +14,23 @@ import {
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-type Event = {
+type Body = {
   workspaceSID?: string;
   helpline?: string;
 };
 
-type Body = {
-  workspaceSID: string;
-  helpline?: string;
-};
-
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: Event, callback: ServerlessCallback) => {
+  async (context: Context, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
+    const { workspaceSID, helpline } = event;
+
     try {
-      if (event.workspaceSID === undefined) {
+      if (workspaceSID === undefined) {
         resolve(error400('WorkspaceSID'));
         return;
       }
-
-      const { workspaceSID, helpline } = event as Body;
 
       const workspace = await context
         .getTwilioClient()

@@ -19,14 +19,14 @@ type EnvVars = {
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
 };
 
-type Event = {
+type Body = {
   closeSid?: string;
   keepSid?: string;
   newStatus?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context<EnvVars>, event: Event, callback: ServerlessCallback) => {
+  async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const client = context.getTwilioClient();
 
     const response = responseWithCors();

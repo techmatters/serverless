@@ -14,24 +14,22 @@ import {
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-type Event = {
+type Body = {
   language?: string;
 };
 
-type Body = Required<Event>;
-
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: Event, callback: ServerlessCallback) => {
+  async (context: Context, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
+    const { language } = event;
+
     try {
-      if (event.language === undefined) {
+      if (language === undefined) {
         resolve(error400('language'));
         return;
       }
-
-      const { language } = event as Body;
 
       const translation = Runtime.getAssets()[`/translations/${language}/flexUI.json`].open();
 

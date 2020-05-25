@@ -26,27 +26,6 @@ type Event = {
   mode?: string;
 };
 
-type Body = Required<Event>;
-
-const validateBody = (event: Event) => {
-  let missing: string[] = [];
-
-  if (event.taskSid === undefined) {
-    missing = [...missing, 'taskSid'];
-  }
-  if (event.targetSid === undefined) {
-    missing = [...missing, 'targetSid'];
-  }
-  if (event.workerName === undefined) {
-    missing = [...missing, 'workerName'];
-  }
-  if (event.mode === undefined) {
-    missing = [...missing, 'mode'];
-  }
-
-  return missing;
-};
-
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context<EnvVars>, event: Event, callback: ServerlessCallback) => {
     const client = context.getTwilioClient();
@@ -54,15 +33,25 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    try {
-      const missing = validateBody(event);
+    const { taskSid, targetSid, workerName, mode } = event;
 
-      if (missing.length !== 0) {
-        resolve(error400(missing));
+    try {
+      if (taskSid === undefined) {
+        resolve(error400('taskSid'));
         return;
       }
-
-      const { taskSid, targetSid, workerName, mode } = event as Body;
+      if (targetSid === undefined) {
+        resolve(error400('targetSid'));
+        return;
+      }
+      if (workerName === undefined) {
+        resolve(error400('workerName'));
+        return;
+      }
+      if (mode === undefined) {
+        resolve(error400('mode'));
+        return;
+      }
 
       // retrieve attributes of the original task
       const originalTask = await client.taskrouter
