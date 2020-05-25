@@ -34,7 +34,8 @@ const responseWithCors = () => {
 type Body = {
   workspaceSID?: string;
   taskSID?: string;
-  conversationsAttributes?: string;
+  conversations?: string;
+  customers?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -43,7 +44,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       const body = event as Body;
-      const { workspaceSID, taskSID, conversationsAttributes } = body;
+      const { workspaceSID, taskSID, conversations, customers } = body;
 
       if (workspaceSID === undefined) {
         const err = { message: 'Error: workspaceSID parameter not provided', status: 400 };
@@ -69,8 +70,12 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         ...previousAttributes,
         conversations: {
           ...previousAttributes.conversations,
-          ...(conversationsAttributes && JSON.parse(conversationsAttributes)),
+          ...(conversations && JSON.parse(conversations)),
           conversation_id: taskSID,
+        },
+        customers: {
+          ...previousAttributes.customers,
+          ...(customers && JSON.parse(customers)),
         },
       };
 
