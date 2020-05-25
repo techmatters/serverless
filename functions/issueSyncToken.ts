@@ -5,15 +5,15 @@ import {
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, error500, success } from 'tech-matters-serverless-helpers';
-import { Context as AuthContext } from 'twilio-flex-token-validator';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
+  ACCOUNT_SID: string;
   API_KEY: string;
   API_SECRET: string;
   SYNC_SERVICE_SID: string;
-} & AuthContext;
+};
 
 type AuthEvent = {
   Token: string;
