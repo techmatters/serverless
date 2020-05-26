@@ -7,7 +7,7 @@ Repository for serverless functions living on the Twilio Serverless Toolkit
 `git clone https://github.com/tech-matters/serverless && cd serverless`  
 2- Install dependencies:  
 `npm install`  
-3- create a .env file with all the .env variables ([below is the whole list](##environment-variables))  
+3- create a .env file with all the .env variables ([below is the whole list](#environment-variables))  
 4- run typescript compiler (as Twilio ST serves the .js files) and start local server:  
 `npm start`  
 
