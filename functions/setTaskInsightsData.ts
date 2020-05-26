@@ -3,33 +3,9 @@ import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
-  TwilioResponse,
 } from '@twilio-labs/serverless-runtime-types/types';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
-
-// TODO: Factor out into lib
-const send = (statusCode: number) => (body: string | object) => (callback: ServerlessCallback) => (
-  response: TwilioResponse,
-) => {
-  response.setStatusCode(statusCode);
-  response.setBody(body);
-  callback(null, response);
-};
-
-// TODO: Factor out into lib
-const responseWithCors = () => {
-  const response = new Twilio.Response();
-
-  response.setHeaders({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  });
-
-  return response;
-};
 
 type Body = {
   workspaceSID?: string;

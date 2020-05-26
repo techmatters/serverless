@@ -114,9 +114,9 @@ dist
 .yarn/build-state.yml
 .pnp.*
 
-# serverless toolkit generated .js files
 functions/*.js
-utils/*.js
+tech-matters-serverless-helpers/node_modules/
+tech-matters-serverless-helpers/lib/
 
-utils/params.json
+
 .twilio-functions

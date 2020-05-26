@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
+    "tech-matters-serverless-helpers": "^1.0.1",
     "twilio-flex-token-validator": "^1.5.1"
   }
 }
