@@ -17,11 +17,13 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
+  CHAT_SERVICE_SID: string;
 };
 
 type Body = {
   closeSid?: string;
   keepSid?: string;
+  kickMember?: string;
   newStatus?: string;
 };
 
@@ -32,7 +34,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { closeSid, keepSid, newStatus } = event;
+    const { closeSid, keepSid, kickMember, newStatus } = event;
 
     try {
       if (closeSid === undefined) {
@@ -43,6 +45,10 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         resolve(error400('keepSid'));
         return;
       }
+      if (kickMember === undefined) {
+        resolve(error400('kickMember'));
+        return;
+      }
 
       // retrieve attributes of the closing task
       const closingTask = await client.taskrouter
@@ -51,6 +57,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .fetch();
 
       const closingAttributes = JSON.parse(closingTask.attributes);
+      const keepingChannel = closingAttributes.channelSid;
 
       // Set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
       const updatedClosingAttributes = {
@@ -79,6 +86,14 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
             },
           }),
         });
+
+      // kick the counselor that is not required anymore
+      if (kickMember)
+        await client.chat
+          .services(context.CHAT_SERVICE_SID)
+          .channels(keepingChannel)
+          .members(kickMember)
+          .remove();
 
       // retrieve attributes of the closing task
       const keepingTask = await client.taskrouter

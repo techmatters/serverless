@@ -7,14 +7,27 @@ Repository for serverless functions living on the Twilio Serverless Toolkit
 `git clone https://github.com/tech-matters/serverless && cd serverless`  
 2- Install dependencies:  
 `npm install`  
-3- create a .env file with propper ACCOUNT_SID=<account_sid_value> AUTH_TOKEN=<auth_token_value> (can be found inside the twilio console, depending on the enviroment we want to deploy to)  
+3- create a .env file with all the .env variables ([below is the whole list](##environment-variables))  
 4- run typescript compiler (as Twilio ST serves the .js files) and start local server:  
 `npm start`  
 
 For help on twilio-run commands run:  
 `npm run tr -- help`  
    
-To deploy:  
+## Environment variables
+| Variable Name                       | Expected Value                                |
+| ----------------------------------- | --------------------------------------------  |
+| `ACCOUNT_SID`                       | sid of the Twilio account                     |
+| `AUTH_TOKEN`                        | auth token of the abouve account              |
+| `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter              |
+| `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | workflow sid within above workspace           |
+| `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage |
+| `SYNC_SERVICE_API_KEY`              | api resource to use above sync client         |
+| `SYNC_SERVICE_API_SECRET`           | api secret of the above resource              |
+| `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks     |
+
+## Deployment
+To deploy (dev environment):  
 `npm run tr:deploy`  
 [More about deploying](https://www.twilio.com/docs/labs/serverless-toolkit/deploying)
 

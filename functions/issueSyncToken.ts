@@ -10,8 +10,8 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
   ACCOUNT_SID: string;
-  API_KEY: string;
-  API_SECRET: string;
+  SYNC_SERVICE_API_KEY: string;
+  SYNC_SERVICE_API_SECRET: string;
   SYNC_SERVICE_SID: string;
 };
 
@@ -34,14 +34,24 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     try {
       const identity = event.TokenResult?.identity || 'unknown';
 
-      const { ACCOUNT_SID, API_KEY, API_SECRET, SYNC_SERVICE_SID } = context;
+      const {
+        ACCOUNT_SID,
+        SYNC_SERVICE_API_KEY,
+        SYNC_SERVICE_API_SECRET,
+        SYNC_SERVICE_SID,
+      } = context;
 
       const { AccessToken } = Twilio.jwt;
       const { SyncGrant } = AccessToken;
 
       const syncGrant = new SyncGrant({ serviceSid: SYNC_SERVICE_SID });
 
-      const accessToken = new AccessToken(ACCOUNT_SID, API_KEY, API_SECRET, { identity });
+      const accessToken = new AccessToken(
+        ACCOUNT_SID,
+        SYNC_SERVICE_API_KEY,
+        SYNC_SERVICE_API_SECRET,
+        { identity },
+      );
 
       accessToken.addGrant(syncGrant);
 
