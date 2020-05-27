@@ -14,7 +14,7 @@ import {
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-type Body = {
+export type Body = {
   workspaceSID?: string;
   helpline?: string;
 };
