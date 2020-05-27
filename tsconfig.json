@@ -1,3 +1,7 @@
+/**
+* NOTE:
+* If any change is ever done in this file, make sure to replicate in tsconifg.eslint.json
+*/
 {
   "compilerOptions": {
     /* Basic Options */
