@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/tech-matters/serverless/workflows/serverless-ci/badge.svg)](https://github.com/tech-matters/serverless/actions)
+
 # serverless
 Repository for serverless functions living on the Twilio Serverless Toolkit
 
