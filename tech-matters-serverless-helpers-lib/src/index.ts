@@ -8,7 +8,16 @@ export type ResolveFunction = (cb: ServerlessCallback) => (res: TwilioResponse) 
 
 /**
  * Binds callback and response to a function.
- * Used in combination with send (or a resolution) to avoid the unclear style of callback(null, response)
+ * Used in combination with a resolution or send helpers
+ * @example
+ * import { responseWithCors, bindResolve, success, } from 'tech-matters-serverless-helpers';
+ *
+ * export const handler = (context, event, callback) => {
+ *   const resolve = bindResolve(callback)(responseWithCors());
+ *   const body = { prop1: value1, prop2: value2 };
+ *   resolve(succes(body));
+ * }
+ *
  */
 export const bindResolve = (cb: ServerlessCallback) => (res: TwilioResponse) => (
   f: ResolveFunction,

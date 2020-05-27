@@ -4,6 +4,13 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  responseWithCors,
+  bindResolve,
+  error400,
+  error500,
+  success,
+} from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
@@ -15,22 +22,19 @@ type Body = {
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: {}, callback: ServerlessCallback) => {
+  async (context: Context, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
+    const resolve = bindResolve(callback)(response);
+
+    const { workspaceSID, taskSID, conversations, customers } = event;
 
     try {
-      const body = event as Body;
-      const { workspaceSID, taskSID, conversations, customers } = body;
-
       if (workspaceSID === undefined) {
-        const err = { message: 'Error: workspaceSID parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+        resolve(error400('workspaceSID'));
         return;
       }
-
       if (taskSID === undefined) {
-        const err = { message: 'Error: taskSID parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+        resolve(error400('taskSID'));
         return;
       }
 
@@ -61,9 +65,9 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .tasks(taskSID)
         .update({ attributes: JSON.stringify(newAttributes) });
 
-      send(200)(updatedTask)(callback)(response);
+      resolve(success(updatedTask));
     } catch (err) {
-      send(500)(err)(callback)(response);
+      resolve(error500(err));
     }
   },
 );
