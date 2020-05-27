@@ -1,2 +1,4 @@
 functions/*.js
 utils/*.js
+tech-matters-serverless-helpers-lib/node_modules/
+tech-matters-serverless-helpers-lib/lib/

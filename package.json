@@ -7,9 +7,13 @@
     "start": "tsc & twilio-run --env",
     "watch": "tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
-    "lint": "eslint --ext .ts .",
+    "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "tsc && npm run swagger && twilio-run deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tech-matters/serverless.git"
   },
   "devDependencies": {
     "@types/jest": "^25.2.3",
