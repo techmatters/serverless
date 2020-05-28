@@ -1,3 +1,5 @@
+[![Actions Status](https://github.com/tech-matters/serverless/workflows/serverless-ci/badge.svg)](https://github.com/tech-matters/serverless/actions)
+
 # serverless
 Repository for serverless functions living on the Twilio Serverless Toolkit
 
@@ -32,3 +34,14 @@ Explanation
 "and_valid_Token": finally append to the uri "Token=<valid_token>"  
 
 Token generator util is a work in progress
+
+## tech-matters-serverless-helpers
+This are helpers and functions reused across the various serverless functions.
+They are packed as npm package because it's the easiest way to reuse the code within a Twilio Serverless Toolkit Project and preserve the typing information TS provides.
+
+It's currenty deployed with Gian's npm account, [contact him](https://github.com/GPaoloni) to deploy new versions!
+
+To deploy:
+once inside the project folder (`cd tech-matters-serverless-helpers`)
+1- `npm run build`
+2- `npm publish` (must be logged in npm cli)

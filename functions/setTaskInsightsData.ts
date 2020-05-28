@@ -3,35 +3,18 @@ import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
-  TwilioResponse,
 } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  responseWithCors,
+  bindResolve,
+  error400,
+  error500,
+  success,
+} from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-// TODO: Factor out into lib
-const send = (statusCode: number) => (body: string | object) => (callback: ServerlessCallback) => (
-  response: TwilioResponse,
-) => {
-  response.setStatusCode(statusCode);
-  response.setBody(body);
-  callback(null, response);
-};
-
-// TODO: Factor out into lib
-const responseWithCors = () => {
-  const response = new Twilio.Response();
-
-  response.setHeaders({
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'OPTIONS, POST, GET',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json',
-  });
-
-  return response;
-};
-
-type Body = {
+export type Body = {
   workspaceSID?: string;
   taskSID?: string;
   conversations?: string;
@@ -39,22 +22,19 @@ type Body = {
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
-  async (context: Context, event: {}, callback: ServerlessCallback) => {
+  async (context: Context, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
+    const resolve = bindResolve(callback)(response);
+
+    const { workspaceSID, taskSID, conversations, customers } = event;
 
     try {
-      const body = event as Body;
-      const { workspaceSID, taskSID, conversations, customers } = body;
-
       if (workspaceSID === undefined) {
-        const err = { message: 'Error: workspaceSID parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+        resolve(error400('workspaceSID'));
         return;
       }
-
       if (taskSID === undefined) {
-        const err = { message: 'Error: taskSID parameter not provided', status: 400 };
-        send(400)(err)(callback)(response);
+        resolve(error400('taskSID'));
         return;
       }
 
@@ -65,7 +45,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .fetch();
 
       const previousAttributes = JSON.parse(taskToBeUpdated.attributes);
-
       const newAttributes = {
         ...previousAttributes,
         conversations: {
@@ -85,9 +64,9 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .tasks(taskSID)
         .update({ attributes: JSON.stringify(newAttributes) });
 
-      send(200)(updatedTask)(callback)(response);
+      resolve(success(updatedTask));
     } catch (err) {
-      send(500)(err)(callback)(response);
+      resolve(error500(err));
     }
   },
 );

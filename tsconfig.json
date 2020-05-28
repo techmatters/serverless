@@ -1,3 +1,7 @@
+/**
+* NOTE:
+* If any change is ever done in this file, make sure to replicate in tsconifg.eslint.json
+*/
 {
   "compilerOptions": {
     /* Basic Options */
@@ -62,5 +66,6 @@
 
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
-  }
+  },
+  "include": ["functions"],
 }

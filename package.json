@@ -3,15 +3,20 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --verbose",
     "start": "tsc & twilio-run --env",
     "watch": "tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
-    "lint": "eslint --ext .ts .",
+    "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "tsc && npm run swagger && twilio-run deploy"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tech-matters/serverless.git"
+  },
   "devDependencies": {
+    "@types/jest": "^25.2.3",
     "@types/node-fetch": "^2.5.5",
     "@types/swagger-ui-express": "^4.1.1",
     "@typescript-eslint/eslint-plugin": "^2.23.0",
@@ -23,8 +28,10 @@
     "eslint-import-resolver-typescript": "^2.0.0",
     "eslint-plugin-import": "^2.20.1",
     "eslint-plugin-prettier": "^3.1.2",
+    "jest": "^26.0.1",
     "prettier": "^1.19.1",
     "redoc-cli": "^0.9.7",
+    "ts-jest": "^26.0.0",
     "twilio-run": "2.* || >2.0.0-rc",
     "typescript": "^3.8.3"
   },
@@ -33,6 +40,7 @@
   },
   "dependencies": {
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
+    "tech-matters-serverless-helpers": "^1.0.3",
     "twilio-flex-token-validator": "^1.5.1"
   }
 }

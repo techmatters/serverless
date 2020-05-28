@@ -1,2 +1,2 @@
-functions/*.js
-utils/*.js
+**/*.js
+tech-matters-serverless-helpers-lib/
