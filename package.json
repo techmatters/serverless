@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@types/jest": "^25.2.3",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/node-fetch": "^2.5.5",
     "@types/swagger-ui-express": "^4.1.1",
     "@typescript-eslint/eslint-plugin": "^2.23.0",
@@ -40,7 +41,8 @@
   },
   "dependencies": {
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
+    "jsonwebtoken": "^8.5.1",
     "tech-matters-serverless-helpers": "^1.0.3",
-    "twilio-flex-token-validator": "^1.5.1"
+    "twilio-flex-token-validator": "^1.5.3"
   }
 }
