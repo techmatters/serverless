@@ -155,7 +155,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const validBody = event as Required<Body>;
+      const validBody = { closeSid, keepSid, memberToKick, newStatus };
 
       const [closedTask, keptTask] = await Promise.all([
         closeTaskAndKick(context, validBody),
