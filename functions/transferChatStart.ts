@@ -140,6 +140,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         targetSid, // update task attributes to include the required targetSid on the task (workerSid or a queueSid)
         transferTargetType: targetSid.startsWith('WK') ? 'worker' : 'queue',
       };
+
       // create New task
       const newTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
