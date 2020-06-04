@@ -23,18 +23,119 @@ type EnvVars = {
 export type Body = {
   closeSid?: string;
   keepSid?: string;
-  kickMember?: string;
+  memberToKick?: string;
   newStatus?: string;
 };
 
+async function closeTask(
+  context: Context<EnvVars>,
+  sid: string,
+  taskToCloseAttributes: any,
+  newStatus: string,
+) {
+  // set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
+  const newTaskToCloseAttributes = {
+    ...taskToCloseAttributes,
+    channelSid: 'CH00000000000000000000000000000000',
+    proxySessionSID: 'KC00000000000000000000000000000000',
+  };
+
+  const client = context.getTwilioClient();
+
+  await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(sid)
+    .update({ attributes: JSON.stringify(newTaskToCloseAttributes) });
+
+  // close the Task and set the proper status
+  const closedTask = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(sid)
+    .update({
+      assignmentStatus: 'completed',
+      reason: 'task transferred',
+      attributes: JSON.stringify({
+        ...newTaskToCloseAttributes,
+        transferMeta: {
+          ...newTaskToCloseAttributes.transferMeta,
+          transferStatus: newStatus,
+        },
+      }),
+    });
+
+  return closedTask;
+}
+
+async function kickMember(context: Context<EnvVars>, memberToKick: string, chatChannel: string) {
+  const client = context.getTwilioClient();
+
+  // kick out the counselor that is not required anymore
+  if (memberToKick) {
+    const memberKicked = await client.chat
+      .services(context.CHAT_SERVICE_SID)
+      .channels(chatChannel)
+      .members(memberToKick)
+      .remove();
+
+    return memberKicked;
+  }
+
+  return false;
+}
+
+async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+  const client = context.getTwilioClient();
+
+  // retrieve attributes of the task to close
+  const taskToClose = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(body.closeSid)
+    .fetch();
+  const taskToCloseAttributes = JSON.parse(taskToClose.attributes);
+  const { channelSid } = taskToCloseAttributes;
+
+  const [closedTask] = await Promise.all([
+    closeTask(context, body.closeSid, taskToCloseAttributes, body.newStatus),
+    kickMember(context, body.memberToKick, channelSid),
+  ]);
+
+  return closedTask;
+}
+
+async function updateTaskToKeep(context: Context<EnvVars>, body: Required<Body>) {
+  const client = context.getTwilioClient();
+
+  // retrieve attributes of the preserved task
+  const taskToKeep = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(body.keepSid)
+    .fetch();
+
+  const taskToKeepAttributes = JSON.parse(taskToKeep.attributes);
+
+  // update the status of the task that is preserved
+  const newTaskToKeepAttributes = {
+    ...taskToKeepAttributes,
+    transferMeta: {
+      ...taskToKeepAttributes.transferMeta,
+      transferStatus: body.newStatus,
+    },
+  };
+
+  const keptTask = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(body.keepSid)
+    .update({ attributes: JSON.stringify(newTaskToKeepAttributes) });
+
+  return keptTask;
+}
+
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
-    const client = context.getTwilioClient();
-
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { closeSid, keepSid, kickMember, newStatus } = event;
+    const { closeSid, keepSid, memberToKick, newStatus } = event;
 
     try {
       if (closeSid === undefined) {
@@ -45,77 +146,21 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         resolve(error400('keepSid'));
         return;
       }
-      if (kickMember === undefined) {
-        resolve(error400('kickMember'));
+      if (memberToKick === undefined) {
+        resolve(error400('memberToKick'));
+        return;
+      }
+      if (newStatus === undefined) {
+        resolve(error400('newStatus'));
         return;
       }
 
-      // retrieve attributes of the closing task
-      const closingTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(closeSid)
-        .fetch();
+      const validBody = event as Required<Body>;
 
-      const closingAttributes = JSON.parse(closingTask.attributes);
-      const keepingChannel = closingAttributes.channelSid;
-
-      // Set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
-      const updatedClosingAttributes = {
-        ...closingAttributes,
-        channelSid: 'CH00000000000000000000000000000000',
-        proxySessionSID: 'KC00000000000000000000000000000000',
-      };
-
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(closeSid)
-        .update({ attributes: JSON.stringify(updatedClosingAttributes) });
-
-      // Close the Task and set the propper status
-      const closedTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(closeSid)
-        .update({
-          assignmentStatus: 'completed',
-          reason: 'task transferred',
-          attributes: JSON.stringify({
-            ...updatedClosingAttributes,
-            transferMeta: {
-              ...updatedClosingAttributes.transferMeta,
-              transferStatus: newStatus || 'completed',
-            },
-          }),
-        });
-
-      // kick the counselor that is not required anymore
-      if (kickMember)
-        await client.chat
-          .services(context.CHAT_SERVICE_SID)
-          .channels(keepingChannel)
-          .members(kickMember)
-          .remove();
-
-      // retrieve attributes of the preserved task
-      const keepingTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(keepSid)
-        .fetch();
-
-      const keepingAttributes = JSON.parse(keepingTask.attributes);
-
-      // update the status of the task that is preserved
-      const updatedKeepingAttributes = {
-        ...keepingAttributes,
-        transferMeta: {
-          ...keepingAttributes.transferMeta,
-          transferStatus: newStatus || 'completed',
-        },
-      };
-
-      const keptTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(keepSid)
-        .update({ attributes: JSON.stringify(updatedKeepingAttributes) });
+      const [closedTask, keptTask] = await Promise.all([
+        closeTaskAndKick(context, validBody),
+        updateTaskToKeep(context, validBody),
+      ]);
 
       resolve(success({ closed: closedTask.sid, kept: keptTask.sid }));
     } catch (err) {
