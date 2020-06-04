@@ -17,6 +17,7 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
+  CHAT_SERVICE_SID: string;
 };
 
 export type Body = {
@@ -24,7 +25,72 @@ export type Body = {
   targetSid?: string;
   workerName?: string;
   mode?: string;
+  memberToKick?: string;
 };
+
+async function closeTask(context: Context<EnvVars>, sid: string, taskToCloseAttributes: any) {
+  // set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
+  const newTaskToCloseAttributes = {
+    ...taskToCloseAttributes,
+    channelSid: 'CH00000000000000000000000000000000',
+    proxySessionSID: 'KC00000000000000000000000000000000',
+  };
+
+  const client = context.getTwilioClient();
+
+  await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(sid)
+    .update({ attributes: JSON.stringify(newTaskToCloseAttributes) });
+
+  // close the Task and set the proper status
+  const closedTask = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(sid)
+    .update({
+      assignmentStatus: 'completed',
+      reason: 'task transferred',
+      attributes: JSON.stringify(newTaskToCloseAttributes),
+    });
+
+  return closedTask;
+}
+
+async function kickMember(context: Context<EnvVars>, memberToKick: string, chatChannel: string) {
+  const client = context.getTwilioClient();
+
+  // kick out the counselor that is not required anymore
+  if (memberToKick) {
+    const memberKicked = await client.chat
+      .services(context.CHAT_SERVICE_SID)
+      .channels(chatChannel)
+      .members(memberToKick)
+      .remove();
+
+    return memberKicked;
+  }
+
+  return false;
+}
+
+async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+  const client = context.getTwilioClient();
+
+  // retrieve attributes of the task to close
+  const taskToClose = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(body.taskSid)
+    .fetch();
+  const taskToCloseAttributes = JSON.parse(taskToClose.attributes);
+  const { channelSid } = taskToCloseAttributes;
+
+  const [closedTask] = await Promise.all([
+    closeTask(context, body.taskSid, taskToCloseAttributes),
+    kickMember(context, body.memberToKick, channelSid),
+  ]);
+
+  return closedTask;
+}
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
@@ -33,7 +99,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, targetSid, workerName, mode } = event;
+    const { taskSid, targetSid, workerName, mode, memberToKick } = event;
 
     try {
       if (taskSid === undefined) {
@@ -50,6 +116,10 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       }
       if (mode === undefined) {
         resolve(error400('mode'));
+        return;
+      }
+      if (memberToKick === undefined) {
+        resolve(error400('memberToKick'));
         return;
       }
 
@@ -80,23 +150,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         });
 
       if (mode === 'COLD') {
-        // Set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
-        const updatedAttributes = {
-          ...originalAttributes,
-          channelSid: 'CH00000000000000000000000000000000',
-          proxySessionSID: 'KC00000000000000000000000000000000',
-        };
-
-        await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(taskSid)
-          .update({ attributes: JSON.stringify(updatedAttributes) });
-
-        // Close the original Task
-        await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(taskSid)
-          .update({ assignmentStatus: 'completed', reason: 'task transferred' });
+        const validBody = { taskSid, targetSid, workerName, mode, memberToKick };
+        await closeTaskAndKick(context, validBody);
       }
 
       resolve(success({ taskSid: newTask.sid }));
