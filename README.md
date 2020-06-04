@@ -20,7 +20,7 @@ For help on twilio-run commands run:
 | Variable Name                       | Expected Value                                |
 | ----------------------------------- | --------------------------------------------  |
 | `ACCOUNT_SID`                       | sid of the Twilio account                     |
-| `AUTH_TOKEN`                        | auth token of the abouve account              |
+| `AUTH_TOKEN`                        | auth token of the above account              |
 | `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter              |
 | `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | workflow sid within above workspace           |
 | `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage |

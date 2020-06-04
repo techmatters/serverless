@@ -15,7 +15,7 @@ type EnvVars = {
   SYNC_SERVICE_SID: string;
 };
 
-// This are added to event by TokenValidator (if a valid Token was provided) https://www.npmjs.com/package/twilio-flex-token-validator#token-result
+// This is added to event by TokenValidator (if a valid Token was provided) https://www.npmjs.com/package/twilio-flex-token-validator#token-result
 export type AuthEvent = {
   TokenResult: {
     identity: string;
