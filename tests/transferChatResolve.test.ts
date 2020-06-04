@@ -73,7 +73,6 @@ const baseContext = {
                       return {
                         remove: async () => {
                           channels[channelSid] = channels[channelSid].filter(v => v !== memberSid);
-                          return true;
                         },
                       };
 
@@ -114,26 +113,20 @@ describe('transferChatResolve', () => {
     const event1: Body = {
       closeSid: undefined,
       keepSid: 'task2',
-      memberToKick: 'worker1',
-      newStatus: 'accepted',
+      kickMember: 'worker1',
+      newStatus: 'completed',
     };
     const event2: Body = {
       closeSid: 'task1',
       keepSid: undefined,
-      memberToKick: 'worker1',
-      newStatus: 'accepted',
+      kickMember: 'worker1',
+      newStatus: 'completed',
     };
     const event3: Body = {
       closeSid: 'task1',
       keepSid: 'task2',
-      memberToKick: undefined,
-      newStatus: 'accepted',
-    };
-    const event4: Body = {
-      closeSid: 'task1',
-      keepSid: 'task2',
-      memberToKick: 'worker1',
-      newStatus: undefined,
+      kickMember: undefined,
+      newStatus: 'completed',
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -143,9 +136,7 @@ describe('transferChatResolve', () => {
     };
 
     await Promise.all(
-      [{}, event1, event2, event3, event4].map(event =>
-        transferChatResolve(baseContext, event, callback),
-      ),
+      [{}, event1, event2, event3].map(event => transferChatResolve(baseContext, event, callback)),
     );
   });
 
@@ -153,14 +144,14 @@ describe('transferChatResolve', () => {
     const event1: Body = {
       closeSid: 'non existing',
       keepSid: 'task2',
-      memberToKick: '',
-      newStatus: 'accepted',
+      kickMember: '',
+      newStatus: 'completed',
     };
     const event2: Body = {
       closeSid: 'task1',
       keepSid: 'non existing',
-      memberToKick: '',
-      newStatus: 'accepted',
+      kickMember: '',
+      newStatus: 'completed',
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -187,19 +178,19 @@ describe('transferChatResolve', () => {
     const event: Body = {
       closeSid: 'task1',
       keepSid: 'task2',
-      memberToKick: 'worker1',
-      newStatus: 'accepted',
+      kickMember: 'worker1',
+      newStatus: 'completed',
     };
 
     const expected = { closed: 'task1', kept: 'task2' };
     const expectedClosedAttr = JSON.stringify({
       channelSid: 'CH00000000000000000000000000000000',
       proxySessionSID: 'KC00000000000000000000000000000000',
-      transferMeta: { transferStatus: 'accepted' },
+      transferMeta: { transferStatus: 'completed' },
     });
     const expectedKeptAttr = JSON.stringify({
       channelSid: 'channel',
-      transferMeta: { transferStatus: 'accepted' },
+      transferMeta: { transferStatus: 'completed' },
     });
 
     const callback: ServerlessCallback = (err, result) => {
@@ -225,19 +216,19 @@ describe('transferChatResolve', () => {
     const event: Body = {
       closeSid: 'task2',
       keepSid: 'task1',
-      memberToKick: 'worker1',
-      newStatus: 'accepted',
+      kickMember: 'worker1',
+      newStatus: 'completed',
     };
 
     const expected = { closed: 'task2', kept: 'task1' };
     const expectedClosedAttr = JSON.stringify({
       channelSid: 'CH00000000000000000000000000000000',
       proxySessionSID: 'KC00000000000000000000000000000000',
-      transferMeta: { transferStatus: 'accepted' },
+      transferMeta: { transferStatus: 'completed' },
     });
     const expectedKeptAttr = JSON.stringify({
       channelSid: 'channel',
-      transferMeta: { transferStatus: 'accepted' },
+      transferMeta: { transferStatus: 'completed' },
     });
 
     const callback: ServerlessCallback = (err, result) => {
