@@ -7,7 +7,7 @@ let tasks: any[] = [
   {
     sid: 'task1',
     taskChannelUniqueName: 'channel',
-    attributes: '{}',
+    attributes: '{"channelSid":"channel"}',
     fetch: async () => tasks.find(t => t.sid === 'task1'),
     update: async ({
       attributes,
@@ -35,6 +35,8 @@ let tasks: any[] = [
   },
 ];
 
+const channels: { [x: string]: string[] } = {};
+
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
@@ -52,6 +54,12 @@ workspaces.WSxxx.tasks.create = async (options: any) => {
     sid: 'newTaskSid',
   };
   tasks.push(newTask);
+
+  const channel = options.taskChannel;
+
+  if (channels[channel] === undefined) channels[channel] = ['worker2'];
+  else channels[channel].push('worker2');
+
   return newTask;
 };
 
@@ -64,10 +72,38 @@ const baseContext = {
         throw new Error('Workspace does not exists');
       },
     },
+    chat: {
+      services: (serviceSid: string) => {
+        if (serviceSid === baseContext.CHAT_SERVICE_SID)
+          return {
+            channels: (channelSid: string) => {
+              if (channels[channelSid])
+                return {
+                  members: (memberSid: string) => {
+                    if (channels[channelSid].includes(memberSid))
+                      return {
+                        remove: async () => {
+                          channels[channelSid] = channels[channelSid].filter(v => v !== memberSid);
+                          return true;
+                        },
+                      };
+
+                    throw new Error('Member is not participant');
+                  },
+                };
+
+              throw new Error('Error retrieving chat channel');
+            },
+          };
+
+        throw new Error('Error retrieving chat service');
+      },
+    },
   }),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
+  CHAT_SERVICE_SID: 'ISxxx',
 };
 
 describe('transferChatStart', () => {
@@ -76,6 +112,10 @@ describe('transferChatStart', () => {
   });
   afterAll(() => {
     helpers.teardown();
+  });
+
+  beforeEach(() => {
+    channels.channel = ['worker1'];
   });
 
   afterEach(() => {
@@ -88,24 +128,35 @@ describe('transferChatStart', () => {
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
     const event2: Body = {
       taskSid: 'task1',
       targetSid: undefined,
       workerName: 'worker1',
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
     const event3: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
       workerName: undefined,
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
     const event4: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: undefined,
+      memberToKick: 'worker1',
+    };
+    const event5: Body = {
+      taskSid: 'task1',
+      targetSid: 'WKxxx',
+      workerName: 'worker1',
+      mode: 'COLD',
+      memberToKick: undefined,
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -115,7 +166,7 @@ describe('transferChatStart', () => {
     };
 
     await Promise.all(
-      [{}, event1, event2, event3, event4].map(event =>
+      [{}, event1, event2, event3, event4, event5].map(event =>
         transferChatStart(baseContext, event, callback),
       ),
     );
@@ -127,6 +178,7 @@ describe('transferChatStart', () => {
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
 
     const event2: Body = {
@@ -134,6 +186,7 @@ describe('transferChatStart', () => {
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -161,6 +214,7 @@ describe('transferChatStart', () => {
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: 'WARM',
+      memberToKick: 'worker1',
     };
     const before = Array.from(tasks);
     const expected = { taskSid: 'newTaskSid' };
@@ -170,7 +224,7 @@ describe('transferChatStart', () => {
       const newTask = tasks.find(t => t.sid === 'newTaskSid');
 
       const expectedNewAttr =
-        '{"conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
+        '{"channelSid":"channel","conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
 
       expect(result).toBeDefined();
       const response = result as MockedResponse;
@@ -182,6 +236,8 @@ describe('transferChatStart', () => {
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
+      expect(channels.channel).toContain('worker1');
+      expect(channels.channel).toContain('worker2');
     };
 
     await transferChatStart(baseContext, event, callback);
@@ -193,11 +249,12 @@ describe('transferChatStart', () => {
       targetSid: 'WKxxx',
       workerName: 'worker1',
       mode: 'COLD',
+      memberToKick: 'worker1',
     };
     const expectedOldAttr =
       '{"channelSid":"CH00000000000000000000000000000000","proxySessionSID":"KC00000000000000000000000000000000"}';
     const expectedNewAttr =
-      '{"conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
+      '{"channelSid":"channel","conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
 
     const expected = { taskSid: 'newTaskSid' };
 
@@ -217,6 +274,8 @@ describe('transferChatStart', () => {
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
+      expect(channels.channel).not.toContain('worker1');
+      expect(channels.channel).toContain('worker2');
     };
 
     await transferChatStart(baseContext, event, callback);
