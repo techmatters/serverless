@@ -23,7 +23,8 @@ export type Body = {
   reservationSid?: string;
 };
 
-async function closeTask(context: Context<EnvVars>, body: Required<Body>) {
+// Closes the given reservation for the given task. Used with WARM transfers
+async function closeReservation(context: Context<EnvVars>, body: Required<Body>) {
   const client = context.getTwilioClient();
 
   const closedReservation = await client.taskrouter
@@ -56,7 +57,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       const validBody = { taskSid, reservationSid };
 
-      const closedReservation = await closeTask(context, validBody);
+      const closedReservation = await closeReservation(context, validBody);
 
       resolve(success({ closed: closedReservation.sid }));
     } catch (err) {
