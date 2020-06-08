@@ -23,7 +23,6 @@ export type Body = {
   reservationSid?: string;
 };
 
-// Closes the given reservation for the given task. Used with WARM transfers
 async function closeReservation(context: Context<EnvVars>, body: Required<Body>) {
   const client = context.getTwilioClient();
 
