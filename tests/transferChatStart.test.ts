@@ -268,7 +268,7 @@ describe('transferChatStart', () => {
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe('task transferred');
-      expect(originalTask.assignmentStatus).toBe('completed');
+      expect(originalTask.assignmentStatus).toBe('wrapping');
       expect(tasks).toHaveLength(2);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);

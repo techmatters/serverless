@@ -48,7 +48,7 @@ async function closeTask(context: Context<EnvVars>, sid: string, taskToCloseAttr
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(sid)
     .update({
-      assignmentStatus: 'completed',
+      assignmentStatus: 'wrapping',
       reason: 'task transferred',
       attributes: JSON.stringify(newTaskToCloseAttributes),
     });
