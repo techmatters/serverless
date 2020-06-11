@@ -36,6 +36,10 @@ async function closeTask(
   // set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
   const newTaskToCloseAttributes = {
     ...taskToCloseAttributes,
+    transferMeta: {
+      ...taskToCloseAttributes.transferMeta,
+      transferStatus: newStatus,
+    },
     channelSid: 'CH00000000000000000000000000000000',
     proxySessionSID: 'KC00000000000000000000000000000000',
   };
@@ -52,15 +56,9 @@ async function closeTask(
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(sid)
     .update({
-      assignmentStatus: 'completed',
+      assignmentStatus: 'wrapping',
       reason: 'task transferred',
-      attributes: JSON.stringify({
-        ...newTaskToCloseAttributes,
-        transferMeta: {
-          ...newTaskToCloseAttributes.transferMeta,
-          transferStatus: newStatus,
-        },
-      }),
+      attributes: JSON.stringify(newTaskToCloseAttributes),
     });
 
   return closedTask;

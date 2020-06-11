@@ -192,15 +192,15 @@ describe('transferChatResolve', () => {
     };
 
     const expected = { closed: 'task1', kept: 'task2' };
-    const expectedClosedAttr = JSON.stringify({
+    const expectedClosedAttr = {
       channelSid: 'CH00000000000000000000000000000000',
       proxySessionSID: 'KC00000000000000000000000000000000',
       transferMeta: { transferStatus: 'accepted' },
-    });
-    const expectedKeptAttr = JSON.stringify({
+    };
+    const expectedKeptAttr = {
       channelSid: 'channel',
       transferMeta: { transferStatus: 'accepted' },
-    });
+    };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -212,10 +212,10 @@ describe('transferChatResolve', () => {
       const closedTask = tasks.find(t => t.sid === closed);
       const keptTask = tasks.find(t => t.sid === kept);
 
-      expect(closedTask.assignmentStatus).toBe('completed');
+      expect(closedTask.assignmentStatus).toBe('wrapping');
       expect(closedTask.reason).toBe('task transferred');
-      expect(closedTask.attributes).toBe(expectedClosedAttr);
-      expect(keptTask.attributes).toBe(expectedKeptAttr);
+      expect(JSON.parse(closedTask.attributes)).toStrictEqual(expectedClosedAttr);
+      expect(JSON.parse(keptTask.attributes)).toStrictEqual(expectedKeptAttr);
     };
 
     await transferChatResolve(baseContext, event, callback);
@@ -230,15 +230,15 @@ describe('transferChatResolve', () => {
     };
 
     const expected = { closed: 'task2', kept: 'task1' };
-    const expectedClosedAttr = JSON.stringify({
+    const expectedClosedAttr = {
       channelSid: 'CH00000000000000000000000000000000',
       proxySessionSID: 'KC00000000000000000000000000000000',
       transferMeta: { transferStatus: 'accepted' },
-    });
-    const expectedKeptAttr = JSON.stringify({
+    };
+    const expectedKeptAttr = {
       channelSid: 'channel',
       transferMeta: { transferStatus: 'accepted' },
-    });
+    };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -250,10 +250,10 @@ describe('transferChatResolve', () => {
       const closedTask = tasks.find(t => t.sid === closed);
       const keptTask = tasks.find(t => t.sid === kept);
 
-      expect(closedTask.assignmentStatus).toBe('completed');
+      expect(closedTask.assignmentStatus).toBe('wrapping');
       expect(closedTask.reason).toBe('task transferred');
-      expect(closedTask.attributes).toBe(expectedClosedAttr);
-      expect(keptTask.attributes).toBe(expectedKeptAttr);
+      expect(JSON.parse(closedTask.attributes)).toStrictEqual(expectedClosedAttr);
+      expect(JSON.parse(keptTask.attributes)).toStrictEqual(expectedKeptAttr);
     };
 
     await transferChatResolve(baseContext, event, callback);
