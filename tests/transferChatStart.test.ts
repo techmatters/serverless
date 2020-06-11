@@ -126,35 +126,35 @@ describe('transferChatStart', () => {
     const event1: Body = {
       taskSid: undefined,
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
     };
     const event2: Body = {
       taskSid: 'task1',
       targetSid: undefined,
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
     };
     const event3: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: undefined,
+      ignoreAgent: undefined,
       mode: 'COLD',
       memberToKick: 'worker1',
     };
     const event4: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: undefined,
       memberToKick: 'worker1',
     };
     const event5: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: undefined,
     };
@@ -176,7 +176,7 @@ describe('transferChatStart', () => {
     const event1: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
     };
@@ -184,7 +184,7 @@ describe('transferChatStart', () => {
     const event2: Body = {
       taskSid: 'non existing',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
     };
@@ -212,7 +212,7 @@ describe('transferChatStart', () => {
     const event: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'WARM',
       memberToKick: 'worker1',
     };
@@ -247,7 +247,7 @@ describe('transferChatStart', () => {
     const event: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
-      workerName: 'worker1',
+      ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
     };

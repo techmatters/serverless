@@ -23,7 +23,7 @@ type EnvVars = {
 export type Body = {
   taskSid?: string;
   targetSid?: string;
-  workerName?: string;
+  ignoreAgent?: string;
   mode?: string;
   memberToKick?: string;
 };
@@ -99,7 +99,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, targetSid, workerName, mode, memberToKick } = event;
+    const { taskSid, targetSid, ignoreAgent, mode, memberToKick } = event;
 
     try {
       if (taskSid === undefined) {
@@ -110,8 +110,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         resolve(error400('targetSid'));
         return;
       }
-      if (workerName === undefined) {
-        resolve(error400('workerName'));
+      if (ignoreAgent === undefined) {
+        resolve(error400('ignoreAgent'));
         return;
       }
       if (mode === undefined) {
@@ -136,7 +136,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         conversations: originalAttributes.conversation // set up attributes of the new task to link them to the original task in Flex Insights
           ? originalAttributes.conversation
           : { conversation_id: taskSid },
-        ignoreAgent: workerName, // update task attributes to ignore the agent who transferred the task
+        ignoreAgent, // update task attributes to ignore the agent who transferred the task
         targetSid, // update task attributes to include the required targetSid on the task (workerSid or a queueSid)
         transferTargetType: targetSid.startsWith('WK') ? 'worker' : 'queue',
       };
@@ -151,7 +151,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         });
 
       if (mode === 'COLD') {
-        const validBody = { taskSid, targetSid, workerName, mode, memberToKick };
+        const validBody = { taskSid, targetSid, ignoreAgent, mode, memberToKick };
         await closeTaskAndKick(context, validBody);
       }
 
