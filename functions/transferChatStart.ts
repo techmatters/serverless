@@ -10,6 +10,7 @@ import {
   error400,
   error500,
   success,
+  send,
 } from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
@@ -123,6 +124,25 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
+      const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
+
+      if (transferTargetType === 'worker') {
+        const worker = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .workers(targetSid)
+          .fetch();
+
+        if (!worker.available) {
+          resolve(
+            send(403)({
+              message: "Error: can't transfer to an offline counselor",
+              status: 403,
+            }),
+          );
+          return;
+        }
+      }
+
       // retrieve attributes of the original task
       const originalTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -138,7 +158,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           : { conversation_id: taskSid },
         ignoreAgent, // update task attributes to ignore the agent who transferred the task
         targetSid, // update task attributes to include the required targetSid on the task (workerSid or a queueSid)
-        transferTargetType: targetSid.startsWith('WK') ? 'worker' : 'queue',
+        transferTargetType,
       };
 
       // create New task
