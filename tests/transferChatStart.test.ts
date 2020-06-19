@@ -45,6 +45,11 @@ const workspaces: { [x: string]: any } = {
 
       throw new Error('Task does not exists');
     },
+    workers: (worker: string) => {
+      if (worker === 'WK offline worker') return { fetch: async () => ({ available: false }) };
+
+      return { fetch: async () => ({ available: true }) };
+    },
   },
 };
 
@@ -170,6 +175,25 @@ describe('transferChatStart', () => {
         transferChatStart(baseContext, event, callback),
       ),
     );
+  });
+
+  test('Should return status 403', async () => {
+    const event: Body = {
+      taskSid: 'task1',
+      targetSid: 'WK offline worker',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      memberToKick: 'worker1',
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(403);
+      expect(response.getBody().message).toContain("Error: can't transfer to an offline counselor");
+    };
+
+    await transferChatStart(baseContext, event, callback);
   });
 
   test('Should return status 500', async () => {
