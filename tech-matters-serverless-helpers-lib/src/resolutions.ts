@@ -28,6 +28,15 @@ export const error400 = (missing: string | string[]) => {
 };
 
 /**
+ * @param message message to send within the 403 status http response
+ * @example
+ * resolve(error404('Forbiden: you are not authorized'))
+ */
+export const error403 = (message: string) => {
+  return send(403)({ message, status: 403 });
+};
+
+/**
  * @example
  * // with resolve bind:
  * resolve(error500(err))
