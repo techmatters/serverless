@@ -288,7 +288,6 @@ describe('transferChatStart', () => {
 
       expect(result).toBeDefined();
       const response = result as MockedResponse;
-      console.log(response)
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask.attributes).toBe(expectedOldAttr);
