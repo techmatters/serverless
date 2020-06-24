@@ -8,9 +8,9 @@ import {
   responseWithCors,
   bindResolve,
   error400,
+  error403,
   error500,
   success,
-  send,
 } from 'tech-matters-serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
@@ -133,12 +133,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           .fetch();
 
         if (!worker.available) {
-          resolve(
-            send(403)({
-              message: "Error: can't transfer to an offline counselor",
-              status: 403,
-            }),
-          );
+          resolve(error403("Error: can't transfer to an offline counselor"));
           return;
         }
       }
