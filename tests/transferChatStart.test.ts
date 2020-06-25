@@ -6,6 +6,7 @@ import helpers, { MockedResponse } from './helpers';
 let tasks: any[] = [
   {
     sid: 'task1',
+    taskChannelSid: 'channel1',
     taskChannelUniqueName: 'channel',
     attributes: '{"channelSid":"channel"}',
     fetch: async () => tasks.find(t => t.sid === 'task1'),
@@ -19,6 +20,36 @@ let tasks: any[] = [
       reason: string;
     }) => {
       const task = tasks.find(t => t.sid === 'task1');
+      tasks = tasks.map(t => {
+        if (t.sid === task.sid)
+          return {
+            ...task,
+            attributes: attributes || task.attributes,
+            assignmentStatus: assignmentStatus || task.assignmentStatus,
+            reason: reason || task.reason,
+          };
+        return t;
+      });
+
+      return task;
+    },
+  },
+  {
+    sid: 'task2',
+    taskChannelSid: 'channel2',
+    taskChannelUniqueName: 'channel',
+    attributes: '{"channelSid":"channel"}',
+    fetch: async () => tasks.find(t => t.sid === 'task2'),
+    update: async ({
+      attributes,
+      assignmentStatus,
+      reason,
+    }: {
+      attributes: string;
+      assignmentStatus: string;
+      reason: string;
+    }) => {
+      const task = tasks.find(t => t.sid === 'task2');
       tasks = tasks.map(t => {
         if (t.sid === task.sid)
           return {
@@ -48,7 +79,18 @@ const workspaces: { [x: string]: any } = {
     workers: (worker: string) => {
       if (worker === 'WK offline worker') return { fetch: async () => ({ available: false }) };
 
-      return { fetch: async () => ({ available: true }) };
+      return {
+        fetch: async () => ({ available: true }),
+        workerChannels: (taskChannelSid: string) => {
+          if (taskChannelSid === 'channel1')
+            return { fetch: async () => ({ availableCapacityPercentage: 1 }) };
+
+          if (taskChannelSid === 'channel2')
+            return { fetch: async () => ({ availableCapacityPercentage: 0 }) };
+
+          throw new Error('Channel does not exists');
+        },
+      };
     },
   },
 };
@@ -178,7 +220,7 @@ describe('transferChatStart', () => {
   });
 
   test('Should return status 403', async () => {
-    const event: Body = {
+    const event1: Body = {
       taskSid: 'task1',
       targetSid: 'WK offline worker',
       ignoreAgent: 'worker1',
@@ -186,14 +228,32 @@ describe('transferChatStart', () => {
       memberToKick: 'worker1',
     };
 
-    const callback: ServerlessCallback = (err, result) => {
+    const event2: Body = {
+      taskSid: 'task2',
+      targetSid: 'WK offline worker',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      memberToKick: 'worker1',
+    };
+
+    const callback1: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(403);
       expect(response.getBody().message).toContain("Error: can't transfer to an offline counselor");
     };
 
-    await transferChatStart(baseContext, event, callback);
+    const callback2: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      console.log(response)
+      console.log(tasks)
+      expect(response.getStatus()).toBe(403);
+      expect(response.getBody().message).toContain('Error: counselor has no available capacity');
+    };
+
+    await transferChatStart(baseContext, event1, callback1);
+    await transferChatStart(baseContext, event2, callback2);
   });
 
   test('Should return status 500', async () => {

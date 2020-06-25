@@ -124,6 +124,12 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
+      // retrieve attributes of the original task
+      const originalTask = await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(taskSid)
+        .fetch();
+
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
 
       if (transferTargetType === 'worker') {
@@ -136,13 +142,18 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           resolve(error403("Error: can't transfer to an offline counselor"));
           return;
         }
-      }
 
-      // retrieve attributes of the original task
-      const originalTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(taskSid)
-        .fetch();
+        const workerChannel = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .workers(targetSid)
+          .workerChannels(originalTask.taskChannelSid)
+          .fetch();
+
+        if (!workerChannel.availableCapacityPercentage) {
+          resolve(error403('Error: counselor has no available capacity'));
+          return;
+        }
+      }
 
       const originalAttributes = JSON.parse(originalTask.attributes);
 
