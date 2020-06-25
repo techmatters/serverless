@@ -146,7 +146,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         const workerChannel = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .workers(targetSid)
-          .workerChannels(originalTask.taskChannelSid)
+          .workerChannels(originalTask.taskChannelUniqueName)
           .fetch();
 
         if (!workerChannel.availableCapacityPercentage) {
