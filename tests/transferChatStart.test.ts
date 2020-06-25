@@ -6,7 +6,6 @@ import helpers, { MockedResponse } from './helpers';
 let tasks: any[] = [
   {
     sid: 'task1',
-    taskChannelSid: 'channel1',
     taskChannelUniqueName: 'channel',
     attributes: '{"channelSid":"channel"}',
     fetch: async () => tasks.find(t => t.sid === 'task1'),
@@ -36,8 +35,7 @@ let tasks: any[] = [
   },
   {
     sid: 'task2',
-    taskChannelSid: 'channel2',
-    taskChannelUniqueName: 'channel',
+    taskChannelUniqueName: 'channel2',
     attributes: '{"channelSid":"channel"}',
     fetch: async () => tasks.find(t => t.sid === 'task2'),
     update: async ({
@@ -81,11 +79,11 @@ const workspaces: { [x: string]: any } = {
 
       return {
         fetch: async () => ({ available: true }),
-        workerChannels: (taskChannelSid: string) => {
-          if (taskChannelSid === 'channel1')
+        workerChannels: (taskChannelUniqueName: string) => {
+          if (taskChannelUniqueName === 'channel')
             return { fetch: async () => ({ availableCapacityPercentage: 1 }) };
 
-          if (taskChannelSid === 'channel2')
+          if (taskChannelUniqueName === 'channel2')
             return { fetch: async () => ({ availableCapacityPercentage: 0 }) };
 
           throw new Error('Channel does not exists');
@@ -166,7 +164,7 @@ describe('transferChatStart', () => {
   });
 
   afterEach(() => {
-    if (tasks.length > 1) tasks = tasks.slice(0, 1);
+    if (tasks.length > 2) tasks = tasks.slice(0, 2);
   });
 
   test('Should return status 400', async () => {
@@ -230,7 +228,7 @@ describe('transferChatStart', () => {
 
     const event2: Body = {
       taskSid: 'task2',
-      targetSid: 'WK offline worker',
+      targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
@@ -246,8 +244,6 @@ describe('transferChatStart', () => {
     const callback2: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
-      console.log(response)
-      console.log(tasks)
       expect(response.getStatus()).toBe(403);
       expect(response.getBody().message).toContain('Error: counselor has no available capacity');
     };
@@ -315,7 +311,7 @@ describe('transferChatStart', () => {
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask).toStrictEqual(before[0]);
-      expect(tasks).toHaveLength(2);
+      expect(tasks).toHaveLength(3);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
@@ -353,7 +349,7 @@ describe('transferChatStart', () => {
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe('task transferred');
       expect(originalTask.assignmentStatus).toBe('wrapping');
-      expect(tasks).toHaveLength(2);
+      expect(tasks).toHaveLength(3);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
