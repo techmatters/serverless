@@ -133,21 +133,22 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
 
       if (transferTargetType === 'worker') {
-        const worker = await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .workers(targetSid)
-          .fetch();
+        const [worker, workerChannel] = await Promise.all([
+          client.taskrouter
+            .workspaces(context.TWILIO_WORKSPACE_SID)
+            .workers(targetSid)
+            .fetch(),
+          client.taskrouter
+            .workspaces(context.TWILIO_WORKSPACE_SID)
+            .workers(targetSid)
+            .workerChannels(originalTask.taskChannelUniqueName)
+            .fetch(),
+        ]);
 
         if (!worker.available) {
           resolve(error403("Error: can't transfer to an offline counselor"));
           return;
         }
-
-        const workerChannel = await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .workers(targetSid)
-          .workerChannels(originalTask.taskChannelUniqueName)
-          .fetch();
 
         if (!workerChannel.availableCapacityPercentage) {
           resolve(error403('Error: counselor has no available capacity'));

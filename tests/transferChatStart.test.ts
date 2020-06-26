@@ -75,7 +75,13 @@ const workspaces: { [x: string]: any } = {
       throw new Error('Task does not exists');
     },
     workers: (worker: string) => {
-      if (worker === 'WK offline worker') return { fetch: async () => ({ available: false }) };
+      if (worker === 'WK offline worker')
+        return {
+          fetch: async () => ({ available: false }),
+          workerChannels: () => ({
+            fetch: async () => ({ availableCapacityPercentage: 1 }),
+          }),
+        };
 
       return {
         fetch: async () => ({ available: true }),
