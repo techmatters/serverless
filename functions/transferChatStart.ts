@@ -11,7 +11,7 @@ import {
   error403,
   error500,
   success,
-} from 'tech-matters-serverless-helpers';
+} from '@tech-matters/serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 

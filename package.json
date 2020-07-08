@@ -41,8 +41,8 @@
     "node": "10.17.0"
   },
   "dependencies": {
+    "@tech-matters/serverless-helpers": "^1.0.6",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
-    "tech-matters-serverless-helpers": "^1.0.5",
     "twilio-flex-token-validator": "^1.5.3"
   }
 }
