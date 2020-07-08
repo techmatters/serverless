@@ -1,5 +1,5 @@
 {
-  "name": "tech-matters-serverless-helpers",
+  "name": "tech-matters-serverless-functions",
   "version": "1.0.5",
   "description": "Helpers and utilities used by Tech Matters for our serverless functions, hosted in Twilio Serverless Toolkit",
   "main": "lib/index.js",
