@@ -9,7 +9,7 @@ import {
   bindResolve,
   error500,
   success,
-} from 'tech-matters-serverless-functions';
+} from '@tech-matters/serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
