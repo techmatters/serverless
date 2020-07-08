@@ -4,7 +4,12 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from 'tech-matters-serverless-functions';
+import {
+  responseWithCors,
+  bindResolve,
+  error500,
+  success,
+} from 'tech-matters-serverless-functions';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
