@@ -19,6 +19,10 @@ class MockRuntime {
     };
   }
 
+  _missingAsset(key) {
+    this._assets[key] = undefined;
+  }
+
   _addFunction(key, filePath) {
     this._functions[key] = {
       path: path.resolve(filePath)
