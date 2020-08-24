@@ -17,7 +17,7 @@ export const handler = (context: Context, event: Event, callback: ServerlessCall
 
       // Handle someone asking "why" or questioning what is meant by gender
       // Answers to the "why" question will never produce this
-      if (gender.answer.toLowerCase() === 'why') {
+      if (gender.answer.toLowerCase() === 'why' && gender.error === undefined) {
         returnObj.actions.push({
           redirect: 'task://gender_why',
         });
