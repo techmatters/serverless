@@ -19,14 +19,14 @@ For help on twilio-run commands run:
 ## Environment variables
 | Variable Name                       | Expected Value                                |
 | ----------------------------------- | --------------------------------------------  |
-| `ACCOUNT_SID`                       | sid of the Twilio account                     |
-| `AUTH_TOKEN`                        | auth token of the above account              |
-| `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter              |
-| `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | workflow sid within above workspace           |
-| `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage |
-| `SYNC_SERVICE_API_KEY`              | api resource to use above sync client         |
-| `SYNC_SERVICE_API_SECRET`           | api secret of the above resource              |
-| `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks     |
+| `ACCOUNT_SID`                       | sid of the Twilio account                    (under /project/settings) |
+| `AUTH_TOKEN`                        | auth token of the above account              (under /project/settings) |
+| `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter              (under /taskrouter/workspaces, named Flex Task Assignment) |
+| `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | workflow sid within above workspace           (under /taskrouter/workspaces/< above-workspace >/workflows, named Master Workflow) |
+| `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage (under /sync/services, named Shared State Service) |
+| `SYNC_SERVICE_API_KEY`              | api resource to use above sync client         (under /sync/tools, named Shared State Service) |
+| `SYNC_SERVICE_API_SECRET`           | api secret of the above resource              (no way to acces in Twilio console, ask this to the repo owner) |
+| `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks     (under /chat/services, named Flex Chat Service) |
 
 ## Deployment
 To deploy (dev environment):  `npm run tr:deploy`  
