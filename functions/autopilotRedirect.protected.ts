@@ -62,11 +62,16 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   event: Event,
   callback: ServerlessCallback,
 ) => {
-  if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function')
-    await handleChatChannel(context, event);
+  try {
+    if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function')
+      await handleChatChannel(context, event);
 
-  const actions = buildActionsArray(context, event);
-  const returnObj = { actions };
+    const actions = buildActionsArray(context, event);
+    const returnObj = { actions };
 
-  callback(null, returnObj);
+    callback(null, returnObj);
+  } catch (err) {
+    // If something goes wrong, just handoff to counselor so contact is not lost
+    callback(null, { actions: [{ redirect: 'task://counselor_handoff' }] });
+  }
 };

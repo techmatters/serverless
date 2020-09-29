@@ -25,6 +25,8 @@ const baseContext = {
               }),
             };
 
+          if (channelSid === 'failure') throw new Error('Something crashed');
+
           return {
             fetch: async () => ({
               attributes: '{}',
@@ -120,6 +122,42 @@ describe('Redirect forwards to the correct task', () => {
       expect(result).toMatchObject({ actions: [{ redirect: 'task://counselor_handoff' }] });
       expect(err).toBeNull();
       expect(users.user.attributes).toBe(JSON.stringify(expectedAttr));
+    };
+
+    await autopilotRedirect(baseContext, event, callback);
+  });
+
+  test('Should forward handoff to counselor if something fails', async () => {
+    const event: Event = {
+      Channel: 'chat',
+      CurrentTask: 'redirect_function',
+      UserIdentifier: 'user',
+      Memory: `{
+                "twilio": {
+                    "chat": { "ChannelSid": "failure" },
+                    "collected_data": {
+                        "collect_survey": {
+                            "answers": {
+                                "about_self": {
+                                    "answer": "Yes"
+                                },
+                                "age": {
+                                    "answer": "12"
+                                },
+                                "gender": {
+                                    "answer": "Girl"
+                                }
+                            }
+                        }
+                    }
+                },
+                "at": "survey"
+            }`,
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toMatchObject({ actions: [{ redirect: 'task://counselor_handoff' }] });
+      expect(err).toBeNull();
     };
 
     await autopilotRedirect(baseContext, event, callback);
