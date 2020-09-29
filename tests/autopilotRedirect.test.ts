@@ -15,6 +15,7 @@ const users: { [u: string]: any } = {
 const baseContext = {
   getTwilioClient: (): any => ({
     chat: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       services: (serviceSid: string) => ({
         channels: (channelSid: string) => {
           if (channelSid === 'web')
