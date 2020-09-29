@@ -5,8 +5,9 @@ import {
 } from '@twilio-labs/serverless-runtime-types/types';
 
 export interface Event {
-  Memory: string;
   Channel: string;
+  CurrentTask: string;
+  Memory: string;
   UserIdentifier: string;
 }
 
@@ -87,7 +88,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   event: Event,
   callback: ServerlessCallback,
 ) => {
-  if (event.Channel === 'chat') await handleChatChannel(context, event);
+  if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function')
+    await handleChatChannel(context, event);
+
   const actions = buildActionsArray(context, event);
   const returnObj = { actions };
 
