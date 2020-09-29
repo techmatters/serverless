@@ -3,8 +3,39 @@ import { handler as autopilotRedirect, Event } from '../functions/autopilotRedir
 
 import helpers from './helpers';
 
+const users: { [u: string]: any } = {
+  user: {
+    attributes: '{}',
+    update: async (attributes: string) => {
+      users.user = attributes;
+    },
+  },
+};
+
 const baseContext = {
-  getTwilioClient: (): any => ({}),
+  getTwilioClient: (): any => ({
+    chat: {
+      services: (serviceSid: string) => ({
+        channels: (channelSid: string) => {
+          if (channelSid === 'web')
+            return {
+              fetch: async () => ({
+                attributes: '{"channel_type": "web"}',
+              }),
+            };
+
+          return {
+            fetch: async () => ({
+              attributes: '{}',
+            }),
+          };
+        },
+        users: (user: string) => ({
+          fetch: async () => users[user],
+        }),
+      }),
+    },
+  }),
   DOMAIN_NAME: 'serverless',
 };
 
@@ -16,10 +47,14 @@ describe('Redirect forwards to the correct task', () => {
     helpers.teardown();
   });
 
-  test('Should forward normal surveys to a counselor', () => {
+  test('Should forward normal surveys to a counselor (NO update to user as channel is not web)', async () => {
     const event: Event = {
+      Channel: 'chat',
+      CurrentTask: 'redirect_function',
+      UserIdentifier: 'user',
       Memory: `{
                 "twilio": {
+                  "chat": { "ChannelSid": "not web" },
                     "collected_data": {
                         "collect_survey": {
                             "answers": {
@@ -41,17 +76,23 @@ describe('Redirect forwards to the correct task', () => {
     };
 
     const callback: ServerlessCallback = (err, result) => {
+      const expectedAttr = {};
       expect(result).toMatchObject({ actions: [{ redirect: 'task://counselor_handoff' }] });
       expect(err).toBeNull();
+      expect(users.user.attributes).toBe(JSON.stringify(expectedAttr));
     };
 
-    expect(autopilotRedirect(baseContext, event, callback));
+    await autopilotRedirect(baseContext, event, callback);
   });
 
-  test('Should forward the Why gender to the answer', () => {
+  test('Should forward normal surveys to a counselor (YES update to user as channel is web)', async () => {
     const event: Event = {
+      Channel: 'chat',
+      CurrentTask: 'redirect_function',
+      UserIdentifier: 'user',
       Memory: `{
                 "twilio": {
+                    "chat": { "ChannelSid": "web" },
                     "collected_data": {
                         "collect_survey": {
                             "answers": {
@@ -62,7 +103,7 @@ describe('Redirect forwards to the correct task', () => {
                                     "answer": "12"
                                 },
                                 "gender": {
-                                    "answer": "why"
+                                    "answer": "Girl"
                                 }
                             }
                         }
@@ -73,78 +114,13 @@ describe('Redirect forwards to the correct task', () => {
     };
 
     const callback: ServerlessCallback = (err, result) => {
-      expect(result).toMatchObject({ actions: [{ redirect: 'task://gender_why' }] });
-      expect(err).toBeNull();
-    };
+      const expectedAttr = { lockInput: true };
 
-    expect(autopilotRedirect(baseContext, event, callback));
-  });
-
-  test('Should forward all regular gender_why responses to a counselor', () => {
-    const event: Event = {
-      Memory: `{
-                  "twilio": {
-                      "collected_data": {
-                          "collect_survey": {
-                              "answers": {
-                                  "about_self": {
-                                      "answer": "No"
-                                  },
-                                  "age": {
-                                      "answer": "23"
-                                  },
-                                  "gender": {
-                                      "answer": "Boy"
-                                  }
-                              }
-                          }
-                      }
-                  },
-                  "at": "gender_why"
-              }`,
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
       expect(result).toMatchObject({ actions: [{ redirect: 'task://counselor_handoff' }] });
       expect(err).toBeNull();
+      expect(users.user.attributes).toBe(JSON.stringify(expectedAttr));
     };
 
-    expect(autopilotRedirect(baseContext, event, callback));
-  });
-
-  test('Should forward non-responses to why, even with autopilot weirdness, to a counselor', () => {
-    const event: Event = {
-      Memory: `{
-                "twilio": {
-                    "collected_data": {
-                        "collect_survey": {
-                            "answers": {
-                                "about_self": {
-                                    "answer": "Yes"
-                                },
-                                "age": {
-                                    "answer": "12"
-                                },
-                                "gender": {
-                                    "answer": "why",
-                                    "error": {
-                                      "message": "Invalid Value",
-                                      "value": "prefer not to answer"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "at": "gender_why"
-            }`,
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toMatchObject({ actions: [{ redirect: 'task://counselor_handoff' }] });
-      expect(err).toBeNull();
-    };
-
-    expect(autopilotRedirect(baseContext, event, callback));
+    await autopilotRedirect(baseContext, event, callback);
   });
 });

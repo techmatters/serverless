@@ -11,9 +11,7 @@ export interface Event {
   UserIdentifier: string;
 }
 
-type EnvVars = {
-  TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
-};
+type EnvVars = {};
 
 const handleChatChannel = async (context: Context<EnvVars>, event: Event) => {
   const memory = JSON.parse(event.Memory);
