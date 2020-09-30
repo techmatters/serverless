@@ -1,40 +1,77 @@
-import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { JsonObject } from 'swagger-ui-express';
+import {
+  Context,
+  ServerlessCallback,
+  ServerlessFunctionSignature,
+} from '@twilio-labs/serverless-runtime-types/types';
 
 export interface Event {
+  Channel: string;
+  CurrentTask: string;
   Memory: string;
+  UserIdentifier: string;
 }
 
-export const handler = (context: Context, event: Event, callback: ServerlessCallback) => {
+type EnvVars = {};
+
+const handleChatChannel = async (context: Context<EnvVars>, event: Event) => {
   const memory = JSON.parse(event.Memory);
-  const returnObj: JsonObject = { actions: [] };
+  const { ServiceSid, ChannelSid } = memory.twilio.chat;
+
+  const channel = await context
+    .getTwilioClient()
+    .chat.services(ServiceSid)
+    .channels(ChannelSid)
+    .fetch();
+
+  const attributes = JSON.parse(channel.attributes);
+
+  // if channel is webchat, disable the input
+  if (attributes.channel_type === 'web') {
+    const user = await context
+      .getTwilioClient()
+      .chat.services(ServiceSid)
+      .users(event.UserIdentifier)
+      .fetch();
+
+    const userAttr = JSON.parse(user.attributes);
+    const updatedAttr = { ...userAttr, lockInput: true };
+
+    await user.update({ attributes: JSON.stringify(updatedAttr) });
+  }
+};
+
+const buildActionsArray = (context: Context<EnvVars>, event: Event) => {
+  const memory = JSON.parse(event.Memory);
 
   switch (memory.at) {
-    case 'survey':
-    case 'gender_why':
-      // eslint-disable-next-line no-case-declarations
-      const { gender } = memory.twilio.collected_data.collect_survey.answers;
-
-      // Handle someone asking "why" or questioning what is meant by gender
-      // Answers to the "why" question will never produce this
-      if (gender.error === undefined && gender.answer.toLowerCase() === 'why') {
-        returnObj.actions.push({
-          redirect: 'task://gender_why',
-        });
-        break;
-      }
-
-      returnObj.actions.push({
-        redirect: 'task://counselor_handoff',
-      });
-      break;
-    default:
+    case 'survey': {
+      const redirect = { redirect: 'task://counselor_handoff' };
+      return [redirect];
+    }
+    default: {
       // If we ever get here, it's in error
       // Just handoff to counselor for now, maybe need to internally record an error
-      returnObj.actions.push({
-        redirect: 'task://counselor_handoff',
-      });
-      break;
+      const redirect = { redirect: 'task://counselor_handoff' };
+      return [redirect];
+    }
   }
-  callback(null, returnObj);
+};
+
+export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
+  context: Context<EnvVars>,
+  event: Event,
+  callback: ServerlessCallback,
+) => {
+  try {
+    if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function')
+      await handleChatChannel(context, event);
+
+    const actions = buildActionsArray(context, event);
+    const returnObj = { actions };
+
+    callback(null, returnObj);
+  } catch (err) {
+    // If something goes wrong, just handoff to counselor so contact is not lost
+    callback(null, { actions: [{ redirect: 'task://counselor_handoff' }] });
+  }
 };
