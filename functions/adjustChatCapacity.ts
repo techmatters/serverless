@@ -37,10 +37,10 @@ const adjustChatCapacity = async (
     .fetch();
 
   if (body.adjustment === 'increase') {
-    if (channel.availableCapacityPercentage === 0)
-      return { status: 412, message: 'Already have available capacity.' };
+    if (channel.availableCapacityPercentage > 0)
+      return { status: 412, message: 'Still have available capacity, no need to increase.' };
 
-    if (channel.configuredCapacity < body.workerLimit)
+    if (channel.configuredCapacity === body.workerLimit)
       return { status: 412, message: 'Reached the max capacity.' };
 
     await channel.update({ capacity: channel.configuredCapacity + 1 });
@@ -51,6 +51,7 @@ const adjustChatCapacity = async (
     if (channel.configuredCapacity - 1 >= 1)
       await channel.update({ capacity: channel.configuredCapacity - 1 });
 
+    // If configuredCapacity is already 1, send status 200 to avoid error on client side
     return { status: 200, message: 'Succesfully decreased channel capacity' };
   }
 
