@@ -9,7 +9,7 @@ import {
   bindResolve,
   error400,
   error500,
-  success,
+  send,
 } from '@tech-matters/serverless-helpers';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
@@ -24,7 +24,10 @@ export type Body = {
   adjustment?: 'increase' | 'decrease';
 };
 
-const adjustChatCapacity = async (context: Context<EnvVars>, body: Required<Body>) => {
+const adjustChatCapacity = async (
+  context: Context<EnvVars>,
+  body: Required<Body>,
+): Promise<{ status: number; message: string }> => {
   const client = context.getTwilioClient();
 
   const channel = await client.taskrouter
@@ -34,14 +37,24 @@ const adjustChatCapacity = async (context: Context<EnvVars>, body: Required<Body
     .fetch();
 
   if (body.adjustment === 'increase') {
-    if (channel.availableCapacityPercentage === 0 && channel.configuredCapacity < body.workerLimit)
-      await channel.update({ capacity: channel.configuredCapacity + 1 });
+    if (channel.availableCapacityPercentage === 0)
+      return { status: 412, message: 'Already have available capacity.' };
+
+    if (channel.configuredCapacity < body.workerLimit)
+      return { status: 412, message: 'Reached the max capacity.' };
+
+    await channel.update({ capacity: channel.configuredCapacity + 1 });
+    return { status: 200, message: 'Succesfully increased channel capacity' };
   }
 
   if (body.adjustment === 'decrease') {
     if (channel.configuredCapacity - 1 >= 1)
       await channel.update({ capacity: channel.configuredCapacity - 1 });
+
+    return { status: 200, message: 'Succesfully decreased channel capacity' };
   }
+
+  return { status: 400, message: 'Invalid adjustment argument' };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -70,11 +83,9 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       const validBody = { workerSid, workspaceSid, channelSid, workerLimit, adjustment };
 
-      await adjustChatCapacity(context, validBody);
+      const { status, message } = await adjustChatCapacity(context, validBody);
 
-      return resolve(
-        success(`Chat channel capicity adjusted with "${adjustment}" for worker ${workerSid}`),
-      );
+      return resolve(send(status)({ message, status }));
     } catch (err) {
       return resolve(error500(err));
     }
