@@ -66,21 +66,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const { workerSid, workspaceSid, channelSid, workerLimit, adjustment } = event;
 
     try {
-      if (workerSid === undefined) {
-        return resolve(error400('workerSid'));
-      }
-      if (workspaceSid === undefined) {
-        return resolve(error400('workspaceSid'));
-      }
-      if (channelSid === undefined) {
-        return resolve(error400('channelSid'));
-      }
-      if (workerLimit === undefined) {
-        return resolve(error400('workerLimit'));
-      }
-      if (adjustment === undefined) {
-        return resolve(error400('adjustment'));
-      }
+      if (workerSid === undefined) return resolve(error400('workerSid'));
+      if (workspaceSid === undefined) return resolve(error400('workspaceSid'));
+      if (channelSid === undefined) return resolve(error400('channelSid'));
+      if (workerLimit === undefined) return resolve(error400('workerLimit'));
+      if (adjustment === undefined) return resolve(error400('adjustment'));
 
       const validBody = { workerSid, workspaceSid, channelSid, workerLimit, adjustment };
 
