@@ -1,14 +1,17 @@
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
 import '@twilio-labs/serverless-runtime-types';
 import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+import { PromiseValue } from 'type-fest';
 import {
   responseWithCors,
   bindResolve,
   error400,
-  error403,
+  send,
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
@@ -75,6 +78,8 @@ async function kickMember(context: Context<EnvVars>, memberToKick: string, chatC
 }
 
 async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+  if (body.mode !== 'COLD') return null;
+
   const client = context.getTwilioClient();
 
   // retrieve attributes of the task to close
@@ -91,6 +96,80 @@ async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>)
   ]);
 
   return closedTask;
+}
+
+// if transfer targets a worker, validates that it can be effectively transferred, and if the worker's chat capacity needs to increase
+async function validateChannelIfWorker(
+  context: Context<EnvVars>,
+  targetSid: string,
+  transferTargetType: string,
+  taskChannelUniqueName: string,
+  channelType: string,
+) {
+  if (transferTargetType === 'queue') return { type: 'queue' } as const;
+
+  const client = context.getTwilioClient();
+
+  const [worker, workerChannel] = await Promise.all([
+    client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .workers(targetSid)
+      .fetch(),
+    client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .workers(targetSid)
+      .workerChannels(taskChannelUniqueName)
+      .fetch(),
+  ]);
+
+  if (!worker.available)
+    return {
+      type: 'error',
+      payload: { status: 403, message: "Error: can't transfer to an offline counselor" },
+    } as const;
+
+  const workerAttr = JSON.parse(worker.attributes);
+
+  const unavailableVoice = channelType === 'voice' && !workerChannel.availableCapacityPercentage;
+  const unavailableChat =
+    channelType !== 'voice' &&
+    !workerChannel.availableCapacityPercentage &&
+    workerAttr.maxMessageCapacity &&
+    workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity;
+
+  if (unavailableVoice || unavailableChat)
+    return {
+      type: 'error',
+      payload: { status: 403, message: 'Error: counselor has no available capacity' },
+    } as const;
+
+  const shouldIncrease =
+    channelType !== 'voice' &&
+    !workerChannel.availableCapacityPercentage &&
+    workerAttr.maxMessageCapacity &&
+    workerChannel.configuredCapacity < workerAttr.maxMessageCapacity;
+
+  return { type: 'worker', worker, shouldIncrease } as const;
+}
+
+async function increaseChatCapacity(
+  context: Context<EnvVars>,
+  validationResult: PromiseValue<ReturnType<typeof validateChannelIfWorker>>,
+) {
+  // once created the task, increase worker chat capacity if needed
+  if (validationResult.shouldIncrease) {
+    const { path } = Runtime.getFunctions().adjustChatCapacity;
+    const { adjustChatCapacity } = require(path) as typeof import('./adjustChatCapacity');
+
+    const { worker } = validationResult;
+
+    const body = {
+      workerSid: worker.sid,
+      adjustment: 'increase',
+    } as const;
+
+    await adjustChatCapacity(context, body);
+  }
 }
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -130,33 +209,23 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .tasks(taskSid)
         .fetch();
 
+      const originalAttributes = JSON.parse(originalTask.attributes);
+
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
 
-      if (transferTargetType === 'worker') {
-        const [worker, workerChannel] = await Promise.all([
-          client.taskrouter
-            .workspaces(context.TWILIO_WORKSPACE_SID)
-            .workers(targetSid)
-            .fetch(),
-          client.taskrouter
-            .workspaces(context.TWILIO_WORKSPACE_SID)
-            .workers(targetSid)
-            .workerChannels(originalTask.taskChannelUniqueName)
-            .fetch(),
-        ]);
+      const validationResult = await validateChannelIfWorker(
+        context,
+        targetSid,
+        transferTargetType,
+        originalTask.taskChannelUniqueName,
+        originalAttributes.channelType,
+      );
 
-        if (!worker.available) {
-          resolve(error403("Error: can't transfer to an offline counselor"));
-          return;
-        }
-
-        if (!workerChannel.availableCapacityPercentage) {
-          resolve(error403('Error: counselor has no available capacity'));
-          return;
-        }
+      if (validationResult.type === 'error') {
+        const { status, message } = validationResult.payload;
+        resolve(send(status)(message));
+        return;
       }
-
-      const originalAttributes = JSON.parse(originalTask.attributes);
 
       const newAttributes = {
         ...originalAttributes,
@@ -175,12 +244,14 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
           taskChannel: originalTask.taskChannelUniqueName,
           attributes: JSON.stringify(newAttributes),
+          priority: 100,
         });
 
-      if (mode === 'COLD') {
-        const validBody = { taskSid, targetSid, ignoreAgent, mode, memberToKick };
-        await closeTaskAndKick(context, validBody);
-      }
+      // Final actions that might not happen (conditions specified inside of each)
+      await Promise.all([
+        increaseChatCapacity(context, validationResult),
+        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid }),
+      ]);
 
       resolve(success({ taskSid: newTask.sid }));
     } catch (err) {
