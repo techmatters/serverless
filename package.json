@@ -35,7 +35,6 @@
     "redoc-cli": "^0.9.7",
     "ts-jest": "^26.0.0",
     "twilio-run": "2.* || >2.0.0-rc",
-    "type-fest": "^0.17.0",
     "typescript": "^3.8.3"
   },
   "engines": {
@@ -45,6 +44,7 @@
     "@tech-matters/serverless-helpers": "^1.0.6",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
     "swagger-ui-express": "^4.1.4",
-    "twilio-flex-token-validator": "^1.5.3"
+    "twilio-flex-token-validator": "^1.5.3",
+    "type-fest": "^0.17.0"
   }
 }

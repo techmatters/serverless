@@ -223,7 +223,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       if (validationResult.type === 'error') {
         const { status, message } = validationResult.payload;
-        resolve(send(status)(message));
+        resolve(send(status)({ status, message }));
         return;
       }
 

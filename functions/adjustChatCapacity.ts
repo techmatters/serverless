@@ -34,6 +34,8 @@ export const adjustChatCapacity = async (
     .workers(body.workerSid)
     .fetch();
 
+  if (!worker) return { status: 404, message: 'Could not find worker.' };
+
   const { maxMessageCapacity } = JSON.parse(worker.attributes);
 
   const channels = await worker.workerChannels().list();

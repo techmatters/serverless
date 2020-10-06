@@ -66,6 +66,8 @@ let tasks: any[] = [
 
 const channels: { [x: string]: string[] } = {};
 
+const configurableCapacity = 1;
+
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
@@ -79,18 +81,25 @@ const workspaces: { [x: string]: any } = {
         return {
           fetch: async () => ({ available: false }),
           workerChannels: () => ({
-            fetch: async () => ({ availableCapacityPercentage: 1 }),
+            fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
           }),
         };
 
       return {
-        fetch: async () => ({ available: true }),
+        fetch: async () => ({
+          available: true,
+          attributes: JSON.stringify({ maxMessageCapacity: configurableCapacity }),
+        }),
         workerChannels: (taskChannelUniqueName: string) => {
           if (taskChannelUniqueName === 'channel')
-            return { fetch: async () => ({ availableCapacityPercentage: 1 }) };
+            return {
+              fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
+            };
 
           if (taskChannelUniqueName === 'channel2')
-            return { fetch: async () => ({ availableCapacityPercentage: 0 }) };
+            return {
+              fetch: async () => ({ availableCapacityPercentage: 0, configuredCapacity: 1 }),
+            };
 
           throw new Error('Channel does not exists');
         },
