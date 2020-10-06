@@ -44,7 +44,7 @@ const adjustChatCapacity = async (
       return { status: 412, message: 'Reached the max capacity.' };
 
     await channel.update({ capacity: channel.configuredCapacity + 1 });
-    return { status: 200, message: 'Succesfully increased channel capacity' };
+    return { status: 200, message: 'Successfully increased channel capacity' };
   }
 
   if (body.adjustment === 'decrease') {
@@ -52,7 +52,7 @@ const adjustChatCapacity = async (
       await channel.update({ capacity: channel.configuredCapacity - 1 });
 
     // If configuredCapacity is already 1, send status 200 to avoid error on client side
-    return { status: 200, message: 'Succesfully decreased channel capacity' };
+    return { status: 200, message: 'Successfully decreased channel capacity' };
   }
 
   return { status: 400, message: 'Invalid adjustment argument' };
