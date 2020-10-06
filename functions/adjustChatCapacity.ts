@@ -14,33 +14,38 @@ import {
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
-type EnvVars = {};
+type EnvVars = {
+  TWILIO_WORKSPACE_SID: string;
+};
 
 export type Body = {
   workerSid?: string;
-  workspaceSid?: string;
-  channelSid?: string;
-  workerLimit?: number;
   adjustment?: 'increase' | 'decrease';
 };
 
-const adjustChatCapacity = async (
+export const adjustChatCapacity = async (
   context: Context<EnvVars>,
   body: Required<Body>,
 ): Promise<{ status: number; message: string }> => {
   const client = context.getTwilioClient();
 
-  const channel = await client.taskrouter
-    .workspaces(body.workspaceSid)
+  const worker = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
     .workers(body.workerSid)
-    .workerChannels(body.channelSid)
     .fetch();
+
+  const { maxMessageCapacity } = JSON.parse(worker.attributes);
+
+  const channels = await worker.workerChannels().list();
+  const channel = channels.find(c => c.taskChannelUniqueName === 'chat');
+
+  if (!channel) return { status: 404, message: 'Could not find chat channel.' };
 
   if (body.adjustment === 'increase') {
     if (channel.availableCapacityPercentage > 0)
       return { status: 412, message: 'Still have available capacity, no need to increase.' };
 
-    if (!(channel.configuredCapacity < body.workerLimit))
+    if (!(channel.configuredCapacity < maxMessageCapacity))
       return { status: 412, message: 'Reached the max capacity.' };
 
     await channel.update({ capacity: channel.configuredCapacity + 1 });
@@ -63,16 +68,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { workerSid, workspaceSid, channelSid, workerLimit, adjustment } = event;
+    const { workerSid, adjustment } = event;
 
     try {
       if (workerSid === undefined) return resolve(error400('workerSid'));
-      if (workspaceSid === undefined) return resolve(error400('workspaceSid'));
-      if (channelSid === undefined) return resolve(error400('channelSid'));
-      if (workerLimit === undefined) return resolve(error400('workerLimit'));
       if (adjustment === undefined) return resolve(error400('adjustment'));
 
-      const validBody = { workerSid, workspaceSid, channelSid, workerLimit, adjustment };
+      const validBody = { workerSid, adjustment };
 
       const { status, message } = await adjustChatCapacity(context, validBody);
 
