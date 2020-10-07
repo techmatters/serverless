@@ -15,6 +15,8 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+// eslint-disable-next-line prettier/prettier
+import type { AdjustChatCapacityType } from './adjustChatCapacity';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
@@ -159,7 +161,8 @@ async function increaseChatCapacity(
   // once created the task, increase worker chat capacity if needed
   if (validationResult.shouldIncrease) {
     const { path } = Runtime.getFunctions().adjustChatCapacity;
-    const { adjustChatCapacity } = require(path) as typeof import('./adjustChatCapacity');
+    // eslint-disable-next-line prefer-destructuring
+    const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
 
     const { worker } = validationResult;
 

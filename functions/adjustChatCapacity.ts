@@ -65,6 +65,8 @@ export const adjustChatCapacity = async (
   return { status: 400, message: 'Invalid adjustment argument' };
 };
 
+export type AdjustChatCapacityType = typeof adjustChatCapacity;
+
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
