@@ -138,7 +138,6 @@ async function validateChannelIfWorker(
     workerAttr.maxMessageCapacity 
       ? channelType !== 'voice' &&
     !workerChannel.availableCapacityPercentage &&
-    workerAttr.maxMessageCapacity &&
     workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity
       : channelType !== 'voice' && !workerChannel.availableCapacityPercentage;
 
