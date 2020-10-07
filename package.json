@@ -44,6 +44,7 @@
     "@tech-matters/serverless-helpers": "^1.0.6",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
     "swagger-ui-express": "^4.1.4",
-    "twilio-flex-token-validator": "^1.5.3"
+    "twilio-flex-token-validator": "^1.5.3",
+    "type-fest": "^0.17.0"
   }
 }

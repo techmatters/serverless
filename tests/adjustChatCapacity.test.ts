@@ -4,6 +4,7 @@ import { handler as adjustChatCapacity, Body } from '../functions/adjustChatCapa
 import helpers, { MockedResponse } from './helpers';
 
 let workerChannel = {
+  taskChannelUniqueName: 'chat',
   configuredCapacity: 1,
   availableCapacityPercentage: 0,
   updateCapacityPercentage: (availableCapacityPercentage: number) => {
@@ -14,19 +15,46 @@ let workerChannel = {
   },
 };
 
+const someWorker = {
+  attributes: JSON.stringify({ maxMessageCapacity: 2 }),
+  fetch: async () => someWorker,
+  workerChannels: () => ({
+    list: async () => [workerChannel],
+    fetch: async () => workerChannel,
+  }),
+};
+
+const withoutChannel = {
+  attributes: JSON.stringify({ maxMessageCapacity: 2 }),
+  fetch: async () => withoutChannel,
+  workerChannels: () => ({
+    list: async () => [],
+  }),
+};
+
+const withoutAttr = {
+  attributes: JSON.stringify({}),
+  fetch: async () => withoutAttr,
+  workerChannels: () => ({
+    list: async () => [],
+  }),
+};
+
 const baseContext = {
   getTwilioClient: (): any => ({
     taskrouter: {
       workspaces: () => ({
-        workers: (workerSid: string) => ({
-          workerChannels: () => ({
-            fetch: async () => {
-              if (workerSid === 'worker123') return workerChannel;
+        workers: (workerSid: string) => {
+          if (workerSid === 'worker123') return someWorker;
 
-              throw new Error('Non existing worker');
-            },
-          }),
-        }),
+          if (workerSid === 'nonExisting') return { fetch: async () => null };
+
+          if (workerSid === 'withoutChannel') return withoutChannel;
+
+          if (workerSid === 'withoutAttr') return withoutAttr;
+
+          throw new Error('Non existing worker');
+        },
       }),
     },
   }),
@@ -43,17 +71,11 @@ describe('populateCounselors', () => {
 
   test('Should return status 400', async () => {
     const workerSid = 'worker123';
-    const workspaceSid = 'workspace123';
-    const channelSid = 'channel123';
-    const workerLimit = 2;
     // const adjustment = 'increase';
     const event1 = {};
     const event2 = { ...event1, workerSid };
-    const event3 = { ...event2, workspaceSid };
-    const event4 = { ...event3, channelSid };
-    const event5 = { ...event4, workerLimit };
 
-    const events = [{}, event1, event2, event3, event4, event5];
+    const events = [event1, event2];
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -67,9 +89,6 @@ describe('populateCounselors', () => {
   test('Should return status 500', async () => {
     const event: Body = {
       workerSid: 'non-existing',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'increase',
     };
 
@@ -86,9 +105,6 @@ describe('populateCounselors', () => {
   test('Should return status 200 (increase)', async () => {
     const event: Body = {
       workerSid: 'worker123',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'increase',
     };
 
@@ -108,9 +124,6 @@ describe('populateCounselors', () => {
 
     const event: Body = {
       workerSid: 'worker123',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'decrease',
     };
 
@@ -130,9 +143,6 @@ describe('populateCounselors', () => {
 
     const event: Body = {
       workerSid: 'worker123',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'decrease',
     };
 
@@ -152,9 +162,6 @@ describe('populateCounselors', () => {
 
     const event: Body = {
       workerSid: 'worker123',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'increase',
     };
 
@@ -176,9 +183,6 @@ describe('populateCounselors', () => {
 
     const event: Body = {
       workerSid: 'worker123',
-      workspaceSid: 'workspace123',
-      channelSid: 'channel123',
-      workerLimit: 2,
       adjustment: 'increase',
     };
 
@@ -190,6 +194,69 @@ describe('populateCounselors', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(412);
       expect(response.getBody().message).toContain('Reached the max capacity');
+    };
+
+    await adjustChatCapacity(baseContext, event, callback);
+  });
+
+  test('Should return status 404 (Could not find worker)', async () => {
+    workerChannel.updateCapacityPercentage(0);
+    expect(workerChannel.availableCapacityPercentage).toStrictEqual(0);
+
+    const event: Body = {
+      workerSid: 'nonExisting',
+      adjustment: 'increase',
+    };
+
+    await adjustChatCapacity(baseContext, event, () => {});
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(404);
+      expect(response.getBody().message).toContain('Could not find worker');
+    };
+
+    await adjustChatCapacity(baseContext, event, callback);
+  });
+
+  test('Should return status 404 (Could not find chat channel)', async () => {
+    workerChannel.updateCapacityPercentage(0);
+
+    const event: Body = {
+      workerSid: 'withoutChannel',
+      adjustment: 'increase',
+    };
+
+    await adjustChatCapacity(baseContext, event, () => {});
+    expect(workerChannel.configuredCapacity).toStrictEqual(2);
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(404);
+      expect(response.getBody().message).toContain('Could not find chat channel');
+    };
+
+    await adjustChatCapacity(baseContext, event, callback);
+  });
+
+  test('Should return status 409 (Worker does not have a "maxMessageCapacity" attribute, can\'t adjust capacity.)', async () => {
+    const event: Body = {
+      workerSid: 'withoutAttr',
+      adjustment: 'increase',
+    };
+
+    await adjustChatCapacity(baseContext, event, () => {});
+    expect(workerChannel.configuredCapacity).toStrictEqual(2);
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(409);
+      expect(response.getBody().message).toContain(
+        `Worker ${event.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
+      );
     };
 
     await adjustChatCapacity(baseContext, event, callback);

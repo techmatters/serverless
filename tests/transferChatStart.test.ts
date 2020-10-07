@@ -66,6 +66,8 @@ let tasks: any[] = [
 
 const channels: { [x: string]: string[] } = {};
 
+let configurableCapacity: number | undefined = 1;
+
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
@@ -79,18 +81,25 @@ const workspaces: { [x: string]: any } = {
         return {
           fetch: async () => ({ available: false }),
           workerChannels: () => ({
-            fetch: async () => ({ availableCapacityPercentage: 1 }),
+            fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
           }),
         };
 
       return {
-        fetch: async () => ({ available: true }),
+        fetch: async () => ({
+          available: true,
+          attributes: JSON.stringify({ maxMessageCapacity: configurableCapacity }),
+        }),
         workerChannels: (taskChannelUniqueName: string) => {
           if (taskChannelUniqueName === 'channel')
-            return { fetch: async () => ({ availableCapacityPercentage: 1 }) };
+            return {
+              fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
+            };
 
           if (taskChannelUniqueName === 'channel2')
-            return { fetch: async () => ({ availableCapacityPercentage: 0 }) };
+            return {
+              fetch: async () => ({ availableCapacityPercentage: 0, configuredCapacity: 1 }),
+            };
 
           throw new Error('Channel does not exists');
         },
@@ -157,22 +166,22 @@ const baseContext = {
   CHAT_SERVICE_SID: 'ISxxx',
 };
 
-describe('transferChatStart', () => {
-  beforeAll(() => {
-    helpers.setup({});
-  });
-  afterAll(() => {
-    helpers.teardown();
-  });
+beforeAll(() => {
+  helpers.setup({});
+});
+afterAll(() => {
+  helpers.teardown();
+});
 
-  beforeEach(() => {
-    channels.channel = ['worker1'];
-  });
+beforeEach(() => {
+  channels.channel = ['worker1'];
+});
 
-  afterEach(() => {
-    if (tasks.length > 2) tasks = tasks.slice(0, 2);
-  });
+afterEach(() => {
+  if (tasks.length > 2) tasks = tasks.slice(0, 2);
+});
 
+describe('transferChatStart (with maxMessageCapacity set)', () => {
   test('Should return status 400', async () => {
     const event1: Body = {
       taskSid: undefined,
@@ -330,6 +339,90 @@ describe('transferChatStart', () => {
   });
 
   test('Should return status 200 (COLD)', async () => {
+    const event: Body = {
+      taskSid: 'task1',
+      targetSid: 'WKxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      memberToKick: 'worker1',
+    };
+    const expectedOldAttr =
+      '{"channelSid":"CH00000000000000000000000000000000","proxySessionSID":"KC00000000000000000000000000000000"}';
+    const expectedNewAttr =
+      '{"channelSid":"channel","conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
+
+    const expected = { taskSid: 'newTaskSid' };
+
+    const callback: ServerlessCallback = (err, result) => {
+      const originalTask = tasks.find(t => t.sid === 'task1');
+      const newTask = tasks.find(t => t.sid === 'newTaskSid');
+
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toStrictEqual(expected);
+      expect(originalTask.attributes).toBe(expectedOldAttr);
+      expect(originalTask.reason).toBe('task transferred');
+      expect(originalTask.assignmentStatus).toBe('wrapping');
+      expect(tasks).toHaveLength(3);
+      expect(newTask).toHaveProperty('sid');
+      expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
+      expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
+      expect(newTask.attributes).toBe(expectedNewAttr);
+      expect(channels.channel).not.toContain('worker1');
+      expect(channels.channel).toContain('worker2');
+    };
+
+    await transferChatStart(baseContext, event, callback);
+  });
+});
+
+describe('transferChatStart (without maxMessageCapacity set)', () => {
+  configurableCapacity = undefined;
+
+  test('Should return status 403', async () => {
+    const event1: Body = {
+      taskSid: 'task1',
+      targetSid: 'WK offline worker',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      memberToKick: 'worker1',
+    };
+
+    const event2: Body = {
+      taskSid: 'task2',
+      targetSid: 'WKxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      memberToKick: 'worker1',
+    };
+
+    const callback1: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(403);
+      expect(response.getBody().message).toContain("Error: can't transfer to an offline counselor");
+    };
+
+    const callback2: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(403);
+      expect(response.getBody().message).toContain('Error: counselor has no available capacity');
+    };
+
+    await transferChatStart(baseContext, event1, callback1);
+    await transferChatStart(baseContext, event2, callback2);
+  });
+
+  test('Should return status 200 (COLD withouth having maxMessageCapacity)', async () => {
+    // reset task attributes
+    await tasks[0].update({
+      attributes: '{"channelSid":"channel"}',
+      assignmentStatus: undefined,
+      reason: undefined,
+    });
+
     const event: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
