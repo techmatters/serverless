@@ -32,6 +32,14 @@ const withoutChannel = {
   }),
 };
 
+const withoutAttr = {
+  attributes: JSON.stringify({}),
+  fetch: async () => withoutAttr,
+  workerChannels: () => ({
+    list: async () => [],
+  }),
+};
+
 const baseContext = {
   getTwilioClient: (): any => ({
     taskrouter: {
@@ -42,6 +50,8 @@ const baseContext = {
           if (workerSid === 'nonExisting') return { fetch: async () => null };
 
           if (workerSid === 'withoutChannel') return withoutChannel;
+
+          if (workerSid === 'withoutAttr') return withoutAttr;
 
           throw new Error('Non existing worker');
         },
@@ -226,6 +236,27 @@ describe('populateCounselors', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(404);
       expect(response.getBody().message).toContain('Could not find chat channel');
+    };
+
+    await adjustChatCapacity(baseContext, event, callback);
+  });
+
+  test('Should return status 409 (Worker does not have a "maxMessageCapacity" attribute, can\'t adjust capacity.)', async () => {
+    const event: Body = {
+      workerSid: 'withoutAttr',
+      adjustment: 'increase',
+    };
+
+    await adjustChatCapacity(baseContext, event, () => {});
+    expect(workerChannel.configuredCapacity).toStrictEqual(2);
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(409);
+      expect(response.getBody().message).toContain(
+        `Worker ${event.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
+      );
     };
 
     await adjustChatCapacity(baseContext, event, callback);
