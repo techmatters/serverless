@@ -133,11 +133,14 @@ async function validateChannelIfWorker(
   const workerAttr = JSON.parse(worker.attributes);
 
   const unavailableVoice = channelType === 'voice' && !workerChannel.availableCapacityPercentage;
+  // if maxMessageCapacity is not set, just use configuredCapacity without adjustChatCapacity
   const unavailableChat =
-    channelType !== 'voice' &&
+    workerAttr.maxMessageCapacity 
+      ? channelType !== 'voice' &&
     !workerChannel.availableCapacityPercentage &&
     workerAttr.maxMessageCapacity &&
-    workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity;
+    workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity
+      : channelType !== 'voice' && !workerChannel.availableCapacityPercentage;
 
   if (unavailableVoice || unavailableChat)
     return {
@@ -146,9 +149,9 @@ async function validateChannelIfWorker(
     } as const;
 
   const shouldIncrease =
+    workerAttr.maxMessageCapacity &&
     channelType !== 'voice' &&
     !workerChannel.availableCapacityPercentage &&
-    workerAttr.maxMessageCapacity &&
     workerChannel.configuredCapacity < workerAttr.maxMessageCapacity;
 
   return { type: 'worker', worker, shouldIncrease } as const;
