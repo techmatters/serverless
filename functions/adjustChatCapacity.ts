@@ -38,6 +38,12 @@ export const adjustChatCapacity = async (
 
   const { maxMessageCapacity } = JSON.parse(worker.attributes);
 
+  if (!maxMessageCapacity)
+    return {
+      status: 409,
+      message: `Worker ${body.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
+    };
+
   const channels = await worker.workerChannels().list();
   const channel = channels.find(c => c.taskChannelUniqueName === 'chat');
 
