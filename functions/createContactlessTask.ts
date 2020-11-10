@@ -19,10 +19,10 @@ type EnvVars = {
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
 };
 
-type Body = { 
-  targetSid?: string; 
-  transferTargetType?: string; 
-  helpline?: string 
+type Body = {
+  targetSid?: string;
+  transferTargetType?: string;
+  helpline?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -49,6 +49,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         transferTargetType,
         helpline,
         channelType: 'default',
+        isContactlessTask: true,
       };
 
       // create New task
