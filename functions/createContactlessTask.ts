@@ -19,7 +19,7 @@ type EnvVars = {
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
 };
 
-type Body = {
+export type Body = {
   targetSid?: string;
   transferTargetType?: string;
   helpline?: string;
@@ -37,6 +37,10 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     try {
       if (targetSid === undefined) {
         resolve(error400('targetSid'));
+        return;
+      }
+      if (transferTargetType === undefined) {
+        resolve(error400('transferTargetType'));
         return;
       }
       if (helpline === undefined) {
