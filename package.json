@@ -32,7 +32,7 @@
     "jest": "^26.0.1",
     "jsonwebtoken": "^8.5.1",
     "prettier": "^1.19.1",
-    "redoc-cli": "^0.9.7",
+    "redoc-cli": "^0.10.2",
     "ts-jest": "^26.0.0",
     "twilio-run": "2.* || >2.0.0-rc",
     "typescript": "^3.8.3"
