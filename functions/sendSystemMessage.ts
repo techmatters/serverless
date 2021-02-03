@@ -16,14 +16,13 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-  TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
   CHAT_SERVICE_SID: string;
 };
 
 export type Body = {
   taskSid?: string;
   message?: string;
-  from?: string
+  from?: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
