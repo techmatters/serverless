@@ -1,0 +1,34 @@
+# This is a basic workflow to publish a Twilio function with Github Actions
+
+name: Serverless release to South Africa Staging.
+
+# Controls when the action will run.
+on:
+  workflow_dispatch
+  
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      # Runs a single command using the runners shell
+      - name: Install dependencies for the twilio function
+        run: npm ci
+      - name: Install twilio cli and run deploy command
+        env:
+         TWILIO_ACCOUNT_SID: ${{ secrets.SA_STG_ACCOUNT_SID }}
+         TWILIO_AUTH_TOKEN: ${{ secrets.SA_STG_AUTH_TOKEN }}
+        # Install the Twilio CLI and the serverless plugin then deploy the function
+        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --service-name=serverless --environment=dev --force
+      - name: deploy to Production
+        run: twilio serverless:deploy --service-name=serverless --environment=production --force
