@@ -24,11 +24,17 @@ jobs:
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
-      - name: Install twilio cli and run deploy command
+      # Compile typescript to javascript
+      - name: Transpile typescript to javascript
+        run: npx tsc
+      # Deploy the function        
+      - name: Run deploy command to dev
         env:
          ACCOUNT_SID: ${{ secrets.SA_STG_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.SA_STG_AUTH_TOKEN }}
-        # Install the Twilio CLI and the serverless plugin then deploy the function
-        run: npm run tr -- deploy --service-name=serverless --environment=dev --force
-      - name: deploy to Production
-        run: npm run tr -- deploy --service-name=serverless --environment=production --force
+        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+      - name: Run deploy command to Production
+        env:
+         ACCOUNT_SID: ${{ secrets.SA_STG_ACCOUNT_SID }}
+         AUTH_TOKEN: ${{ secrets.SA_STG_AUTH_TOKEN }}      
+        run: npm run tr -- deploy --service-name=serverless --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
