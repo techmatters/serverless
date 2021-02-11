@@ -1,0 +1,40 @@
+# This is a basic workflow to publish a Twilio function with Github Actions
+
+name: Serverless release to South Africa Staging.
+
+# Controls when the action will run.
+on:
+  workflow_dispatch
+  
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      # Runs a single command using the runners shell
+      - name: Install dependencies for the twilio function
+        run: npm ci
+      # Compile typescript to javascript
+      - name: Transpile typescript to javascript
+        run: npx tsc
+      # Deploy the function        
+      - name: Run deploy command to dev
+        env:
+         ACCOUNT_SID: ${{ secrets.SA_STG_ACCOUNT_SID }}
+         AUTH_TOKEN: ${{ secrets.SA_STG_AUTH_TOKEN }}
+        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+      - name: Run deploy command to Production
+        env:
+         ACCOUNT_SID: ${{ secrets.SA_STG_ACCOUNT_SID }}
+         AUTH_TOKEN: ${{ secrets.SA_STG_AUTH_TOKEN }}      
+        run: npm run tr -- deploy --service-name=serverless --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
