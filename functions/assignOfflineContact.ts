@@ -21,8 +21,7 @@ type EnvVars = {
 
 export type Body = {
   targetSid?: string;
-  transferTargetType?: string;
-  helpline?: string;
+  finalTaskAttributes: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -32,29 +31,22 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { targetSid, transferTargetType, helpline } = event;
+    const { targetSid, finalTaskAttributes } = event;
 
     try {
       if (targetSid === undefined) {
         resolve(error400('targetSid'));
         return;
       }
-      if (transferTargetType === undefined) {
-        resolve(error400('transferTargetType'));
-        return;
-      }
-      if (helpline === undefined) {
-        resolve(error400('helpline'));
+      if (finalTaskAttributes === undefined) {
+        resolve(error400('finalTaskAttributes'));
         return;
       }
 
       const newAttributes = {
+        ...JSON.parse(finalTaskAttributes),
         targetSid,
-        transferTargetType,
-        helpline,
-        channelType: 'default',
-        isContactlessTask: true,
-        isInMyBehalf: true,
+        transferTargetType: 'worker',
       };
 
       // create New task
@@ -79,11 +71,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .activities.list({ friendlyName: 'Available' });
         await targeWorker.update({ activitySid: availableActivity[0].sid });
+
         const reservations = await newTask.reservations().list();
         if (reservations.length && reservations[0].workerSid === targetSid) {
           await reservations[0].update({ reservationStatus: 'accepted' });
           await reservations[0].update({ reservationStatus: 'completed' });
         }
+
         await targeWorker.update({ activitySid: previousActivity });
       }
 
