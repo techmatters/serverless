@@ -73,9 +73,10 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         await targeWorker.update({ activitySid: availableActivity[0].sid });
 
         const reservations = await newTask.reservations().list();
-        if (reservations.length && reservations[0].workerSid === targetSid) {
-          await reservations[0].update({ reservationStatus: 'accepted' });
-          await reservations[0].update({ reservationStatus: 'completed' });
+        const reservation = reservations.find(r => r.workerSid === targetSid);
+        if (reservation) {
+          await reservation.update({ reservationStatus: 'accepted' });
+          await reservation.update({ reservationStatus: 'completed' });
         }
 
         await targeWorker.update({ activitySid: previousActivity });
