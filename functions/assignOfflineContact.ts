@@ -10,7 +10,10 @@ import {
   error400,
   error500,
   success,
+  send,
 } from '@tech-matters/serverless-helpers';
+// eslint-disable-next-line prettier/prettier
+import type { PromiseValue } from 'type-fest';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
@@ -22,6 +25,57 @@ type EnvVars = {
 export type Body = {
   targetSid?: string;
   finalTaskAttributes: string;
+};
+
+// eslint-disable-next-line prettier/prettier
+type TaskInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['tasks']>['fetch']>>;
+// eslint-disable-next-line prettier/prettier
+type WorkerInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['workers']>['fetch']>>;
+
+const assignToAvailableWorker = async (
+  event: Body,
+  newTask: TaskInstance,
+) => {
+  const reservations = await newTask.reservations().list();
+  const reservation = reservations.find(r => r.workerSid === event.targetSid);
+
+  if (reservation) {
+    await reservation.update({ reservationStatus: 'accepted' });
+    await reservation.update({ reservationStatus: 'completed' });
+    return { type: 'success' } as const;
+  } 
+
+  await newTask.remove();
+  return {
+    type: 'error',
+    payload: { status: 500, message: 'Error: reservation for task not created.' },
+  } as const;
+  
+};
+
+const assignToOfflineWorker = async (
+  context: Context<EnvVars>,
+  event: Body,
+  targetWorker: WorkerInstance,
+  newTask: TaskInstance,
+) => {
+  const previousActivity = targetWorker.activitySid;
+  const previousAttributes = JSON.parse(targetWorker.attributes);
+  const availableActivity = await context
+    .getTwilioClient()
+    .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+    .activities.list({ friendlyName: 'Available' });
+
+  await targetWorker.update({
+    activitySid: availableActivity[0].sid,
+    attributes: JSON.stringify({ ...previousAttributes, waitingOfflineContact: true, acceptOnlyTask: newTask.sid }), // waitingOfflineContact & acceptOnlyTask are routing rules used to avoid other tasks to be assigned during this window of time
+  });
+
+  const result = await assignToAvailableWorker(event, newTask);
+
+  await targetWorker.update({ activitySid: previousActivity, attributes: JSON.stringify(previousAttributes) });
+
+  return result;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -59,27 +113,24 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           priority: 100,
         });
 
-      const targeWorker = await client.taskrouter
+      const targetWorker = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .workers(targetSid)
         .fetch();
 
-      // Set the worker available, assign the task, accept & complete it and set worker to previous state
-      if (!targeWorker.available) {
-        const previousActivity = targeWorker.activitySid;
-        const availableActivity = await client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .activities.list({ friendlyName: 'Available' });
-        await targeWorker.update({ activitySid: availableActivity[0].sid });
+      let assignmentResult: PromiseValue<ReturnType<typeof assignToAvailableWorker>>;
+      if (targetWorker.available) {
+        // assign the task, accept and complete it
+        assignmentResult = await assignToAvailableWorker(event, newTask);
+      } else {
+        // Set the worker available, assign the task, accept, complete it and set worker to previous state
+        assignmentResult = await assignToOfflineWorker(context, event, targetWorker, newTask);
+      }
 
-        const reservations = await newTask.reservations().list();
-        const reservation = reservations.find(r => r.workerSid === targetSid);
-        if (reservation) {
-          await reservation.update({ reservationStatus: 'accepted' });
-          await reservation.update({ reservationStatus: 'completed' });
-        }
-
-        await targeWorker.update({ activitySid: previousActivity });
+      if (assignmentResult.type === 'error') {
+        const { status, message } = assignmentResult.payload;
+        resolve(send(status)({ status, message }));
+        return;
       }
 
       resolve(success(newTask));
