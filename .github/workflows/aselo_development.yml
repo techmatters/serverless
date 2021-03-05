@@ -21,6 +21,38 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
+      # Setup credentials to access AWS for parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      # Get AWS parameters to setup environment variables for Serveless function
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_API_KEY"
+          env_variable_name: "SYNC_SERVICE_API_KEY"
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_SERVICE_SID"
+          env_variable_name: "CHAT_SERVICE_SID"
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_WORKFLOW_SID"
+          env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SECRET"
+          env_variable_name: "SYNC_SERVICE_API_SECRET"
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SYNC_SID"
+          env_variable_name: "SYNC_SERVICE_SID"
+      - uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_WORKSPACE_SID"
+          env_variable_name: "TWILIO_WORKSPACE_SID"                                    
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
@@ -32,12 +64,12 @@ jobs:
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
-        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+        run: npm run tr -- deploy --service-name=serverless-test --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
       - name: Run deploy command to production
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}      
-        run: npm run tr -- deploy --service-name=serverless --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+        run: npm run tr -- deploy --service-name=serverless-test --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
 
 # For newer versions of the Serverless function, replace the "Deploy the function" step with the following step:
 #      # Install the Twilio CLI and the serverless plugin then deploy the function
