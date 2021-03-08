@@ -21,6 +21,57 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
+      # Setup credentials to access AWS for parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      # Get AWS parameters to setup environment variables for Serveless function
+      - name: Set Twilio Sync API key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_API_KEY"
+          env_variable_name: "SYNC_SERVICE_API_KEY"
+      - name: Set Twilio Chat service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_CHAT_SERVICE_SID"
+          env_variable_name: "CHAT_SERVICE_SID"
+      - name: Set Twilio Chat transfer workflow ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_CHAT_WORKFLOW_SID"
+          env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
+      - name: Set Twilio Sync API secret
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_SECRET"
+          env_variable_name: "SYNC_SERVICE_API_SECRET"
+      - name: Set Twilio Sync service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_SYNC_SID"
+          env_variable_name: "SYNC_SERVICE_SID"
+      - name: Set Twilio Workspace ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_WORKSPACE_SID"
+          env_variable_name: "TWILIO_WORKSPACE_SID"
+      - name: Create environment variable file
+        run: |
+          touch .env
+      - name: Fill .env
+        run: |
+          cat <<EOT >> .env
+          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
+          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
+          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
+          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
+          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
+          EOT           
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
