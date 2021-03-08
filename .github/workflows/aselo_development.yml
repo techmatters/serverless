@@ -83,12 +83,12 @@ jobs:
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
-        run: npm run tr -- deploy --service-name=serverless-test --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
       - name: Run deploy command to production
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}      
-        run: npm run tr -- deploy --service-name=serverless-test --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+        run: npm run tr -- deploy --service-name=serverless --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
 
 # For newer versions of the Serverless function, replace the "Deploy the function" step with the following step:
 #      # Install the Twilio CLI and the serverless plugin then deploy the function
