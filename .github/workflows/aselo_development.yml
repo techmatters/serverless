@@ -83,7 +83,7 @@ jobs:
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
          AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
-        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force --runtime=node12
       - name: Run deploy command to production
         env:
          ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
