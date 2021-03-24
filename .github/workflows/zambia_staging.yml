@@ -78,28 +78,14 @@ jobs:
       # Compile typescript to javascript
       - name: Transpile typescript to javascript
         run: npx tsc
-      # Deploy the function        
-      - name: Run deploy command to dev
+      # Install the Twilio CLI and the serverless plugin then deploy the function
+      - name: Install twilio cli and run deploy command to dev
         env:
-         ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
-         AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}
-        run: npm run tr -- deploy --service-name=serverless --environment=dev --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
+          TWILIO_ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}
+        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
       - name: Run deploy command to production
         env:
-         ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
-         AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}      
-        run: npm run tr -- deploy --service-name=serverless --environment=production --account-sid $ACCOUNT_SID --auth-token $AUTH_TOKEN --force
-
-# For newer versions of the Serverless function, replace the "Deploy the function" step with the following step:
-#      # Install the Twilio CLI and the serverless plugin then deploy the function
-#      - name: Install twilio cli and run deploy command to dev
-#        env:
-#         TWILIO_ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
-#         TWILIO_AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}
-#        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --service-name=serverless --environment=dev --force
-#      - name: Run deploy command to production
-#        env:
-#         TWILIO_ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
-#         TWILIO_AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}
-#        # Install the Twilio CLI and the serverless plugin then deploy the function
-#        run: twilio serverless:deploy --service-name=serverless --environment=production --force
+          TWILIO_ACCOUNT_SID: ${{ secrets.ZM_STG_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.ZM_STG_AUTH_TOKEN }}
+        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
