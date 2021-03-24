@@ -38,7 +38,7 @@
     "typescript": "^3.8.3"
   },
   "engines": {
-    "node": "10.17.0"
+    "node": "^12.0"
   },
   "dependencies": {
     "@tech-matters/serverless-helpers": "^1.0.6",
