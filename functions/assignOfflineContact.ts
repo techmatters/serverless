@@ -96,7 +96,7 @@ type AssignmentResult = {
   payload: { status: number, message: string, taskRemoved: boolean, attributes?: string }
 } |  { type: 'success', newTask: TaskInstance };
 
-const assingOfflineContact = async (context: Context<EnvVars>, body: Required<Body>): Promise<AssignmentResult> => {
+const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Body>): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
   const { targetSid, finalTaskAttributes } = body;
 
@@ -154,7 +154,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const assignmentResult = await assingOfflineContact(context, {targetSid, finalTaskAttributes});
+      const assignmentResult = await assignOfflineContact(context, {targetSid, finalTaskAttributes});
 
       if (assignmentResult.type === 'error') {
         const { payload } = assignmentResult;
