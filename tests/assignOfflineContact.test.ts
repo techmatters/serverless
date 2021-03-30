@@ -236,7 +236,7 @@ describe('assignOfflineContact', () => {
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
-      const response = result as MockedResponse;
+      // const response = result as MockedResponse;
       // expect(response.getStatus()).toBe(200);
       expect(updateWorkerMock).not.toBeCalled();
     };
@@ -252,7 +252,7 @@ describe('assignOfflineContact', () => {
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
-      const response = result as MockedResponse;
+      // const response = result as MockedResponse;
       // expect(response.getStatus()).toBe(200);
       // expect(updateWorkerMock).toBeCalledTimes(2);
     };
