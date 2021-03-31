@@ -20,21 +20,55 @@ const createTask = (sid: string, options: any) => {
 
 const createReservation = (taskSid: string, workerSid: string) => {
   const task = tasks.find(t => t.sid === taskSid);
-  const updateMock = jest.fn();
-  const withReservation = {
-    ...task,
-    reservations: () => ({
-      list: async () => [
-        {
-          workerSid,
-          update: updateMock,
-        },
-      ],
-    }),
-  };
+  task.reservationsSource = [
+    {
+      workerSid,
+      reservationStatus: 'pending',
+      update: async ({ reservationStatus }: { reservationStatus: string }) => {
+        const reservation = (await task.reservations().list()).find(
+          (r: any) => r.workerSid === workerSid,
+        );
 
-  tasks = tasks.map(t => (t.sid === taskSid ? withReservation : t));
-  return updateMock;
+        if (
+          reservationStatus === 'accepted' &&
+          reservation.reservationStatus === 'pending' &&
+          (workerSid === 'available-worker-with-accepted' ||
+            workerSid === 'not-available-worker-with-accepted')
+        ) {
+          const accepted = { ...reservation, reservationStatus };
+          task.reservationsSource = [accepted];
+          return accepted;
+        }
+
+        if (
+          reservationStatus === 'accepted' &&
+          reservation.reservationStatus === 'pending' &&
+          (workerSid === 'available-worker-with-completed' ||
+            workerSid === 'not-available-worker-with-completed')
+        ) {
+          const accepted = { ...reservation, reservationStatus };
+          task.reservationsSource = [accepted];
+          return accepted;
+        }
+
+        if (
+          reservationStatus === 'completed' &&
+          reservation.reservationStatus === 'accepted' &&
+          (workerSid === 'available-worker-with-completed' ||
+            workerSid === 'not-available-worker-with-completed')
+        ) {
+          const completed = { ...reservation, reservationStatus };
+          task.reservationsSource = [completed];
+          return completed;
+        }
+
+        return reservation;
+      },
+    },
+  ];
+  task.reservations = () => ({
+    list: async () => task.reservationsSource,
+  });
 };
 
 const updateWorkerMock = jest.fn();
@@ -60,9 +94,14 @@ const workspaces: { [x: string]: any } = {
         tasks = [...tasks, newTask];
 
         if (
-          ['available-worker-with-reservation', 'not-available-worker-with-reservation'].includes(
-            attributes.targetSid,
-          )
+          [
+            'available-worker-with-reservation',
+            'not-available-worker-with-reservation',
+            'available-worker-with-accepted',
+            'not-available-worker-with-accepted',
+            'available-worker-with-completed',
+            'not-available-worker-with-completed',
+          ].includes(attributes.targetSid)
         )
           createReservation(newTask.sid, attributes.targetSid);
 
@@ -71,33 +110,86 @@ const workspaces: { [x: string]: any } = {
     },
     workers: (workerSid: string) => ({
       fetch: () => {
-        if (workerSid === 'available-worker-no-reservation')
+        if (workerSid === 'waitingOfflineContact-worker')
           return {
-            sid: 'available-worker-no-reservation',
+            attributes: JSON.stringify({ waitingOfflineContact: true }),
+            sid: 'waitingOfflineContact-worker',
             available: true,
           };
 
-        if (workerSid === 'available-worker-with-reservation')
+        if (workerSid === 'available-worker-no-reservation')
           return {
-            sid: 'available-worker-with-reservation',
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            sid: 'available-worker-no-reservation',
             available: true,
           };
 
         if (workerSid === 'not-available-worker-no-reservation')
           return {
-            attributes: JSON.stringify({}),
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-reservation',
             available: false,
             update: updateWorkerMock,
           };
 
+        if (workerSid === 'available-worker-with-reservation')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            sid: 'available-worker-with-reservation',
+            available: true,
+            update: updateWorkerMock,
+          };
+
         if (workerSid === 'not-available-worker-with-reservation')
           return {
-            attributes: JSON.stringify({}),
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-reservation',
             available: false,
+            update: updateWorkerMock,
+          };
+
+        if (workerSid === 'available-worker-with-accepted')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            sid: 'available-worker-with-accepted',
+            available: true,
+            update: updateWorkerMock,
+          };
+
+        if (workerSid === 'not-available-worker-with-accepted')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            activitySid: 'activitySid',
+            sid: 'not-available-worker-with-accepted',
+            available: false,
+            update: updateWorkerMock,
+          };
+
+        if (workerSid === 'available-worker-with-completed')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            sid: 'available-worker-with-completed',
+            available: true,
+            update: updateWorkerMock,
+          };
+
+        if (workerSid === 'not-available-worker-with-completed')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            activitySid: 'activitySid',
+            sid: 'not-available-worker-with-completed',
+            available: false,
+            update: updateWorkerMock,
+          };
+
+        if (workerSid === 'intentionallyThrow')
+          return {
+            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            activitySid: 'activitySid',
+            sid: 'intentionallyThrow',
+            available: true,
             update: updateWorkerMock,
           };
 
@@ -140,10 +232,10 @@ describe('assignOfflineContact', () => {
       targetSid: undefined,
       finalTaskAttributes: JSON.stringify({}),
     };
-    // @ts-ignore
     const bad2: Body = {
       targetSid: 'WKxxx',
-      // finalTaskAttributes: undefined,
+      // @ts-ignore
+      finalTaskAttributes: undefined,
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -164,22 +256,47 @@ describe('assignOfflineContact', () => {
     };
 
     const event2: Body = {
-      targetSid: 'intentionallyThrow',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event3: Body = {
       targetSid: 'non-existing-worker',
       finalTaskAttributes: JSON.stringify({}),
     };
 
+    const event3: Body = {
+      targetSid: 'waitingOfflineContact-worker',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
     const event4: Body = {
-      targetSid: 'available-worker-no-reservation',
+      targetSid: 'intentionallyThrow',
       finalTaskAttributes: JSON.stringify({}),
     };
 
     const event5: Body = {
+      targetSid: 'available-worker-no-reservation',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
+    const event6: Body = {
       targetSid: 'not-available-worker-no-reservation',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
+    const event7: Body = {
+      targetSid: 'available-worker-with-reservation',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
+    const event8: Body = {
+      targetSid: 'not-available-worker-with-reservation',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
+    const event9: Body = {
+      targetSid: 'available-worker-with-accepted',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
+    const event10: Body = {
+      targetSid: 'not-available-worker-with-accepted',
       finalTaskAttributes: JSON.stringify({}),
     };
 
@@ -194,22 +311,23 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      // expect(response.getBody().toString()).toContain('Intentionally thrown error');
+      expect(response.getBody().toString()).toContain('Non existing worker');
     };
 
     const callback3: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Non existing worker');
+      expect(response.getBody().toString()).toContain(
+        'Error: the worker is already waiting for an offline contact.',
+      );
     };
 
     const callback4: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      // expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
-      expect(updateWorkerMock).not.toBeCalled();
+      expect(response.getBody().toString()).toContain('Intentionally thrown error');
     };
 
     const callback5: ServerlessCallback = (err, result) => {
@@ -217,27 +335,82 @@ describe('assignOfflineContact', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
+      expect(updateWorkerMock).not.toBeCalled();
+    };
+
+    const callback6: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
+      expect(updateWorkerMock).toBeCalledTimes(2);
+    };
+
+    const callback7: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
+      expect(updateWorkerMock).not.toBeCalled();
+    };
+
+    const callback8: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
+      expect(updateWorkerMock).toBeCalledTimes(2);
+    };
+
+    const callback9: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not completed.');
+      expect(updateWorkerMock).not.toBeCalled();
+    };
+
+    const callback10: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not completed.');
       expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
     const { getTwilioClient, DOMAIN_NAME } = baseContext;
+    updateWorkerMock.mockClear();
     await assignOfflineContact({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
+    updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event2, callback2);
+    updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event3, callback3);
+    updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event4, callback4);
+    updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event5, callback5);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event6, callback6);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event7, callback7);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event8, callback8);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event9, callback9);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event10, callback10);
   });
 
   test('Should return status 200 (available worker)', async () => {
     const event: Body = {
-      targetSid: 'available-worker-with-reservation',
+      targetSid: 'available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
     };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
-      // const response = result as MockedResponse;
-      // expect(response.getStatus()).toBe(200);
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
       expect(updateWorkerMock).not.toBeCalled();
     };
 
@@ -246,15 +419,15 @@ describe('assignOfflineContact', () => {
 
   test('Should return status 200 (not available worker)', async () => {
     const event: Body = {
-      targetSid: 'not-available-worker-with-reservation',
+      targetSid: 'not-available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
     };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
-      // const response = result as MockedResponse;
-      // expect(response.getStatus()).toBe(200);
-      // expect(updateWorkerMock).toBeCalledTimes(2);
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
     await assignOfflineContact(baseContext, event, callback);
