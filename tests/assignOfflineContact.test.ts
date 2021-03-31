@@ -255,47 +255,47 @@ describe('assignOfflineContact', () => {
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event3: Body = {
+    const event2: Body = {
       targetSid: 'non-existing-worker',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event31: Body = {
+    const event3: Body = {
       targetSid: 'waitingOfflineContact-worker',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event2: Body = {
+    const event4: Body = {
       targetSid: 'intentionallyThrow',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event4: Body = {
+    const event5: Body = {
       targetSid: 'available-worker-no-reservation',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event5: Body = {
+    const event6: Body = {
       targetSid: 'not-available-worker-no-reservation',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event6: Body = {
+    const event7: Body = {
       targetSid: 'available-worker-with-reservation',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event7: Body = {
+    const event8: Body = {
       targetSid: 'not-available-worker-with-reservation',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event8: Body = {
+    const event9: Body = {
       targetSid: 'available-worker-with-accepted',
       finalTaskAttributes: JSON.stringify({}),
     };
 
-    const event9: Body = {
+    const event10: Body = {
       targetSid: 'not-available-worker-with-accepted',
       finalTaskAttributes: JSON.stringify({}),
     };
@@ -307,14 +307,14 @@ describe('assignOfflineContact', () => {
       expect(response.getBody().toString()).toContain('Workspace does not exists');
     };
 
-    const callback3: ServerlessCallback = (err, result) => {
+    const callback2: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Non existing worker');
     };
 
-    const callback31: ServerlessCallback = (err, result) => {
+    const callback3: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
@@ -323,19 +323,11 @@ describe('assignOfflineContact', () => {
       );
     };
 
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Intentionally thrown error');
-    };
-
     const callback4: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
-      expect(updateWorkerMock).not.toBeCalled();
+      expect(response.getBody().toString()).toContain('Intentionally thrown error');
     };
 
     const callback5: ServerlessCallback = (err, result) => {
@@ -343,15 +335,15 @@ describe('assignOfflineContact', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
-      expect(updateWorkerMock).toBeCalledTimes(2);
+      expect(updateWorkerMock).not.toBeCalled();
     };
 
     const callback6: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
-      expect(updateWorkerMock).not.toBeCalled();
+      expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
+      expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
     const callback7: ServerlessCallback = (err, result) => {
@@ -359,10 +351,18 @@ describe('assignOfflineContact', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
-      expect(updateWorkerMock).toBeCalledTimes(2);
+      expect(updateWorkerMock).not.toBeCalled();
     };
 
     const callback8: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
+      expect(updateWorkerMock).toBeCalledTimes(2);
+    };
+
+    const callback9: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
@@ -370,7 +370,7 @@ describe('assignOfflineContact', () => {
       expect(updateWorkerMock).not.toBeCalled();
     };
 
-    const callback9: ServerlessCallback = (err, result) => {
+    const callback10: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
@@ -382,11 +382,9 @@ describe('assignOfflineContact', () => {
     updateWorkerMock.mockClear();
     await assignOfflineContact({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
     updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event3, callback3);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event31, callback31);
-    updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event2, callback2);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event3, callback3);
     updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event4, callback4);
     updateWorkerMock.mockClear();
@@ -399,6 +397,8 @@ describe('assignOfflineContact', () => {
     await assignOfflineContact(baseContext, event8, callback8);
     updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event9, callback9);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, event10, callback10);
   });
 
   test('Should return status 200 (available worker)', async () => {
