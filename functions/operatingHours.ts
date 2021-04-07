@@ -11,10 +11,20 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type OperatingShift = { open: number; close: number };
 
+enum DaysOfTheWeek {
+  Monday = '1',
+  Tuesday = '2',
+  Wednesday = '3',
+  Thursday = '4',
+  Friday = '5',
+  Saturday = '6',
+  Sunday = '7',
+}
+
 type OperatingInfo = {
   timezone: string; // the timezone the helpline uses
-  holidays: { [date: string]: string }; // a date - holiday name object to specify which days are holidays for the helpline
-  operatingHours: { [day: string]: OperatingShift[] }; // object that pairs numbers representing weekdays (1 Monday, 2 Tuesday and so on) to open and close shifts
+  holidays: { [date: string]: string }; // a date (in MM/DD/YYYY format) - holiday name object to specify which days are holidays for the helpline
+  operatingHours: { [day in DaysOfTheWeek]: OperatingShift[] }; // object that pairs numbers representing weekdays to open and close shifts
 };
 
 type EnvVars = {
@@ -54,7 +64,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       );
       const dayOfWeek = moment()
         .tz(timezone)
-        .format('d');
+        .format('d') as DaysOfTheWeek;
       const currentDate = moment()
         .tz(timezone)
         .format('MM/DD/YYYY');
