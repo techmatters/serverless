@@ -1,0 +1,15 @@
+{
+  "timezone": "Africa/Johannesburg",
+  "holidays": { 
+    "12/25/2021": "Christmas"
+  },
+  "operatingHours": {
+    "1": [{ "open": 9, "close": 11 }, { "open": 13, "close": 18 }],
+    "2": [{ "open": 9, "close": 11 }, { "open": 13, "close": 18 }],
+    "3": [{ "open": 9, "close": 11 }, { "open": 13, "close": 18 }],
+    "4": [{ "open": 9, "close": 11 }, { "open": 13, "close": 18 }],
+    "5": [{ "open": 9, "close": 11 }, { "open": 13, "close": 18 }],
+    "6": [],
+    "7": []
+  }
+}
