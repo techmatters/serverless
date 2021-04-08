@@ -59,7 +59,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const hour = parseInt(
         moment()
           .tz(timezone)
-          .format('H'),
+          .format('Hmm'), // e.g 123 for 1hs 23m, 1345 for 13hs 45m
         10,
       );
       const dayOfWeek = moment()
