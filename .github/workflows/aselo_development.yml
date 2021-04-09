@@ -59,6 +59,8 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
+      - name: Set operating information file key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
           ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
