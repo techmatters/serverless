@@ -59,6 +59,9 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
+          env_variable_name: "OPERATING_INFO_KEY"
       - name: Create environment variable file
         run: |
           touch .env
