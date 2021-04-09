@@ -12,8 +12,8 @@ const baseContext = {
   OPERATING_INFO_KEY: 'test',
 };
 
-const testday = 1617911935784; // hour: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'
-const holiday = testday + 86400000; // set hour: 21:58, dayOfWeek: 5, currentDate: '04/09/2021'
+const testday = 1617911935784; // timeOfDay: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'
+const holiday = testday + 86400000; // timeOfDay: 21:58, dayOfWeek: 5, currentDate: '04/09/2021'
 
 describe('operatingHours', () => {
   beforeAll(() => {

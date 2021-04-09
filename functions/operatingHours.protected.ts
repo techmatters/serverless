@@ -35,8 +35,8 @@ export type Body = {
   channel?: string;
 };
 
-const isOpen = (hour: number) => (shift: OperatingShift): boolean =>
-  hour >= shift.open && hour < shift.close;
+const isOpen = (timeOfDay: number) => (shift: OperatingShift): boolean =>
+  timeOfDay >= shift.open && timeOfDay < shift.close;
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -68,7 +68,7 @@ export const handler = async (
       );
 
     const { timezone, holidays, operatingHours } = operatingInfo;
-    const hour = parseInt(
+    const timeOfDay = parseInt(
       moment()
         .tz(timezone)
         .format('Hmm'), // e.g 123 for 1hs 23m, 1345 for 13hs 45m
@@ -86,7 +86,7 @@ export const handler = async (
       return;
     }
 
-    const isInOpenShift = isOpen(hour);
+    const isInOpenShift = isOpen(timeOfDay);
     const isOpenNow = operatingHours[channel][dayOfWeek].some(isInOpenShift);
 
     if (isOpenNow) {
