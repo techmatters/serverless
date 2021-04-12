@@ -76,6 +76,7 @@ jobs:
           SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
+          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
           EOT                                          
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
