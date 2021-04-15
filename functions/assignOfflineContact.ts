@@ -56,13 +56,13 @@ const cleanUpTask = async (task: TaskInstance, message: string) => {
 const assignToAvailableWorker = async (
   event: Body,
   newTask: TaskInstance,
-  retry: number,
+  retry: number = 0,
 ): Promise<AssignmentResult> => {
   const reservations = await newTask.reservations().list();
   const reservation = reservations.find(r => r.workerSid === event.targetSid);
 
   if (!reservation) {
-    if (retry < 3) {
+    if (retry < 5) {
       await wait(200);
       return assignToAvailableWorker(event, newTask, retry + 1);
     }
@@ -105,7 +105,7 @@ const assignToOfflineWorker = async (
     attributes: JSON.stringify({ ...previousAttributes, waitingOfflineContact: true }), // waitingOfflineContact is used to avoid other tasks to be assigned during this window of time (workflow rules)
   });
 
-  const result = await assignToAvailableWorker(event, newTask, 0);
+  const result = await assignToAvailableWorker(event, newTask);
 
   await targetWorker.update({ activitySid: previousActivity, attributes: JSON.stringify(previousAttributes), rejectPendingReservations: true });
 
@@ -147,7 +147,7 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
 
   if (targetWorker.available) {
     // assign the task, accept and complete it
-    return assignToAvailableWorker(body, newTask, 0);
+    return assignToAvailableWorker(body, newTask);
   }
   // Set the worker available, assign the task, accept, complete it and set worker to previous state
   return assignToOfflineWorker(context, body, targetWorker, newTask);
