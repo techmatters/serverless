@@ -32,6 +32,17 @@ type TaskInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Con
 // eslint-disable-next-line prettier/prettier
 type WorkerInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['workers']>['fetch']>>;
 
+type AssignmentResult = {
+  type: 'error',
+  payload: { status: number, message: string, taskRemoved: boolean, attributes?: string }
+} |  { type: 'success', newTask: TaskInstance };
+
+const wait = (ms: number): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
 const cleanUpTask = async (task: TaskInstance, message: string) => {
   const { attributes } = task;
   const taskRemoved = await task.remove();
@@ -45,12 +56,19 @@ const cleanUpTask = async (task: TaskInstance, message: string) => {
 const assignToAvailableWorker = async (
   event: Body,
   newTask: TaskInstance,
-) => {
+  retry: number = 0,
+): Promise<AssignmentResult> => {
   const reservations = await newTask.reservations().list();
   const reservation = reservations.find(r => r.workerSid === event.targetSid);
 
-  if (!reservation)
+  if (!reservation) {
+    if (retry < 5) {
+      await wait(200);
+      return assignToAvailableWorker(event, newTask, retry + 1);
+    }
+
     return cleanUpTask(newTask, 'Error: reservation for task not created.');
+  }
 
   const accepted = await reservation.update({ reservationStatus: 'accepted' });
 
@@ -61,6 +79,9 @@ const assignToAvailableWorker = async (
 
   if (completed.reservationStatus !== 'completed')
     return cleanUpTask(newTask, 'Error: reservation for task not completed.');
+
+  // eslint-disable-next-line no-console
+  if (retry) console.warn(`Needed ${retry} retries to get reservation`);
 
   return { type: 'success', newTask } as const;
 };
@@ -90,11 +111,6 @@ const assignToOfflineWorker = async (
 
   return result;
 };
-
-type AssignmentResult = {
-  type: 'error',
-  payload: { status: number, message: string, taskRemoved: boolean, attributes?: string }
-} |  { type: 'success', newTask: TaskInstance };
 
 const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Body>): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
