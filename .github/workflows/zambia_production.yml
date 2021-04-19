@@ -71,7 +71,13 @@ jobs:
           SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          EOT 
+          EOT
+      # Runs a single command using the runners shell
+      - name: Install dependencies for the twilio function
+        run: npm ci
+      # Compile typescript to javascript
+      - name: Transpile typescript to javascript
+        run: npx tsc
       # Install the Twilio CLI and the serverless plugin then deploy the function
       - name: Install twilio cli and run deploy command to dev
         env:
