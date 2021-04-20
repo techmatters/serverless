@@ -1,24 +1,35 @@
 {
   "timezone": "Africa/Johannesburg",
-  "holidays": { 
-    "12/25/2021": "Christmas"
+  "holidays": {
+    "01/01/2021":"New Years Day",
+    "03/22/2021":"Human Rights Day",
+    "04/02/2021":"Good Friday",
+    "04/05/2021":"Family Day",
+    "04/27/2021":"Freedom Day",
+    "05/01/2021":"Workers Day",
+    "06/16/2021":"Youth Day",
+    "08/09/2021":"National Womens Day",
+    "09/24/2021":"Heritage Day",
+    "12/16/2021":"Day of Reconciliation",
+    "12/25/2021":"Christmas",
+    "12/27/2021":"Boxing Day"
   },
   "operatingHours": {
     "webchat": {
-      "1": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "2": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "3": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "4": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "5": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
+      "1": [{ "open": 1100, "close": 1300 }, { "open": 1400, "close": 1800 }],
+      "2": [{ "open": 1100, "close": 1300 }, { "open": 1400, "close": 1800 }],
+      "3": [{ "open": 1100, "close": 1300 }, { "open": 1400, "close": 1800 }],
+      "4": [{ "open": 1100, "close": 1300 }, { "open": 1400, "close": 1800 }],
+      "5": [{ "open": 1100, "close": 1300 }, { "open": 1400, "close": 1800 }],
       "6": [],
       "7": []
     },
     "facebook": {
-      "1": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "2": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "3": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "4": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
-      "5": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
+      "1": [{ "open": 1000, "close": 1800 }],
+      "2": [{ "open": 1000, "close": 1800 }],
+      "3": [{ "open": 1000, "close": 1800 }],
+      "4": [{ "open": 1000, "close": 1800 }],
+      "5": [{ "open": 1000, "close": 1800 }],
       "6": [],
       "7": []
     }
