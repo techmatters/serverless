@@ -1,7 +1,7 @@
 [![Actions Status](https://github.com/tech-matters/serverless/workflows/serverless-ci/badge.svg)](https://github.com/tech-matters/serverless/actions)
 
 # serverless
-Repository for serverless functions living on the Twilio Serverless Toolkit
+Repository for serverless functions living on [Twilio Functions](https://www.twilio.com/docs/runtime/functions).  Supports the [Aselo frontend](https://www.twilio.com/docs/flex/developer/plugins).  See [aselo.org](https://aselo.org/) or [contact Aselo](https://aselo.org/contact-us/) for more information.
 
 ## Local development
 
