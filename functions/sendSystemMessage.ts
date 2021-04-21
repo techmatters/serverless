@@ -15,6 +15,8 @@ import {
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
 };
@@ -33,6 +35,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const { taskSid, message, from } = event;
 
     try {
+      console.log('------ sendSystemMessage excecution ------');
+
       if (taskSid === undefined) {
         resolve(error400('taskSid'));
         return;
@@ -52,12 +56,19 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const taskToCloseAttributes = JSON.parse(task.attributes);
       const { channelSid } = taskToCloseAttributes;
 
-      await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .messages.create({ body: message, from });
+      console.log(`Sending message "${message} to channel ${channelSid}"`);
 
-      resolve(success('Message sent'));
+      const messageResult = await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .messages.create({
+          body: message,
+          from,
+          xTwilioWebhookEnabled: 'true',
+        });
+
+      resolve(success(messageResult));
     } catch (err) {
       resolve(error500(err));
     }
