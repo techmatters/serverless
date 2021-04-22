@@ -59,6 +59,11 @@ jobs:
         with:
           ssm_parameter: "PROD_TWILIO_ZA_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
+      - name: Set operating information file key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_OPERATING_INFO_KEY"
+          env_variable_name: "OPERATING_INFO_KEY"
       - name: Create environment variable file
         run: |
           touch .env
@@ -71,6 +76,7 @@ jobs:
           SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
+          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
           EOT           
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
