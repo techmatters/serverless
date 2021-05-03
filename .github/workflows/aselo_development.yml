@@ -95,6 +95,3 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
-      # Check if serverless is up and running
-      - name: Check if serverless is up and running
-        run: npm run verify-run        
