@@ -10,7 +10,7 @@
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "tsc && npm run swagger && twilio-run deploy --override-existing-project",
-    "verify-run": "curl -f https://serverless-9971-dev.twil.io/healthChecka"
+    "verify-run": "curl -f https://serverless-9971-dev.twil.io/healthCheck"
   },
   "repository": {
     "type": "git",
