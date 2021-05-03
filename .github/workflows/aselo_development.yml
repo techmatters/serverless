@@ -64,6 +64,11 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
+      - name: Set serverless base URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
+          env_variable_name: "SERVERLESS_BASE_URL"
       - name: Create environment variable file
         run: |
           touch .env
@@ -97,4 +102,4 @@ jobs:
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
       # Check if serverless is up and running
       - name: Check if serverless is up and running
-        run: npm run verify-run
+        run: curl -f $SERVERLESS_BASE_URL/healthCheck
