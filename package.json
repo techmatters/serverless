@@ -9,7 +9,8 @@
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
-    "tr:deploy": "tsc && npm run swagger && twilio-run deploy"
+    "tr:deploy": "tsc && npm run swagger && twilio-run deploy --override-existing-project",
+    "verify-run": "curl -f https://serverless-9971-dev.twil.io/healthChecka"
   },
   "repository": {
     "type": "git",
