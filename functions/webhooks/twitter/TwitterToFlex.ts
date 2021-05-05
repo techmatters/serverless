@@ -1,7 +1,6 @@
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
-import crypto from 'crypto';
 
 type EnvVars = {
   ACCOUNT_SID: string;
@@ -44,14 +43,6 @@ export type Body = {
 };
 
 const twitterUniqueNamePrefix = 'twitter:';
-
-const validateWebhook = (crcToken: string, consumerSecret: string) => {
-  const responseToken = crypto
-    .createHmac('sha256', consumerSecret)
-    .update(crcToken)
-    .digest('base64');
-  return { response_token: `sha256=${responseToken}` };
-};
 
 /**
  * Retrieves a channel by sid or uniqueName
@@ -176,14 +167,6 @@ export const handler = async (
 
   try {
     console.log('------ TwitterToFlex excecution ------');
-
-    // Listen for Twitter CRC challenge on the webhook
-    if (event.crc_token) {
-      const challengeResponse = validateWebhook(event.crc_token, context.TWITTER_CONSUMER_SECRET);
-
-      resolve(success(challengeResponse));
-      return;
-    }
 
     // Listen for incoming direct messages
     if (event.direct_message_events) {
