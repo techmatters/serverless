@@ -101,5 +101,7 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
       # Check if the deployed serverless is up and running
-      - name: Check if serverless is up and running
-        run: curl -f $SERVERLESS_BASE_URL/healthCheck
+      - name: Executing check serverless action
+        uses: actions/check-serverless@v1
+        with:
+          serverless-base-url: $SERVERLESS_BASE_URL

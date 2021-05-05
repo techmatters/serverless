@@ -1,0 +1,13 @@
+# Check if the deployed serverless is up and running
+name: 'check-serverless'
+description: 'Check if serverless is up and running'
+inputs:
+  serverless-base-url:  # id of input
+    description: 'Serverless nase Url'
+    required: true
+    default: 'https://serverless-9971-dev.twil.io'
+runs:
+  using: "composite"
+  steps:
+    - run: curl -f https://serverless-9971-dev.twil.io/healthCheck
+      shell: bash
