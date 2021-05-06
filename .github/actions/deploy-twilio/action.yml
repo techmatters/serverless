@@ -11,13 +11,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    env:
-      TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
-      TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
     - run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
+      env:
+        TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
+        TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    env:
-      TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
-      TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}   
     - run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      env:
+        TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
+        TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}   
       shell: bash
