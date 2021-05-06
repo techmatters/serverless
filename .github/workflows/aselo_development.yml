@@ -102,6 +102,6 @@ jobs:
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
       # Check if the deployed serverless is up and running
       - name: Executing check serverless action
-        uses: actions/check-serverless
+        uses: .github/actions/check-serverless
         with:
           serverless-base-url: $SERVERLESS_BASE_URL
