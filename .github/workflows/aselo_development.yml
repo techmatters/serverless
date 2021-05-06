@@ -75,6 +75,8 @@ jobs:
       - name: Fill .env
         run: |
           cat <<EOT >> .env
+          ACCOUNT_SID=${{ secrets.AS_DEV_ACCOUNT_SID }}
+          AUTH_TOKEN=${{ secrets.AS_DEV_AUTH_TOKEN }}
           TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
           TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
           SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
