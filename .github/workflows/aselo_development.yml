@@ -92,9 +92,6 @@ jobs:
       # Install the Twilio CLI and the serverless plugin then deploy the function
       - name: Executing deploying action
         uses: ./.github/actions/deploy-twilio
-        with:
-          account-sid: ${{ secrets.AS_DEV_ACCOUNT_SID }}
-          auth-token: ${{ secrets.AS_DEV_AUTH_TOKEN }}
       # Check if the deployed serverless is up and running
       - name: Executing check serverless action
         uses: ./.github/actions/check-serverless
