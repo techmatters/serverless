@@ -9,5 +9,5 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: curl -f ${{ input.serverless-base-url }}/healthCheck
+    - run: curl -f ${{ inputs.serverless-base-url }}/healthCheck
       shell: bash
