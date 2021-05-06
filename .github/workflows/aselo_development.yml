@@ -69,8 +69,8 @@ jobs:
         with:
           ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"
-      # Executing compile serverless action      
-      - name: Compiling serverless application
+      # Prepare everything to compile the serverless application     
+      - name: Executing compile serverless action 
         uses: ./.github/actions/compile-serverless
         with:
           workspace-sid: $TWILIO_WORKSPACE_SID
