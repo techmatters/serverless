@@ -104,4 +104,4 @@ jobs:
       - name: Executing check serverless action
         uses: ./.github/actions/check-serverless
         with:
-          serverless-base-url: $SERVERLESS_BASE_URL
+          serverless-base-url: $SERVERLESS_BASE_URL 
