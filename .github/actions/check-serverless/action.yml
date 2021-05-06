@@ -5,7 +5,6 @@ inputs:
   serverless-base-url:  # id of input
     description: 'Serverless base url'
     required: true
-    default: 'https://serverless-9971-dev.twil.io'
 runs:
   using: "composite"
   steps:

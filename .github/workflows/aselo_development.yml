@@ -69,26 +69,17 @@ jobs:
         with:
           ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"
-      - name: Create environment variable file
-        run: |
-          touch .env
-      - name: Fill .env
-        run: |
-          cat <<EOT >> .env
-          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
-          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
-          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
-          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
-          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
-          EOT                                          
-      # Runs a single command using the runners shell
-      - name: Install dependencies for the twilio function
-        run: npm ci
-      # Compile typescript to javascript
-      - name: Transpile typescript to javascript
-        run: npx tsc
+      # Executing compile serverless action      
+      - name: Compiling serverless application
+        uses: ./.github/actions/compile-serverless
+        with:
+          workspace-sid: $TWILIO_WORKSPACE_SID
+          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          sync-service-api-key: $SYNC_SERVICE_API_KEY
+          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+          sync-service-sid: $SYNC_SERVICE_SID
+          chat-service-sid: $CHAT_SERVICE_SID
+          operating-info-key: $OPERATING_INFO_KEY
       # Install the Twilio CLI and the serverless plugin then deploy the function
       - name: Executing deploying action
         uses: ./.github/actions/deploy-twilio
