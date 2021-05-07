@@ -69,37 +69,25 @@ jobs:
         with:
           ssm_parameter: "STG_TWILIO_ZA_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"          
-      - name: Create environment variable file
-        run: |
-          touch .env
-      - name: Fill .env
-        run: |
-          cat <<EOT >> .env
-          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
-          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
-          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
-          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
-          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
-          EOT           
-      # Runs a single command using the runners shell
-      - name: Install dependencies for the twilio function
-        run: npm ci
-      # Compile typescript to javascript
-      - name: Transpile typescript to javascript
-        run: npx tsc
+      # Prepare everything to compile the serverless application     
+      - name: Executing compile serverless action 
+        uses: ./.github/actions/compile-serverless
+        with:
+          workspace-sid: $TWILIO_WORKSPACE_SID
+          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          sync-service-api-key: $SYNC_SERVICE_API_KEY
+          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+          sync-service-sid: $SYNC_SERVICE_SID
+          chat-service-sid: $CHAT_SERVICE_SID
+          operating-info-key: $OPERATING_INFO_KEY
       # Install the Twilio CLI and the serverless plugin then deploy the function
-      - name: Install twilio cli and run deploy command to dev
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_STG_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_STG_AUTH_TOKEN }}
-        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
-      - name: Run deploy command to production
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_STG_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_STG_AUTH_TOKEN }}
-        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      - name: Executing deploying action
+        uses: ./.github/actions/deploy-twilio
+        with:
+          account-sid: ${{ secrets.ZA_STG_ACCOUNT_SID }}
+          auth-token: ${{ secrets.ZA_STG_AUTH_TOKEN }} 
       # Check if the deployed serverless is up and running
-      - name: Check if serverless is up and running
-        run: curl -f $SERVERLESS_BASE_URL/healthCheck
+      - name: Executing check serverless action
+        uses: ./.github/actions/check-serverless
+        with:
+          serverless-base-url: $SERVERLESS_BASE_URL 
