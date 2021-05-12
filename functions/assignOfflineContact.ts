@@ -62,7 +62,7 @@ const assignToAvailableWorker = async (
   const reservation = reservations.find(r => r.workerSid === event.targetSid);
 
   if (!reservation) {
-    if (retry < 5) {
+    if (retry < 8) {
       await wait(200);
       return assignToAvailableWorker(event, newTask, retry + 1);
     }
