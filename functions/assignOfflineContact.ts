@@ -121,9 +121,15 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
     .workers(targetSid)
     .fetch();
 
-  const previousAttributes = JSON.parse(targetWorker.attributes);
+  const targetWorkerAttributes = JSON.parse(targetWorker.attributes);
 
-  if (previousAttributes.waitingOfflineContact)
+  if (targetWorkerAttributes.helpline === undefined)
+    return {
+      type: 'error',
+      payload: { status: 500, message: 'Error: the worker does not have helpline attribute set, check the worker configuration.', taskRemoved: false },
+    };
+
+  if (targetWorkerAttributes.waitingOfflineContact)
     return {
       type: 'error',
       payload: { status: 500, message: 'Error: the worker is already waiting for an offline contact.', taskRemoved: false },
@@ -133,6 +139,10 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
     ...JSON.parse(finalTaskAttributes),
     targetSid,
     transferTargetType: 'worker',
+    helpline: targetWorkerAttributes.helpline,
+    channelType: 'default',
+    isContactlessTask: true,
+    isInMyBehalf: true,
   };
 
   // create New task
