@@ -11,27 +11,27 @@ inputs:
   workspace-sid:  
       description: 'Twilio Workspace SID'
       required: true
-    transfer-workflow-sid:  
-      description: 'Chat Transfer Workflow SID'
-      required: true
-    sync-service-api-key:  
-      description: 'Sync Service API Key'
-      required: true
-    sync-service-api-secret:  
-      description: 'Sync Service API Secret'
-      required: true
-    sync-service-sid:
-      description: 'Sync Service SID'
-      required: true
-    chat-service-sid:
-      description: 'Chat Service SID'
-      required: true
-    operating-info-key:
-      description: 'Operating Info Key'
-      required: true
-    serverless-base-url:
-      description: 'Serverless base url'
-      required: true
+  transfer-workflow-sid:  
+    description: 'Chat Transfer Workflow SID'
+    required: true
+  sync-service-api-key:  
+    description: 'Sync Service API Key'
+    required: true
+  sync-service-api-secret:  
+    description: 'Sync Service API Secret'
+    required: true
+  sync-service-sid:
+    description: 'Sync Service SID'
+    required: true
+  chat-service-sid:
+    description: 'Chat Service SID'
+    required: true
+  operating-info-key:
+    description: 'Operating Info Key'
+    required: true
+  serverless-base-url:
+    description: 'Serverless base url'
+    required: true
 runs:
   using: "composite"
   steps:
