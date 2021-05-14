@@ -1,0 +1,59 @@
+# Install the Twilio CLI and the serverless plugin then deploy the function
+name: 'main-action'
+description: 'Install the Twilio CLI and the serverless plugin then deploy the function'
+inputs:
+  account-sid:
+    description: 'Twilio Account SID'
+    required: true
+  auth-token:
+    description: 'Twilio Token'
+    required: true
+  workspace-sid:  
+      description: 'Twilio Workspace SID'
+      required: true
+    transfer-workflow-sid:  
+      description: 'Chat Transfer Workflow SID'
+      required: true
+    sync-service-api-key:  
+      description: 'Sync Service API Key'
+      required: true
+    sync-service-api-secret:  
+      description: 'Sync Service API Secret'
+      required: true
+    sync-service-sid:
+      description: 'Sync Service SID'
+      required: true
+    chat-service-sid:
+      description: 'Chat Service SID'
+      required: true
+    operating-info-key:
+      description: 'Operating Info Key'
+      required: true
+    serverless-base-url:
+      description: 'Serverless base url'
+      required: true
+runs:
+  using: "composite"
+  steps:
+    # Prepare everything to compile the serverless application     
+    - name: Executing compile serverless action 
+      uses: ./.github/actions/compile-serverless
+      with:
+        workspace-sid: ${{ inputs.workspace-sid }}
+        transfer-workflow-sid: ${{ inputs.transfer-workflow-sid }}
+        sync-service-api-key: ${{ inputs.sync-service-api-key }}
+        sync-service-api-secret: ${{ inputs.sync-service-api-secret }}
+        sync-service-sid: ${{ inputs.sync-service-sid }}
+        chat-service-sid: ${{ inputs.chat-service-sid }}
+        operating-info-key: ${{ inputs.operating-info-key }}
+    # Install the Twilio CLI and the serverless plugin then deploy the function
+    - name: Executing deploying action
+      uses: ./.github/actions/deploy-twilio
+      with:
+        account-sid: ${{ inputs.account-sid }}
+        auth-token: ${{ inputs.auth-token }}
+    # Check if the deployed serverless is up and running
+    - name: Executing check serverless action
+      uses: ./.github/actions/check-serverless
+      with:
+        serverless-base-url: ${{ inputs.serverless-base-url }}
