@@ -35,25 +35,43 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Prepare everything to compile the serverless application     
-    - name: Executing compile serverless action 
-      uses: ./.github/actions/compile-serverless
-      with:
-        workspace-sid: ${{ inputs.workspace-sid }}
-        transfer-workflow-sid: ${{ inputs.transfer-workflow-sid }}
-        sync-service-api-key: ${{ inputs.sync-service-api-key }}
-        sync-service-api-secret: ${{ inputs.sync-service-api-secret }}
-        sync-service-sid: ${{ inputs.sync-service-sid }}
-        chat-service-sid: ${{ inputs.chat-service-sid }}
-        operating-info-key: ${{ inputs.operating-info-key }}
-    # Install the Twilio CLI and the serverless plugin then deploy the function
-    - name: Executing deploying action
-      uses: ./.github/actions/deploy-twilio
-      with:
-        account-sid: ${{ inputs.account-sid }}
-        auth-token: ${{ inputs.auth-token }}
-    # Check if the deployed serverless is up and running
-    - name: Executing check serverless action
-      uses: ./.github/actions/check-serverless
-      with:
-        serverless-base-url: ${{ inputs.serverless-base-url }}
+    # Prepare everything to compile the serverless application with proper env
+    - name: Create environment variable file
+      run: touch .env
+      shell: bash
+    - name: Fill .env
+      run: |
+          cat <<EOT >> .env
+          TWILIO_WORKSPACE_SID=${{ inputs.workspace-sid }}
+          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.transfer-workflow-sid }}
+          SYNC_SERVICE_API_KEY=${{ inputs.sync-service-api-key }}
+          SYNC_SERVICE_API_SECRET=${{ inputs.sync-service-api-secret }}
+          SYNC_SERVICE_SID=${{ inputs.sync-service-sid }}
+          CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
+          OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
+          EOT
+      shell: bash
+    # Install dependencies for the twilio functions
+    - name: Install dependencies for the twilio functions
+      run: npm ci
+      shell: bash
+    # Compile typescript to javascript
+    - name: Transpile typescript to javascript
+      run: npx tsc
+      shell: bash
+    # Install Twilio CLI and run deploy command
+    - name: Install Twilio CLI and run deploy command
+      run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
+      env:
+        TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
+        TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
+      shell: bash
+    - run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      env:
+        TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
+        TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
+      shell: bash
+    # Check if serverless is up and running
+    - name: Check if serverless is up and running
+      run: curl -f ${{ inputs.serverless-base-url }}/healthCheck
+      shell: bash
