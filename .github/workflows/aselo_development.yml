@@ -70,7 +70,7 @@ jobs:
           ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"
       # Call main-action to compile, deploy and check availability
-      - name: Executing check serverless action
+      - name: Executing main-action
         uses: ./.github/actions/main-action
         with:
           account-sid: ${{ secrets.AS_DEV_ACCOUNT_SID }}
