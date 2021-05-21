@@ -1,0 +1,105 @@
+# This is a basic workflow to publish a Twilio function with Github Actions
+
+name: Aselo Development release (pre DRY)
+
+# Controls when the action will run.
+on:
+  workflow_dispatch
+  
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+      # Setup credentials to access AWS for parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      # Get AWS parameters to setup environment variables for Serveless function
+      - name: Set Twilio Sync API key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_API_KEY"
+          env_variable_name: "SYNC_SERVICE_API_KEY"
+      - name: Set Twilio Chat service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_SERVICE_SID"
+          env_variable_name: "CHAT_SERVICE_SID"
+      - name: Set Twilio Chat transfer workflow ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_WORKFLOW_SID"
+          env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
+      - name: Set Twilio Sync API secret
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SECRET"
+          env_variable_name: "SYNC_SERVICE_API_SECRET"
+      - name: Set Twilio Sync service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SYNC_SID"
+          env_variable_name: "SYNC_SERVICE_SID"
+      - name: Set Twilio Workspace ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_WORKSPACE_SID"
+          env_variable_name: "TWILIO_WORKSPACE_SID"
+      - name: Set operating information file key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
+          env_variable_name: "OPERATING_INFO_KEY"
+      - name: Set serverless base URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
+          env_variable_name: "SERVERLESS_BASE_URL"
+      - name: Create environment variable file
+        run: |
+          touch .env
+      - name: Fill .env
+        run: |
+          cat <<EOT >> .env
+          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
+          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
+          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
+          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
+          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
+          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
+          EOT                                          
+      # Runs a single command using the runners shell
+      - name: Install dependencies for the twilio function
+        run: npm ci
+      # Compile typescript to javascript
+      - name: Transpile typescript to javascript
+        run: npx tsc
+      # Install the Twilio CLI and the serverless plugin then deploy the function
+      - name: Install twilio cli and run deploy command to dev
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
+        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
+      - name: Run deploy command to production
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
+        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      # Check if the deployed serverless is up and running
+      - name: Check if serverless is up and running
+        run: curl -f $SERVERLESS_BASE_URL/healthCheck
