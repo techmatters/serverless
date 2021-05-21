@@ -623,12 +623,12 @@
   "SupervisorTaskWrapUp": ">>> Wrap up | {{helper.durationSinceUpdateShort}}",
   "SupervisorUserCardFirstLine": ">>> {{worker.fullName}}",
   "SupervisorUserCardSecondLine": ">>> {{worker.activityName}} | {{worker.activityDuration}}",
-  "TabbedForms-AddCallerInfoTab": ">>> Caller Info",
-  "TabbedForms-AddCaseInfoTab": ">>> Summary",
-  "TabbedForms-AddChildInfoTab": ">>> Child Info",
-  "TabbedForms-AddContactInfoTab": ">>> Contact Info",
-  "TabbedForms-BackButton": ">>> Categorize Contact Type",
-  "TabbedForms-CategoriesTab": ">>> Categories",
+  "TabbedForms-AddCallerInfoTab": "> Caller Info",
+  "TabbedForms-AddCaseInfoTab": "> Summary",
+  "TabbedForms-AddChildInfoTab": "> Child Info",
+  "TabbedForms-AddContactInfoTab": "> Contact Info",
+  "TabbedForms-BackButton": "> Categorize Contact Type",
+  "TabbedForms-CategoriesTab": "> Categories",
   "TaskAssigned": ">>> Assigned",
   "TaskCanceled": ">>> Canceled",
   "TaskCannotBeTransferredNotification": ">>> Task cannot be transferred",
@@ -752,5 +752,7 @@
   "WorkerSkillsSchemaMismatch": ">>> Worker skills schema mismatch",
   "WorkerTableEmpty": ">>> No agents matched your criteria. Refine results via search or filter.",
   "Yesterday": ">>> YESTERDAY",
-  "YouMustBeAvailableToPerformThisOp": ">>> You must be available to perform this operation."
+  "YouMustBeAvailableToPerformThisOp": ">>> You must be available to perform this operation.",
+ 
+  "First Name": ">>> First Name"
 }
