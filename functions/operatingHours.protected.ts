@@ -96,6 +96,8 @@ export const handler = async (
 
     resolve(success('closed'));
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
     resolve(error500(err));
   }
 };
