@@ -12,13 +12,13 @@ import moment from 'moment-timezone';
 type OperatingShift = { open: number; close: number };
 
 enum DaysOfTheWeek {
-  Monday = '1',
-  Tuesday = '2',
-  Wednesday = '3',
-  Thursday = '4',
-  Friday = '5',
-  Saturday = '6',
-  Sunday = '7',
+  Monday = 1,
+  Tuesday = 2,
+  Wednesday = 3,
+  Thursday = 4,
+  Friday = 5,
+  Saturday = 6,
+  Sunday = 7,
 }
 
 type OperatingInfo = {
@@ -76,7 +76,7 @@ export const handler = async (
     );
     const dayOfWeek = moment()
       .tz(timezone)
-      .format('d') as DaysOfTheWeek;
+      .isoWeekday() as DaysOfTheWeek;
     const currentDate = moment()
       .tz(timezone)
       .format('MM/DD/YYYY');
