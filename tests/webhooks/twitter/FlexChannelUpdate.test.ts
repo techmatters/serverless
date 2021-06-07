@@ -133,23 +133,9 @@ describe('FlexChannelUpdate', () => {
     };
 
     await FlexChannelUpdate(baseContext, event2, callback2);
-
-    const event3: Body = {
-      EventType: 'onChannelUpdated',
-      ChannelSid: 'twoMembers',
-    };
-
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('Ignored event.');
-    };
-
-    await FlexChannelUpdate(baseContext, event3, callback3);
   });
 
-  test('Should return status 200', async () => {
+  test('Should return status 200 (one member in channel)', async () => {
     channels.inactiveChannel.remove.mockClear();
 
     const event1: Body = {
@@ -167,5 +153,21 @@ describe('FlexChannelUpdate', () => {
 
     await FlexChannelUpdate(baseContext, event1, callback1);
     channels.inactiveChannel.remove.mockClear();
+  });
+
+  test('Should return status 200 (two members in channel)', async () => {
+    const event1: Body = {
+      EventType: 'onChannelUpdated',
+      ChannelSid: 'twoMembers',
+    };
+
+    const callback1: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toContain('INACTIVE channel removed: true');
+    };
+
+    await FlexChannelUpdate(baseContext, event1, callback1);
   });
 });
