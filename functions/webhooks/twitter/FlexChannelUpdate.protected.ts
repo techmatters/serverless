@@ -31,6 +31,10 @@ export type Body = {
   WebhookSid?: string;
 };
 
+function timeout(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export const handler = async (
   context: Context<EnvVars>,
   event: Body,
@@ -58,7 +62,8 @@ export const handler = async (
 
       const { status } = JSON.parse(channel.attributes);
 
-      if (status === 'INACTIVE' && channel.membersCount === 1) {
+      if (status === 'INACTIVE') {
+        await timeout(1000); // set small timeout just in case some cleanup is still going on
         const removed = await channel.remove();
         console.log(`INACTIVE channel with sid ${ChannelSid} removed: ${removed}`);
         resolve(success(`INACTIVE channel removed: ${removed}`));
