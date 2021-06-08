@@ -36,7 +36,6 @@ type DirectMessageEvent = {
 };
 
 export type Body = {
-  crc_token?: string;
   direct_message_events?: DirectMessageEvent[];
   for_user_id?: string;
   users?: { [key: string]: { name: string; screen_name: string } };
