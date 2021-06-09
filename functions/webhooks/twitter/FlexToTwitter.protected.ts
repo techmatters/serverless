@@ -115,6 +115,7 @@ export const handler = async (
 
       console.log('Message ignored (do not re-send self messages)');
       resolve(success('Ignored event.'));
+      return;
     }
 
     resolve(send(406)('Event Source not supported'));
