@@ -73,6 +73,8 @@ export const handler = async (
 
     resolve(success('Ignored event.'));
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
     resolve(error500(err));
   }
 };

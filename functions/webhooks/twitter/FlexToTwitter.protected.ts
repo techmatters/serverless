@@ -120,6 +120,8 @@ export const handler = async (
 
     resolve(send(406)('Event Source not supported'));
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
     resolve(error500(err));
   }
 };

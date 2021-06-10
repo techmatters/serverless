@@ -61,7 +61,10 @@ const createTwitterChannel = async (
   uniqueChannelName: string,
   senderId: string,
   senderName: string,
+  forUserId: string,
 ) => {
+  const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
+
   const client = context.getTwilioClient();
 
   const channel = await client.flexApi.channel.create({
@@ -72,6 +75,26 @@ const createTwitterChannel = async (
     chatUniqueName: uniqueChannelName,
     target: senderName,
   });
+
+  const channelAttributes = JSON.parse(
+    (
+      await client.chat
+        .services(context.CHAT_SERVICE_SID)
+        .channels(channel.sid)
+        .fetch()
+    ).attributes,
+  );
+
+  await client.chat
+    .services(context.CHAT_SERVICE_SID)
+    .channels(channel.sid)
+    .update({
+      attributes: JSON.stringify({
+        ...channelAttributes,
+        customChannelType: 'twitter',
+        twilioNumber,
+      }),
+    });
 
   /* const onMessageSent = */
   await client.chat
@@ -129,6 +152,7 @@ const sendMessageToFlex = async (
   senderName: string,
   senderScreenName: string,
   messageText: string,
+  forUserId: string,
 ) => {
   const uniqueChannelName = `${twitterUniqueNamePrefix}${senderId}`;
   let channelSid;
@@ -144,6 +168,7 @@ const sendMessageToFlex = async (
         uniqueChannelName,
         senderId,
         senderName,
+        forUserId,
       );
       channelSid = newChannel.sid;
     } catch (err2) {
@@ -169,13 +194,13 @@ export const handler = async (
 
     // Listen for incoming direct messages
     if (event.direct_message_events) {
-      const { for_user_id: activeUser, direct_message_events: directMessageEvents, users } = event;
-      if (!activeUser || !directMessageEvents || !directMessageEvents.length || !users)
+      const { for_user_id: forUserId, direct_message_events: directMessageEvents, users } = event;
+      if (!forUserId || !directMessageEvents || !directMessageEvents.length || !users)
         throw new Error('Bad formatted direct message event');
 
       const senderId = directMessageEvents[0].message_create.sender_id;
 
-      if (senderId !== activeUser) {
+      if (senderId !== forUserId) {
         console.log(`New message from: ${users[senderId].name}`);
         console.log(directMessageEvents[0].message_create.message_data.text);
 
@@ -189,6 +214,7 @@ export const handler = async (
           senderName,
           senderScreenName,
           messageText,
+          forUserId,
         );
 
         resolve(success(message));
@@ -200,6 +226,8 @@ export const handler = async (
 
     resolve(success('Ignored event.'));
   } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(err);
     resolve(error500(err));
   }
 };
