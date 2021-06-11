@@ -91,7 +91,8 @@ const createTwitterChannel = async (
     .update({
       attributes: JSON.stringify({
         ...channelAttributes,
-        customChannelType: 'twitter',
+        channel_type: 'twitter',
+        // customChannelType: 'twitter',
         twilioNumber,
       }),
     });
