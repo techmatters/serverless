@@ -1,6 +1,13 @@
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
+import {
+  responseWithCors,
+  bindResolve,
+  error403,
+  error500,
+  success,
+} from '@tech-matters/serverless-helpers';
+import crypto from 'crypto';
 
 type EnvVars = {
   ACCOUNT_SID: string;
@@ -39,9 +46,30 @@ export type Body = {
   direct_message_events?: DirectMessageEvent[];
   for_user_id?: string;
   users?: { [key: string]: { name: string; screen_name: string } };
+  xTwitterWebhooksSignature?: string;
+  bodyAsString?: string;
 };
 
 const twitterUniqueNamePrefix = 'twitter:';
+
+/**
+ * Validates that the payload is signed with TWITTER_CONSUMER_SECRET so we know it's comming from Twitter
+ */
+const isValidTwitterPayload = (event: Body, consumerSecret: string): boolean => {
+  if (!event.bodyAsString || !event.xTwitterWebhooksSignature) return false;
+
+  const expectedSignature = crypto
+    .createHmac('sha256', consumerSecret)
+    .update(event.bodyAsString)
+    .digest('base64');
+
+  const isValidRequest = crypto.timingSafeEqual(
+    Buffer.from(event.xTwitterWebhooksSignature),
+    Buffer.from(`sha256=${expectedSignature}`),
+  );
+
+  return isValidRequest;
+};
 
 /**
  * Retrieves a channel by sid or uniqueName
@@ -189,6 +217,11 @@ export const handler = async (
 ) => {
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
+
+  if (!isValidTwitterPayload(event, context.TWITTER_CONSUMER_SECRET)) {
+    resolve(error403('Unauthorized'));
+    return;
+  }
 
   try {
     console.log('------ TwitterToFlex excecution ------');
