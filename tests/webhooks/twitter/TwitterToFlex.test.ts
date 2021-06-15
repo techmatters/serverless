@@ -3,6 +3,11 @@ import { handler as TwitterToFlex, Body } from '../../../functions/webhooks/twit
 
 import helpers, { MockedResponse } from '../../helpers';
 
+jest.mock('crypto', () => ({
+  timingSafeEqual: () => true,
+  createHmac: () => ({ update: () => ({ digest: () => '' }) }),
+}));
+
 const channels: { [x: string]: any } = {
   'twitter:sender_id': {
     sid: 'twitter:sender_id',
@@ -73,6 +78,8 @@ describe('TwitterToFlex', () => {
   test('Should return status 500', async () => {
     // Bad formatted direct message event
     const event1: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [],
     };
 
@@ -86,6 +93,8 @@ describe('TwitterToFlex', () => {
     await TwitterToFlex(baseContext, event1, callback1);
 
     const event2: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
@@ -114,6 +123,8 @@ describe('TwitterToFlex', () => {
     await TwitterToFlex(baseContext, event2, callback2);
 
     const event3: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
@@ -143,6 +154,8 @@ describe('TwitterToFlex', () => {
     await TwitterToFlex(baseContext, event3, callback3);
 
     const event4: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
@@ -200,12 +213,16 @@ describe('TwitterToFlex', () => {
     };
 
     const event1: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: undefined,
     };
 
     await TwitterToFlex(baseContext, event1, callback);
 
     const event2: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
@@ -234,6 +251,8 @@ describe('TwitterToFlex', () => {
 
   test('Should return status 200 (existing channel)', async () => {
     const event: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
@@ -269,6 +288,8 @@ describe('TwitterToFlex', () => {
 
   test('Should return status 200 (create channel)', async () => {
     const event: Body = {
+      bodyAsString: 'fake body',
+      xTwitterWebhooksSignature: 'fake signature',
       direct_message_events: [
         {
           type: 'type',
