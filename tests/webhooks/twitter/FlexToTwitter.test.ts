@@ -12,11 +12,15 @@ jest.mock('twit');
 const channels: { [x: string]: any } = {
   ChannelSid: {
     sid: 'ChannelSid',
-    attributes: JSON.stringify({ from: 'from' }),
+    attributes: JSON.stringify({ from: 'from', twilioNumber: 'twitter:123456789' }),
+  },
+  BrokenChannel: {
+    sid: 'BrokenChannel',
+    attributes: JSON.stringify({ from: 'from', twilioNumber: 'twitter:not-existing' }),
   },
 };
 
-const baseContext = {
+const baseContext: any = {
   getTwilioClient: (): any => ({
     chat: {
       services: (serviceSid: string) => {
@@ -37,6 +41,8 @@ const baseContext = {
   TWITTER_CONSUMER_SECRET: 'TWITTER_CONSUMER_SECRET',
   TWITTER_ACCESS_TOKEN: 'TWITTER_ACCESS_TOKEN',
   TWITTER_ACCESS_TOKEN_SECRET: 'TWITTER_ACCESS_TOKEN_SECRET',
+  TWITTER_ACCESS_TOKEN_123456789: 'TWITTER_ACCESS_TOKEN_123456789',
+  TWITTER_ACCESS_TOKEN_SECRET_123456789: 'TWITTER_ACCESS_TOKEN_SECRET_123456789',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
 };
 
@@ -181,6 +187,30 @@ describe('FlexToTwitter', () => {
     };
 
     await FlexToTwitter(baseContext, event3, callback3);
+
+    // @ts-ignore
+    Twit.mockClear();
+
+    const event4: Body = {
+      recipientId: 'recipientId',
+      Body: 'Body',
+      Source: 'API',
+      EventType: 'onMessageSent',
+      ChannelSid: 'BrokenChannel',
+      From: 'different-from',
+    };
+
+    const callback4: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain(
+        'TWITTER_ACCESS_TOKEN_not-existing or TWITTER_ACCESS_TOKEN_SECRET_not-existing missing in environment. Please review the setup steps for a new Twitter account and include the access token and secret for Twitter account not-existing',
+      );
+    };
+
+    await FlexToTwitter(baseContext, event4, callback4);
   });
 
   test('Should return status 200 (ignore events)', async () => {
