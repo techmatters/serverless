@@ -12,10 +12,7 @@ import crypto from 'crypto';
 type EnvVars = {
   ACCOUNT_SID: string;
   AUTH_TOKEN: string;
-  TWITTER_CONSUMER_KEY: string;
   TWITTER_CONSUMER_SECRET: string;
-  TWITTER_ACCESS_TOKEN: string;
-  TWITTER_ACCESS_TOKEN_SECRET: string;
   CHAT_SERVICE_SID: string;
   TWITTER_FLEX_FLOW_SID: string;
 };

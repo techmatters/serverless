@@ -13,10 +13,10 @@ import {
 type EnvVars = {
   TWITTER_CONSUMER_KEY: string;
   TWITTER_CONSUMER_SECRET: string;
-  TWITTER_ACCESS_TOKEN: string;
-  TWITTER_ACCESS_TOKEN_SECRET: string;
+  // TWITTER_ACCESS_TOKEN: string;
+  // TWITTER_ACCESS_TOKEN_SECRET: string;
   CHAT_SERVICE_SID: string;
-};
+} & { [key: string]: string };
 
 export type Body = {
   recipientId?: string;
@@ -29,14 +29,23 @@ export type Body = {
 
 const sendTwitterMessage = async (
   context: Context<EnvVars>,
+  helplineTwitterId: string,
   recipientId: string,
   messageText: string,
 ) => {
+  const twitterAccessToken = context[`TWITTER_ACCESS_TOKEN_${helplineTwitterId}`];
+  const twitterAccessTokenSecret = context[`TWITTER_ACCESS_TOKEN_SECRET_${helplineTwitterId}`];
+
+  if (!twitterAccessToken || !twitterAccessTokenSecret)
+    throw new Error(
+      `TWITTER_ACCESS_TOKEN_${helplineTwitterId} or TWITTER_ACCESS_TOKEN_SECRET_${helplineTwitterId} missing in environment. Please review the setup steps for a new Twitter account and include the access token and secret for Twitter account ${helplineTwitterId}`,
+    );
+
   const T = new Twit({
     consumer_key: context.TWITTER_CONSUMER_KEY,
     consumer_secret: context.TWITTER_CONSUMER_SECRET,
-    access_token: context.TWITTER_ACCESS_TOKEN,
-    access_token_secret: context.TWITTER_ACCESS_TOKEN_SECRET,
+    access_token: twitterAccessToken,
+    access_token_secret: twitterAccessTokenSecret,
     timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
     strictSSL: true, // optional - requires SSL certificates to be valid.
   });
@@ -82,32 +91,38 @@ export const handler = async (
 
     console.log('------ FlexToTwitter excecution ------');
 
+    const { ChannelSid } = event;
+
+    if (ChannelSid === undefined) {
+      resolve(error400('ChannelSid'));
+      return;
+    }
+
+    const client = context.getTwilioClient();
+    const channel = await client.chat
+      .services(context.CHAT_SERVICE_SID)
+      .channels(ChannelSid)
+      .fetch();
+
+    const channelAttributes = JSON.parse(channel.attributes);
+    const helplineTwitterId = channelAttributes.twilioNumber.replace('twitter:', '');
+
     if (event.Source === 'SDK') {
-      const TwitResponse = await sendTwitterMessage(context, recipientId, Body);
+      const TwitResponse = await sendTwitterMessage(context, helplineTwitterId, recipientId, Body);
       console.log('Message sent from SDK call: ', Body);
       resolve(success(TwitResponse));
       return;
     }
 
     if (event.Source === 'API' && event.EventType === 'onMessageSent') {
-      const { ChannelSid } = event;
-
-      if (ChannelSid === undefined) {
-        resolve(error400('ChannelSid'));
-        return;
-      }
-
-      const client = context.getTwilioClient();
-      const channel = await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(ChannelSid)
-        .fetch();
-
-      const channelAttributes = JSON.parse(channel.attributes);
-
       // Redirect bot, system or third participant
       if (channelAttributes.from !== event.From) {
-        const TwitResponse = await sendTwitterMessage(context, recipientId, Body);
+        const TwitResponse = await sendTwitterMessage(
+          context,
+          helplineTwitterId,
+          recipientId,
+          Body,
+        );
         console.log('Message sent from API call: ', Body);
         resolve(success(TwitResponse));
         return;
