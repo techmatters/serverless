@@ -1,6 +1,6 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: South Africa Production release
+name: Aselo Development release (pre DRY)
 
 # Controls when the action will run.
 on:
@@ -32,43 +32,43 @@ jobs:
       - name: Set Twilio Sync API key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_API_KEY"
+          ssm_parameter: "DEV_TWILIO_AS_API_KEY"
           env_variable_name: "SYNC_SERVICE_API_KEY"
       - name: Set Twilio Chat service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_CHAT_SERVICE_SID"
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_SERVICE_SID"
           env_variable_name: "CHAT_SERVICE_SID"
       - name: Set Twilio Chat transfer workflow ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_CHAT_WORKFLOW_SID"
+          ssm_parameter: "DEV_TWILIO_AS_CHAT_WORKFLOW_SID"
           env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
       - name: Set Twilio Sync API secret
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_SECRET"
+          ssm_parameter: "DEV_TWILIO_AS_SECRET"
           env_variable_name: "SYNC_SERVICE_API_SECRET"
       - name: Set Twilio Sync service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_SYNC_SID"
+          ssm_parameter: "DEV_TWILIO_AS_SYNC_SID"
           env_variable_name: "SYNC_SERVICE_SID"
       - name: Set Twilio Workspace ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_WORKSPACE_SID"
+          ssm_parameter: "DEV_TWILIO_AS_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
       - name: Set operating information file key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_OPERATING_INFO_KEY"
+          ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
       - name: Set serverless base URL
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_SERVERLESS_BASE_URL"
-          env_variable_name: "SERVERLESS_BASE_URL"            
+          ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
+          env_variable_name: "SERVERLESS_BASE_URL"
       - name: Create environment variable file
         run: |
           touch .env
@@ -82,7 +82,7 @@ jobs:
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
           OPERATING_INFO_KEY=$OPERATING_INFO_KEY
-          EOT           
+          EOT                                          
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
@@ -92,14 +92,14 @@ jobs:
       # Install the Twilio CLI and the serverless plugin then deploy the function
       - name: Install twilio cli and run deploy command to dev
         env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_PROD_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_PROD_AUTH_TOKEN }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
         run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
       - name: Run deploy command to production
         env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_PROD_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_PROD_AUTH_TOKEN }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.AS_DEV_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.AS_DEV_AUTH_TOKEN }}
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
       # Check if the deployed serverless is up and running
       - name: Check if serverless is up and running
-        run: curl -f $SERVERLESS_BASE_URL/healthCheck        
+        run: curl -f $SERVERLESS_BASE_URL/healthCheck

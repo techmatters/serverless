@@ -59,33 +59,27 @@ jobs:
         with:
           ssm_parameter: "PROD_TWILIO_AS_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
-      - name: Create environment variable file
-        run: |
-          touch .env
-      - name: Fill .env
-        run: |
-          cat <<EOT >> .env
-          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
-          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
-          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
-          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
-          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          EOT 
-      # Runs a single command using the runners shell
-      - name: Install dependencies for the twilio function
-        run: npm ci
-      # Compile typescript to javascript
-      - name: Transpile typescript to javascript
-        run: npx tsc
-      # Install the Twilio CLI and the serverless plugin then deploy the function
-      - name: Install twilio cli and run deploy command to dev
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.AS_BETA_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.AS_BETA_AUTH_TOKEN }}
-        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
-      - name: Run deploy command to production
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.AS_BETA_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.AS_BETA_AUTH_TOKEN }}
-        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      - name: Set operating information file key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_AS_OPERATING_INFO_KEY"
+          env_variable_name: "OPERATING_INFO_KEY"
+      - name: Set serverless base URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_BETA_SERVERLESS_BASE_URL"
+          env_variable_name: "SERVERLESS_BASE_URL"          
+      # Call main-action to compile, deploy and check availability
+      - name: Executing main-action
+        uses: ./.github/actions/main-action
+        with:
+          account-sid: ${{ secrets.AS_BETA_ACCOUNT_SID }}
+          auth-token: ${{ secrets.AS_BETA_AUTH_TOKEN }}
+          workspace-sid: $TWILIO_WORKSPACE_SID
+          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          sync-service-api-key: $SYNC_SERVICE_API_KEY
+          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+          sync-service-sid: $SYNC_SERVICE_SID
+          chat-service-sid: $CHAT_SERVICE_SID
+          operating-info-key: $OPERATING_INFO_KEY
+          serverless-base-url: $SERVERLESS_BASE_URL

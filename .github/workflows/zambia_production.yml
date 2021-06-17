@@ -59,6 +59,16 @@ jobs:
         with:
           ssm_parameter: "PROD_TWILIO_ZM_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
+      - name: Set operating information file key
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZM_OPERATING_INFO_KEY"
+          env_variable_name: "OPERATING_INFO_KEY"
+      - name: Set serverless base URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZM_SERVERLESS_BASE_URL"
+          env_variable_name: "SERVERLESS_BASE_URL"          
       - name: Create environment variable file
         run: |
           touch .env
@@ -71,7 +81,14 @@ jobs:
           SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          EOT 
+          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
+          EOT
+      # Runs a single command using the runners shell
+      - name: Install dependencies for the twilio function
+        run: npm ci
+      # Compile typescript to javascript
+      - name: Transpile typescript to javascript
+        run: npx tsc
       # Install the Twilio CLI and the serverless plugin then deploy the function
       - name: Install twilio cli and run deploy command to dev
         env:
@@ -83,3 +100,6 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.ZM_PROD_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.ZM_PROD_AUTH_TOKEN }}
         run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+      # Check if the deployed serverless is up and running
+      - name: Check if serverless is up and running
+        run: curl -f $SERVERLESS_BASE_URL/healthCheck        

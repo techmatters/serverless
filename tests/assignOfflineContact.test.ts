@@ -110,23 +110,30 @@ const workspaces: { [x: string]: any } = {
     },
     workers: (workerSid: string) => ({
       fetch: () => {
+        if (workerSid === 'noHelpline-worker')
+          return {
+            attributes: JSON.stringify({}),
+            sid: 'waitingOfflineContact-worker',
+            available: true,
+          };
+
         if (workerSid === 'waitingOfflineContact-worker')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: true }),
+            attributes: JSON.stringify({ waitingOfflineContact: true, helpline: 'helpline' }),
             sid: 'waitingOfflineContact-worker',
             available: true,
           };
 
         if (workerSid === 'available-worker-no-reservation')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             sid: 'available-worker-no-reservation',
             available: true,
           };
 
         if (workerSid === 'not-available-worker-no-reservation')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-reservation',
             available: false,
@@ -135,7 +142,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'available-worker-with-reservation')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             sid: 'available-worker-with-reservation',
             available: true,
             update: updateWorkerMock,
@@ -143,7 +150,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'not-available-worker-with-reservation')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-reservation',
             available: false,
@@ -152,7 +159,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'available-worker-with-accepted')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             sid: 'available-worker-with-accepted',
             available: true,
             update: updateWorkerMock,
@@ -160,7 +167,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'not-available-worker-with-accepted')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-accepted',
             available: false,
@@ -169,7 +176,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'available-worker-with-completed')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             sid: 'available-worker-with-completed',
             available: true,
             update: updateWorkerMock,
@@ -177,7 +184,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'not-available-worker-with-completed')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             activitySid: 'activitySid',
             sid: 'not-available-worker-with-completed',
             available: false,
@@ -186,7 +193,7 @@ const workspaces: { [x: string]: any } = {
 
         if (workerSid === 'intentionallyThrow')
           return {
-            attributes: JSON.stringify({ waitingOfflineContact: false }),
+            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
             activitySid: 'activitySid',
             sid: 'intentionallyThrow',
             available: true,
@@ -260,6 +267,11 @@ describe('assignOfflineContact', () => {
       finalTaskAttributes: JSON.stringify({}),
     };
 
+    const eventNoHelplineWorker: Body = {
+      targetSid: 'noHelpline-worker',
+      finalTaskAttributes: JSON.stringify({}),
+    };
+
     const event3: Body = {
       targetSid: 'waitingOfflineContact-worker',
       finalTaskAttributes: JSON.stringify({}),
@@ -312,6 +324,15 @@ describe('assignOfflineContact', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Non existing worker');
+    };
+
+    const callbackNoHelplineWorker: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(500);
+      expect(response.getBody().toString()).toContain(
+        'Error: the worker does not have helpline attribute set, check the worker configuration.',
+      );
     };
 
     const callback3: ServerlessCallback = (err, result) => {
@@ -383,6 +404,8 @@ describe('assignOfflineContact', () => {
     await assignOfflineContact({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
     updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event2, callback2);
+    updateWorkerMock.mockClear();
+    await assignOfflineContact(baseContext, eventNoHelplineWorker, callbackNoHelplineWorker);
     updateWorkerMock.mockClear();
     await assignOfflineContact(baseContext, event3, callback3);
     updateWorkerMock.mockClear();
