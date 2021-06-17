@@ -82,7 +82,26 @@ jobs:
           SYNC_SERVICE_SID=$SYNC_SERVICE_SID
           CHAT_SERVICE_SID=$CHAT_SERVICE_SID
           OPERATING_INFO_KEY=$OPERATING_INFO_KEY
-          EOT                                          
+          EOT
+      # Add custom variables per helpline like Twitter access tokens
+      - name: Set TWITTER_ACCESS_TOKEN_1075439824344150016
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "TWITTER_ACCESS_TOKEN_1075439824344150016_pgian5"
+          env_variable_name: "TWITTER_ACCESS_TOKEN_1075439824344150016"
+      - name: Set TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016_pgian5"
+          env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016"
+      - name: Define custom env variables for this helpline only
+        run: |
+          customEnv="
+          TWITTER_ACCESS_TOKEN_1075439824344150016=$TWITTER_ACCESS_TOKEN_1075439824344150016
+          TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016=$TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016
+          "
+      - name: Add custom env variables to .env
+        run: echo $customEnv >> .env
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
