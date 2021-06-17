@@ -94,14 +94,12 @@ jobs:
         with:
           ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016_pgian5"
           env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016"
-      - name: Define custom env variables for this helpline only
-        run: |
-          customEnv="
+      - name: Add custom env variables for this helpline only
+        run: | 
+          echo "
           TWITTER_ACCESS_TOKEN_1075439824344150016=$TWITTER_ACCESS_TOKEN_1075439824344150016
           TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016=$TWITTER_ACCESS_TOKEN_SECRET_1075439824344150016
-          "
-      - name: Add custom env variables to .env
-        run: echo $customEnv >> .env
+          " >> .env
       # Runs a single command using the runners shell
       - name: Install dependencies for the twilio function
         run: npm ci
