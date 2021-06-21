@@ -14,6 +14,7 @@ const baseContext = {
 
 const testday = 1617911935784; // timeOfDay: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'
 const holiday = testday + 86400000; // timeOfDay: 21:58, dayOfWeek: 5, currentDate: '04/09/2021'
+const sunday = testday + 86400000 * 3; // timeOfDay: 21:58, dayOfWeek: 7, currentDate: '04/11/2021'
 
 describe('operatingHours', () => {
   beforeAll(() => {
@@ -116,6 +117,23 @@ describe('operatingHours', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toContain('holiday');
+    };
+
+    await operatingHours(baseContext, event, callback);
+
+    MockDate.set(testday);
+  });
+
+  test('Should return status 200 (sunday-closed)', async () => {
+    MockDate.set(sunday);
+
+    const event: Body = { channel: 'facebook' };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toContain('closed');
     };
 
     await operatingHours(baseContext, event, callback);

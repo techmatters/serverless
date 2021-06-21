@@ -116,6 +116,7 @@ dist
 .pnp.*
 
 functions/*.js
+functions/**/*.js
 tech-matters-serverless-helpers/node_modules/
 tech-matters-serverless-helpers/lib/
 
