@@ -99,7 +99,7 @@ const createTwitterChannel = async (
     chatUserFriendlyName: senderScreenName,
     chatFriendlyName: uniqueChannelName,
     chatUniqueName: uniqueChannelName,
-    target: uniqueChannelName,
+    target: uniqueSenderName,
   });
 
   const channelAttributes = JSON.parse(
@@ -207,7 +207,7 @@ const sendMessageToFlex = async (
 
   console.log('Code excecution continued with channelSid: ', channelSid);
 
-  return sendChatMessage(context, channelSid, senderScreenName, messageText);
+  return sendChatMessage(context, channelSid, uniqueSenderName, messageText);
 };
 
 export const handler = async (
