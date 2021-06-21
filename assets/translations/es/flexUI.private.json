@@ -92,7 +92,7 @@
   "TabbedForms-CategoriesTab": "Categorias",
   "TabbedForms-AddCaseInfoTab": "Resumen",
   "CancelOfflineContact": "Cancelar contacto sin conexión",
-  "BottomBar-Next": "próximo",
+  "BottomBar-Next": "Próximo",
   "TabbedForms-BackButton": "Categorizar el tipo de contacto",
   "Categories-Title": "Categorizar este contacto",
   "Error-CategoryRequired": "Se requiere 1 categoría como mínimo, 3 categorías como máximo.",
@@ -163,6 +163,10 @@
   "SearchForm-Phone": "Teléfono",
   "SearchForm-Office": "Oficina",
   "SearchForm-Button": "Buscar",
+  "SearchForm-First": "Primer nombre",
+  "SearchForm-Last": "Apellido",
+  "SearchForm-Start": "Fecha de inicio",
+  "SearchForm-End": "Fecha final",
   "SearchResultsIndex-Back": "Volver a los criterios de búsqueda",
   "SearchResultsIndex-NonDataContacts": "Contactos sin datos",
   "SearchResultsIndex-Result": "resultado",
@@ -314,6 +318,5 @@
 "Counsellor": "Consejero",
 "Date of Contact": "Fecha de contacto",
 "Time of Contact": "Hora de contacto",
-"Helpline": "Línea de ayuda",
-"First": "Primer"
+"Helpline": "Línea de ayuda"
 }
