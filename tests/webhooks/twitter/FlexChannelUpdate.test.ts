@@ -9,23 +9,23 @@ import helpers, { MockedResponse } from '../../helpers';
 const channels: { [x: string]: any } = {
   activeChannel: {
     sid: 'activeChannel',
-    attributes: JSON.stringify({ status: 'ACTIVE' }),
+    attributes: JSON.stringify({ status: 'ACTIVE', from: 'activeChannel' }),
     membersCount: 1,
-    remove: async () => true,
   },
   inactiveChannel: {
     sid: 'inactiveChannel',
-    attributes: JSON.stringify({ status: 'INACTIVE' }),
+    attributes: JSON.stringify({ status: 'INACTIVE', from: 'inactiveChannel' }),
     membersCount: 1,
-    remove: jest.fn(() => true),
   },
   twoMembers: {
     sid: 'twoMembers',
-    attributes: JSON.stringify({ status: 'INACTIVE' }),
+    attributes: JSON.stringify({ status: 'INACTIVE', from: 'twoMembers' }),
     membersCount: 2,
-    remove: async () => true,
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const mockDocRemove = jest.fn((doc: string) => true);
 
 const baseContext = {
   getTwilioClient: (): any => ({
@@ -42,9 +42,17 @@ const baseContext = {
         };
       },
     },
+    sync: {
+      services: () => ({
+        documents: (doc: string) => ({
+          remove: async () => mockDocRemove(doc),
+        }),
+      }),
+    },
   }),
   DOMAIN_NAME: 'serverless',
   CHAT_SERVICE_SID: 'chatService',
+  SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
 };
 
 describe('FlexChannelUpdate', () => {
@@ -53,6 +61,9 @@ describe('FlexChannelUpdate', () => {
   });
   afterAll(() => {
     helpers.teardown();
+  });
+  afterEach(() => {
+    mockDocRemove.mockClear();
   });
 
   test('Should return status 400', async () => {
@@ -66,6 +77,7 @@ describe('FlexChannelUpdate', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(400);
       expect(response.getBody().message).toContain('Error: ChannelSid parameter not provided');
+      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event, callback);
@@ -82,6 +94,7 @@ describe('FlexChannelUpdate', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Service does not exists.');
+      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(
@@ -100,6 +113,7 @@ describe('FlexChannelUpdate', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().toString()).toContain('Channel does not exists.');
+      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event2, callback2);
@@ -116,6 +130,7 @@ describe('FlexChannelUpdate', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toContain('Ignored event.');
+      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event1, callback1);
@@ -130,14 +145,13 @@ describe('FlexChannelUpdate', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toContain('Ignored event.');
+      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event2, callback2);
   });
 
   test('Should return status 200 (one member in channel)', async () => {
-    channels.inactiveChannel.remove.mockClear();
-
     const event1: Body = {
       EventType: 'onChannelUpdated',
       ChannelSid: 'inactiveChannel',
@@ -147,12 +161,13 @@ describe('FlexChannelUpdate', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('INACTIVE channel removed: true');
-      expect(channels.inactiveChannel.remove).toHaveBeenCalled();
+      expect(response.getBody()).toContain(
+        'INACTIVE channel triggered map removal for inactiveChannel, removed true',
+      );
+      expect(mockDocRemove).toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event1, callback1);
-    channels.inactiveChannel.remove.mockClear();
   });
 
   test('Should return status 200 (two members in channel)', async () => {
@@ -165,7 +180,10 @@ describe('FlexChannelUpdate', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('INACTIVE channel removed: true');
+      expect(response.getBody()).toContain(
+        'INACTIVE channel triggered map removal for twoMembers, removed true',
+      );
+      expect(mockDocRemove).toHaveBeenCalled();
     };
 
     await FlexChannelUpdate(baseContext, event1, callback1);
