@@ -10,6 +10,7 @@ import {
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
 };
 
 export type Body = {
@@ -60,13 +61,20 @@ export const handler = async (
         .channels(ChannelSid)
         .fetch();
 
-      const { status } = JSON.parse(channel.attributes);
+      const { status, from } = JSON.parse(channel.attributes);
 
       if (status === 'INACTIVE') {
         await timeout(1000); // set small timeout just in case some cleanup is still going on
-        const removed = await channel.remove();
-        console.log(`INACTIVE channel with sid ${ChannelSid} removed: ${removed}`);
-        resolve(success(`INACTIVE channel removed: ${removed}`));
+
+        const removed = await context
+          .getTwilioClient()
+          .sync.services(context.SYNC_SERVICE_SID)
+          .documents(from)
+          .remove();
+
+        console.log(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`);
+
+        resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
         return;
       }
     }

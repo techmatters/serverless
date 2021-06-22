@@ -12,6 +12,7 @@ import crypto from 'crypto';
 type EnvVars = {
   ACCOUNT_SID: string;
   AUTH_TOKEN: string;
+  SYNC_SERVICE_SID: string;
   TWITTER_CONSUMER_KEY: string;
   TWITTER_CONSUMER_SECRET: string;
   TWITTER_ACCESS_TOKEN: string;
@@ -74,12 +75,43 @@ const isValidTwitterPayload = (event: Body, consumerSecret: string): boolean => 
 /**
  * Retrieves a channel by sid or uniqueName
  */
-const retrieveChannel = (context: Context<EnvVars>, uniqueName: string) =>
-  context
+const retrieveChannel = async (
+  context: Context<EnvVars>,
+  uniqueSenderName: string,
+): Promise<string | undefined> => {
+  try {
+    const userChannelMap = await context
+      .getTwilioClient()
+      .sync.services(context.SYNC_SERVICE_SID)
+      .documents(uniqueSenderName)
+      .fetch();
+    console.log('userChannelMap: ', userChannelMap.data);
+
+    return userChannelMap.data.activeChannelSid;
+  } catch (err) {
+    return undefined;
+  }
+};
+
+/**
+ * Updates the user channel map to contain the new channel assigned for this user
+ */
+const createUserChannelMap = async (
+  context: Context<EnvVars>,
+  uniqueSenderName: string,
+  channelSid: string,
+) => {
+  const userChannelMap = await context
     .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
-    .channels(uniqueName)
-    .fetch();
+    .sync.services(context.SYNC_SERVICE_SID)
+    .documents.create({
+      data: { activeChannelSid: channelSid },
+      uniqueName: uniqueSenderName,
+      ttl: 259200, // auto romeoved after 3 days
+    });
+
+  console.log('userChannelMap was created from scratch and its value is: ', userChannelMap.data);
+};
 
 /**
  * Creates a new Flex channel in the Twitter Flex Flow and subscribes webhooks to it's events
@@ -101,7 +133,6 @@ const createTwitterChannel = async (
     identity: uniqueSenderName,
     chatUserFriendlyName: senderScreenName,
     chatFriendlyName: uniqueChannelName,
-    chatUniqueName: uniqueChannelName,
     target: uniqueSenderName,
   });
 
@@ -122,7 +153,6 @@ const createTwitterChannel = async (
         ...channelAttributes,
         channel_type: 'twitter',
         twitterUserHandle: senderScreenName,
-        // customChannelType: 'twitter',
         twilioNumber,
       }),
     });
@@ -153,7 +183,7 @@ const createTwitterChannel = async (
       },
     });
 
-  return channel;
+  return channel.sid;
 };
 
 const sendChatMessage = async (
@@ -179,22 +209,20 @@ const sendChatMessage = async (
 const sendMessageToFlex = async (
   context: Context<EnvVars>,
   senderId: string,
-  senderName: string,
   senderScreenName: string,
   messageText: string,
   forUserId: string,
 ) => {
   const uniqueChannelName = `${twitterUniqueNamePrefix}${senderId}`;
   const uniqueSenderName = `${twitterUniqueNamePrefix}${senderId}`;
-  let channelSid;
+  let channelSid: string | undefined;
 
   try {
-    const channel = await retrieveChannel(context, uniqueChannelName);
-    channelSid = channel.sid;
-  } catch (err) {
-    try {
+    channelSid = await retrieveChannel(context, uniqueSenderName);
+
+    if (!channelSid) {
       console.log('Creating new channel');
-      const newChannel = await createTwitterChannel(
+      const newChannelSid = await createTwitterChannel(
         context,
         uniqueChannelName,
         senderId,
@@ -202,10 +230,12 @@ const sendMessageToFlex = async (
         senderScreenName,
         forUserId,
       );
-      channelSid = newChannel.sid;
-    } catch (err2) {
-      throw new Error(`Error while creating the new channel ${err2.message}`);
+
+      channelSid = newChannelSid;
+      await createUserChannelMap(context, uniqueSenderName, channelSid);
     }
+  } catch (err) {
+    throw new Error(`Error while creating the new channel ${err.message}`);
   }
 
   console.log('Code excecution continued with channelSid: ', channelSid);
@@ -242,13 +272,11 @@ export const handler = async (
         console.log(directMessageEvents[0].message_create.message_data.text);
 
         const messageText = directMessageEvents[0].message_create.message_data.text;
-        const senderName = users[senderId].name;
         const senderScreenName = users[senderId].screen_name;
 
         const message = await sendMessageToFlex(
           context,
           senderId,
-          senderName,
           senderScreenName,
           messageText,
           forUserId,
