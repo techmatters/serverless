@@ -75,7 +75,7 @@ const isValidTwitterPayload = (event: Body, consumerSecret: string): boolean => 
 /**
  * Retrieves a channel by sid or uniqueName
  */
-const retrieveChannel = async (
+const retrieveChannelSid = async (
   context: Context<EnvVars>,
   uniqueSenderName: string,
 ): Promise<string | undefined> => {
@@ -107,7 +107,7 @@ const createUserChannelMap = async (
     .documents.create({
       data: { activeChannelSid: channelSid },
       uniqueName: uniqueSenderName,
-      ttl: 259200, // auto romeoved after 3 days
+      ttl: 259200, // auto removed after 3 days
     });
 
   console.log('userChannelMap was created from scratch and its value is: ', userChannelMap.data);
@@ -218,7 +218,7 @@ const sendMessageToFlex = async (
   let channelSid: string | undefined;
 
   try {
-    channelSid = await retrieveChannel(context, uniqueSenderName);
+    channelSid = await retrieveChannelSid(context, uniqueSenderName);
 
     if (!channelSid) {
       console.log('Creating new channel');
