@@ -10,6 +10,7 @@ jest.mock('crypto', () => ({
 
 const channels: { [x: string]: any } = {
   'twitter:sender_id': {
+    attributes: '{}',
     sid: 'twitter:sender_id',
     messages: {
       create: async () => 'Message sent in channel twitter:sender_id.',
@@ -17,8 +18,10 @@ const channels: { [x: string]: any } = {
     webhooks: {
       create: async () => {},
     },
+    update: async () => {},
   },
   'twitter:other_id': {
+    attributes: '{}',
     sid: 'twitter:other_id',
     messages: {
       create: async () => 'Message sent in channel twitter:other_id.',
@@ -26,7 +29,26 @@ const channels: { [x: string]: any } = {
     webhooks: {
       create: async () => {},
     },
+    update: async () => {},
   },
+};
+
+let documents: any = {
+  'twitter:sender_id': { data: { activeChannelSid: 'twitter:sender_id' } },
+};
+
+function documentsMock(doc: string) {
+  return {
+    fetch: async () => {
+      if (!documents[doc]) throw new Error('Document does not exists');
+
+      return documents[doc];
+    },
+  };
+}
+documentsMock.create = async ({ data, uniqueName }: { data: any; uniqueName: string }) => {
+  documents = { ...documents, [uniqueName]: { data } };
+  return documents[uniqueName];
 };
 
 const baseContext = {
@@ -55,10 +77,16 @@ const baseContext = {
         },
       },
     },
+    sync: {
+      services: () => ({
+        documents: documentsMock,
+      }),
+    },
   }),
   DOMAIN_NAME: 'serverless',
   ACCOUNT_SID: 'ACCOUNT_SID',
   AUTH_TOKEN: 'AUTH_TOKEN',
+  SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
   TWITTER_CONSUMER_KEY: 'TWITTER_CONSUMER_KEY',
   TWITTER_CONSUMER_SECRET: 'TWITTER_CONSUMER_SECRET',
   TWITTER_ACCESS_TOKEN: 'TWITTER_ACCESS_TOKEN',
