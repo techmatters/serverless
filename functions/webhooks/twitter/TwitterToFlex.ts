@@ -206,6 +206,13 @@ const sendChatMessage = async (
   return message;
 };
 
+const removeStaleChannel = async (context: Context<EnvVars>, channelSid: string) =>
+  context
+    .getTwilioClient()
+    .chat.services(context.CHAT_SERVICE_SID)
+    .channels(channelSid)
+    .remove();
+
 const sendMessageToFlex = async (
   context: Context<EnvVars>,
   senderId: string,
@@ -235,7 +242,10 @@ const sendMessageToFlex = async (
       await createUserChannelMap(context, uniqueSenderName, channelSid);
     }
   } catch (err) {
-    throw new Error(`Error while creating the new channel ${err.message}`);
+    const removedStaleChannel = channelSid ? await removeStaleChannel(context, channelSid) : false;
+    throw new Error(
+      `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
+    );
   }
 
   console.log('Code excecution continued with channelSid: ', channelSid);
