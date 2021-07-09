@@ -48,7 +48,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
           'Error: the target worker does not have helpline attribute set, check the worker configuration.',
         );
 
-      resolve(success(workerAttributes));
+      const whiteListedAttributes = {
+        helpline: workerAttributes.helpline,
+      };
+
+      resolve(success(whiteListedAttributes));
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
