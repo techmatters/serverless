@@ -36,6 +36,24 @@ function timeout(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {
+  try {
+    const removed = await context
+      .getTwilioClient()
+      .sync.services(context.SYNC_SERVICE_SID)
+      .documents(from)
+      .remove();
+
+    return removed;
+  } catch (err) {
+    // If the error is that the doc was already cleaned, don't throw further
+    const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
+    if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+
+    throw err;
+  }
+}
+
 export const handler = async (
   context: Context<EnvVars>,
   event: Body,
@@ -64,13 +82,9 @@ export const handler = async (
       const { status, from } = JSON.parse(channel.attributes);
 
       if (status === 'INACTIVE') {
-        await timeout(1000); // set small timeout just in case some cleanup is still going on
+        await timeout(3000); // set small timeout just in case some cleanup is still going on
 
-        const removed = await context
-          .getTwilioClient()
-          .sync.services(context.SYNC_SERVICE_SID)
-          .documents(from)
-          .remove();
+        const removed = await cleanupUserChannelMap(context, from);
 
         console.log(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`);
 
