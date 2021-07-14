@@ -82,7 +82,7 @@ export const handler = async (
       const { status, from } = JSON.parse(channel.attributes);
 
       if (status === 'INACTIVE') {
-        await timeout(3000); // set small timeout just in case some cleanup is still going on
+        await timeout(1000); // set small timeout just in case some cleanup is still going on
 
         const removed = await cleanupUserChannelMap(context, from);
 
