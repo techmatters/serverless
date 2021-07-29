@@ -39,6 +39,13 @@ export const handler = async (
       .fetch();
 
     const taskAttributes = JSON.parse(task.attributes);
+
+    if (taskAttributes.isContactlessTask) {
+      // this case is already handled when the task is created, in assignOfflineContact function
+      resolve(success(JSON.stringify({ message: 'Is contactless task' })));
+      return;
+    }
+
     const newAttributes = {
       ...taskAttributes,
       customers: {
