@@ -135,10 +135,7 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
       payload: { status: 500, message: 'Error: the worker is already waiting for an offline contact.', taskRemoved: false },
     };
 
-  const newAttributes = {
-    ...JSON.parse(finalTaskAttributes),
-    targetSid,
-    transferTargetType: 'worker',
+  const queueRequiredTaskAttributes = {
     helpline: targetWorkerAttributes.helpline,
     channelType: 'default',
     isContactlessTask: true,
@@ -151,16 +148,39 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
     .tasks.create({
       workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
       taskChannel: 'default',
-      attributes: JSON.stringify(newAttributes),
+      attributes: JSON.stringify(queueRequiredTaskAttributes),
       priority: 100,
     });
+  
+  const newTaskAttributes = JSON.parse(newTask.attributes);
+  const parsedFinalAttributes = JSON.parse(finalTaskAttributes);
+  const routingAttributes = {
+    targetSid,
+    transferTargetType: 'worker',
+    helpline: targetWorkerAttributes.helpline,
+    channelType: 'default',
+    isContactlessTask: true,
+    isInMyBehalf: true,
+  };
+
+  const mergedAttributes = {
+    ...newTaskAttributes,
+    ...parsedFinalAttributes,
+    ...routingAttributes,
+    customers: {
+      ...parsedFinalAttributes.customers,
+      external_id: newTask.sid,
+    },
+  };
+
+  const updatedTask = await newTask.update({attributes: JSON.stringify(mergedAttributes)});
 
   if (targetWorker.available) {
     // assign the task, accept and complete it
-    return assignToAvailableWorker(body, newTask);
+    return assignToAvailableWorker(body, updatedTask);
   }
   // Set the worker available, assign the task, accept, complete it and set worker to previous state
-  return assignToOfflineWorker(context, body, targetWorker, newTask);
+  return assignToOfflineWorker(context, body, targetWorker, updatedTask);
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
