@@ -5,7 +5,6 @@ import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/
 export type Body = {
   EventType: string;
   TaskSid: string;
-  TaskChannelUniqueName: string;
 };
 
 type EnvVars = {
