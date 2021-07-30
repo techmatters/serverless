@@ -5,19 +5,6 @@ import helpers, { MockedResponse } from './helpers';
 
 let tasks: any[] = [];
 
-const createTask = (sid: string, options: any) => {
-  return {
-    sid,
-    ...options,
-    reservations: () => ({
-      list: async () => [],
-    }),
-    remove: async () => {
-      tasks = tasks.filter(t => t.sid === sid);
-    },
-  };
-};
-
 const createReservation = (taskSid: string, workerSid: string) => {
   const task = tasks.find(t => t.sid === taskSid);
   task.reservationsSource = [
@@ -71,6 +58,47 @@ const createReservation = (taskSid: string, workerSid: string) => {
   });
 };
 
+const createTask = (sid: string, options: any) => {
+  return {
+    sid,
+    ...options,
+    reservations: () => ({
+      list: async () => [],
+    }),
+    update: async ({ attributes }: { attributes: any }) => {
+      tasks = tasks.map(t => (t.sid === sid ? { ...t, attributes } : t));
+
+      const hasReservation =
+        (
+          await tasks
+            .find(t => t.sid === sid)
+            .reservations()
+            .list()
+        ).length > 0;
+
+      const { targetSid } = JSON.parse(attributes);
+      if (
+        [
+          'available-worker-with-reservation',
+          'not-available-worker-with-reservation',
+          'available-worker-with-accepted',
+          'not-available-worker-with-accepted',
+          'available-worker-with-completed',
+          'not-available-worker-with-completed',
+        ].includes(targetSid) &&
+        !hasReservation
+      )
+        createReservation(sid, targetSid);
+
+      const task = tasks.find(t => t.sid === sid);
+      return task;
+    },
+    remove: async () => {
+      tasks = tasks.filter(t => t.sid === sid);
+    },
+  };
+};
+
 const updateWorkerMock = jest.fn();
 
 const workspaces: { [x: string]: any } = {
@@ -92,18 +120,6 @@ const workspaces: { [x: string]: any } = {
         const newTask = createTask(Math.random().toString(), options);
 
         tasks = [...tasks, newTask];
-
-        if (
-          [
-            'available-worker-with-reservation',
-            'not-available-worker-with-reservation',
-            'available-worker-with-accepted',
-            'not-available-worker-with-accepted',
-            'available-worker-with-completed',
-            'not-available-worker-with-completed',
-          ].includes(attributes.targetSid)
-        )
-          createReservation(newTask.sid, attributes.targetSid);
 
         return tasks.find(t => t.sid === newTask.sid);
       },
