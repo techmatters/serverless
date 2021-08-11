@@ -33,7 +33,8 @@ const deleteProxySession = async (
 
     return removed;
   } catch (err) {
-    console.log('deleteProxySession error: ', err);
+    // eslint-disable-next-line no-console
+    console.warn('deleteProxySession error: ', err);
     return false;
   }
 };
