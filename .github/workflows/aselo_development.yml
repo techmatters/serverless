@@ -39,6 +39,11 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_CHAT_SERVICE_SID"
           env_variable_name: "CHAT_SERVICE_SID"
+      - name: Set Twilio Flex Proxy service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
+          env_variable_name: "FLEX_PROXY_SERVICE_SID"
       - name: Set Twilio Chat transfer workflow ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
@@ -70,8 +75,8 @@ jobs:
           ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"
       # Call main-action to compile, deploy and check availability
-      - name: Executing main-action
-        uses: ./.github/actions/main-action
+      - name: Executing beta-action
+        uses: ./.github/actions/beta-action
         with:
           account-sid: ${{ secrets.AS_DEV_ACCOUNT_SID }}
           auth-token: ${{ secrets.AS_DEV_AUTH_TOKEN }}
@@ -81,5 +86,6 @@ jobs:
           sync-service-api-secret: $SYNC_SERVICE_API_SECRET
           sync-service-sid: $SYNC_SERVICE_SID
           chat-service-sid: $CHAT_SERVICE_SID
+          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
           operating-info-key: $OPERATING_INFO_KEY
           serverless-base-url: $SERVERLESS_BASE_URL

@@ -11,15 +11,15 @@ export interface Event {
   UserIdentifier: string;
 }
 
-type EnvVars = {};
+type EnvVars = {
+  FLEX_PROXY_SERVICE_SID: string;
+};
 
-const deleteProxySession = async (
-  client: ReturnType<Context['getTwilioClient']>,
-  proxySession: string,
-) => {
+const deleteProxySession = async (context: Context<EnvVars>, proxySession: string) => {
   try {
+    const client = context.getTwilioClient();
     const ps = await client.proxy
-      .services('KSe0886a03f78ebc55178f3996591dfd0b') // TODO: move sid to env vars (edit deploy scripts needed)
+      .services(context.FLEX_PROXY_SERVICE_SID)
       .sessions(proxySession)
       .fetch();
 
@@ -40,10 +40,12 @@ const deleteProxySession = async (
 };
 
 const deactivateChannel = async (
-  client: ReturnType<Context['getTwilioClient']>,
+  context: Context<EnvVars>,
   ServiceSid: string,
   ChannelSid: string,
 ) => {
+  const client = context.getTwilioClient();
+
   const channel = await client.chat
     .services(ServiceSid)
     .channels(ChannelSid)
@@ -58,7 +60,7 @@ const deactivateChannel = async (
   });
 
   if (attributes.proxySession) {
-    await deleteProxySession(client, attributes.proxySession);
+    await deleteProxySession(context, attributes.proxySession);
   }
 
   return updated;
@@ -94,7 +96,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           xTwilioWebhookEnabled: 'true',
         });
 
-      await deactivateChannel(client, ServiceSid, ChannelSid);
+      await deactivateChannel(context, ServiceSid, ChannelSid);
     }
 
     const actions: never[] = []; // Empty actions array so bot finishes it's execution
