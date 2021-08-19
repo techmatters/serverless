@@ -16,10 +16,45 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
+  TWILIO_WORKSPACE_SID: string;
 };
 
 export type Body = {
   channelSid?: string;
+  taskSid?: string;
+};
+
+const createSurveyTask = async (context: Context<EnvVars>, event: Required<Body>) => {
+  const client = context.getTwilioClient();
+  const { channelSid, taskSid } = event;
+
+  const taskAttributes = {
+    isSurveyTask: true,
+    channelSid,
+    conversations: { conversation_id: taskSid },
+  };
+
+  const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
+    workflowSid: 'WW6a967d8f663083bdb8ae586539fa71d7', // TODO: move this out
+    taskChannel: 'survey',
+    attributes: JSON.stringify(taskAttributes),
+    timeout: 30,
+  });
+
+  const channel = await client.chat
+    .services(context.CHAT_SERVICE_SID)
+    .channels(channelSid)
+    .fetch();
+
+  // Add the surveyTask sid so we can retrieve it just by looking at the channel
+  await channel.update({
+    attributes: JSON.stringify({
+      ...JSON.parse(channel.attributes),
+      surveyTaskSid: surveyTask.sid,
+    }),
+  });
+
+  return surveyTask;
 };
 
 const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: string) => {
@@ -38,9 +73,8 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
       },
     });
 
-  const messageResult = await context
-    .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
+  const messageResult = await client.chat
+    .services(context.CHAT_SERVICE_SID)
     .channels(channelSid)
     .messages.create({
       body: 'Hey! Before you leave, can you answer a few questions about this contact?',
@@ -52,14 +86,18 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+    console.log('-------- postSurveyInit execution --------');
+
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { channelSid } = event;
+    const { channelSid, taskSid } = event;
 
     try {
       if (channelSid === undefined) return resolve(error400('channelSid'));
+      if (taskSid === undefined) return resolve(error400('taskSid'));
 
+      await createSurveyTask(context, { channelSid, taskSid });
       await triggerPostSurveyFlow(context, channelSid);
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));

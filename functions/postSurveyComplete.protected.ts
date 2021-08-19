@@ -12,58 +12,7 @@ export interface Event {
 }
 
 type EnvVars = {
-  FLEX_PROXY_SERVICE_SID: string;
-};
-
-const deleteProxySession = async (context: Context<EnvVars>, proxySession: string) => {
-  try {
-    const client = context.getTwilioClient();
-    const ps = await client.proxy
-      .services(context.FLEX_PROXY_SERVICE_SID)
-      .sessions(proxySession)
-      .fetch();
-
-    if (!ps) {
-      // eslint-disable-next-line no-console
-      console.warn(`Tried to remove proxy session ${proxySession} but couldn't find it.`);
-      return false;
-    }
-
-    const removed = await ps.remove();
-
-    return removed;
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('deleteProxySession error: ', err);
-    return false;
-  }
-};
-
-const deactivateChannel = async (
-  context: Context<EnvVars>,
-  ServiceSid: string,
-  ChannelSid: string,
-) => {
-  const client = context.getTwilioClient();
-
-  const channel = await client.chat
-    .services(ServiceSid)
-    .channels(ChannelSid)
-    .fetch();
-
-  const attributes = JSON.parse(channel.attributes);
-  const newAttributes = { ...attributes, status: 'INACTIVE' };
-
-  const updated = await channel.update({
-    attributes: JSON.stringify(newAttributes),
-    xTwilioWebhookEnabled: 'true',
-  });
-
-  if (attributes.proxySession) {
-    await deleteProxySession(context, attributes.proxySession);
-  }
-
-  return updated;
+  TWILIO_WORKSPACE_SID: string;
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
@@ -71,38 +20,42 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   event: Event,
   callback: ServerlessCallback,
 ) => {
-  Object.entries(event).forEach(([k, v]) => {
-    console.log(k, JSON.stringify(v));
-  });
+  console.log('-------- postSurveyComplete execution --------');
+
   try {
     const memory = JSON.parse(event.Memory);
     const { ServiceSid, ChannelSid } = memory.twilio.chat;
 
     const client = context.getTwilioClient();
 
+    // In this webhook we should do stuff with the bot memory, like storing the values in task attributes (Inishgts) or saving in HRM
+
     if (event.Channel === 'chat' && event.CurrentTask === 'complete_post_survey') {
-      const ws = await client.chat
+      const channel = await client.chat
         .services(ServiceSid)
         .channels(ChannelSid)
-        .webhooks.list();
+        .fetch();
 
-      await Promise.all(ws.map(w => w.remove())); // Remove the bot from the channel
+      const channelAttributes = JSON.parse(channel.attributes);
 
-      await client.chat
-        .services(ServiceSid)
-        .channels(ChannelSid)
-        .messages.create({
-          body: 'Thanks!!',
-          xTwilioWebhookEnabled: 'true',
-        });
+      if (channelAttributes.surveyTaskSid) {
+        const surveyTask = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(channelAttributes.surveyTaskSid)
+          .fetch();
 
-      await deactivateChannel(context, ServiceSid, ChannelSid);
+        await surveyTask.update({ assignmentStatus: 'canceled' }); // can't complete a pending task only cancel it
+      }
     }
 
-    const actions: never[] = []; // Empty actions array so bot finishes it's execution
+    const actions = [
+      {
+        say: 'Thanks!',
+      },
+    ];
     const returnObj = { actions };
 
-    callback(null, returnObj);
+    callback(null, JSON.stringify(returnObj));
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);
