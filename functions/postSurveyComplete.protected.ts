@@ -1,8 +1,12 @@
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
 import {
   Context,
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+// eslint-disable-next-line prettier/prettier
+import type { BuildSurveyInsightsData } from './helpers/insightsService.private';
 
 export interface Event {
   Channel: string;
@@ -21,6 +25,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   callback: ServerlessCallback,
 ) => {
   console.log('-------- postSurveyComplete execution --------');
+  Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
 
   try {
     const memory = JSON.parse(event.Memory);
@@ -44,7 +49,32 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           .tasks(channelAttributes.surveyTaskSid)
           .fetch();
 
-        await surveyTask.update({ assignmentStatus: 'canceled' }); // can't complete a pending task only cancel it
+        const handlerPath = Runtime.getFunctions()['helpers/insightsService'].path;
+        const buildSurveyInsightsData = require(handlerPath)
+          .buildSurveyInsightsData as BuildSurveyInsightsData;
+
+        // A sample custom config example
+        const sample = [
+          {
+            insightsObject: 'customers' as const,
+            attributeName: 'customer_attribute_9',
+            questions: ['question'],
+          },
+          {
+            insightsObject: 'customers' as const,
+            attributeName: 'customer_attribute_10',
+            questions: ['question'],
+          },
+        ];
+
+        const taskAttributes = JSON.parse(surveyTask.attributes);
+        const finalAttributes = buildSurveyInsightsData(sample)(taskAttributes, memory);
+        console.log('finalAttributes: ', JSON.stringify(finalAttributes));
+
+        await surveyTask.update({
+          assignmentStatus: 'canceled', // can't complete a pending task only cancel it
+          attributes: JSON.stringify({ ...taskAttributes, memory })}
+        ); 
       }
     }
 
