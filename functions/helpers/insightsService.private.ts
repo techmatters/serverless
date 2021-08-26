@@ -1,5 +1,4 @@
 import { get } from 'lodash';
-// import '@twilio-labs/serverless-runtime-types';
 
 type InsightsAttributes = {
   conversations?: { [key: string]: string | number };

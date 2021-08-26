@@ -68,24 +68,7 @@ export const postSurveyJanitor = async (
 ) => {
   console.log('-------- postSurveyJanitor execution --------');
 
-  // const client = context.getTwilioClient();
-
   if (event.channelType === 'chat') {
-    // const ws = await client.chat
-    //   .services(context.CHAT_SERVICE_SID)
-    //   .channels(event.channelSid)
-    //   .webhooks.list();
-
-    // await Promise.all(ws.map(w => w.remove())); // Remove the bot from the channel
-
-    // await client.chat
-    //   .services(ServiceSid)
-    //   .channels(ChannelSid)
-    //   .messages.create({
-    //     body: 'Thanks!!',
-    //     xTwilioWebhookEnabled: 'true',
-    //   });
-
     await deactivateChannel(context, context.CHAT_SERVICE_SID, event.channelSid);
 
     return { message: `Deactivation successful for channel ${event.channelSid}` };
