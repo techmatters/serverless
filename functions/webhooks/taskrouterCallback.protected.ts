@@ -5,9 +5,9 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
 
 // eslint-disable-next-line prettier/prettier
-import type { AddCustomerExternalId } from '../private/addCustomerExternalId.protected';
+import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
 // eslint-disable-next-line prettier/prettier
-import type { PostSurveyJanitor } from '../private/postSurveyJanitor.protected';
+import type { PostSurveyJanitor } from '../helpers/postSurveyJanitor.private';
 
 export type Body = {
   EventType: string;
@@ -39,17 +39,15 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
-  const baseUrl = `https://${context.DOMAIN_NAME}`;
-
   try {
     const { EventType } = event;
 
     if (EventType === TASK_CREATED_EVENT) {
-      const handlerPath = Runtime.getFunctions().addCustomerExternalId.path;
+      const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
       const addCustomerExternalId = require(handlerPath).addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
-      const message = `Redirected event ${TASK_CREATED_EVENT} to ${baseUrl}/addCustomerExternalId`;
+      const message = `Event ${TASK_CREATED_EVENT} handled by /helpers/addCustomerExternalId`;
       console.log(message);
       resolve(
         success(
@@ -67,11 +65,11 @@ export const handler = async (
       if (taskAttributes.isSurveyTask) {
         await wait(3000); // wait 3 seconds just in case some bot message is pending
 
-        const handlerPath = Runtime.getFunctions().postSurveyJanitor.path;
+        const handlerPath = Runtime.getFunctions()['helpers/postSurveyJanitor'].path;
         const postSurveyJanitor = require(handlerPath).postSurveyJanitor as PostSurveyJanitor;
         await postSurveyJanitor(context, { channelSid: taskAttributes.channelSid, channelType: 'chat' });
   
-        const message = `Redirected event ${TASK_CREATED_EVENT} to /postSurveyJanitor`;
+        const message = `Event ${TASK_CREATED_EVENT} handled by /helpers/postSurveyJanitor`;
         console.log(message);
         resolve(
           success(
