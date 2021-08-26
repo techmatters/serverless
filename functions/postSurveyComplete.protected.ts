@@ -53,28 +53,24 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
         const buildSurveyInsightsData = require(handlerPath)
           .buildSurveyInsightsData as BuildSurveyInsightsData;
 
-        // A sample custom config example
-        const sample = [
-          {
-            insightsObject: 'customers' as const,
-            attributeName: 'customer_attribute_9',
-            questions: ['question'],
-          },
-          {
-            insightsObject: 'customers' as const,
-            attributeName: 'customer_attribute_10',
-            questions: ['question'],
-          },
-        ];
+        const serviceConfig = await client.flexApi.configuration.get().fetch();
+        const { definitionVersion } = serviceConfig.attributes;
+        const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
 
-        const taskAttributes = JSON.parse(surveyTask.attributes);
-        const finalAttributes = buildSurveyInsightsData(sample)(taskAttributes, memory);
-        console.log('finalAttributes: ', JSON.stringify(finalAttributes));
+        if (definitionVersion && postSurveyConfigJson && postSurveyConfigJson.open) {
+          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open());
+  
+          const taskAttributes = JSON.parse(surveyTask.attributes);
+          const finalAttributes = buildSurveyInsightsData(postSurveyConfigSpecs)(taskAttributes, memory);
+          console.log('finalAttributes: ', JSON.stringify(finalAttributes));
 
-        await surveyTask.update({
-          assignmentStatus: 'canceled', // can't complete a pending task only cancel it
-          attributes: JSON.stringify({ ...taskAttributes, memory })}
-        ); 
+          await surveyTask.update({ attributes: JSON.stringify(finalAttributes) }); 
+        } else {
+          // eslint-disable-next-line no-console
+          console.error('Missing definition for post survey. Not saving to insights.');
+        }
+
+        await surveyTask.update({ assignmentStatus: 'canceled' }); // can't complete a pending task only cancel it
       }
     }
 
