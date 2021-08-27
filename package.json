@@ -45,6 +45,7 @@
   "dependencies": {
     "@tech-matters/serverless-helpers": "^1.0.6",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
+    "aws-sdk": "^2.975.0",
     "moment-timezone": "^0.5.33",
     "swagger-ui-express": "^4.1.4",
     "twilio": "^3.60.0",
