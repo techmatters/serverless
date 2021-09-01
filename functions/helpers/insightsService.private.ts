@@ -1,4 +1,6 @@
 import { get } from 'lodash';
+// eslint-disable-next-line prettier/prettier
+import type { BotMemory } from '../postSurveyComplete.protected';
 
 type InsightsAttributes = {
   conversations?: { [key: string]: string | number };
@@ -10,18 +12,14 @@ type TaskAttributes = {} & InsightsAttributes;
 type InsightsObject = 'customers' | 'conversations';
 
 // Each of this ConfigSpec maps (possibly) many form field to one insights attribute
-type OneToManyConfigSpec = {
+export type OneToManyConfigSpec = {
   insightsObject: InsightsObject; // In which attributes object this goes
   attributeName: string; // Which name the property receives in above object (e.g. customer_attribute_1)
   questions: string[]; // Array of questions names (as they are named in the bot definition) to grab and concatenate to drop in above property
 };
-type OneToManyConfigSpecs = OneToManyConfigSpec[];
+export type OneToManyConfigSpecs = OneToManyConfigSpec[];
 
-type BotMemory = {
-  memory: {
-    twilio: { collected_data: { collect_survey: { [question: string]: string | number } } };
-  };
-};
+
 type SurveyInsightsUpdateFunction = (memory: BotMemory) => InsightsAttributes;
 
 const delimiter = ';';

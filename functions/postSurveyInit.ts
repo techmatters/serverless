@@ -31,6 +31,7 @@ const createSurveyTask = async (context: Context<EnvVars>, event: Required<Body>
   const taskAttributes = {
     isSurveyTask: true,
     channelSid,
+    contactTaskId: taskSid,
     conversations: { conversation_id: taskSid },
   };
 

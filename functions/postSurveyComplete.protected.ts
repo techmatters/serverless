@@ -5,8 +5,23 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+import axios from 'axios';
 // eslint-disable-next-line prettier/prettier
-import type { BuildSurveyInsightsData } from './helpers/insightsService.private';
+import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
+import type { BuildSurveyInsightsData, OneToManyConfigSpecs } from './helpers/insightsService.private';
+import type { BuildDataObject, PostSurveyData } from './helpers/hrmService.private';
+
+export type BotMemory = {
+  memory: {
+    twilio: { collected_data: { collect_survey: { [question: string]: string | number } } };
+  };
+};
+
+type PostSurveyBody = {
+  contactTaskId: string;
+  taskId: string;
+  data: PostSurveyData;
+};
 
 export interface Event {
   Channel: string;
@@ -17,6 +32,45 @@ export interface Event {
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
+  SYSTEM_SECRET: string;
+};
+
+const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance) => {
+  const handlerPath = Runtime.getFunctions()['helpers/insightsService'].path;
+  const buildSurveyInsightsData = require(handlerPath)
+    .buildSurveyInsightsData as BuildSurveyInsightsData;
+
+  const taskAttributes = JSON.parse(surveyTask.attributes);
+  const finalAttributes = buildSurveyInsightsData(postSurveyConfigJson)(taskAttributes, memory);
+  console.log('finalAttributes: ', JSON.stringify(finalAttributes));
+
+  await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
+};
+
+const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, systemSecret: string) => {
+  const handlerPath = Runtime.getFunctions()['helpers/hrmService'].path;
+  const buildDataObject = require(handlerPath)
+    .buildDataObject as BuildDataObject;
+
+  const taskAttributes = JSON.parse(surveyTask.attributes);
+
+  const data = buildDataObject(postSurveyConfigJson, memory);
+
+  const body: PostSurveyBody = {
+    contactTaskId: taskAttributes.contactTaskId,
+    taskId: surveyTask.sid,
+    data
+  };
+
+  const response = await axios({
+    url: `${hrmBaseUrl}/postSurveys`,
+    method: 'POST',
+    data: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Basic ${systemSecret}`
+    },
+  })
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
@@ -33,8 +87,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
 
     const client = context.getTwilioClient();
 
-    // In this webhook we should do stuff with the bot memory, like storing the values in task attributes (Inishgts) or saving in HRM
-
     if (event.Channel === 'chat' && event.CurrentTask === 'complete_post_survey') {
       const channel = await client.chat
         .services(ServiceSid)
@@ -44,29 +96,29 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       const channelAttributes = JSON.parse(channel.attributes);
 
       if (channelAttributes.surveyTaskSid) {
+        // get the postSurvey definition
+        const serviceConfig = await client.flexApi.configuration.get().fetch();
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
+        const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
+        const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
+
+        // get the survey task
         const surveyTask = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(channelAttributes.surveyTaskSid)
           .fetch();
 
-        const handlerPath = Runtime.getFunctions()['helpers/insightsService'].path;
-        const buildSurveyInsightsData = require(handlerPath)
-          .buildSurveyInsightsData as BuildSurveyInsightsData;
-
-        const serviceConfig = await client.flexApi.configuration.get().fetch();
-        const { definitionVersion } = serviceConfig.attributes;
-        const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
-
         if (definitionVersion && postSurveyConfigJson && postSurveyConfigJson.open) {
-          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open());
-  
-          const taskAttributes = JSON.parse(surveyTask.attributes);
-          const finalAttributes = buildSurveyInsightsData(postSurveyConfigSpecs)(taskAttributes, memory);
-          console.log('finalAttributes: ', JSON.stringify(finalAttributes));
+          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open()) as OneToManyConfigSpecs;
 
-          await surveyTask.update({ attributes: JSON.stringify(finalAttributes) }); 
+          // parallel execution to save survey collected data in insights and hrm
+          await Promise.all([
+            saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask),
+            saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.SYSTEM_SECRET),
+          ]);
         } else {
-          // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console
           console.error('Missing definition for post survey. Not saving to insights.');
         }
 
