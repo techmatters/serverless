@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
 import {
@@ -62,7 +63,7 @@ const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memor
     data
   };
 
-  const response = await axios({
+  await axios({
     url: `${hrmBaseUrl}/postSurveys`,
     method: 'POST',
     data: JSON.stringify(body),
@@ -70,7 +71,7 @@ const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memor
       'Content-Type': 'application/json',
       'Authorization': `Basic ${systemSecret}`
     },
-  })
+  });
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
@@ -98,7 +99,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       if (channelAttributes.surveyTaskSid) {
         // get the postSurvey definition
         const serviceConfig = await client.flexApi.configuration.get().fetch();
-        // eslint-disable-next-line @typescript-eslint/camelcase
         const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
         const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
         const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
