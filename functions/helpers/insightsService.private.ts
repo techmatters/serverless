@@ -44,7 +44,7 @@ const mergeAttributes = (
 const applyCustomUpdate = (customUpdate: OneToManyConfigSpec): SurveyInsightsUpdateFunction => {
   return memory => {
     const updatePaths = customUpdate.questions.map(
-      question => `twilio.collected_data.collect_survey.${question}.answer`, // Path where the answer for each question should be in bot memory
+      question => `twilio.collected_data.collect_survey.answers.${question}.answer`, // Path where the answer for each question should be in bot memory
     );
     // concatenate the values, taken from dataSource using paths (e.g. 'contactForm.childInformation.province')
     const value = updatePaths.map(path => get(memory, path, '')).join(delimiter);

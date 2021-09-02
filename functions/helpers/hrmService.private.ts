@@ -7,7 +7,7 @@ export type PostSurveyData = { [question: string]: string | number };
 
 const flattenOneToMany = (memory: BotMemory) => (previousValue: PostSurveyData, currentValue: OneToManyConfigSpec) => {
   const paths = currentValue.questions.map(
-    question => ({ question, path: `twilio.collected_data.collect_survey.${question}.answer` }), // Path where the answer for each question should be in bot memory
+    question => ({ question, path: `twilio.collected_data.collect_survey.answers.${question}.answer` }), // Path where the answer for each question should be in bot memory
   );
 
   const values: PostSurveyData = {};
