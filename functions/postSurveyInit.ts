@@ -70,7 +70,7 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
         filters: ['onMessageSent'],
         method: 'POST',
         url:
-          'https://channels.autopilot.twilio.com/v1/ACd8a2e89748318adf6ddff7df6948deaf/UA59f7eb8ec74c4a18b229f7d6ff5a63ab/twilio-chat', // TODO: move url to env vars (edit deploy scripts needed)
+          'https://channels.autopilot.twilio.com/v1/ACd8a2e89748318adf6ddff7df6948deaf/UAb5360da99806f414522ab636fe3c5a17/twilio-chat', // TODO: move url to env vars (edit deploy scripts needed)
       },
     });
 
