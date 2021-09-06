@@ -39,11 +39,6 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_CHAT_SERVICE_SID"
           env_variable_name: "CHAT_SERVICE_SID"
-      - name: Set Twilio Flex Proxy service ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
-          env_variable_name: "FLEX_PROXY_SERVICE_SID"
       - name: Set Twilio Chat transfer workflow ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
@@ -72,8 +67,28 @@ jobs:
       - name: Set serverless base URL
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "ASELO_DEV_SERVERLESS_BASE_URL"
+          ssm_parameter: "DEV_TWILIO_AS_SERVERLESS_BASE_URL"
           env_variable_name: "SERVERLESS_BASE_URL"
+      - name: Set Twilio Flex Proxy service ID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
+          env_variable_name: "FLEX_PROXY_SERVICE_SID"
+      - name: Set System Secret to make HRM system calls
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SYSTEM_SECRET"
+          env_variable_name: "SYSTEM_SECRET"
+      - name: Set Survey Workflow SID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_SURVEY_WORKFLOW_SID"
+          env_variable_name: "SURVEY_WORKFLOW_SID"
+      - name: Set Post Survey Bot Programmable Chat URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_POST_SURVEY_BOT_CHAT_URL"
+          env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
       # Call main-action to compile, deploy and check availability
       - name: Executing beta-action
         uses: ./.github/actions/beta-action
@@ -86,6 +101,9 @@ jobs:
           sync-service-api-secret: $SYNC_SERVICE_API_SECRET
           sync-service-sid: $SYNC_SERVICE_SID
           chat-service-sid: $CHAT_SERVICE_SID
-          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
           operating-info-key: $OPERATING_INFO_KEY
           serverless-base-url: $SERVERLESS_BASE_URL
+          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
+          system-secret: $SYSTEM_SECRET
+          survey-workflow-sid: $SURVEY_WORKFLOW_SID
+          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
