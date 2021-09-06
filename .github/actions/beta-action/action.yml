@@ -26,14 +26,23 @@ inputs:
   chat-service-sid:
     description: 'Chat Service SID'
     required: true
-  flex-proxy-service-sid:
-    description: 'Flex Proxy Service SID'
-    required: true
   operating-info-key:
     description: 'Operating Info Key'
     required: true
   serverless-base-url:
     description: 'Serverless base url'
+    required: true
+  flex-proxy-service-sid:
+    description: 'Flex Proxy Service SID'
+    required: true
+  system-secret:
+    description: 'Secret to make HRM system calls'
+    required: true
+  survey-workflow-sid:
+    description: 'Survey Workflow SID'
+    required: true
+  post-survey-bot-chat-url:
+    description: 'Post Survey Bot Programmable Chat URL'
     required: true
 runs:
   using: "composite"
@@ -51,8 +60,11 @@ runs:
           SYNC_SERVICE_API_SECRET=${{ inputs.sync-service-api-secret }}
           SYNC_SERVICE_SID=${{ inputs.sync-service-sid }}
           CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
-          FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
           OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
+          FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
+          SYSTEM_SECRET=${{ inputs.system-secret }}
+          SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
+          POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
           EOT
       shell: bash
     # Install dependencies for the twilio functions
