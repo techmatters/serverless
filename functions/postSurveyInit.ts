@@ -17,6 +17,8 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
+  SURVEY_WORKFLOW_SID: string;
+  POST_SURVEY_BOT_CHAT_URL: string;
 };
 
 export type Body = {
@@ -36,7 +38,7 @@ const createSurveyTask = async (context: Context<EnvVars>, event: Required<Body>
   };
 
   const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
-    workflowSid: 'WW6a967d8f663083bdb8ae586539fa71d7', // TODO: move this out
+    workflowSid: context.SURVEY_WORKFLOW_SID,
     taskChannel: 'survey',
     attributes: JSON.stringify(taskAttributes),
     timeout: 30,
@@ -69,8 +71,7 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
       configuration: {
         filters: ['onMessageSent'],
         method: 'POST',
-        url:
-          'https://channels.autopilot.twilio.com/v1/ACd8a2e89748318adf6ddff7df6948deaf/UAb5360da99806f414522ab636fe3c5a17/twilio-chat', // TODO: move url to env vars (edit deploy scripts needed)
+        url: context.POST_SURVEY_BOT_CHAT_URL,
       },
     });
 
