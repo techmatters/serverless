@@ -10,6 +10,7 @@ import { responseWithCors, bindResolve, error500, success } from '@tech-matters/
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 export type Body = {
+  fileNameAtAws: string;
   fileName: string;
 };
 
@@ -25,14 +26,15 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { fileName } = event;
+      const { fileNameAtAws, fileName } = event;
       const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY } = context;
 
       const secondsToExpire = 30;
       const getUrlParams = {
         Bucket: 'tl-aselo-docs-zm-staging',
-        Key: fileName,
+        Key: fileNameAtAws,
         Expires: secondsToExpire,
+        ResponseContentDisposition: `attachment; filename ="${fileName}"`,
       };
 
       AWS.config.update({
