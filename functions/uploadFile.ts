@@ -39,13 +39,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       const { fileBase64, fileName } = event;
-      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY } = context;
+      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET } = context;
 
       const fileNameAtAWS = `${new Date().getTime()}-${fileName}`;
       const content = Buffer.from(fileBase64, 'base64');
 
       const uploadParams = {
-        Bucket: 'tl-aselo-docs-zm-staging',
+        Bucket: S3_BUCKET,
         Key: fileNameAtAWS,
         Body: content,
       };

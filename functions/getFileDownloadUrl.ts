@@ -27,11 +27,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       const { fileNameAtAws, fileName } = event;
-      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY } = context;
+      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET } = context;
 
       const secondsToExpire = 30;
       const getUrlParams = {
-        Bucket: 'tl-aselo-docs-zm-staging',
+        Bucket: S3_BUCKET,
         Key: fileNameAtAws,
         Expires: secondsToExpire,
         ResponseContentDisposition: `attachment; filename ="${fileName}"`,
