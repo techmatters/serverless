@@ -15,9 +15,10 @@ export type Body = {
 };
 
 type EnvVars = {
-  ASELO_APP_ACESS_KEY: string;
+  ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   S3_BUCKET: string;
+  AWS_REGION: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -27,7 +28,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       const { fileNameAtAws, fileName } = event;
-      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET } = context;
+      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, AWS_REGION } = context;
 
       const secondsToExpire = 30;
       const getUrlParams = {
@@ -39,10 +40,10 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       AWS.config.update({
         credentials: {
-          accessKeyId: ASELO_APP_ACESS_KEY,
+          accessKeyId: ASELO_APP_ACCESS_KEY,
           secretAccessKey: ASELO_APP_SECRET_KEY,
         },
-        region: 'us-east-1',
+        region: AWS_REGION,
       });
 
       const s3Client = new AWS.S3();

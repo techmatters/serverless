@@ -1,4 +1,4 @@
-import AWS, { S3, AWSError } from 'aws-sdk';
+import AWS from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
 import {
   Context,
@@ -10,26 +10,15 @@ import { responseWithCors, bindResolve, error500, success } from '@tech-matters/
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 export type Body = {
-  fileBase64: string;
   fileName: string;
+  mimeType: string;
 };
 
 type EnvVars = {
-  ASELO_APP_ACESS_KEY: string;
+  ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   S3_BUCKET: string;
-};
-
-const sendObject = async (s3Client: S3, uploadParams: any) => {
-  return new Promise<AWS.S3.PutObjectOutput>((resolve, reject) => {
-    s3Client.putObject(uploadParams, (err: AWSError, data: S3.Types.PutObjectOutput) => {
-      if (err) {
-        reject(err);
-      }
-
-      resolve(data);
-    });
-  });
+  AWS_REGION: string;
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -38,30 +27,30 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { fileBase64, fileName } = event;
-      const { ASELO_APP_ACESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET } = context;
+      const { fileName, mimeType } = event;
+      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, AWS_REGION } = context;
 
-      const fileNameAtAWS = `${new Date().getTime()}-${fileName}`;
-      const content = Buffer.from(fileBase64, 'base64');
-
-      const uploadParams = {
+      const fileNameAtAws = `${new Date().getTime()}-${fileName}`;
+      const secondsToExpire = 30;
+      const getUrlParams = {
         Bucket: S3_BUCKET,
-        Key: fileNameAtAWS,
-        Body: content,
+        Key: fileNameAtAws,
+        Expires: secondsToExpire,
+        ContentType: mimeType,
       };
 
       AWS.config.update({
         credentials: {
-          accessKeyId: ASELO_APP_ACESS_KEY,
+          accessKeyId: ASELO_APP_ACCESS_KEY,
           secretAccessKey: ASELO_APP_SECRET_KEY,
         },
-        region: 'us-east-1',
+        region: AWS_REGION,
       });
 
       const s3Client = new AWS.S3();
-      await sendObject(s3Client, uploadParams);
+      const uploadUrl = await s3Client.getSignedUrl('putObject', getUrlParams);
 
-      resolve(success({ fileNameAtAWS }));
+      resolve(success({ uploadUrl, fileNameAtAws }));
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
