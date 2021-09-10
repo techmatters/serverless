@@ -35,8 +35,8 @@ inputs:
   flex-proxy-service-sid:
     description: 'Flex Proxy Service SID'
     required: true
-  system-secret:
-    description: 'Secret to make HRM system calls'
+  hrm-static-key:
+    description: 'HRM static key to make HRM calls'
     required: true
   survey-workflow-sid:
     description: 'Survey Workflow SID'
@@ -62,7 +62,7 @@ runs:
           CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
           OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
           FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
-          SYSTEM_SECRET=${{ inputs.system-secret }}
+          HRM_STATIC_KEY=${{ inputs.hrm-static-key }}
           SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
           POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
           EOT

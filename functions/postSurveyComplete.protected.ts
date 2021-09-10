@@ -33,7 +33,7 @@ export interface Event {
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-  SYSTEM_SECRET: string;
+  HRM_STATIC_KEY: string;
 };
 
 const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance) => {
@@ -48,7 +48,7 @@ const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpecs, 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
 };
 
-const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, systemSecret: string) => {
+const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, hrmStaticKey: string) => {
   const handlerPath = Runtime.getFunctions()['helpers/hrmService'].path;
   const buildDataObject = require(handlerPath)
     .buildDataObject as BuildDataObject;
@@ -69,7 +69,7 @@ const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memor
     data: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Basic ${systemSecret}`
+      'Authorization': `Basic ${hrmStaticKey}`
     },
   });
 };
@@ -115,7 +115,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           // parallel execution to save survey collected data in insights and hrm
           await Promise.all([
             saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask),
-            saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.SYSTEM_SECRET),
+            saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.HRM_STATIC_KEY),
           ]);
         } else {
         // eslint-disable-next-line no-console

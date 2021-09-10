@@ -74,11 +74,11 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
           env_variable_name: "FLEX_PROXY_SERVICE_SID"
-      - name: Set System Secret to make HRM system calls
+      - name: Set HRM static key to make HRM calls
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "DEV_TWILIO_AS_SYSTEM_SECRET"
-          env_variable_name: "SYSTEM_SECRET"
+          ssm_parameter: "DEV_TWILIO_AS_HRM_STATIC_KEY"
+          env_variable_name: "HRM_STATIC_KEY"
       - name: Set Survey Workflow SID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
@@ -104,6 +104,6 @@ jobs:
           operating-info-key: $OPERATING_INFO_KEY
           serverless-base-url: $SERVERLESS_BASE_URL
           flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
-          system-secret: $SYSTEM_SECRET
+          hrm-static-key: $HRM_STATIC_KEY
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
           post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
