@@ -75,11 +75,14 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
       },
     });
 
+  // Message to trigger the post survey bot. This will be a localized string later on.
+  const message = 'Hey! Before you leave, can you answer a few questions about this contact?';
+
   const messageResult = await client.chat
     .services(context.CHAT_SERVICE_SID)
     .channels(channelSid)
     .messages.create({
-      body: 'Hey! Before you leave, can you answer a few questions about this contact?',
+      body: message,
       xTwilioWebhookEnabled: 'true',
     });
 
