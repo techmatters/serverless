@@ -1,3 +1,11 @@
+/**
+ * In order to make post surveys work, we need to disable the Channel Janitor (see https://www.twilio.com/docs/flex/developer/messaging/manage-flows#channel-janitor).
+ * However, once the post survey is finished we want to mimic this feature to clear the channel and the proxy session, to enable future conversations from the same customer
+ * Ths file exposes functionalities to achieve this. postSurveyJanitor will:
+ * - Label the chat channel as INACTIVE.
+ * - Delete the associated proxy session if there is one.
+ */
+
 // eslint-disable-next-line prettier/prettier
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
 
