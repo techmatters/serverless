@@ -43,7 +43,7 @@ const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpec[],
     .buildSurveyInsightsData as BuildSurveyInsightsData;
 
   const taskAttributes = JSON.parse(surveyTask.attributes);
-  const finalAttributes = buildSurveyInsightsData(postSurveyConfigJson)(taskAttributes, memory);
+  const finalAttributes = buildSurveyInsightsData(postSurveyConfigJson, taskAttributes, memory);
   console.log('finalAttributes: ', JSON.stringify(finalAttributes));
 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });

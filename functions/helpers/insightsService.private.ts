@@ -64,7 +64,8 @@ const bindApplyCustomUpdates = (
   return customUpdatesFuns;
 };
 
-export const buildSurveyInsightsData = (oneToManyConfigSpecs: OneToManyConfigSpec[]) => (
+export const buildSurveyInsightsData = (
+  oneToManyConfigSpecs: OneToManyConfigSpec[],
   taskAttributes: TaskAttributes,
   memory: BotMemory,
 ) => {
