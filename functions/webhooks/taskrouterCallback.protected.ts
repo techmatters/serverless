@@ -1,3 +1,12 @@
+/**
+ * This file is intended to be used as the Task Router Event Callback (see https://www.twilio.com/docs/taskrouter/api/event#event-callbacks).
+ * We'll perform different actions based on the event type on each invocation.
+ * As for 2021-09-17:
+ *   - On task.created: external customer id is added to the task attributes.
+ *   - On task.canceled: post survey janitor is invoked.
+ *   - On task.completed: post survey janitor is invoked.
+ */
+
 /* eslint-disable global-require */
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
