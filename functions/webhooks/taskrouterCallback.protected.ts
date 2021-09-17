@@ -47,7 +47,7 @@ export const handler = async (
       const addCustomerExternalId = require(handlerPath).addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
-      const message = `Event ${TASK_CREATED_EVENT} handled by /helpers/addCustomerExternalId`;
+      const message = `Event ${EventType} handled by /helpers/addCustomerExternalId`;
       console.log(message);
       resolve(
         success(
@@ -69,7 +69,7 @@ export const handler = async (
         const postSurveyJanitor = require(handlerPath).postSurveyJanitor as PostSurveyJanitor;
         await postSurveyJanitor(context, { channelSid: taskAttributes.channelSid, channelType: 'chat' });
   
-        const message = `Event ${TASK_CREATED_EVENT} handled by /helpers/postSurveyJanitor`;
+        const message = `Event ${EventType} handled by /helpers/postSurveyJanitor`;
         console.log(message);
         resolve(
           success(
