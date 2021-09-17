@@ -6,6 +6,7 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
+// We use axios instead of node-fetch in this repo because the later one raises a run time error when trying to import it. The error is related to how JS modules are loaded.
 import axios from 'axios';
 // eslint-disable-next-line prettier/prettier
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
