@@ -130,7 +130,8 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
         }
 
-        await surveyTask.update({ assignmentStatus: 'canceled' }); // can't complete a pending task only cancel it
+        // As survey tasks will never be assigned to a worker, they'll be kept in pending state. A pending can't transition to completed state, so we cancel them here to raise a task.canceled taskrouter event.
+        await surveyTask.update({ assignmentStatus: 'canceled' });
       }
     }
 
