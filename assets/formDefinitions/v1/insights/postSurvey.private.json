@@ -2,11 +2,11 @@
   {
     "insightsObject": "customers",
     "attributeName": "customer_attribute_9",
-    "questions": ["question"]
+    "questions": ["wasHelpful"]
   },
   {
     "insightsObject": "customers",
     "attributeName": "customer_attribute_10",
-    "questions": ["question"]
+    "questions": ["wouldRecommend"]
   }
 ]
