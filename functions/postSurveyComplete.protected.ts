@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
@@ -119,8 +120,14 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
             saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.HRM_STATIC_KEY),
           ]);
         } else {
-          // eslint-disable-next-line no-console
-          console.error('Missing definition for post survey. Not saving to insights.');
+          const errorMEssage =
+          // eslint-disable-next-line no-nested-ternary
+          !definitionVersion
+            ? 'Current definitionVersion is missing in service configuration.'
+            : !postSurveyConfigJson
+              ? `No postSurveyConfigJson found for definitionVersion ${definitionVersion}.`
+              : `postSurveyConfigJson for definitionVersion ${definitionVersion} is not a Twilio asset as expected`; // This should removed when if we move definition versions to an external source.
+          console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
         }
 
         await surveyTask.update({ assignmentStatus: 'canceled' }); // can't complete a pending task only cancel it
