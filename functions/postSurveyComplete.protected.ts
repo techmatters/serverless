@@ -9,8 +9,8 @@ import {
 import axios from 'axios';
 // eslint-disable-next-line prettier/prettier
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
-import type { BuildSurveyInsightsData, OneToManyConfigSpecs } from './helpers/insightsService.private';
-import type { BuildDataObject, PostSurveyData } from './helpers/hrmService.private';
+import type { BuildSurveyInsightsData, OneToManyConfigSpec } from './helpers/insightsService.private';
+import type { BuildDataObject, PostSurveyData } from './helpers/hrmDataManipulation.private';
 
 export type BotMemory = {
   memory: {
@@ -36,7 +36,7 @@ type EnvVars = {
   HRM_STATIC_KEY: string;
 };
 
-const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance) => {
+const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpec[], memory: BotMemory, surveyTask: TaskInstance) => {
   const handlerPath = Runtime.getFunctions()['helpers/insightsService'].path;
   const buildSurveyInsightsData = require(handlerPath)
     .buildSurveyInsightsData as BuildSurveyInsightsData;
@@ -48,7 +48,7 @@ const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpecs, 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
 };
 
-const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpecs, memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, hrmStaticKey: string) => {
+const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpec[], memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, hrmStaticKey: string) => {
   const handlerPath = Runtime.getFunctions()['helpers/hrmService'].path;
   const buildDataObject = require(handlerPath)
     .buildDataObject as BuildDataObject;
@@ -110,7 +110,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           .fetch();
 
         if (definitionVersion && postSurveyConfigJson && postSurveyConfigJson.open) {
-          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open()) as OneToManyConfigSpecs;
+          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open()) as OneToManyConfigSpec[];
 
           // parallel execution to save survey collected data in insights and hrm
           await Promise.all([

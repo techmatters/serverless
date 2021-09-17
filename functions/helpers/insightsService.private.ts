@@ -17,7 +17,6 @@ export type OneToManyConfigSpec = {
   attributeName: string; // Which name the property receives in above object (e.g. customer_attribute_1)
   questions: string[]; // Array of questions names (as they are named in the bot definition) to grab and concatenate to drop in above property
 };
-export type OneToManyConfigSpecs = OneToManyConfigSpec[];
 
 
 type SurveyInsightsUpdateFunction = (memory: BotMemory) => InsightsAttributes;
@@ -58,14 +57,14 @@ const applyCustomUpdate = (customUpdate: OneToManyConfigSpec): SurveyInsightsUpd
 };
 
 const bindApplyCustomUpdates = (
-  oneToManyConfigSpecs: OneToManyConfigSpecs,
+  oneToManyConfigSpecs: OneToManyConfigSpec[],
 ): SurveyInsightsUpdateFunction[] => {
   const customUpdatesFuns = oneToManyConfigSpecs.map(applyCustomUpdate);
 
   return customUpdatesFuns;
 };
 
-export const buildSurveyInsightsData = (oneToManyConfigSpecs: OneToManyConfigSpecs) => (
+export const buildSurveyInsightsData = (oneToManyConfigSpecs: OneToManyConfigSpec[]) => (
   taskAttributes: TaskAttributes,
   memory: BotMemory,
 ) => {
