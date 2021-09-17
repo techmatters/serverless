@@ -118,7 +118,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
             saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.HRM_STATIC_KEY),
           ]);
         } else {
-        // eslint-disable-next-line no-console
+          // eslint-disable-next-line no-console
           console.error('Missing definition for post survey. Not saving to insights.');
         }
 
