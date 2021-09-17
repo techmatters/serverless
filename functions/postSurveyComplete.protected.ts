@@ -135,9 +135,13 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       }
     }
 
+    // Message to send back to the user. This will be a localized string later on.
+    const say = 'Thanks!';
+
+    // This is the tasks that are sent back to the bot. For now, it just sends a thanks message before finishing bot's execution.
     const actions = [
       {
-        say: 'Thanks!',
+        say,
       },
     ];
     const returnObj = { actions };
