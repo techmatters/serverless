@@ -19,7 +19,7 @@ async function healthCheck () {
     const service = await client.serverless.services('serverless').fetch();
     const productionEnv = (await service.environments().list()).find(e => e.domainSuffix === 'production');
   
-    const url = `https://${productionEnv.domainName}/healthCheck`;
+    const url = `https://${productionEnv.domainName}/healthCheckasdasd`;
   
     console.log('Attempting health check against ', url);
     const response = await fetch(url);
