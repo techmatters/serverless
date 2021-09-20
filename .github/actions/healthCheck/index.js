@@ -5,13 +5,13 @@
  * For details see https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action#commit-tag-and-push-your-action-to-github 
  */ 
 
-const core = require('@actions/core');
-const fetch = require('node-fetch');
+import { getInput, setOutput, setFailed } from '@actions/core';
+import fetch from 'node-fetch';
 
 async function healthCheck () {
     // `who-to-greet` input defined in action metadata file
-    const twilioAccountSid = core.getInput('account-sid');
-    const twilioAuthToken = core.getInput('auth-token');
+    const twilioAccountSid = getInput('account-sid');
+    const twilioAuthToken = getInput('auth-token');
   
     if(!twilioAccountSid || !twilioAuthToken) throw new Error('Account sid or auth token not provided.')
   
@@ -21,11 +21,18 @@ async function healthCheck () {
   
     const url = `https://${productionEnv.domainName}/healthCheck`;
   
+    console.log('Attempting health check against ', url);
     const response = await fetch(url);
   
     if(!response.ok) throw new Error(`Error: response status is ${response.status}`);  
 }
 
 healthCheck()
-.then(() => { core.setOutput("Success", true); })
-.catch((err) => { core.setFailed(err.message); });
+.then(() => {
+  console.log('Success!!')
+  setOutput("Success", true);
+})
+.catch((err) => {
+  console.log(err);
+  setFailed(err.message);
+});
