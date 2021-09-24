@@ -64,28 +64,8 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
-      - name: Set Twilio Flex Proxy service ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
-          env_variable_name: "FLEX_PROXY_SERVICE_SID"
-      - name: Set HRM static key to make HRM calls
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_HRM_STATIC_KEY"
-          env_variable_name: "HRM_STATIC_KEY"
-      - name: Set Survey Workflow SID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_SURVEY_WORKFLOW_SID"
-          env_variable_name: "SURVEY_WORKFLOW_SID"
-      - name: Set Post Survey Bot Programmable Chat URL
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_POST_SURVEY_BOT_CHAT_URL"
-          env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
-      # Call deploy-beta to compile and deploy
-      - name: Executing deploy-beta
+      # Call main-action to compile and deploy
+      - name: Executing main-action
         uses: ./.github/actions/deploy-beta
         with:
           account-sid: ${{ secrets.AS_DEV_ACCOUNT_SID }}
@@ -97,10 +77,6 @@ jobs:
           sync-service-sid: $SYNC_SERVICE_SID
           chat-service-sid: $CHAT_SERVICE_SID
           operating-info-key: $OPERATING_INFO_KEY
-          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
-          hrm-static-key: $HRM_STATIC_KEY
-          survey-workflow-sid: $SURVEY_WORKFLOW_SID
-          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
       # Call health check action to chec the service is working
       - name: Health Check
         uses: ./.github/actions/healthCheck
