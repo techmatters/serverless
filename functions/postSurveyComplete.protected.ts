@@ -51,7 +51,7 @@ const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpec[],
 };
 
 const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpec[], memory: BotMemory, surveyTask: TaskInstance, hrmBaseUrl: string, hrmStaticKey: string) => {
-  const handlerPath = Runtime.getFunctions()['helpers/hrmService'].path;
+  const handlerPath = Runtime.getFunctions()['helpers/hrmDataManipulation'].path;
   const buildDataObject = require(handlerPath)
     .buildDataObject as BuildDataObject;
 
