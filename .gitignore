@@ -124,5 +124,6 @@ tech-matters-serverless-helpers/lib/
 
 
 .twilio-functions
+.twiliodeployinfo
 
 assets/blocklist.private.json
