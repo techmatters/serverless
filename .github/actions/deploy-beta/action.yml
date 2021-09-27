@@ -84,6 +84,3 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    # Run the health check
-    - run: node ${{ github.action_path }}/dist/index.js
-      shell: bash
