@@ -41,6 +41,18 @@ inputs:
   post-survey-bot-chat-url:
     description: 'Post Survey Bot Programmable Chat URL'
     required: true
+  aselo-app-access-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aselo-app-secret-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aws-region:
+    description: 'AWS region where Aselo documents bucket is hosted'
+    required: true
+  s3-bucket:
+    description: 'S3 bucket name where Aselo documents are stored'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -62,6 +74,10 @@ runs:
           HRM_STATIC_KEY=${{ inputs.hrm-static-key }}
           SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
           POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
+          ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
+          ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
+          S3_BUCKET=${{ inputs.aws-region }}
+          AWS_REGION=${{ inputs.s3-bucket }}
           EOT
       shell: bash
     # Install dependencies for the twilio functions
