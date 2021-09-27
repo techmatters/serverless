@@ -84,6 +84,26 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_POST_SURVEY_BOT_CHAT_URL"
           env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
+      - name: Set AWS credentials for Aselo user
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_APP_ACCESS_KEY"
+          env_variable_name: "ASELO_APP_ACCESS_KEY"
+      - name: Set AWS credentials for Aselo user
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_APP_SECRET_KEY"
+          env_variable_name: "ASELO_APP_SECRET_KEY"
+      - name: AWS region where Aselo documents bucket is hosted
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "REGION"
+          env_variable_name: "AWS_REGION"
+      - name: Set S3 bucket name where Aselo documents are stored
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "DEV_TWILIO_AS_S3_BUCKET_DOCS"
+          env_variable_name: "S3_BUCKET"
       # Call deploy-beta to compile and deploy
       - name: Executing deploy-beta
         uses: ./.github/actions/deploy-beta
@@ -101,3 +121,7 @@ jobs:
           hrm-static-key: $HRM_STATIC_KEY
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
           post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
+          aselo-app-access-key: $ASELO_APP_ACCESS_KEY
+          aselo-app-secret-key: $ASELO_APP_SECRET_KEY
+          aws-region: $AWS_REGION
+          s3-bucket: $S3_BUCKET
