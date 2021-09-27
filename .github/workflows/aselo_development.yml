@@ -101,3 +101,9 @@ jobs:
           hrm-static-key: $HRM_STATIC_KEY
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
           post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
+      # Call health check action to chec the service is working
+      - name: Health Check
+        uses: ./.github/actions/healthCheck
+        with:
+          account-sid: ${{ secrets.AS_DEV_ACCOUNT_SID }}
+          auth-token: ${{ secrets.AS_DEV_AUTH_TOKEN }}
