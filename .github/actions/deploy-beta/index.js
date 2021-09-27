@@ -5,13 +5,13 @@
  * For details see https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action#commit-tag-and-push-your-action-to-github 
  */ 
 
-import { getInput, setOutput, setFailed } from '@actions/core';
+import { setOutput, setFailed } from '@actions/core';
 import fetch from 'node-fetch';
 
 async function healthCheck () {
     // `who-to-greet` input defined in action metadata file
-    const twilioAccountSid = getInput('account-sid');
-    const twilioAuthToken = getInput('auth-token');
+    const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
   
     if(!twilioAccountSid || !twilioAuthToken) throw new Error('Account sid or auth token not provided.')
   
