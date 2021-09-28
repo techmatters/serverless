@@ -64,42 +64,64 @@ jobs:
         with:
           ssm_parameter: "PROD_TWILIO_ZA_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
-      - name: Set serverless base URL
+      - name: Set Twilio Flex Proxy service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_ZA_SERVERLESS_BASE_URL"
-          env_variable_name: "SERVERLESS_BASE_URL"            
-      - name: Create environment variable file
-        run: |
-          touch .env
-      - name: Fill .env
-        run: |
-          cat <<EOT >> .env
-          TWILIO_WORKSPACE_SID=$TWILIO_WORKSPACE_SID
-          TWILIO_CHAT_TRANSFER_WORKFLOW_SID=$TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          SYNC_SERVICE_API_KEY=$SYNC_SERVICE_API_KEY
-          SYNC_SERVICE_API_SECRET=$SYNC_SERVICE_API_SECRET
-          SYNC_SERVICE_SID=$SYNC_SERVICE_SID
-          CHAT_SERVICE_SID=$CHAT_SERVICE_SID
-          OPERATING_INFO_KEY=$OPERATING_INFO_KEY
-          EOT           
-      # Runs a single command using the runners shell
-      - name: Install dependencies for the twilio function
-        run: npm ci
-      # Compile typescript to javascript
-      - name: Transpile typescript to javascript
-        run: npx tsc
-      # Install the Twilio CLI and the serverless plugin then deploy the function
-      - name: Install twilio cli and run deploy command to dev
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_PROD_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_PROD_AUTH_TOKEN }}
-        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
-      - name: Run deploy command to production
-        env:
-          TWILIO_ACCOUNT_SID: ${{ secrets.ZA_PROD_ACCOUNT_SID }}
-          TWILIO_AUTH_TOKEN: ${{ secrets.ZA_PROD_AUTH_TOKEN }}
-        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
-      # Check if the deployed serverless is up and running
-      - name: Check if serverless is up and running
-        run: curl -f $SERVERLESS_BASE_URL/healthCheck        
+          ssm_parameter: "PROD_TWILIO_ZA_FLEX_PROXY_SERVICE_SID"
+          env_variable_name: "FLEX_PROXY_SERVICE_SID"
+      - name: Set HRM static key to make HRM calls
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_HRM_STATIC_KEY"
+          env_variable_name: "HRM_STATIC_KEY"
+      - name: Set Survey Workflow SID
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_SURVEY_WORKFLOW_SID"
+          env_variable_name: "SURVEY_WORKFLOW_SID"
+      - name: Set Post Survey Bot Programmable Chat URL
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_POST_SURVEY_BOT_CHAT_URL"
+          env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
+      - name: Set AWS credentials for Aselo user
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_APP_ACCESS_KEY"
+          env_variable_name: "ASELO_APP_ACCESS_KEY"
+      - name: Set AWS credentials for Aselo user
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "ASELO_APP_SECRET_KEY"
+          env_variable_name: "ASELO_APP_SECRET_KEY"
+      - name: AWS region where Aselo documents bucket is hosted
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "REGION"
+          env_variable_name: "AWS_REGION"
+      - name: Set S3 bucket name where Aselo documents are stored
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "PROD_TWILIO_ZA_S3_BUCKET_DOCS"
+          env_variable_name: "S3_BUCKET"
+      # Call deploy-beta to compile and deploy
+      - name: Executing deploy-beta
+        uses: ./.github/actions/deploy-beta
+        with:
+          account-sid: ${{ secrets.ZA_PROD_ACCOUNT_SID }}
+          auth-token: ${{ secrets.ZA_PROD_AUTH_TOKEN }}
+          workspace-sid: $TWILIO_WORKSPACE_SID
+          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          sync-service-api-key: $SYNC_SERVICE_API_KEY
+          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+          sync-service-sid: $SYNC_SERVICE_SID
+          chat-service-sid: $CHAT_SERVICE_SID
+          operating-info-key: $OPERATING_INFO_KEY
+          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
+          hrm-static-key: $HRM_STATIC_KEY
+          survey-workflow-sid: $SURVEY_WORKFLOW_SID
+          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
+          aselo-app-access-key: $ASELO_APP_ACCESS_KEY
+          aselo-app-secret-key: $ASELO_APP_SECRET_KEY
+          aws-region: $AWS_REGION
+          s3-bucket: $S3_BUCKET
