@@ -76,8 +76,8 @@ runs:
           POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
           ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
           ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
-          S3_BUCKET=${{ inputs.aws-region }}
-          AWS_REGION=${{ inputs.s3-bucket }}
+          S3_BUCKET=${{ inputs.s3-bucket }}
+          AWS_REGION=${{ inputs.aws-region }}
           EOT
       shell: bash
     # Install dependencies for the twilio functions
