@@ -1,0 +1,38 @@
+{
+  "timezone": "America/Sao_Paulo",
+  "holidays": {
+    "10/12/2021":"Our Lady of Aparecida's day",
+    "11/02/2021":"All Souls Day",
+    "11/15/2021":"Republic Day",
+    "12/25/2021":"Christmas Day",
+    "01/01/2022":"New Year's Day",
+    "02/16/2022":"Shrove Tuesday",
+    "04/02/2022":"Good Friday",
+    "04/04/2022":"Easter Sunday",
+    "04/21/2022":"Tiradentes Day",
+    "05/01/2022":"Labour Day",
+    "06/03/2022":"Corpus Christi",
+    "09/07/2022":"Independence Day",
+    "10/12/2022":"Our Lady of Aparecida's day"
+  },
+  "operatingHours": {
+    "webchat": {
+      "1": [{ "open": 800, "close": 1200 }],
+      "2": [{ "open": 800, "close": 1200 }],
+      "3": [{ "open": 800, "close": 1200 }],
+      "4": [{ "open": 1400, "close": 1800 }],
+      "5": [{ "open": 1400, "close": 1800 }],
+      "6": [],
+      "7": []
+    },
+    "facebook": {
+      "1": [{ "open": 800, "close": 1200 }],
+      "2": [{ "open": 800, "close": 1200 }],
+      "3": [{ "open": 800, "close": 1200 }],
+      "4": [{ "open": 1400, "close": 1800 }],
+      "5": [{ "open": 1400, "close": 1800 }],
+      "6": [],
+      "7": []
+    }
+  }
+}
