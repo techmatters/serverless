@@ -115,7 +115,7 @@ runs:
     # Send Slack notifying success
     - name: Slack Aselo channel
       id: slack
-      uses: slackapi/slack-github-action@latest
+      uses: slackapi/slack-github-action@v1.14.0
       with:
         channel-id: "C02L11XCKQU"
         slack-message: "posting from a github action! ${{ github.sha }} ${{ github.workflow }}"
