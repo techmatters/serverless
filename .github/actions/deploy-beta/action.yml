@@ -53,12 +53,6 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
-  slack-bot-token:
-    description: 'GitHub Actions Slack bot token to send Slack messages'
-    required: true
-  # slack-channel-id:
-  #   description: 'Slack channel id where the message should be sent'
-  #   required: true
 runs:
   using: "composite"
   steps:
@@ -112,12 +106,3 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    # Send Slack notifying success
-    - name: Slack Aselo channel
-      id: slack
-      uses: slackapi/slack-github-action@latest
-      with:
-        channel-id: "C02L11XCKQU"
-        slack-message: "posting from a github action! ${{ github.sha }} ${{ github.workflow }}"
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
