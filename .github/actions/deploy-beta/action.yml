@@ -131,11 +131,11 @@ runs:
     - name: Clear env var
       run: |
         echo "${{ $AWS_DEFAULT_REGION }}"
-      shel: bash
+      shell: bash
       env:
         AWS_DEFAULT_REGION: ''
     # Check
     - name: Clear env var
       run: |
         echo "${{ $AWS_DEFAULT_REGION }}"
-      shel: bash
+      shell: bash
