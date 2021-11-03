@@ -104,11 +104,6 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_S3_BUCKET_DOCS"
           env_variable_name: "S3_BUCKET"
-      - name: Set GITHUB-ACTIONS-SLACK-BOT-TOKEN
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "GITHUB-ACTIONS-SLACK-BOT-TOKEN"
-          env_variable_name: "GITHUB-ACTIONS-SLACK-BOT-TOKEN"
       # Call deploy-beta to compile and deploy
       - name: Executing deploy-beta
         uses: ./.github/actions/deploy-beta
@@ -130,5 +125,4 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-          slack-bot-token: $GITHUB-ACTIONS-SLACK-BOT-TOKEN
 
