@@ -56,6 +56,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # Set any env vars needed from Parameter Store here
+    - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+        env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
@@ -106,3 +112,12 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
+    # Send Slack notifying success
+    - name: Slack Aselo channel
+      id: slack
+      uses: slackapi/slack-github-action@v1.14.0
+      with:
+        channel-id: "C02L11XCKQU"
+        slack-message: "Serverless was deployed to environment ${{ github.workflow }} with SHA ${{ github.sha }} :rocket:"
+      env:
+        SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
