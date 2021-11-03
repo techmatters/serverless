@@ -56,15 +56,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    ######
-    # NOTE: Set any env vars needed from Parameter Store here
+    # Set any env vars needed from Parameter Store here
     - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
         env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
-    ######
-
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
