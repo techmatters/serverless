@@ -66,19 +66,7 @@ runs:
       with:
         ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
         env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
-    #
-    # Clear the AWS credentials so other actions can't make use of them
-    - name: Sets env vars for release
-      run: |
-        echo "AWS_DEFAULT_REGION=''  AWS_REGION='' AWS_ACCESS_KEY_ID='' AWS_SECRET_ACCESS_KEY=''" >> $GITHUB_ENV
-      shell: bash
     ######
-    ##### TESTING: This should fail
-    - name: Set GitHub Actions Slack bot token to send Slack messages
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
-        env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN2"
 
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
@@ -138,4 +126,16 @@ runs:
         channel-id: "C02L11XCKQU"
         slack-message: "posting from a github action! ${{ github.sha }} ${{ github.workflow }}"
       env:
-        SLACK_BOT_TOKEN: $GITHUB_ACTIONS_SLACK_BOT_TOKEN
+        SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
+    # Clear env var
+    - name: Clear env var
+      run: |
+        echo "${{ $AWS_DEFAULT_REGION }}"
+      shel: bash
+      env:
+        AWS_DEFAULT_REGION: ''
+    # Check
+    - name: Clear env var
+      run: |
+        echo "${{ $AWS_DEFAULT_REGION }}"
+      shel: bash
