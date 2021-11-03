@@ -62,6 +62,11 @@ runs:
       with:
         ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
         env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+    - name: Set ASELO_DEPLOYS_CHANNEL_ID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "ASELO_DEPLOYS_CHANNEL_ID"
+        env_variable_name: "ASELO_DEPLOYS_CHANNEL_ID"
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
@@ -117,7 +122,7 @@ runs:
       id: slack
       uses: slackapi/slack-github-action@v1.14.0
       with:
-        channel-id: "C02L11XCKQU"
-        slack-message: "Serverless was deployed to environment ${{ github.workflow }} with SHA ${{ github.sha }} :rocket:"
+        channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
+        slack-message: "[Serverless] ${{ github.workflow }} deployed with SHA ${{ github.sha }} :rocket:. Job id is ${{ github.job }}."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
