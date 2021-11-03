@@ -124,6 +124,6 @@ runs:
       uses: slackapi/slack-github-action@v1.14.0
       with:
         channel-id: "C02L11XCKQU"
-        slack-message: "Serverless was deployed to environment ${{ github.workflow }} with SHA ${{ github.sha }}"
+        slack-message: "Serverless was deployed to environment ${{ github.workflow }} with SHA ${{ github.sha }} :rocket:"
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
