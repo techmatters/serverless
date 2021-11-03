@@ -53,9 +53,6 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
-  # slack-channel-id:
-  #   description: 'Slack channel id where the message should be sent'
-  #   required: true
 runs:
   using: "composite"
   steps:
