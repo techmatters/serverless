@@ -53,9 +53,21 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
+  # slack-channel-id:
+  #   description: 'Slack channel id where the message should be sent'
+  #   required: true
 runs:
   using: "composite"
   steps:
+    ######
+    # NOTE: Set any env vars needed from Parameter Store here
+    - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+        env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+    ######
+
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
@@ -105,4 +117,25 @@ runs:
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
+      shell: bash
+    # Send Slack notifying success
+    - name: Slack Aselo channel
+      id: slack
+      uses: slackapi/slack-github-action@v1.14.0
+      with:
+        channel-id: "C02L11XCKQU"
+        slack-message: "posting from a github action! ${{ github.sha }} ${{ github.workflow }}"
+      env:
+        SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
+    # Clear env var
+    - name: Clear env var
+      run: |
+        echo "$AWS_DEFAULT_REGION"
+      shell: bash
+      env:
+        AWS_DEFAULT_REGION: ''
+    # Check
+    - name: Clear env var
+      run: |
+        echo "$AWS_DEFAULT_REGION"
       shell: bash
