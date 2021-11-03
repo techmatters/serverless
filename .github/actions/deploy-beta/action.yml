@@ -71,7 +71,7 @@ runs:
     - name: Sets env vars for release
       run: |
         echo "AWS_DEFAULT_REGION=''  AWS_REGION='' AWS_ACCESS_KEY_ID='' AWS_SECRET_ACCESS_KEY=''" >> $GITHUB_ENV
-      if: startsWith(github.ref, 'refs/tags/release-')
+      shell: bash
     ######
     ##### TESTING: This should fail
     - name: Set GitHub Actions Slack bot token to send Slack messages
