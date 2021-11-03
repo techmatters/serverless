@@ -124,18 +124,6 @@ runs:
       uses: slackapi/slack-github-action@v1.14.0
       with:
         channel-id: "C02L11XCKQU"
-        slack-message: "posting from a github action! ${{ github.sha }} ${{ github.workflow }}"
+        slack-message: "Serverless was deployed to environment ${{ github.workflow }} with SHA ${{ github.sha }}"
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
-    # Clear env var
-    - name: Clear env var
-      run: |
-        echo "$AWS_DEFAULT_REGION"
-      shell: bash
-      env:
-        AWS_DEFAULT_REGION: ''
-    # Check
-    - name: Clear env var
-      run: |
-        echo "$AWS_DEFAULT_REGION"
-      shell: bash
