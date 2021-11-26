@@ -36,13 +36,13 @@ type IWFReportPayload = {
   Reporter_Description: string | null; // Max 500 characters
 };
 
-type Event = {
-  Reported_URL: string | undefined;
-  Reporter_Anonymous: string | undefined;
-  Reporter_First_Name: string | undefined;
-  Reporter_Last_Name: string | undefined;
-  Reporter_Email_ID: string | undefined;
-  Reporter_Description: string | undefined;
+export type Event = {
+  Reported_URL?: string;
+  Reporter_Anonymous?: string;
+  Reporter_First_Name?: string;
+  Reporter_Last_Name?: string;
+  Reporter_Email_ID?: string;
+  Reporter_Description?: string;
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
