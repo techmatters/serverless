@@ -46,7 +46,7 @@
   "dependencies": {
     "@tech-matters/serverless-helpers": "^1.0.6",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "aws-sdk": "^2.975.0",
     "lodash": "^4.17.21",
     "moment-timezone": "^0.5.33",
