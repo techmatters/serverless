@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "test": "jest --verbose",
-    "start": "tsc & twilio-run --env",
-    "watch": "tsc && twilio-run start --live",
+    "start": "npx tsc && twilio-run --env",
+    "watch": "npx tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
-    "tr:deploy": "tsc && twilio-run deploy --force"
+    "tr:deploy": "npx tsc && twilio-run deploy --force"
   },
   "repository": {
     "type": "git",
