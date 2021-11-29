@@ -1,6 +1,6 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios from 'axios';
-import { handler as reportToIWF, Event as Body } from '../functions/reportToIWF.protected';
+import { handler as reportToIWF, Event as Body } from '../functions/reportToIWF';
 
 import helpers, { MockedResponse } from './helpers';
 
