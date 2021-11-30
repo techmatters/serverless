@@ -16,15 +16,6 @@
     "10/12/2022":"Our Lady of Aparecida's day"
   },
   "operatingHours": {
-    "webchat": {
-      "1": [{ "open": 800, "close": 1200 }],
-      "2": [{ "open": 800, "close": 1200 }],
-      "3": [{ "open": 800, "close": 1200 }],
-      "4": [{ "open": 1400, "close": 1800 }],
-      "5": [{ "open": 1400, "close": 1800 }],
-      "6": [],
-      "7": []
-    },
     "facebook": {
       "1": [{ "open": 800, "close": 1200 }],
       "2": [{ "open": 800, "close": 1200 }],
