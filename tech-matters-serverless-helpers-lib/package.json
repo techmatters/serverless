@@ -1,6 +1,6 @@
 {
   "name": "@tech-matters/serverless-helpers",
-  "version": "1.0.7",
+  "version": "2.0.0",
   "description": "Helpers and utilities used by Tech Matters for our serverless functions, hosted in Twilio Serverless Toolkit",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

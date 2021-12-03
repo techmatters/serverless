@@ -44,7 +44,7 @@
     "node": "^12.0"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "^1.0.7",
+    "@tech-matters/serverless-helpers": "^2.0.0",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
     "aws-sdk": "^2.975.0",
     "axios": "^0.21.2",
