@@ -115,7 +115,7 @@ describe('TwitterToFlex', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Bad formatted direct message event');
+      expect(response.getBody().message).toContain('Bad formatted direct message event');
     };
 
     await TwitterToFlex(baseContext, event1, callback1);
@@ -145,7 +145,7 @@ describe('TwitterToFlex', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Bad formatted direct message event');
+      expect(response.getBody().message).toContain('Bad formatted direct message event');
     };
 
     await TwitterToFlex(baseContext, event2, callback2);
@@ -176,7 +176,7 @@ describe('TwitterToFlex', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Bad formatted direct message event');
+      expect(response.getBody().message).toContain('Bad formatted direct message event');
     };
 
     await TwitterToFlex(baseContext, event3, callback3);
@@ -211,7 +211,7 @@ describe('TwitterToFlex', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Flex Flow does not exists.');
+      expect(response.getBody().message).toContain('Flex Flow does not exists.');
     };
 
     await TwitterToFlex(
@@ -226,7 +226,7 @@ describe('TwitterToFlex', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Service does not exists.');
+      expect(response.getBody().message).toContain('Service does not exists.');
     };
 
     await TwitterToFlex({ ...baseContext, CHAT_SERVICE_SID: 'not-existing' }, event5, callback5);

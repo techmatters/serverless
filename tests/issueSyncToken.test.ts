@@ -37,7 +37,7 @@ describe('issueSyncToken', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain(
+      expect(response.getBody().message).toContain(
         'Identity is missing, something is wrong with the token provided',
       );
     };
@@ -46,7 +46,7 @@ describe('issueSyncToken', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain(
+      expect(response.getBody().message).toContain(
         'Sync Service information missing, set your env vars',
       );
     };

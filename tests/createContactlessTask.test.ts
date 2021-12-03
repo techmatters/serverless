@@ -90,14 +90,14 @@ describe('createContactlessTask', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Workspace does not exists');
+      expect(response.getBody().message).toContain('Workspace does not exists');
     };
 
     const callback2: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Intentionally thrown error');
+      expect(response.getBody().message).toContain('Intentionally thrown error');
     };
 
     const { getTwilioClient, DOMAIN_NAME } = baseContext;

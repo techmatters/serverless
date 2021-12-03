@@ -97,7 +97,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         expect(result).toBeDefined();
         const response = result as MockedResponse;
         expect(response.getStatus()).toBe(500);
-        expect(response.getBody().toString()).toContain('Non existing worker');
+        expect(response.getBody().message).toContain('Non existing worker');
       };
 
       await adjustChatCapacity(baseContext, event, callback);
