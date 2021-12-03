@@ -93,7 +93,7 @@ describe('FlexChannelUpdate', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Service does not exists.');
+      expect(response.getBody().message).toContain('Service does not exists.');
       expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
@@ -112,7 +112,7 @@ describe('FlexChannelUpdate', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Channel does not exists.');
+      expect(response.getBody().message).toContain('Channel does not exists.');
       expect(mockDocRemove).not.toHaveBeenCalled();
     };
 

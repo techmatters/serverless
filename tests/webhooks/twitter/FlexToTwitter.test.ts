@@ -131,7 +131,7 @@ describe('FlexToTwitter', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Service does not exists.');
+      expect(response.getBody().message).toContain('Service does not exists.');
     };
 
     await FlexToTwitter({ ...baseContext, CHAT_SERVICE_SID: 'not-existing' }, event1, callback1);
@@ -153,7 +153,7 @@ describe('FlexToTwitter', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Twit failed because of some reason.');
+      expect(response.getBody().message).toContain('Twit failed because of some reason.');
     };
 
     await FlexToTwitter(baseContext, event2, callback2);
@@ -177,7 +177,7 @@ describe('FlexToTwitter', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Twit post failed because of some reason.');
+      expect(response.getBody().message).toContain('Twit post failed because of some reason.');
     };
 
     await FlexToTwitter(baseContext, event3, callback3);

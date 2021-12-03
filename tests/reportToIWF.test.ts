@@ -55,7 +55,7 @@ describe('reportToIWF', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Boom!');
+      expect(response.getBody().message).toContain('Boom!');
     };
 
     await reportToIWF(baseContext, event, callback);

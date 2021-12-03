@@ -86,7 +86,7 @@ describe('populateCounselors', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Workspace does not exists');
+      expect(response.getBody().message).toContain('Workspace does not exists');
     };
 
     await populateCounselors(baseContext, event, callback);

@@ -332,21 +332,21 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Workspace does not exists');
+      expect(response.getBody().message).toContain('Workspace does not exists');
     };
 
     const callback2: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Non existing worker');
+      expect(response.getBody().message).toContain('Non existing worker');
     };
 
     const callbackNoHelplineWorker: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain(
+      expect(response.getBody().message).toContain(
         'Error: the worker does not have helpline attribute set, check the worker configuration.',
       );
     };
@@ -355,7 +355,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain(
+      expect(response.getBody().message).toContain(
         'Error: the worker is already waiting for an offline contact.',
       );
     };
@@ -364,14 +364,14 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Intentionally thrown error');
+      expect(response.getBody().message).toContain('Intentionally thrown error');
     };
 
     const callback5: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
+      expect(response.getBody().message).toContain('Error: reservation for task not created.');
       expect(updateWorkerMock).not.toBeCalled();
     };
 
@@ -379,7 +379,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not created.');
+      expect(response.getBody().message).toContain('Error: reservation for task not created.');
       expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
@@ -387,7 +387,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
+      expect(response.getBody().message).toContain('Error: reservation for task not accepted.');
       expect(updateWorkerMock).not.toBeCalled();
     };
 
@@ -395,7 +395,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not accepted.');
+      expect(response.getBody().message).toContain('Error: reservation for task not accepted.');
       expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
@@ -403,7 +403,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not completed.');
+      expect(response.getBody().message).toContain('Error: reservation for task not completed.');
       expect(updateWorkerMock).not.toBeCalled();
     };
 
@@ -411,7 +411,7 @@ describe('assignOfflineContact', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().toString()).toContain('Error: reservation for task not completed.');
+      expect(response.getBody().message).toContain('Error: reservation for task not completed.');
       expect(updateWorkerMock).toBeCalledTimes(2);
     };
 

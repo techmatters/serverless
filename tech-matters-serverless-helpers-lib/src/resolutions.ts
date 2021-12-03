@@ -43,4 +43,4 @@ export const error403 = (message: string) => {
  * // withouth resolve bind:
  * error500(err)(callback)(response)
  */
-export const error500 = send(500);
+export const error500 = (error: Error) => send(500)({ message: error.message, stack: error.stack, status: 500 });
