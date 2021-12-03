@@ -35,19 +35,19 @@
     "jsonwebtoken": "^8.5.1",
     "mockdate": "^3.0.5",
     "prettier": "^1.19.1",
-    "redoc-cli": "^0.10.2",
+    "redoc-cli": "^0.13.1",
     "ts-jest": "^26.0.0",
-    "twilio-run": "^3.2.2",
+    "twilio-run": "^3.4.0",
     "typescript": "^3.8.3"
   },
   "engines": {
     "node": "^12.0"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "^1.0.6",
+    "@tech-matters/serverless-helpers": "^1.0.7",
     "@twilio-labs/serverless-runtime-types": "^1.1.8",
-    "axios": "^0.21.2",
     "aws-sdk": "^2.975.0",
+    "axios": "^0.21.2",
     "lodash": "^4.17.21",
     "moment-timezone": "^0.5.33",
     "swagger-ui-express": "^4.1.4",
