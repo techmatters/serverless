@@ -29,12 +29,61 @@ inputs:
   operating-info-key:
     description: 'Operating Info Key'
     required: true
-  serverless-base-url:
-    description: 'Serverless base url'
+  flex-proxy-service-sid:
+    description: 'Flex Proxy Service SID'
+    required: true
+  hrm-static-key:
+    description: 'HRM static key to make HRM calls'
+    required: true
+  survey-workflow-sid:
+    description: 'Survey Workflow SID'
+    required: true
+  post-survey-bot-chat-url:
+    description: 'Post Survey Bot Programmable Chat URL'
+    required: true
+  aselo-app-access-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aselo-app-secret-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aws-region:
+    description: 'AWS region where Aselo documents bucket is hosted'
+    required: true
+  s3-bucket:
+    description: 'S3 bucket name where Aselo documents are stored'
     required: true
 runs:
   using: "composite"
   steps:
+    # Set any env vars needed from Parameter Store here
+    # Slack env
+    - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+        env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
+    - name: Set ASELO_DEPLOYS_CHANNEL_ID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "ASELO_DEPLOYS_CHANNEL_ID"
+        env_variable_name: "ASELO_DEPLOYS_CHANNEL_ID"
+    # IWF credentials
+    - name: Set IWF_API_USERNAME
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_USERNAME"
+        env_variable_name: "IWF_API_USERNAME"
+    - name: Set IWF_API_PASSWORD
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_PASSWORD"
+        env_variable_name: "IWF_API_PASSWORD"
+    - name: Set IWF_API_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_URL"
+        env_variable_name: "IWF_API_URL"
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
@@ -49,8 +98,26 @@ runs:
           SYNC_SERVICE_SID=${{ inputs.sync-service-sid }}
           CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
           OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
+          FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
+          HRM_STATIC_KEY=${{ inputs.hrm-static-key }}
+          SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
+          POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
+          ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
+          ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
+          S3_BUCKET=${{ inputs.s3-bucket }}
+          AWS_REGION=${{ inputs.aws-region }}
+          IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}
+          IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}
+          IWF_API_URL=${{ env.IWF_API_URL }}
           EOT
       shell: bash
+    # Run custom action to perform per-helpline based actions
+    - name: Set flag for custom action
+      run: (test -f ./.github/custom-actions/${{ github.workflow }} && echo "RUN_CUSTOM_ACTION=true" >> $GITHUB_ENV) || echo "./.github/custom-actions/${{ github.workflow }} does not exist, skipping step"
+      shell: bash
+    - name: Execute custom action if flag is true
+      if: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }} == 'true'
+      uses: ./.github/custom-actions/${{ github.workflow }}
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
@@ -71,7 +138,18 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    # Check if serverless is up and running
-    - name: Check if serverless is up and running
-      run: curl -f ${{ inputs.serverless-base-url }}/healthCheck
+    # Run the health check
+    - run: node ${{ github.action_path }}/dist/index.js
+      env:
+        TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
+        TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
+    # Send Slack notifying success
+    - name: Slack Aselo channel
+      id: slack
+      uses: slackapi/slack-github-action@v1.14.0
+      with:
+        channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
+        slack-message: "`[Serverless]` Action ${{ github.workflow }} completed with SHA ${{ github.sha }} :rocket:."
+      env:
+        SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
