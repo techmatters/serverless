@@ -111,6 +111,13 @@ runs:
           IWF_API_URL=${{ env.IWF_API_URL }}
           EOT
       shell: bash
+    # Run custom action to perform per-helpline based actions
+    - name: Set flag for custom action
+      run: '(test -f ./.github/custom-actions/${{ github.workflow }} && echo "{RUN_CUSTOM_ACTION}={true}" >> $GITHUB_ENV) || echo ./.github/custom-actions/${{ github.workflow }} does not exist, skipping step'
+      shell: bash
+    - name: Execute custom action if flag is true
+      if: $RUN_CUSTOM_ACTION == 'true'
+      uses: ./.github/custom-actions/${{ github.workflow }}
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
