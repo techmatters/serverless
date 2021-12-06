@@ -68,22 +68,6 @@ runs:
       with:
         ssm_parameter: "ASELO_DEPLOYS_CHANNEL_ID"
         env_variable_name: "ASELO_DEPLOYS_CHANNEL_ID"
-    # IWF credentials
-    - name: Set IWF_API_USERNAME
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "IWF_API_USERNAME"
-        env_variable_name: "IWF_API_USERNAME"
-    - name: Set IWF_API_PASSWORD
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "IWF_API_PASSWORD"
-        env_variable_name: "IWF_API_PASSWORD"
-    - name: Set IWF_API_URL
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "IWF_API_URL"
-        env_variable_name: "IWF_API_URL"
     # Prepare everything to compile the serverless application with proper env
     - name: Create environment variable file
       run: touch .env
@@ -106,9 +90,6 @@ runs:
           ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
           S3_BUCKET=${{ inputs.s3-bucket }}
           AWS_REGION=${{ inputs.aws-region }}
-          IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}
-          IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}
-          IWF_API_URL=${{ env.IWF_API_URL }}
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
