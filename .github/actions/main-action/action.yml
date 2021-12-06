@@ -112,12 +112,8 @@ runs:
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
-    - name: Set flag for custom action
-      run: (test -f ./.github/custom-actions/${{ github.workflow }} && echo "RUN_CUSTOM_ACTION=true" >> $GITHUB_ENV) || echo "./.github/custom-actions/${{ github.workflow }} does not exist, skipping step"
-      shell: bash
-    - name: Execute custom action if flag is true
-      if: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }} == 'true'
-      uses: ./.github/custom-actions/${{ github.workflow }}
+    - name: Execute custom action (if any)
+      uses: ./.github/custom-actions
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
