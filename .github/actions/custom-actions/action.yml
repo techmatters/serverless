@@ -4,4 +4,4 @@ runs:
   steps:
     - name: Aselo Development release custom action
     - if: ${{ github.workflow }} == 'Aselo Development release'
-    - uses: ./.github/custom-actions/aselo_development_custom
+    - uses: ./.github/actions/custom-actions/aselo_development_custom

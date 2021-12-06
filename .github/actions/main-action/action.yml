@@ -113,7 +113,7 @@ runs:
       shell: bash
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
-      uses: ./.github/custom-actions
+      uses: ./.github/actions/custom-actions
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
