@@ -3,5 +3,5 @@ runs:
   using: "composite"
   steps:
     - name: Aselo Development release custom action
-      if: ${{ github.workflow }} == 'Aselo Development release'
+      if: github.workflow == format('Aselo Development release')
       uses: ./.github/actions/custom-actions/aselo_development_custom
