@@ -5,5 +5,5 @@ runs:
     - run: echo ${{ github.workflow }}
       shell: bash
     - name: Aselo Development release custom action
-      if: ${{ github.workflow }} == 'Something that is not Aselo Development release'
+      if: github.workflow == format('Something that is not Aselo Development release')
       uses: ./.github/actions/custom-actions/aselo_development_custom
