@@ -24,9 +24,13 @@ type EnvVars = {
 export type Body = {
   channelSid?: string;
   taskSid?: string;
+  taskLanguage?: string;
 };
 
-const createSurveyTask = async (context: Context<EnvVars>, event: Required<Body>) => {
+const createSurveyTask = async (
+  context: Context<EnvVars>,
+  event: Required<Omit<Body, 'taskLanguage'>>,
+) => {
   const client = context.getTwilioClient();
   const { channelSid, taskSid } = event;
 
@@ -60,7 +64,11 @@ const createSurveyTask = async (context: Context<EnvVars>, event: Required<Body>
   return surveyTask;
 };
 
-const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: string) => {
+const triggerPostSurveyFlow = async (
+  context: Context<EnvVars>,
+  channelSid: string,
+  message: string,
+) => {
   const client = context.getTwilioClient();
 
   await client.chat
@@ -75,9 +83,6 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
       },
     });
 
-  // Message to trigger the post survey bot. This will be a localized string later on.
-  const message = 'Hey! Before you leave, can you answer a few questions about this contact?';
-
   const messageResult = await client.chat
     .services(context.CHAT_SERVICE_SID)
     .channels(channelSid)
@@ -87,6 +92,27 @@ const triggerPostSurveyFlow = async (context: Context<EnvVars>, channelSid: stri
     });
 
   return messageResult;
+};
+
+const getTriggerMessage = (event: Body): string => {
+  // Try to retrieve the triggerMessage for the approapriate language (if any)
+  const { taskLanguage } = event;
+  if (taskLanguage) {
+    try {
+      const translation = JSON.parse(
+        Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
+      );
+
+      if (!translation.triggerMessage)
+        console.error(`triggerMessage key is missing in translation for ${taskLanguage}`);
+
+      return translation.triggerMessage;
+    } catch {
+      console.error(`Couldn't retrieve triggerMessage translation for ${taskLanguage}`);
+    }
+  }
+
+  return 'Hey! Before you leave, can you answer a few questions about this contact?';
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -103,7 +129,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       if (taskSid === undefined) return resolve(error400('taskSid'));
 
       await createSurveyTask(context, { channelSid, taskSid });
-      await triggerPostSurveyFlow(context, channelSid);
+      await triggerPostSurveyFlow(context, channelSid, triggerMessage);
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
     } catch (err) {
