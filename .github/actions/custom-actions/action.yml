@@ -2,6 +2,8 @@ name: 'Execute per-helpline custom action'
 runs:
   using: "composite"
   steps:
+    - run: echo ${{ github.workflow }}
+      shell: bash
     - name: Aselo Development release custom action
-      if: ${{ github.workflow }} == 'Aselo Development release'
+      if: ${{ github.workflow }} == 'Something that is not Aselo Development release'
       uses: ./.github/actions/custom-actions/aselo_development_custom
