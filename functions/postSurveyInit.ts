@@ -128,6 +128,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       if (channelSid === undefined) return resolve(error400('channelSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
 
+      const triggerMessage = getTriggerMessage(event);
+
       await createSurveyTask(context, { channelSid, taskSid });
       await triggerPostSurveyFlow(context, channelSid, triggerMessage);
 
