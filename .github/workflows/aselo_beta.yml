@@ -108,8 +108,8 @@ jobs:
       - name: Executing deploy-beta
         uses: ./.github/actions/deploy-beta
         with:
-          account-sid: ${{ secrets.AS_BETA_ACCOUNT_SID }}
-          auth-token: ${{ secrets.AS_BETA_AUTH_TOKEN }}
+          account-sid: ${{ secrets.AS_PROD_ACCOUNT_SID }}
+          auth-token: ${{ secrets.AS_PROD_AUTH_TOKEN }}
           workspace-sid: $TWILIO_WORKSPACE_SID
           transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
           sync-service-api-key: $SYNC_SERVICE_API_KEY
