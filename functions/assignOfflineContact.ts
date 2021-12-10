@@ -98,7 +98,7 @@ const assignToOfflineWorker = async (
   const availableActivity = await context
     .getTwilioClient()
     .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-    .activities.list({ friendlyName: 'Available' });
+    .activities.list({ available: 'true' });
 
   await targetWorker.update({
     activitySid: availableActivity[0].sid,
