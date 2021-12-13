@@ -34,13 +34,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       const signedPayload = crypto
         .createHmac('sha256', SAFERNET_TOKEN)
-        .update(payload)
+        .update(encodeURIComponent(payload))
         .digest('hex');
 
       const saferNetResponse = await axios({
         url: SAFERNET_ENDPOINT,
         method: 'POST',
-        data: payload,
+        data: JSON.parse(payload),
         headers: {
           'Content-Type': 'application/json',
           'X-Signature': `sha256=${signedPayload}`,
