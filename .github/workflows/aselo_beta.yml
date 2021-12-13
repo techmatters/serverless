@@ -32,57 +32,57 @@ jobs:
       - name: Set Twilio Sync API key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_API_KEY"
+          ssm_parameter: "STG_TWILIO_AS_API_KEY"
           env_variable_name: "SYNC_SERVICE_API_KEY"
       - name: Set Twilio Chat service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_CHAT_SERVICE_SID"
+          ssm_parameter: "STG_TWILIO_AS_CHAT_SERVICE_SID"
           env_variable_name: "CHAT_SERVICE_SID"
       - name: Set Twilio Chat transfer workflow ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_CHAT_WORKFLOW_SID"
+          ssm_parameter: "STG_TWILIO_AS_CHAT_WORKFLOW_SID"
           env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
       - name: Set Twilio Sync API secret
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_SECRET"
+          ssm_parameter: "STG_TWILIO_AS_SECRET"
           env_variable_name: "SYNC_SERVICE_API_SECRET"
       - name: Set Twilio Sync service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_SYNC_SID"
+          ssm_parameter: "STG_TWILIO_AS_SYNC_SID"
           env_variable_name: "SYNC_SERVICE_SID"
       - name: Set Twilio Workspace ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_WORKSPACE_SID"
+          ssm_parameter: "STG_TWILIO_AS_WORKSPACE_SID"
           env_variable_name: "TWILIO_WORKSPACE_SID"
       - name: Set operating information file key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_OPERATING_INFO_KEY"
+          ssm_parameter: "STG_TWILIO_AS_OPERATING_INFO_KEY"
           env_variable_name: "OPERATING_INFO_KEY"
       - name: Set Twilio Flex Proxy service ID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
+          ssm_parameter: "STG_TWILIO_AS_FLEX_PROXY_SERVICE_SID"
           env_variable_name: "FLEX_PROXY_SERVICE_SID"
       - name: Set HRM static key to make HRM calls
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_HRM_STATIC_KEY"
+          ssm_parameter: "STG_TWILIO_AS_HRM_STATIC_KEY"
           env_variable_name: "HRM_STATIC_KEY"
       - name: Set Survey Workflow SID
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_SURVEY_WORKFLOW_SID"
+          ssm_parameter: "STG_TWILIO_AS_SURVEY_WORKFLOW_SID"
           env_variable_name: "SURVEY_WORKFLOW_SID"
       - name: Set Post Survey Bot Programmable Chat URL
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_POST_SURVEY_BOT_CHAT_URL"
+          ssm_parameter: "STG_TWILIO_AS_POST_SURVEY_BOT_CHAT_URL"
           env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
       - name: Set AWS credentials for Aselo user
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
@@ -102,14 +102,14 @@ jobs:
       - name: Set S3 bucket name where Aselo documents are stored
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "PROD_TWILIO_AS_S3_BUCKET_DOCS"
+          ssm_parameter: "STG_TWILIO_AS_S3_BUCKET_DOCS"
           env_variable_name: "S3_BUCKET"
       # Call deploy-beta to compile and deploy
       - name: Executing deploy-beta
         uses: ./.github/actions/deploy-beta
         with:
-          account-sid: ${{ secrets.AS_BETA_ACCOUNT_SID }}
-          auth-token: ${{ secrets.AS_BETA_AUTH_TOKEN }}
+          account-sid: ${{ secrets.AS_STG_ACCOUNT_SID }}
+          auth-token: ${{ secrets.AS_STG_AUTH_TOKEN }}
           workspace-sid: $TWILIO_WORKSPACE_SID
           transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
           sync-service-api-key: $SYNC_SERVICE_API_KEY
