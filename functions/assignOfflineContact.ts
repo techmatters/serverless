@@ -99,9 +99,12 @@ const assignToOfflineWorker = async (
     .getTwilioClient()
     .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
     .activities.list({ available: 'true' });
-if (availableActivity.length > 1) {
-  console.warn(`There are ${availabilityActivity.length} available worker activities, but there should only be one.`);
-}
+
+  if (availableActivity.length > 1) {
+    // eslint-disable-next-line no-console
+    console.warn(`There are ${availableActivity.length} available worker activities, but there should only be one.`);
+  }
+
   await targetWorker.update({
     activitySid: availableActivity[0].sid,
     attributes: JSON.stringify({ ...previousAttributes, waitingOfflineContact: true }), // waitingOfflineContact is used to avoid other tasks to be assigned during this window of time (workflow rules)
