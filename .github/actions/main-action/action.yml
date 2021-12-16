@@ -78,7 +78,7 @@ runs:
           TWILIO_WORKSPACE_SID=${{ inputs.workspace-sid }}
           TWILIO_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.transfer-workflow-sid }}
           SYNC_SERVICE_API_KEY=${{ inputs.sync-service-api-key }}
-          production=${{ inputs.sync-service-api-secret }}
+          SYNC_SERVICE_API_SECRET=${{ inputs.sync-service-api-secret }}
           SYNC_SERVICE_SID=${{ inputs.sync-service-sid }}
           CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
           OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
