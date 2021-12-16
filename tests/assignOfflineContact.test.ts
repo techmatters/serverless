@@ -108,6 +108,7 @@ const workspaces: { [x: string]: any } = {
         {
           sid: 'Available',
           friendlyName: 'Available',
+          available: 'true',
         },
       ],
     },
