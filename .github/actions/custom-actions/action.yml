@@ -8,3 +8,6 @@ runs:
     - name: Safernet Staging release custom action
       if: github.workflow == format('Safernet Staging release')
       uses: ./.github/actions/custom-actions/safernet_staging_custom
+    - name: Safernet Production release custom action
+      if: github.workflow == format('SaferNet Production release')
+      uses: ./.github/actions/custom-actions/safernet_production_custom
