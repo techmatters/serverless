@@ -1,0 +1,23 @@
+name: 'Safernet Production release custom action'
+runs:
+  using: "composite"
+  steps:
+    # Fetch values from SSM
+    - name: Set SAFERNET_ENDPOINT
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_SAFERNET_ENDPOINT"
+        env_variable_name: "SAFERNET_ENDPOINT"
+    - name: Set SAFERNET_TOKEN
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_SAFERNET_TOKEN"
+        env_variable_name: "SAFERNET_TOKEN"
+    # Append environment variables
+    - name: Add SAFERNET_ENDPOINT
+      run: echo "SAFERNET_ENDPOINT=${{ env.SAFERNET_ENDPOINT }}" >> .env
+      shell: bash
+    - name: Add SAFERNET_TOKEN
+      run: echo "SAFERNET_TOKEN=${{ env.SAFERNET_TOKEN }}" >> .env
+      shell: bash
+    
