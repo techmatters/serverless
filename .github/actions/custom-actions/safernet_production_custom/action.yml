@@ -20,4 +20,7 @@ runs:
     - name: Add SAFERNET_TOKEN
       run: echo "SAFERNET_TOKEN=${{ env.SAFERNET_TOKEN }}" >> .env
       shell: bash
+    - name: Add SAVE_CONTACT_FN
+      run: echo "SAVE_CONTACT_FN=saveContactToSaferNet" >> .env
+      shell: bash
     
