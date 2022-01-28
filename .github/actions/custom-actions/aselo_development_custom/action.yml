@@ -18,6 +18,16 @@ runs:
       with:
         ssm_parameter: "IWF_API_URL"
         env_variable_name: "IWF_API_URL"
+    # - name: Set IWF_API_ENVIRONMENT
+    #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    #   with:
+    #     ssm_parameter: "DEV_AS_IWF_API_ENVIRONMENT"
+    #     env_variable_name: "IWF_API_ENVIRONMENT"
+    # - name: Set IWF_API_COUNTRY_CODE
+    #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    #   with:
+    #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
+    #     env_variable_name: "IWF_API_COUNTRY_CODE"
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -28,4 +38,10 @@ runs:
     - name: Add IWF_API_URL
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
       shell: bash
+    # - name: Add IWF_API_ENVIRONMENT
+    #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
+    #   shell: bash
+    # - name: Add IWF_API_COUNTRY_CODE
+    #   run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
+    #   shell: bash
     
