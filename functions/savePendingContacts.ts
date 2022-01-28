@@ -43,7 +43,7 @@ const getSaveContactFn = (
       // Callback passed to saveContactHandler
       const callback: ServerlessCallback = (error: any, callbackPayload: any) => {
         const isError = error || ![200, 204].includes(callbackPayload?.statusCode);
-        return isError ? rejectCallback(callbackPayload) : resolveCallback(callbackPayload);
+        return isError ? rejectCallback(error) : resolveCallback(callbackPayload);
       };
 
       return saveContactHandler(context, { ...event, payload }, callback);
@@ -68,43 +68,52 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const sharedStateClient = context.getTwilioClient().sync.services(SYNC_SERVICE_SID);
       const list = await sharedStateClient.syncLists('pending-contacts').fetch();
       const pendingContacts = await list.syncListItems().list();
-
       type SyncListItemInstance = typeof pendingContacts[0];
 
-      const successfulRetriesListItems: SyncListItemInstance[] = [];
-      const failedRetriesListItems: SyncListItemInstance[] = [];
+      let savedContacts = 0;
+      let remainingPendingContacts = 0;
+
+      const incrementRetries = async (listItem: SyncListItemInstance) => {
+        try {
+          const updateOptions = {
+            data: {
+              ...listItem.data,
+              retries: (listItem.data.retries || 0) + 1,
+            },
+          };
+
+          await listItem.update(updateOptions);
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn(err);
+        } finally {
+          remainingPendingContacts += 1;
+        }
+      };
+
+      const removeFromPendingContacts = async (listItem: SyncListItemInstance) => {
+        try {
+          await listItem.remove();
+          savedContacts += 1;
+        } catch (err) {
+          // eslint-disable-next-line no-console
+          console.warn(err);
+        }
+      };
 
       await Promise.all(
         pendingContacts.map(listItem => {
           const { payload } = listItem.data;
 
           return saveContactFn(payload)
-            .then(() => successfulRetriesListItems.push(listItem))
-            .catch(() => failedRetriesListItems.push(listItem));
+            .then(() => removeFromPendingContacts(listItem))
+            .catch(() => incrementRetries(listItem));
         }),
       );
 
-      const incrementRetries = (listItem: SyncListItemInstance) => {
-        const updateOptions = {
-          data: {
-            ...listItem.data,
-            retries: (listItem.data.retries || 0) + 1,
-          },
-        };
-
-        return listItem.update(updateOptions);
-      };
-      const removeFromPendingContacts = (listItem: SyncListItemInstance) => listItem.remove();
-
-      // Apply changes to pending-contacts sync list
-      await Promise.all<SyncListItemInstance | boolean>([
-        ...failedRetriesListItems.map(incrementRetries),
-        ...successfulRetriesListItems.map(removeFromPendingContacts),
-      ]);
-
       const result = {
-        savedContacts: successfulRetriesListItems.length,
-        remainingPendingContacts: failedRetriesListItems.length,
+        savedContacts,
+        remainingPendingContacts,
       };
 
       return resolve(success(result));
@@ -120,7 +129,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return resolve(success('The sync list pending-contacts was not found'));
       }
       // eslint-disable-next-line no-console
-      console.error(err);
+      console.warn(err);
       return resolve(error500(err));
     }
   },
