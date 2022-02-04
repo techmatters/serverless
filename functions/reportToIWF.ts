@@ -19,6 +19,8 @@ type EnvVars = {
   IWF_API_USERNAME: string;
   IWF_API_PASSWORD: string;
   IWF_API_URL: string;
+  IWF_API_ENVIRONMENT?: string;
+  IWF_API_COUNTRY_CODE?: string;
 };
 
 type IWFReportPayload = {
@@ -65,9 +67,14 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
       if (!Reporter_Anonymous || (Reporter_Anonymous !== 'Y' && Reporter_Anonymous !== 'N'))
         return resolve(error400('Reporter_Anonymous'));
 
+      const liveReportFlag = context.IWF_API_ENVIRONMENT === 'L' ? 'L' : 'T';
+      const countryID = context.IWF_API_COUNTRY_CODE
+        ? parseInt(context.IWF_API_COUNTRY_CODE, 10)
+        : null;
+
       const body: IWFReportPayload = {
         Reporting_Type: 'R',
-        Live_Report: 'T', // This will change when we go live
+        Live_Report: liveReportFlag,
         Media_Type_ID: 1,
         Report_Channel_ID: 51,
         Origin_ID: 5,
@@ -79,7 +86,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
         Reporter_Last_Name: Reporter_Last_Name || null,
         Reporter_Email_ID: Reporter_Email_ID || null,
         Reporter_Description: Reporter_Description || null,
-        Reporter_Country_ID: null,
+        Reporter_Country_ID: countryID,
       };
 
       const hash = Buffer.from(`${context.IWF_API_USERNAME}:${context.IWF_API_PASSWORD}`).toString(
