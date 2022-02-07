@@ -1,3 +1,5 @@
+/* eslint-disable global-require */
+/* eslint-disable import/no-dynamic-require */
 import Twit from 'twit';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
@@ -7,8 +9,11 @@ import {
   error400,
   error500,
   success,
-  send,
 } from '@tech-matters/serverless-helpers';
+import {
+  WebhookEvent,
+  FlexToCustomChannel,
+} from '../../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
   TWITTER_CONSUMER_KEY: string;
@@ -18,17 +23,11 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = {
-  recipientId?: string;
-  Source?: string;
-  Body?: string;
-  From?: string;
-  ChannelSid?: string;
-  EventType?: string;
+export type Body = WebhookEvent & {
+  recipientId?: string; // The Twitter id of the user that started the conversation. Provided as query parameter
 };
 
-const sendTwitterMessage = async (
-  context: Context<EnvVars>,
+const sendTwitterMessage = (context: Context<EnvVars>) => async (
   recipientId: string,
   messageText: string,
 ) => {
@@ -68,60 +67,58 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { recipientId, Body } = event;
-
+    const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
+    console.log('event.From', event.From);
     if (recipientId === undefined) {
       resolve(error400('recipientId'));
       return;
     }
-
     if (Body === undefined) {
       resolve(error400('Body'));
+      return;
+    }
+    if (From === undefined) {
+      resolve(error400('From'));
+      return;
+    }
+    if (ChannelSid === undefined) {
+      resolve(error400('ChannelSid'));
+      return;
+    }
+    if (EventType === undefined) {
+      resolve(error400('EventType'));
+      return;
+    }
+    if (Source === undefined) {
+      resolve(error400('Source'));
       return;
     }
 
     console.log('------ FlexToTwitter excecution ------');
 
-    if (event.Source === 'SDK') {
-      const TwitResponse = await sendTwitterMessage(context, recipientId, Body);
-      console.log('Message sent from SDK call: ', Body);
-      resolve(success(TwitResponse));
-      return;
-    }
+    const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
+    const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
-    if (event.Source === 'API' && event.EventType === 'onMessageSent') {
-      const { ChannelSid } = event;
+    const sanitizedEvent = { Body, From, ChannelSid, EventType, Source };
 
-      if (ChannelSid === undefined) {
-        resolve(error400('ChannelSid'));
+    const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
+      event: sanitizedEvent,
+      recipientId,
+      sendExternalMessage: sendTwitterMessage(context),
+    });
+
+    switch (result.status) {
+      case 'sent':
+        resolve(success(result.response));
         return;
-      }
-
-      const client = context.getTwilioClient();
-      const channel = await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(ChannelSid)
-        .fetch();
-
-      const channelAttributes = JSON.parse(channel.attributes);
-
-      // Redirect bot, system or third participant
-      if (channelAttributes.from !== event.From) {
-        const TwitResponse = await sendTwitterMessage(context, recipientId, Body);
-        console.log('Message sent from API call: ', Body);
-        resolve(success(TwitResponse));
+      case 'ignored':
+        resolve(success('Ignored event.'));
         return;
-      }
-
-      console.log('Message ignored (do not re-send self messages)');
-      resolve(success('Ignored event.'));
-      return;
+      default:
+        throw new Error('Reached unexpected default case');
     }
-
-    resolve(send(406)('Event Source not supported'));
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
-    resolve(error500(err));
+    if (err instanceof Error) resolve(error500(err));
+    else resolve(error500(new Error(String(err))));
   }
 };

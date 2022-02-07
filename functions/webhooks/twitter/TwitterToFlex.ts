@@ -1,3 +1,5 @@
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
@@ -8,6 +10,7 @@ import {
   success,
 } from '@tech-matters/serverless-helpers';
 import crypto from 'crypto';
+import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   ACCOUNT_SID: string;
@@ -51,8 +54,6 @@ export type Body = {
   bodyAsString?: string;
 };
 
-const twitterUniqueNamePrefix = 'twitter:';
-
 /**
  * Validates that the payload is signed with TWITTER_CONSUMER_SECRET so we know it's comming from Twitter
  */
@@ -70,187 +71,6 @@ const isValidTwitterPayload = (event: Body, consumerSecret: string): boolean => 
   );
 
   return isValidRequest;
-};
-
-/**
- * Retrieves a channel by sid or uniqueName
- */
-const retrieveChannelSid = async (
-  context: Context<EnvVars>,
-  uniqueSenderName: string,
-): Promise<string | undefined> => {
-  try {
-    const userChannelMap = await context
-      .getTwilioClient()
-      .sync.services(context.SYNC_SERVICE_SID)
-      .documents(uniqueSenderName)
-      .fetch();
-    console.log('userChannelMap: ', userChannelMap.data);
-
-    return userChannelMap.data.activeChannelSid;
-  } catch (err) {
-    return undefined;
-  }
-};
-
-/**
- * Updates the user channel map to contain the new channel assigned for this user
- */
-const createUserChannelMap = async (
-  context: Context<EnvVars>,
-  uniqueSenderName: string,
-  channelSid: string,
-) => {
-  const userChannelMap = await context
-    .getTwilioClient()
-    .sync.services(context.SYNC_SERVICE_SID)
-    .documents.create({
-      data: { activeChannelSid: channelSid },
-      uniqueName: uniqueSenderName,
-      ttl: 259200, // auto removed after 3 days
-    });
-
-  console.log('userChannelMap was created from scratch and its value is: ', userChannelMap.data);
-};
-
-/**
- * Creates a new Flex channel in the Twitter Flex Flow and subscribes webhooks to it's events
- */
-const createTwitterChannel = async (
-  context: Context<EnvVars>,
-  uniqueChannelName: string,
-  senderId: string,
-  uniqueSenderName: string, // Unique identifier for this person
-  senderScreenName: string, // Twiter handle to show friendly info
-  forUserId: string,
-) => {
-  const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
-
-  const client = context.getTwilioClient();
-
-  const channel = await client.flexApi.channel.create({
-    flexFlowSid: context.TWITTER_FLEX_FLOW_SID,
-    identity: uniqueSenderName,
-    chatUserFriendlyName: senderScreenName,
-    chatFriendlyName: uniqueChannelName,
-    target: uniqueSenderName,
-  });
-
-  const channelAttributes = JSON.parse(
-    (
-      await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(channel.sid)
-        .fetch()
-    ).attributes,
-  );
-
-  await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channel.sid)
-    .update({
-      attributes: JSON.stringify({
-        ...channelAttributes,
-        channel_type: 'twitter',
-        twitterUserHandle: senderScreenName,
-        twilioNumber,
-      }),
-    });
-
-  /* const onMessageSent = */
-  await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channel.sid)
-    .webhooks.create({
-      type: 'webhook',
-      configuration: {
-        method: 'POST',
-        url: `https://${context.DOMAIN_NAME}/webhooks/twitter/FlexToTwitter?recipientId=${senderId}`,
-        filters: ['onMessageSent'],
-      },
-    });
-
-  /* const onChannelUpdated = */
-  await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channel.sid)
-    .webhooks.create({
-      type: 'webhook',
-      configuration: {
-        method: 'POST',
-        url: `https://${context.DOMAIN_NAME}/webhooks/twitter/FlexChannelUpdate`,
-        filters: ['onChannelUpdated'],
-      },
-    });
-
-  return channel.sid;
-};
-
-const sendChatMessage = async (
-  context: Context<EnvVars>,
-  channelSid: string,
-  from: string,
-  messageText: string,
-) => {
-  const message = await context
-    .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .messages.create({
-      body: messageText,
-      from,
-      xTwilioWebhookEnabled: 'true',
-    });
-
-  console.log('Message sent: ', messageText);
-  return message;
-};
-
-const removeStaleChannel = async (context: Context<EnvVars>, channelSid: string) =>
-  context
-    .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .remove();
-
-const sendMessageToFlex = async (
-  context: Context<EnvVars>,
-  senderId: string,
-  senderScreenName: string,
-  messageText: string,
-  forUserId: string,
-) => {
-  const uniqueChannelName = `${twitterUniqueNamePrefix}${senderId}`;
-  const uniqueSenderName = `${twitterUniqueNamePrefix}${senderId}`;
-  let channelSid: string | undefined;
-
-  try {
-    channelSid = await retrieveChannelSid(context, uniqueSenderName);
-
-    if (!channelSid) {
-      console.log('Creating new channel');
-      const newChannelSid = await createTwitterChannel(
-        context,
-        uniqueChannelName,
-        senderId,
-        uniqueSenderName,
-        senderScreenName,
-        forUserId,
-      );
-
-      channelSid = newChannelSid;
-      await createUserChannelMap(context, uniqueSenderName, channelSid);
-    }
-  } catch (err) {
-    const removedStaleChannel = channelSid ? await removeStaleChannel(context, channelSid) : false;
-    throw new Error(
-      `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
-    );
-  }
-
-  console.log('Code excecution continued with channelSid: ', channelSid);
-
-  return sendChatMessage(context, channelSid, uniqueSenderName, messageText);
 };
 
 export const handler = async (
@@ -275,34 +95,52 @@ export const handler = async (
       if (!forUserId || !directMessageEvents || !directMessageEvents.length || !users)
         throw new Error('Bad formatted direct message event');
 
-      const senderId = directMessageEvents[0].message_create.sender_id;
+      const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
+      const channelToFlex = require(handlerPath) as ChannelToFlex;
 
-      if (senderId !== forUserId) {
-        console.log(`New message from: ${users[senderId].name}`);
-        console.log(directMessageEvents[0].message_create.message_data.text);
+      const senderExternalId = directMessageEvents[0].message_create.sender_id;
+      const subscribedExternalId = forUserId;
+      const channelType = 'twitter';
+      const twilioNumber = `${channelType}:${subscribedExternalId}`;
+      const chatFriendlyName = `${channelType}:${senderExternalId}`;
+      const uniqueUserName = `${channelType}:${senderExternalId}`;
+      const senderScreenName = users[senderExternalId].screen_name;
+      const messageText = directMessageEvents[0].message_create.message_data.text;
+      const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/twitter/FlexToTwitter?recipientId=${senderExternalId}`;
 
-        const messageText = directMessageEvents[0].message_create.message_data.text;
-        const senderScreenName = users[senderId].screen_name;
+      console.log(`New message from: ${users[senderExternalId].name}`);
+      console.log(directMessageEvents[0].message_create.message_data.text);
 
-        const message = await sendMessageToFlex(
-          context,
-          senderId,
-          senderScreenName,
-          messageText,
-          forUserId,
-        );
+      const result = await channelToFlex.sendMessageToFlex(context, {
+        flexFlowSid: context.TWITTER_FLEX_FLOW_SID,
+        chatServiceSid: context.CHAT_SERVICE_SID,
+        syncServiceSid: context.SYNC_SERVICE_SID,
+        channelType,
+        twilioNumber,
+        chatFriendlyName,
+        uniqueUserName,
+        senderScreenName,
+        onMessageSentWebhookUrl,
+        messageText,
+        senderExternalId,
+        subscribedExternalId,
+      });
 
-        resolve(success(message));
-        return;
+      switch (result.status) {
+        case 'sent':
+          resolve(success(result.response));
+          return;
+        case 'ignored':
+          resolve(success('Ignored event.'));
+          return;
+        default:
+          throw new Error('Reached unexpected default case');
       }
-
-      console.log('Message ignored (do not re-send self messages)');
     }
 
     resolve(success('Ignored event.'));
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
-    resolve(error500(err));
+    if (err instanceof Error) resolve(error500(err));
+    else resolve(error500(new Error(String(err))));
   }
 };
