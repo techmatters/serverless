@@ -240,6 +240,7 @@ describe('FlexToTwitter', () => {
       Source: 'SDK',
       EventType: 'onMessageSent',
       ChannelSid: 'ChannelSid',
+      From: 'from-sdk',
     };
 
     const callback: ServerlessCallback = (err, result) => {
