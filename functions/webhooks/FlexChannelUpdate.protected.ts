@@ -46,9 +46,11 @@ async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {
 
     return removed;
   } catch (err) {
-    // If the error is that the doc was already cleaned, don't throw further
-    const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
-    if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+    if (err instanceof Error) {
+      // If the error is that the doc was already cleaned, don't throw further
+      const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
+      if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+    }
 
     throw err;
   }
@@ -95,8 +97,7 @@ export const handler = async (
 
     resolve(success('Ignored event.'));
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
-    resolve(error500(err));
+    if (err instanceof Error) resolve(error500(err));
+    else resolve(error500(new Error(String(err))));
   }
 };
