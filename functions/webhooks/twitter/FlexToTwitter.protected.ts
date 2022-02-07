@@ -23,7 +23,7 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = WebhookEvent & {
+export type Body = Partial<WebhookEvent> & {
   recipientId?: string; // The Twitter id of the user that started the conversation. Provided as query parameter
 };
 
@@ -68,7 +68,6 @@ export const handler = async (
 
   try {
     const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    console.log('event.From', event.From);
     if (recipientId === undefined) {
       resolve(error400('recipientId'));
       return;

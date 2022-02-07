@@ -54,7 +54,12 @@ describe('FlexToTwitter', () => {
 
   test('Should return status 400', async () => {
     const event1: Body = {
-      recipientId: undefined,
+      // recipientId: undefined,
+      Body: 'Body',
+      Source: 'API',
+      EventType: 'onMessageSent',
+      ChannelSid: 'ChannelSid',
+      From: 'from-somewhere',
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -68,7 +73,11 @@ describe('FlexToTwitter', () => {
 
     const event2: Body = {
       recipientId: 'recipientId',
-      Body: undefined,
+      // Body: undefined,
+      Source: 'API',
+      EventType: 'onMessageSent',
+      ChannelSid: 'ChannelSid',
+      From: 'from-somewhere',
     };
 
     const callback2: ServerlessCallback = (err, result) => {
@@ -85,7 +94,8 @@ describe('FlexToTwitter', () => {
       Body: 'Body',
       Source: 'API',
       EventType: 'onMessageSent',
-      ChannelSid: undefined,
+      // ChannelSid: undefined,
+      From: 'from-somewhere',
     };
 
     const callback3: ServerlessCallback = (err, result) => {
@@ -98,25 +108,6 @@ describe('FlexToTwitter', () => {
     await FlexToTwitter(baseContext, event3, callback3);
   });
 
-  test('Should return status 406', async () => {
-    const event: Body = {
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'other source',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(406);
-      expect(response.getBody()).toContain('Event Source not supported');
-    };
-
-    await FlexToTwitter(baseContext, event, callback);
-  });
-
   test('Should return status 500', async () => {
     // Bad formatted direct message event
     const event1: Body = {
@@ -125,6 +116,7 @@ describe('FlexToTwitter', () => {
       Source: 'API',
       EventType: 'onMessageSent',
       ChannelSid: 'ChannelSid',
+      From: 'from-somewhere',
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -147,6 +139,7 @@ describe('FlexToTwitter', () => {
       Source: 'API',
       EventType: 'onMessageSent',
       ChannelSid: 'ChannelSid',
+      From: 'from-somewhere',
     };
 
     const callback2: ServerlessCallback = (err, result) => {
@@ -171,6 +164,7 @@ describe('FlexToTwitter', () => {
       Source: 'API',
       EventType: 'onMessageSent',
       ChannelSid: 'ChannelSid',
+      From: 'from-somewhere',
     };
 
     const callback3: ServerlessCallback = (err, result) => {
@@ -181,6 +175,26 @@ describe('FlexToTwitter', () => {
     };
 
     await FlexToTwitter(baseContext, event3, callback3);
+  });
+
+  test('Should ignore unsupported event source', async () => {
+    const event: Body = {
+      recipientId: 'recipientId',
+      Body: 'Body',
+      Source: 'other source',
+      EventType: 'onMessageSent',
+      ChannelSid: 'ChannelSid',
+      From: 'from',
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toContain('Ignored event.');
+    };
+
+    await FlexToTwitter(baseContext, event, callback);
   });
 
   test('Should return status 200 (ignore events)', async () => {
