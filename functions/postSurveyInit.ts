@@ -71,7 +71,16 @@ const triggerPostSurveyFlow = async (
 ) => {
   const client = context.getTwilioClient();
 
+  /** const messageResult = */
   await client.chat
+    .services(context.CHAT_SERVICE_SID)
+    .channels(channelSid)
+    .messages.create({
+      body: message,
+      xTwilioWebhookEnabled: 'true',
+    });
+
+  return client.chat
     .services(context.CHAT_SERVICE_SID)
     .channels(channelSid)
     .webhooks.create({
@@ -82,16 +91,6 @@ const triggerPostSurveyFlow = async (
         url: context.POST_SURVEY_BOT_CHAT_URL,
       },
     });
-
-  const messageResult = await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .messages.create({
-      body: message,
-      xTwilioWebhookEnabled: 'true',
-    });
-
-  return messageResult;
 };
 
 const getTriggerMessage = (event: Body): string => {
