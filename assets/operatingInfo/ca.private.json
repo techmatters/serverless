@@ -1,0 +1,23 @@
+{
+  "timezone": "America/Toronto",
+  "holidays": {
+    "01/02/2023":"New Years Day",
+    "04/15/2022":"Good Friday",
+    "07/01/2022":"Canada Day",
+    "09/5/2022":"Labour Day",
+    "10/10/2022":"Thanksgiving",
+    "12/25/2022":"Christmas"
+
+  },
+  "operatingHours": {
+    "webchat": {
+      "1": [{ "open": 900, "close": 1700 }],
+      "2": [{ "open": 900, "close": 1700 }],
+      "3": [{ "open": 900, "close": 1700 }],
+      "4": [{ "open": 900, "close": 1700 }],
+      "5": [{ "open": 900, "close": 1700 }],
+      "6": [{ "open": 900, "close": 1700 }],
+      "7": [{ "open": 900, "close": 1700 }]
+    }
+  }
+}
