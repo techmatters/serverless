@@ -1,12 +1,12 @@
 [
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_9",
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_9",
     "questions": ["wasHelpful"]
   },
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_10",
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_10",
     "questions": ["wouldRecommend"]
   }
 ]

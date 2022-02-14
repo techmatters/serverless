@@ -71,7 +71,16 @@ const triggerPostSurveyFlow = async (
 ) => {
   const client = context.getTwilioClient();
 
+  /** const messageResult = */
   await client.chat
+    .services(context.CHAT_SERVICE_SID)
+    .channels(channelSid)
+    .messages.create({
+      body: message,
+      xTwilioWebhookEnabled: 'true',
+    });
+
+  return client.chat
     .services(context.CHAT_SERVICE_SID)
     .channels(channelSid)
     .webhooks.create({
@@ -82,16 +91,6 @@ const triggerPostSurveyFlow = async (
         url: context.POST_SURVEY_BOT_CHAT_URL,
       },
     });
-
-  const messageResult = await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .messages.create({
-      body: message,
-      xTwilioWebhookEnabled: 'true',
-    });
-
-  return messageResult;
 };
 
 const getTriggerMessage = (event: Body): string => {
@@ -112,7 +111,7 @@ const getTriggerMessage = (event: Body): string => {
     }
   }
 
-  return 'Hey! Before you leave, can you answer a few questions about this contact?';
+  return 'Before you leave, would you be willing to answer a few questions about the service you recieved today?';
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
