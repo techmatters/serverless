@@ -1,22 +1,22 @@
 [
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_9",
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_9",
     "questions": ["wasHelpful"]
   },
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_10",
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_10",
     "questions": ["wouldRecommend"]
   },
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_7",
-    "questions": ["support_needs"]
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_4",
+    "questions": ["supportNeeds"]
   },
   {
-    "insightsObject": "customers",
-    "attributeName": "customer_attribute_8",
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_5",
     "questions": ["shareResponse"]
   }
 ]
