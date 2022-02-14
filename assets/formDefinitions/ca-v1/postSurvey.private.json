@@ -1,0 +1,22 @@
+[
+  {
+    "insightsObject": "customers",
+    "attributeName": "customer_attribute_9",
+    "questions": ["wasHelpful"]
+  },
+  {
+    "insightsObject": "customers",
+    "attributeName": "customer_attribute_10",
+    "questions": ["wouldRecommend"]
+  },
+  {
+    "insightsObject": "customers",
+    "attributeName": "customer_attribute_7",
+    "questions": ["support_needs"]
+  },
+  {
+    "insightsObject": "customers",
+    "attributeName": "customer_attribute_8",
+    "questions": ["shareResponse"]
+  }
+]
