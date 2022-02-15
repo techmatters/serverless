@@ -102,10 +102,7 @@ const getTriggerMessage = (event: Body): string => {
         Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
       );
 
-      if (!translation.triggerMessage)
-        console.error(`triggerMessage key is missing in translation for ${taskLanguage}`);
-
-      return translation.triggerMessage;
+      if (translation.triggerMessage) return translation.triggerMessage;
     } catch {
       console.error(`Couldn't retrieve triggerMessage translation for ${taskLanguage}`);
     }
