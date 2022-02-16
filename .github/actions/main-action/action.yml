@@ -73,6 +73,14 @@ inputs:
     description: 'SID of the Twitter Flex Flow for this helpline'
     required: false
     default: 'NOT_USED'
+  facebook-page-access-token:
+    description: 'Facebook Page Access Token for this helpline'
+    required: false
+    default: 'NOT_USED'
+  instagram-flex-flow-sid:
+    description: 'SID of the Instagram Flex Flow for this helpline'
+    required: false
+    default: 'NOT_USED'
 runs:
   using: "composite"
   steps:
@@ -115,6 +123,8 @@ runs:
           TWITTER_CONSUMER_KEY=${{ inputs.twitter-consumer-key }}
           TWITTER_CONSUMER_SECRET=${{ inputs.twitter-consumer-secret }}
           TWITTER_FLEX_FLOW_ID=${{ inputs.twitter-flex-flow-sid }}
+          FACEBOOK_PAGE_ACCESS_TOKEN=${{ inputs.facebook-page-access-token }}
+          INSTAGRAM_FLEX_FLOW_ID=${{ inputs.instagram-flex-flow-sid }}
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
