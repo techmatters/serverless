@@ -53,7 +53,7 @@ describe('FlexToTwitter', () => {
   });
 
   test('Should return status 400', async () => {
-    const event1: Body = {
+    const event1 = {
       recipientId: undefined,
     };
 
@@ -64,11 +64,11 @@ describe('FlexToTwitter', () => {
       expect(response.getBody().message).toContain('Error: recipientId parameter not provided');
     };
 
-    await FlexToTwitter(baseContext, event1, callback1);
+    await FlexToTwitter(baseContext, <Body>event1, callback1);
 
-    const event2: Body = {
+    const event2 = {
       recipientId: 'recipientId',
-      Body: undefined,
+      Body: '',
     };
 
     const callback2: ServerlessCallback = (err, result) => {
@@ -78,14 +78,15 @@ describe('FlexToTwitter', () => {
       expect(response.getBody().message).toContain('Error: Body parameter not provided');
     };
 
-    await FlexToTwitter(baseContext, event2, callback2);
+    await FlexToTwitter(baseContext, <Body>event2, callback2);
 
     const event3: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'API',
       EventType: 'onMessageSent',
-      ChannelSid: undefined,
+      ChannelSid: '',
     };
 
     const callback3: ServerlessCallback = (err, result) => {
@@ -100,6 +101,7 @@ describe('FlexToTwitter', () => {
 
   test('Should return status 406', async () => {
     const event: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'other source',
@@ -120,6 +122,7 @@ describe('FlexToTwitter', () => {
   test('Should return status 500', async () => {
     // Bad formatted direct message event
     const event1: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'API',
@@ -142,6 +145,7 @@ describe('FlexToTwitter', () => {
     });
 
     const event2: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'API',
@@ -166,6 +170,7 @@ describe('FlexToTwitter', () => {
     }));
 
     const event3: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'API',
@@ -235,6 +240,7 @@ describe('FlexToTwitter', () => {
     }));
 
     const event: Body = {
+      From: 'wherever',
       recipientId: 'recipientId',
       Body: 'Body',
       Source: 'SDK',
