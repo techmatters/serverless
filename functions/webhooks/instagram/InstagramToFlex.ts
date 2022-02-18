@@ -5,17 +5,17 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   responseWithCors,
   bindResolve,
-  // error403,
+  error403,
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-// import crypto from 'crypto';
+import crypto from 'crypto';
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   SYNC_SERVICE_SID: string;
   CHAT_SERVICE_SID: string;
-  // FACEBOOK_APP_ID: string;
+  FACEBOOK_APP_SECRET: string;
   FACEBOOK_PAGE_ACCESS_TOKEN: string;
   INSTAGRAM_FLEX_FLOW_SID: string;
 };
@@ -54,7 +54,23 @@ export type Body = InstagramMessageEvent & {
   bodyAsString?: string; // entire payload as string (preserves the ordering to decode and compare with xHubSignature)
 };
 
-// const isValidFacebookPayload = () => true;
+/**
+ * Validates that the payload is signed with FACEBOOK_APP_SECRET so we know it's comming from Facebook
+ */
+const isValidFacebookPayload = (event: Body, appSecret: string) => {
+  if (!event.bodyAsString || !event.xHubSignature) return false;
+
+  const expectedSignature = crypto
+    .createHmac('sha1', appSecret)
+    .update(event.bodyAsString)
+    .digest('hex');
+
+  const isValidRequest = crypto.timingSafeEqual(
+    Buffer.from(event.xHubSignature),
+    Buffer.from(`sha1=${expectedSignature}`),
+  );
+  return isValidRequest;
+};
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -64,7 +80,10 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
-  // TODO: validate signature here, if not valid resolve(error403('Unauthorized')) and return
+  if (!isValidFacebookPayload(event, context.FACEBOOK_APP_SECRET)) {
+    resolve(error403('Unauthorized'));
+    return;
+  }
 
   try {
     console.log('------ InstagramToFlex excecution ------');
