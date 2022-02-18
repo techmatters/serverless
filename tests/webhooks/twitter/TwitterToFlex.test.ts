@@ -1,4 +1,5 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import each from 'jest-each';
 import { handler as TwitterToFlex, Body } from '../../../functions/webhooks/twitter/TwitterToFlex';
 
 import helpers, { MockedResponse } from '../../helpers';
@@ -95,259 +96,137 @@ const baseContext = {
   TWITTER_FLEX_FLOW_SID: 'TWITTER_FLEX_FLOW_SID',
 };
 
+const validEventBody = ({ senderId = 'sender_id', recipientId = 'recipient_id' } = {}): Body => ({
+  bodyAsString: 'fake body',
+  xTwitterWebhooksSignature: 'fake signature',
+  direct_message_events: [
+    {
+      type: 'type',
+      created_timestamp: 'created_timestamp',
+      id: 'id',
+      message_create: {
+        recipient_id: recipientId,
+        sender_id: senderId,
+        target: 'target',
+        message_data: {
+          text: 'text',
+          entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
+        },
+      },
+    },
+  ],
+  for_user_id: recipientId,
+  users: {
+    [senderId]: { name: senderId, screen_name: senderId },
+    [recipientId]: { name: recipientId, screen_name: recipientId },
+  },
+});
+
 describe('TwitterToFlex', () => {
   beforeAll(() => {
-    helpers.setup({});
+    const runtime = new helpers.MockRuntime(baseContext);
+    // eslint-disable-next-line no-underscore-dangle
+    runtime._addFunction(
+      'helpers/customChannels/customChannelToFlex',
+      'functions/helpers/customChannels/customChannelToFlex.private',
+    );
+    helpers.setup({}, runtime);
   });
   afterAll(() => {
     helpers.teardown();
   });
 
-  test('Should return status 500', async () => {
-    // Bad formatted direct message event
-    const event1: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [],
-    };
-
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Bad formatted direct message event');
-    };
-
-    await TwitterToFlex(baseContext, event1, callback1);
-
-    const event2: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'sender_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-    };
-
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Bad formatted direct message event');
-    };
-
-    await TwitterToFlex(baseContext, event2, callback2);
-
-    const event3: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'sender_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-      for_user_id: 'recipient_id',
-    };
-
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Bad formatted direct message event');
-    };
-
-    await TwitterToFlex(baseContext, event3, callback3);
-
-    const event4: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'other_sender_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-      for_user_id: 'recipient_id',
-      users: {
-        other_sender_id: { name: 'other_sender_id', screen_name: 'other_sender_id' },
-        recipient_id: { name: 'recipient_id', screen_name: 'recipient_id' },
+  each([
+    {
+      conditionDescription: 'the event contains no direct message events',
+      event: { ...validEventBody(), direct_message_events: [] },
+      expectedStatus: 500,
+      expectedMessage: 'Bad formatted direct message event',
+    },
+    {
+      conditionDescription: 'the event has no for_user_id property',
+      event: { ...validEventBody(), for_user_id: undefined },
+      expectedStatus: 500,
+      expectedMessage: 'Bad formatted direct message event',
+    },
+    {
+      conditionDescription: 'the event has no users',
+      event: { ...validEventBody(), users: undefined },
+      expectedStatus: 500,
+      expectedMessage: 'Bad formatted direct message event',
+    },
+    {
+      conditionDescription: 'the flex flow identified in the TWITTER_FLEX_FLOW_SID does not exist',
+      event: validEventBody({ senderId: 'other_sender_id' }),
+      flexFlowSid: 'not-existing',
+      expectedStatus: 500,
+      expectedMessage: 'Flex Flow does not exists',
+    },
+    {
+      conditionDescription: 'the chat service identified in the CHAT_SERVICE_SID does not exist',
+      event: validEventBody({ senderId: 'other_sender_id' }),
+      chatServiceSid: 'not-existing',
+      expectedStatus: 500,
+      expectedMessage: 'Service does not exists',
+    },
+    {
+      conditionDescription: 'there is no direct_message_events property',
+      event: {
+        bodyAsString: 'fake body',
+        xTwitterWebhooksSignature: 'fake signature',
+        direct_message_events: undefined,
       },
-    };
+      expectedStatus: 200,
+      expectedMessage: 'Ignored event.',
+    },
+    {
+      conditionDescription: 'for_user_id is set to sender ID, not recipient',
+      event: { ...validEventBody(), for_user_id: 'sender_id' },
+      expectedStatus: 200,
+      expectedMessage: 'Ignored event.',
+    },
+    {
+      conditionDescription: 'sending to existing channel',
+      event: validEventBody({}),
+      expectedStatus: 200,
+      expectedMessage: 'Message sent in channel twitter:sender_id.',
+    },
+    {
+      conditionDescription: 'creating a new channel',
+      event: validEventBody({ senderId: 'other_id' }),
+      expectedStatus: 200,
+      expectedMessage: 'Message sent in channel twitter:other_id.',
+    },
+  ]).test(
+    "Should return error expectedStatus '$expectedMessage' when $conditionDescription",
+    async ({
+      event,
+      expectedStatus,
+      expectedMessage,
+      flexFlowSid = 'TWITTER_FLEX_FLOW_SID',
+      chatServiceSid = 'CHAT_SERVICE_SID',
+    }) => {
+      let response: MockedResponse | undefined;
 
-    const callback4: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Flex Flow does not exists.');
-    };
+      const callback: ServerlessCallback = (err, result) => {
+        response = result as MockedResponse | undefined;
+      };
+      await TwitterToFlex(
+        { ...baseContext, TWITTER_FLEX_FLOW_SID: flexFlowSid, CHAT_SERVICE_SID: chatServiceSid },
+        event,
+        callback,
+      );
 
-    await TwitterToFlex(
-      { ...baseContext, TWITTER_FLEX_FLOW_SID: 'not-existing' },
-      event4,
-      callback4,
-    );
-
-    const event5: Body = event4;
-
-    const callback5: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Service does not exists.');
-    };
-
-    await TwitterToFlex({ ...baseContext, CHAT_SERVICE_SID: 'not-existing' }, event5, callback5);
-  });
-
-  test('Should return status 200 (ignore events)', async () => {
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('Ignored event.');
-    };
-
-    const event1: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: undefined,
-    };
-
-    await TwitterToFlex(baseContext, event1, callback);
-
-    const event2: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'sender_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-      for_user_id: 'sender_id',
-      users: {
-        sender_id: { name: 'sender_id', screen_name: 'sender_id' },
-        recipient_id: { name: 'recipient_id', screen_name: 'recipient_id' },
-      },
-    };
-
-    await TwitterToFlex(baseContext, event2, callback);
-  });
-
-  test('Should return status 200 (existing channel)', async () => {
-    const event: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'sender_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-      for_user_id: 'recipient_id',
-      users: {
-        sender_id: { name: 'sender_id', screen_name: 'sender_id' },
-        recipient_id: { name: 'recipient_id', screen_name: 'recipient_id' },
-      },
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('Message sent in channel twitter:sender_id.');
-    };
-
-    await TwitterToFlex(baseContext, event, callback);
-  });
-
-  test('Should return status 200 (create channel)', async () => {
-    const event: Body = {
-      bodyAsString: 'fake body',
-      xTwitterWebhooksSignature: 'fake signature',
-      direct_message_events: [
-        {
-          type: 'type',
-          created_timestamp: 'created_timestamp',
-          id: 'id',
-          message_create: {
-            recipient_id: 'recipient_id',
-            sender_id: 'other_id',
-            target: 'target',
-            message_data: {
-              text: 'text',
-              entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
-            },
-          },
-        },
-      ],
-      for_user_id: 'recipient_id',
-      users: {
-        other_id: { name: 'other_id', screen_name: 'other_id' },
-        recipient_id: { name: 'recipient_id', screen_name: 'recipient_id' },
-      },
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('Message sent in channel twitter:other_id.');
-    };
-
-    await TwitterToFlex(baseContext, event, callback);
-  });
+      expect(response).toBeDefined();
+      if (response) {
+        expect({
+          status: response.getStatus(),
+          message: expectedStatus === 200 ? response.getBody() : response.getBody().message,
+        }).toMatchObject({
+          status: expectedStatus,
+          message: expect.stringContaining(expectedMessage),
+        });
+      }
+    },
+  );
 });
