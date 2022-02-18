@@ -103,7 +103,10 @@ export const removeChatChannel = async (
     .channels(channelSid)
     .remove();
 
-export type AseloCustomChannels = 'twitter' | 'instagram';
+export enum AseloCustomChannels {
+  Twtter = 'twitter',
+  Instagram = 'instagram',
+}
 
 type CreateFlexChannelParams = {
   flexFlowSid: string;
@@ -295,4 +298,5 @@ export const sendMessageToFlex = async (
 
 export type ChannelToFlex = {
   sendMessageToFlex: typeof sendMessageToFlex;
+  AseloCustomChannels: typeof AseloCustomChannels;
 };

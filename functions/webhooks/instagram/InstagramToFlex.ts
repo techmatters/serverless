@@ -69,6 +69,7 @@ const isValidFacebookPayload = (event: Body, appSecret: string) => {
     Buffer.from(event.xHubSignature),
     Buffer.from(`sha1=${expectedSignature}`),
   );
+
   return isValidRequest;
 };
 
@@ -95,7 +96,7 @@ export const handler = async (
 
     const senderExternalId = sender.id;
     const subscribedExternalId = event.entry[0].id;
-    const channelType = 'instagram';
+    const channelType = channelToFlex.AseloCustomChannels.Instagram;
     const twilioNumber = `${channelType}:${subscribedExternalId}`;
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
