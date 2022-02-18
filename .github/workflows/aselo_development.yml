@@ -104,42 +104,6 @@ jobs:
         with:
           ssm_parameter: "DEV_TWILIO_AS_S3_BUCKET_DOCS"
           env_variable_name: "S3_BUCKET"
-
-      - name: Set Aselo Twitter Consumer Key
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "TWITTER_CONSUMER_KEY"
-          env_variable_name: "TWITTER_CONSUMER_KEY"
-      - name: Set Aselo Twitter Consumer Secret
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "TWITTER_CONSUMER_SECRET"
-          env_variable_name: "TWITTER_CONSUMER_SECRET"
-      - name: Set helpline Twitter Access Token
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "TWITTER_ACCESS_TOKEN_1398343158954663937_AseloDev"
-          env_variable_name: "TWITTER_ACCESS_TOKEN"
-      - name: Set helpline Twitter Access Secret
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1398343158954663937_AseloDev"
-          env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET"
-      - name: Set helpline Twitter Flex Flow SID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_TWITTER_FLEX_FLOW_SID"
-          env_variable_name: "TWILIO_TWITTER_FLEX_FLOW_SID"
-      - name: Set helpline Facebook Page Access Token
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_105220114492262_TL-Staging"
-          env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
-      - name: Set helpline Instagram Flex Flow SID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "DEV_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
-          env_variable_name: "TWILIO_INSTAGRAM_FLEX_FLOW_SID"
       # Call main-action to compile and deploy
       - name: Executing main-action
         uses: ./.github/actions/main-action
@@ -161,10 +125,3 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-          twitter-access-token: $TWIITER_ACCESS_TOKEN
-          twitter-access-token-secret: $TWIITER_ACCESS_TOKEN_SECRET
-          twitter-consumer-key: $TWITTER_CONSUMER_KEY
-          twitter-consumer-secret: $TWITTER_CONSUMER_SECRET
-          twitter-flex-flow-sid: $TWILIO_TWITTER_FLEX_FLOW_SID
-          facebook-page-access-token: $FACEBOOK_PAGE_ACCESS_TOKEN
-          instagram-flex-flow-sid: $TWILIO_INSTAGRAM_FLEX_FLOW_SID

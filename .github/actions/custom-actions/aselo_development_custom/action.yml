@@ -1,4 +1,5 @@
 name: 'Aselo Development release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the development environment'
 runs:
   using: "composite"
   steps:
@@ -28,20 +29,70 @@ runs:
     #   with:
     #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
     #     env_variable_name: "IWF_API_COUNTRY_CODE"
-    # Append environment variables
-    - name: Add IWF_API_USERNAME
-      run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
-      shell: bash
-    - name: Add IWF_API_PASSWORD
-      run: echo "IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}" >> .env
-      shell: bash
-    - name: Add IWF_API_URL
-      run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
-      shell: bash
-    # - name: Add IWF_API_ENVIRONMENT
-    #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
-    #   shell: bash
-    # - name: Add IWF_API_COUNTRY_CODE
-    #   run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
-    #   shell: bash
-    
+  - name: Set Aselo Twitter Consumer Key
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "TWITTER_CONSUMER_KEY"
+      env_variable_name: "TWITTER_CONSUMER_KEY"
+  - name: Set Aselo Twitter Consumer Secret
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "TWITTER_CONSUMER_SECRET"
+      env_variable_name: "TWITTER_CONSUMER_SECRET"
+  - name: Set helpline Twitter Access Token
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "TWITTER_ACCESS_TOKEN_1398343158954663937_AseloDev"
+      env_variable_name: "TWITTER_ACCESS_TOKEN"
+  - name: Set helpline Twitter Access Secret
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1398343158954663937_AseloDev"
+      env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET"
+  - name: Set helpline Twitter Flex Flow SID
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "DEV_TWILIO_AS_TWITTER_FLEX_FLOW_SID"
+      env_variable_name: "TWILIO_TWITTER_FLEX_FLOW_SID"
+  - name: Set helpline Facebook Page Access Token
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_105220114492262_TL-Staging"
+      env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+  - name: Set helpline Instagram Flex Flow SID
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "DEV_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
+      env_variable_name: "TWILIO_INSTAGRAM_FLEX_FLOW_SID"
+  # Append environment variables
+  - name: Add IWF_API_USERNAME
+    run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
+    shell: bash
+  - name: Add IWF_API_PASSWORD
+    run: echo "IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}" >> .env
+    shell: bash
+  - name: Add IWF_API_URL
+    run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
+    shell: bash
+  # - name: Add IWF_API_ENVIRONMENT
+  #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
+  #   shell: bash
+  # - name: Add IWF_API_COUNTRY_CODE
+  #   run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
+  #   shell: bash
+
+  - name: Add TWITTER_CONSUMER_KEY
+    run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
+    shell: bash
+  - name: Add TWITTER_CONSUMER_SECRET
+    run: echo "TWITTER_CONSUMER_SECRET=${{ env.TWITTER_CONSUMER_SECRET }}" >> .env
+    shell: bash
+  - name: Add TWITTER_ACCESS_TOKEN
+    run: echo "TWITTER_ACCESS_TOKEN=${{ env.TWITTER_ACCESS_TOKEN }}" >> .env
+    shell: bash
+  - name: Add TWITTER_ACCESS_TOKEN_SECRET
+    run: echo "TWITTER_ACCESS_TOKEN_SECRET=${{ env.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
+    shell: bash
+  - name: Add TWILIO_TWITTER_FLEX_FLOW_SID
+    run: echo "TWILIO_TWITTER_FLEX_FLOW_SID=${{ env.TWILIO_TWITTER_FLEX_FLOW_SID }}" >> .env
+    shell: bash

@@ -53,34 +53,6 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
-  twitter-access-token:
-    description: 'Twitter Access Token for this helpline'
-    required: false
-    default: 'NOT_USED'
-  twitter-access-token-secret:
-    description: 'Twitter Access Token Secret for this helpline'
-    required: false
-    default: 'NOT_USED'
-  twitter-consumer-key:
-    description: 'Twitter Consumer Key for Aselo'
-    required: false
-    default: 'NOT_USED'
-  twitter-consumer-secret:
-    description: 'Twitter Consumer Secret for Aselo'
-    required: false
-    default: 'NOT_USED'
-  twitter-flex-flow-sid:
-    description: 'SID of the Twitter Flex Flow for this helpline'
-    required: false
-    default: 'NOT_USED'
-  facebook-page-access-token:
-    description: 'Facebook Page Access Token for this helpline'
-    required: false
-    default: 'NOT_USED'
-  instagram-flex-flow-sid:
-    description: 'SID of the Instagram Flex Flow for this helpline'
-    required: false
-    default: 'NOT_USED'
 runs:
   using: "composite"
   steps:
@@ -118,13 +90,6 @@ runs:
           ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
           S3_BUCKET=${{ inputs.s3-bucket }}
           AWS_REGION=${{ inputs.aws-region }}
-          TWITTER_ACCESS_TOKEN=${{ inputs.twitter-access-token }}
-          TWITTER_ACCESS_TOKEN_SECRET=${{ inputs.twitter-access-token-secret }}
-          TWITTER_CONSUMER_KEY=${{ inputs.twitter-consumer-key }}
-          TWITTER_CONSUMER_SECRET=${{ inputs.twitter-consumer-secret }}
-          TWITTER_FLEX_FLOW_ID=${{ inputs.twitter-flex-flow-sid }}
-          FACEBOOK_PAGE_ACCESS_TOKEN=${{ inputs.facebook-page-access-token }}
-          INSTAGRAM_FLEX_FLOW_ID=${{ inputs.instagram-flex-flow-sid }}
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
