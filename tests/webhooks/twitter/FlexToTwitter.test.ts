@@ -1,9 +1,7 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import Twit from 'twit';
-import {
-  handler as FlexToTwitter,
-  Body,
-} from '../../../functions/webhooks/twitter/FlexToTwitter.protected';
+import each from 'jest-each';
+import { handler as FlexToTwitter } from '../../../functions/webhooks/twitter/FlexToTwitter.protected';
 
 import helpers, { MockedResponse } from '../../helpers';
 
@@ -40,9 +38,26 @@ const baseContext = {
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
 };
 
+let successfulTwitterPost: jest.Mock;
+let twitSuccessImpl: () => void;
+
+beforeEach(() => {
+  successfulTwitterPost = jest.fn();
+  successfulTwitterPost.mockReturnValue(Promise.resolve({ messageSent: true }));
+  twitSuccessImpl = () => ({
+    post: successfulTwitterPost,
+  });
+});
+
 describe('FlexToTwitter', () => {
   beforeAll(() => {
-    helpers.setup({});
+    const runtime = new helpers.MockRuntime(baseContext);
+    // eslint-disable-next-line no-underscore-dangle
+    runtime._addFunction(
+      'helpers/customChannels/flexToCustomChannel',
+      'functions/helpers/customChannels/flexToCustomChannel.private',
+    );
+    helpers.setup({}, runtime);
   });
   afterAll(() => {
     helpers.teardown();
@@ -52,209 +67,198 @@ describe('FlexToTwitter', () => {
     Twit.mockClear();
   });
 
-  test('Should return status 400', async () => {
-    const event1 = {
-      recipientId: undefined,
-    };
-
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(400);
-      expect(response.getBody().message).toContain('Error: recipientId parameter not provided');
-    };
-
-    await FlexToTwitter(baseContext, <Body>event1, callback1);
-
-    const event2 = {
-      recipientId: 'recipientId',
-      Body: '',
-    };
-
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(400);
-      expect(response.getBody().message).toContain('Error: Body parameter not provided');
-    };
-
-    await FlexToTwitter(baseContext, <Body>event2, callback2);
-
-    const event3: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: '',
-    };
-
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(400);
-      expect(response.getBody().message).toContain('Error: ChannelSid parameter not provided');
-    };
-
-    await FlexToTwitter(baseContext, event3, callback3);
-  });
-
-  test('Should return status 406', async () => {
-    const event: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'other source',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(406);
-      expect(response.getBody()).toContain('Event Source not supported');
-    };
-
-    await FlexToTwitter(baseContext, event, callback);
-  });
-
-  test('Should return status 500', async () => {
-    // Bad formatted direct message event
-    const event1: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
-
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Service does not exists.');
-    };
-
-    await FlexToTwitter({ ...baseContext, CHAT_SERVICE_SID: 'not-existing' }, event1, callback1);
-
-    // @ts-ignore
-    Twit.mockImplementation(() => {
-      throw new Error('Twit failed because of some reason.');
-    });
-
-    const event2: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
-
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Twit failed because of some reason.');
-    };
-
-    await FlexToTwitter(baseContext, event2, callback2);
-
-    // @ts-ignore
-    Twit.mockImplementation(() => ({
-      post: () => {
-        throw new Error('Twit post failed because of some reason.');
+  each([
+    {
+      conditionDescription: 'the recipientId parameter not provided',
+      event: {
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+        From: 'different-from',
       },
-    }));
+      expectedStatus: 400,
+      expectedMessage: 'Error: recipientId parameter not provided',
+    },
+    {
+      conditionDescription: 'the Body parameter not provided',
+      event: {
+        recipientId: 'recipientId',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+        From: 'different-from',
+      },
+      expectedStatus: 400,
+      expectedMessage: 'Error: Body parameter not provided',
+    },
+    {
+      conditionDescription: 'the ChannelSid parameter not provided',
+      event: {
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        From: 'different-from',
+      },
+      expectedStatus: 400,
+      expectedMessage: 'Error: ChannelSid parameter not provided',
+    },
+    {
+      conditionDescription: 'the chat service for the SID does not exist',
+      event: {
+        From: 'wherever',
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+      },
+      sid: 'not-existing',
+      expectedStatus: 500,
+      expectedMessage: 'Service does not exists.',
+    },
+    {
+      conditionDescription: 'the Twit instantiation throws an error',
+      event: {
+        From: 'wherever',
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+      },
+      twitImpl: () => {
+        throw new Error('Twit instantiation failed because of some reason');
+      },
+      expectedStatus: 500,
+      expectedMessage: 'Twit instantiation failed because of some reason',
+    },
+    {
+      conditionDescription: 'the Twit post throws an error',
+      event: {
+        From: 'wherever',
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+      },
+      twitImpl: () => ({
+        post: () => {
+          throw new Error('Twit post failed because of some reason');
+        },
+      }),
+      expectedStatus: 500,
+      expectedMessage: 'Twit post failed because of some reason',
+    },
+  ]).test(
+    "Should return $expectedStatus '$expectedMessage' error when $conditionDescription.",
+    async ({
+      event,
+      sid = 'CHAT_SERVICE_SID',
+      twitImpl = twitSuccessImpl,
+      expectedStatus,
+      expectedMessage,
+    }) => {
+      // Bad formatted direct message event
+      // @ts-ignore
+      Twit.mockImplementation(twitImpl);
+      let response: MockedResponse | undefined;
+      const callback: ServerlessCallback = (err, result) => {
+        response = result as MockedResponse | undefined;
+      };
 
-    const event3: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
+      await FlexToTwitter({ ...baseContext, CHAT_SERVICE_SID: sid }, event, callback);
 
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Twit post failed because of some reason.');
-    };
+      expect(response).toBeDefined();
+      if (response) {
+        // Matching like this reports the message and the status in the fail message, rather than just one or the other, which you get with 2 separate checks
+        expect({ status: response.getStatus(), message: response.getBody().message }).toMatchObject(
+          {
+            status: expectedStatus,
+            message: expect.stringContaining(expectedMessage),
+          },
+        );
+      }
+    },
+  );
 
-    await FlexToTwitter(baseContext, event3, callback3);
-  });
+  each([
+    {
+      conditionDescription: 'the event source is not supported',
+      event: {
+        From: 'wherever',
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'other source',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+      },
+      shouldBeIgnored: true,
+    },
+    {
+      conditionDescription: "event 'From' property matches channel 'from' attribute",
+      event: {
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+        From: 'from',
+      },
+      shouldBeIgnored: true,
+    },
+    {
+      conditionDescription: "event 'Source' property is set to 'API'",
+      event: {
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'API',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+        From: 'different-from',
+      },
+      shouldBeIgnored: false,
+    },
+    {
+      conditionDescription: "event 'Source' property is set to 'SDK'",
+      event: {
+        From: 'wherever',
+        recipientId: 'recipientId',
+        Body: 'Body',
+        Source: 'SDK',
+        EventType: 'onMessageSent',
+        ChannelSid: 'ChannelSid',
+      },
+      shouldBeIgnored: false,
+    },
+  ]).test(
+    'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
+    async ({ event, shouldBeIgnored }) => {
+      // @ts-ignore
+      Twit.mockImplementation(twitSuccessImpl);
 
-  test('Should return status 200 (ignore events)', async () => {
-    const event: Body = {
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-      From: 'from',
-    };
+      let response: MockedResponse | undefined;
+      const callback: ServerlessCallback = (err, result) => {
+        response = result as MockedResponse | undefined;
+      };
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('Ignored event.');
-    };
+      await FlexToTwitter(baseContext, event, callback);
 
-    await FlexToTwitter(baseContext, event, callback);
-  });
+      if (shouldBeIgnored) {
+        expect(successfulTwitterPost).not.toBeCalled();
+      } else {
+        expect(successfulTwitterPost).toBeCalled();
+      }
 
-  test('Should return status 200 (API)', async () => {
-    // @ts-ignore
-    Twit.mockImplementation(() => ({
-      post: async () => ({ messageSent: true }),
-    }));
-
-    const event: Body = {
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'API',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-      From: 'different-from',
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody().messageSent).toBeTruthy();
-    };
-
-    await FlexToTwitter(baseContext, event, callback);
-  });
-
-  test('Should return status 200 (SDK)', async () => {
-    // @ts-ignore
-    Twit.mockImplementation(() => ({
-      post: async () => ({ messageSent: true }),
-    }));
-
-    const event: Body = {
-      From: 'wherever',
-      recipientId: 'recipientId',
-      Body: 'Body',
-      Source: 'SDK',
-      EventType: 'onMessageSent',
-      ChannelSid: 'ChannelSid',
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody().messageSent).toBeTruthy();
-    };
-
-    await FlexToTwitter(baseContext, event, callback);
-  });
+      expect(response).toBeDefined();
+      if (response) {
+        expect({ status: response.getStatus(), body: response.getBody() }).toMatchObject({
+          status: 200,
+          body: shouldBeIgnored ? expect.stringContaining('Ignored event.') : expect.anything(),
+        });
+      }
+    },
+  );
 });
