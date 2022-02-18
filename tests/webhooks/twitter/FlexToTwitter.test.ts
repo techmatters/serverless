@@ -1,10 +1,7 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import Twit from 'twit';
 import each from 'jest-each';
-import {
-  handler as FlexToTwitter,
-  Body,
-} from '../../../functions/webhooks/twitter/FlexToTwitter.protected';
+import { handler as FlexToTwitter } from '../../../functions/webhooks/twitter/FlexToTwitter.protected';
 
 import helpers, { MockedResponse } from '../../helpers';
 
@@ -157,7 +154,13 @@ describe('FlexToTwitter', () => {
     },
   ]).test(
     "Should return $expectedStatus '$expectedMessage' error when $conditionDescription.",
-    async ({ event, sid = 'CHAT_SERVICE_SID', twitImpl = twitSuccessImpl, expectedStatus, expectedMessage }) => {
+    async ({
+      event,
+      sid = 'CHAT_SERVICE_SID',
+      twitImpl = twitSuccessImpl,
+      expectedStatus,
+      expectedMessage,
+    }) => {
       // Bad formatted direct message event
       // @ts-ignore
       Twit.mockImplementation(twitImpl);
