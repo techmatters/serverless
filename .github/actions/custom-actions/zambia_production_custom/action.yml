@@ -1,5 +1,5 @@
-name: 'Safernet Staging release custom action'
-description: 'Adds Twitter and Instagram related environment variables to the Zambia Staging environment'
+name: 'Zambia PRoduction release custom action'
+description: 'Adds Twitter and Instagram related environment variables to the Zambia Production environment'
 runs:
   using: "composite"
   steps:
