@@ -2,7 +2,7 @@ import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types'
 import {
   handler as FlexChannelUpdate,
   Body,
-} from '../../../functions/webhooks/twitter/FlexChannelUpdate.protected';
+} from '../../../functions/webhooks/FlexChannelUpdate.protected';
 
 import helpers, { MockedResponse } from '../../helpers';
 
