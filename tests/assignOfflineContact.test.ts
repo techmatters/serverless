@@ -1,4 +1,5 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import each from 'jest-each';
 import { handler as assignOfflineContact, Body } from '../functions/assignOfflineContact';
 
 import helpers, { MockedResponse } from './helpers';
@@ -101,127 +102,7 @@ const createTask = (sid: string, options: any) => {
 
 const updateWorkerMock = jest.fn();
 
-const workspaces: { [x: string]: any } = {
-  WSxxx: {
-    activities: {
-      list: async () => [
-        {
-          sid: 'Available',
-          friendlyName: 'Available',
-          available: 'true',
-        },
-      ],
-    },
-    tasks: {
-      create: async (options: any) => {
-        const attributes = JSON.parse(options.attributes);
-        if (attributes.targetSid === 'intentionallyThrow')
-          throw new Error('Intentionally thrown error');
-
-        const newTask = createTask(Math.random().toString(), options);
-
-        tasks = [...tasks, newTask];
-
-        return tasks.find(t => t.sid === newTask.sid);
-      },
-    },
-    workers: (workerSid: string) => ({
-      fetch: () => {
-        if (workerSid === 'noHelpline-worker')
-          return {
-            attributes: JSON.stringify({}),
-            sid: 'waitingOfflineContact-worker',
-            available: true,
-          };
-
-        if (workerSid === 'waitingOfflineContact-worker')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: true, helpline: 'helpline' }),
-            sid: 'waitingOfflineContact-worker',
-            available: true,
-          };
-
-        if (workerSid === 'available-worker-no-reservation')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            sid: 'available-worker-no-reservation',
-            available: true,
-          };
-
-        if (workerSid === 'not-available-worker-no-reservation')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            activitySid: 'activitySid',
-            sid: 'not-available-worker-with-reservation',
-            available: false,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'available-worker-with-reservation')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            sid: 'available-worker-with-reservation',
-            available: true,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'not-available-worker-with-reservation')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            activitySid: 'activitySid',
-            sid: 'not-available-worker-with-reservation',
-            available: false,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'available-worker-with-accepted')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            sid: 'available-worker-with-accepted',
-            available: true,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'not-available-worker-with-accepted')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            activitySid: 'activitySid',
-            sid: 'not-available-worker-with-accepted',
-            available: false,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'available-worker-with-completed')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            sid: 'available-worker-with-completed',
-            available: true,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'not-available-worker-with-completed')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            activitySid: 'activitySid',
-            sid: 'not-available-worker-with-completed',
-            available: false,
-            update: updateWorkerMock,
-          };
-
-        if (workerSid === 'intentionallyThrow')
-          return {
-            attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
-            activitySid: 'activitySid',
-            sid: 'intentionallyThrow',
-            available: true,
-            update: updateWorkerMock,
-          };
-
-        throw new Error('Non existing worker');
-      },
-    }),
-  },
-};
+let workspaces: { [x: string]: any } = {};
 
 const baseContext = {
   getTwilioClient: (): any => ({
@@ -243,6 +124,115 @@ beforeAll(() => {
 });
 afterAll(() => {
   helpers.teardown();
+});
+
+beforeEach(() => {
+  workspaces = {
+    WSxxx: {
+      activities: {
+        list: async () => [
+          {
+            sid: 'Available',
+            friendlyName: 'Available',
+            available: 'true',
+          },
+        ],
+      },
+      tasks: {
+        create: async (options: any) => {
+          const newTask = createTask(Math.random().toString(), options);
+          tasks = [...tasks, newTask];
+          return tasks.find(t => t.sid === newTask.sid);
+        },
+      },
+      workers: (workerSid: string) => ({
+        fetch: () => {
+          if (workerSid === 'noHelpline-worker')
+            return {
+              attributes: JSON.stringify({}),
+              sid: 'waitingOfflineContact-worker',
+              available: true,
+            };
+
+          if (workerSid === 'waitingOfflineContact-worker')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: true, helpline: 'helpline' }),
+              sid: 'waitingOfflineContact-worker',
+              available: true,
+            };
+
+          if (workerSid === 'available-worker-no-reservation')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              sid: 'available-worker-no-reservation',
+              available: true,
+            };
+
+          if (workerSid === 'not-available-worker-no-reservation')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              activitySid: 'activitySid',
+              sid: 'not-available-worker-with-reservation',
+              available: false,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'available-worker-with-reservation')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              sid: 'available-worker-with-reservation',
+              available: true,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'not-available-worker-with-reservation')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              activitySid: 'activitySid',
+              sid: 'not-available-worker-with-reservation',
+              available: false,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'available-worker-with-accepted')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              sid: 'available-worker-with-accepted',
+              available: true,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'not-available-worker-with-accepted')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              activitySid: 'activitySid',
+              sid: 'not-available-worker-with-accepted',
+              available: false,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'available-worker-with-completed')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              sid: 'available-worker-with-completed',
+              available: true,
+              update: updateWorkerMock,
+            };
+
+          if (workerSid === 'not-available-worker-with-completed')
+            return {
+              attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
+              activitySid: 'activitySid',
+              sid: 'not-available-worker-with-completed',
+              available: false,
+              update: updateWorkerMock,
+            };
+
+          throw new Error('Non existing worker');
+        },
+      }),
+    },
+  };
 });
 
 afterEach(() => {
@@ -273,173 +263,106 @@ describe('assignOfflineContact', () => {
     );
   });
 
-  test('Should return status 500', async () => {
-    const event1: Body = {
+  each([
+    {
+      condition: 'task creation throws an error',
+      targetSid: 'available-worker-with-completed',
+      expectedMessage: 'Intentionally thrown error',
+      taskCreateMethod: () => {
+        throw new Error('Intentionally thrown error');
+      },
+    },
+    {
+      condition: 'workspace does not exist',
       targetSid: 'WKxxx',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event2: Body = {
+      expectedMessage: 'Workspace does not exists',
+      context: {
+        getTwilioClient: baseContext.getTwilioClient,
+        DOMAIN_NAME: baseContext.DOMAIN_NAME,
+      },
+    },
+    {
+      condition: 'worker does not exist',
       targetSid: 'non-existing-worker',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const eventNoHelplineWorker: Body = {
+      expectedMessage: 'Non existing worker',
+    },
+    {
+      condition: 'worker has no helpline',
       targetSid: 'noHelpline-worker',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event3: Body = {
-      targetSid: 'waitingOfflineContact-worker',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event4: Body = {
-      targetSid: 'intentionallyThrow',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event5: Body = {
-      targetSid: 'available-worker-no-reservation',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event6: Body = {
-      targetSid: 'not-available-worker-no-reservation',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event7: Body = {
-      targetSid: 'available-worker-with-reservation',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event8: Body = {
-      targetSid: 'not-available-worker-with-reservation',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event9: Body = {
-      targetSid: 'available-worker-with-accepted',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const event10: Body = {
-      targetSid: 'not-available-worker-with-accepted',
-      finalTaskAttributes: JSON.stringify({}),
-    };
-
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Workspace does not exists');
-    };
-
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Non existing worker');
-    };
-
-    const callbackNoHelplineWorker: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain(
+      expectedMessage:
         'Error: the worker does not have helpline attribute set, check the worker configuration.',
-      );
-    };
+    },
+    {
+      condition: 'worker has waitingOfflineContact set',
+      targetSid: 'waitingOfflineContact-worker',
+      expectedMessage: 'Error: the worker is already waiting for an offline contact.',
+    },
+    {
+      condition: 'worker is available with no reservation',
+      targetSid: 'available-worker-no-reservation',
+      expectedMessage: 'Error: reservation for task not created.',
+    },
+    {
+      condition: 'worker is not available with no reservation',
+      targetSid: 'not-available-worker-no-reservation',
+      expectedMessage: 'Error: reservation for task not created.',
+      expectedUpdatedWorkerMockCalls: 2,
+    },
+    {
+      condition: 'worker is available with reservation',
+      targetSid: 'available-worker-with-reservation',
+      expectedMessage: 'Error: reservation for task not accepted.',
+    },
+    {
+      condition: 'worker is not available with a reservation',
+      targetSid: 'not-available-worker-with-reservation',
+      expectedMessage: 'Error: reservation for task not accepted.',
+      expectedUpdatedWorkerMockCalls: 2,
+    },
+    {
+      condition: 'worker is available and accepted',
+      targetSid: 'available-worker-with-accepted',
+      expectedMessage: 'Error: reservation for task not completed.',
+    },
+    {
+      condition: 'worker is not available and accepted',
+      targetSid: 'not-available-worker-with-accepted',
+      expectedMessage: 'Error: reservation for task not completed.',
+      expectedUpdatedWorkerMockCalls: 2,
+    },
+  ]).test.only(
+    "Should return status 500 '$expectedMessage' when $condition",
+    async ({
+      targetSid,
+      expectedMessage,
+      expectedUpdatedWorkerMockCalls = 0,
+      context = baseContext,
+      taskCreateMethod,
+    }) => {
+      // Patch task create method if a custom one is set
+      workspaces.WSxxx.tasks.create = taskCreateMethod ?? workspaces.WSxxx.tasks.create;
 
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain(
-        'Error: the worker is already waiting for an offline contact.',
-      );
-    };
+      const event: Body = {
+        targetSid,
+        finalTaskAttributes: JSON.stringify({}),
+      };
+      let response: MockedResponse | undefined;
 
-    const callback4: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Intentionally thrown error');
-    };
+      const callback: ServerlessCallback = (err, result) => {
+        response = <MockedResponse | undefined>result;
+      };
 
-    const callback5: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not created.');
-      expect(updateWorkerMock).not.toBeCalled();
-    };
+      updateWorkerMock.mockClear();
+      await assignOfflineContact(context, event, callback);
 
-    const callback6: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not created.');
-      expect(updateWorkerMock).toBeCalledTimes(2);
-    };
-
-    const callback7: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not accepted.');
-      expect(updateWorkerMock).not.toBeCalled();
-    };
-
-    const callback8: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not accepted.');
-      expect(updateWorkerMock).toBeCalledTimes(2);
-    };
-
-    const callback9: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not completed.');
-      expect(updateWorkerMock).not.toBeCalled();
-    };
-
-    const callback10: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error: reservation for task not completed.');
-      expect(updateWorkerMock).toBeCalledTimes(2);
-    };
-
-    const { getTwilioClient, DOMAIN_NAME } = baseContext;
-    updateWorkerMock.mockClear();
-    await assignOfflineContact({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event2, callback2);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, eventNoHelplineWorker, callbackNoHelplineWorker);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event3, callback3);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event4, callback4);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event5, callback5);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event6, callback6);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event7, callback7);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event8, callback8);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event9, callback9);
-    updateWorkerMock.mockClear();
-    await assignOfflineContact(baseContext, event10, callback10);
-  });
+      expect(response).toBeDefined();
+      if (response) {
+        expect(response.getStatus()).toBe(500);
+        expect(response.getBody().message).toContain(expectedMessage);
+      }
+      expect(updateWorkerMock).toBeCalledTimes(expectedUpdatedWorkerMockCalls);
+    },
+  );
 
   test('Should return status 200 (available worker)', async () => {
     const event: Body = {
