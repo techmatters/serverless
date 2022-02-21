@@ -4,8 +4,6 @@ import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types'
 import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToInstagram } from '../../../functions/webhooks/instagram/FlexToInstagram.protected';
 
-import Mock = jest.Mock;
-
 jest.mock('axios');
 
 const channels: { [x: string]: any } = {

@@ -70,6 +70,7 @@ const isValidFacebookPayload = (event: Body, appSecret: string) => {
       Buffer.from(`sha1=${expectedSignature}`),
     );
   } catch (e) {
+    console.warn('Unknown error validating signature (rejecting with 403):', e);
     return false;
   }
 };
