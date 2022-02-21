@@ -100,7 +100,7 @@ export const handler = async (
 
       const senderExternalId = directMessageEvents[0].message_create.sender_id;
       const subscribedExternalId = forUserId;
-      const channelType = 'twitter';
+      const channelType = channelToFlex.AseloCustomChannels.Instagram;
       const twilioNumber = `${channelType}:${subscribedExternalId}`;
       const chatFriendlyName = `${channelType}:${senderExternalId}`;
       const uniqueUserName = `${channelType}:${senderExternalId}`;
