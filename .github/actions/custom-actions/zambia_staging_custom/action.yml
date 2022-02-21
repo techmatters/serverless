@@ -28,7 +28,7 @@ runs:
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "STG_TWILIO_ZM_TWITTER_FLEX_FLOW_SID"
-        env_variable_name: "TWILIO_TWITTER_FLEX_FLOW_SID"
+        env_variable_name: "TWITTER_FLEX_FLOW_SID"
     # Append environment variables
     - name: Add TWITTER_CONSUMER_KEY
       run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
@@ -42,7 +42,7 @@ runs:
     - name: Add TWITTER_ACCESS_TOKEN_SECRET
       run: echo "TWITTER_ACCESS_TOKEN_SECRET=${{ env.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
       shell: bash
-    - name: Add TWILIO_TWITTER_FLEX_FLOW_SID
-      run: echo "TWILIO_TWITTER_FLEX_FLOW_SID=${{ env.TWILIO_TWITTER_FLEX_FLOW_SID }}" >> .env
+    - name: Add TWITTER_FLEX_FLOW_SID
+      run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
       shell: bash
     

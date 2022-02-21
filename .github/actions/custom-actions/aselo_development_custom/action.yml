@@ -53,7 +53,12 @@ runs:
     uses: "marvinpinto/action-inject-ssm-secrets@latest"
     with:
       ssm_parameter: "DEV_TWILIO_AS_TWITTER_FLEX_FLOW_SID"
-      env_variable_name: "TWILIO_TWITTER_FLEX_FLOW_SID"
+      env_variable_name: "TWITTER_FLEX_FLOW_SID"
+  - name: Set helpline Facebook Page Access Token
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "FACEBOOK_APP_SECRET"
+      env_variable_name: "FACEBOOK_APP_SECRET"
   - name: Set helpline Facebook Page Access Token
     uses: "marvinpinto/action-inject-ssm-secrets@latest"
     with:
@@ -63,7 +68,7 @@ runs:
     uses: "marvinpinto/action-inject-ssm-secrets@latest"
     with:
       ssm_parameter: "DEV_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
-      env_variable_name: "TWILIO_INSTAGRAM_FLEX_FLOW_SID"
+      env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
   # Append environment variables
   - name: Add IWF_API_USERNAME
     run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -93,6 +98,15 @@ runs:
   - name: Add TWITTER_ACCESS_TOKEN_SECRET
     run: echo "TWITTER_ACCESS_TOKEN_SECRET=${{ env.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
     shell: bash
-  - name: Add TWILIO_TWITTER_FLEX_FLOW_SID
-    run: echo "TWILIO_TWITTER_FLEX_FLOW_SID=${{ env.TWILIO_TWITTER_FLEX_FLOW_SID }}" >> .env
+  - name: Add TWITTER_FLEX_FLOW_SID
+    run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
+    shell: bash
+  - name: Add FACEBOOK_APP_SECRET
+    run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+    shell: bash
+  - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+    run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+    shell: bash
+  - name: Add INSTAGRAM_FLEX_FLOW_SID
+    run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
     shell: bash
