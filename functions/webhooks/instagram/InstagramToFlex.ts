@@ -59,18 +59,19 @@ export type Body = InstagramMessageEvent & {
  */
 const isValidFacebookPayload = (event: Body, appSecret: string) => {
   if (!event.bodyAsString || !event.xHubSignature) return false;
+  try {
+    const expectedSignature = crypto
+      .createHmac('sha1', appSecret)
+      .update(event.bodyAsString)
+      .digest('hex');
 
-  const expectedSignature = crypto
-    .createHmac('sha1', appSecret)
-    .update(event.bodyAsString)
-    .digest('hex');
-
-  const isValidRequest = crypto.timingSafeEqual(
-    Buffer.from(event.xHubSignature),
-    Buffer.from(`sha1=${expectedSignature}`),
-  );
-
-  return isValidRequest;
+    return crypto.timingSafeEqual(
+      Buffer.from(event.xHubSignature),
+      Buffer.from(`sha1=${expectedSignature}`),
+    );
+  } catch (e) {
+    return false;
+  }
 };
 
 export const handler = async (
