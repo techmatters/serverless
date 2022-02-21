@@ -330,7 +330,7 @@ describe('assignOfflineContact', () => {
       expectedMessage: 'Error: reservation for task not completed.',
       expectedUpdatedWorkerMockCalls: 2,
     },
-  ]).test.only(
+  ]).test(
     "Should return status 500 '$expectedMessage' when $condition",
     async ({
       targetSid,

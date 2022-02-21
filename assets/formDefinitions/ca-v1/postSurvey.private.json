@@ -8,5 +8,15 @@
     "insightsObject": "conversations",
     "attributeName": "conversation_attribute_10",
     "questions": ["wouldRecommend"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_4",
+    "questions": ["supportNeeds"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_5",
+    "questions": ["shareResponse"]
   }
 ]
