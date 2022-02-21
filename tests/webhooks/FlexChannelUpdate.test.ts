@@ -2,9 +2,9 @@ import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types'
 import {
   handler as FlexChannelUpdate,
   Body,
-} from '../../../functions/webhooks/FlexChannelUpdate.protected';
+} from '../../functions/webhooks/FlexChannelUpdate.protected';
 
-import helpers, { MockedResponse } from '../../helpers';
+import helpers, { MockedResponse } from '../helpers';
 
 const channels: { [x: string]: any } = {
   activeChannel: {
