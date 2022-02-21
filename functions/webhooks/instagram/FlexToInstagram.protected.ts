@@ -60,7 +60,6 @@ export const handler = async (
 
   try {
     const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    console.log('event.From', event.From);
     if (recipientId === undefined) {
       resolve(error400('recipientId'));
       return;
@@ -85,8 +84,6 @@ export const handler = async (
       resolve(error400('Source'));
       return;
     }
-
-    console.log('------ FlexToInstagram excecution ------');
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;

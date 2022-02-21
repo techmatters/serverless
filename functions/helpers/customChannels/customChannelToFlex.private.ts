@@ -20,8 +20,6 @@ const retrieveChannelFromUserChannelMap = async (
       .documents(uniqueUserName)
       .fetch();
 
-    console.log('userChannelMap: ', userChannelMap.data);
-
     return userChannelMap.data.activeChannelSid;
   } catch (err) {
     return undefined;
@@ -43,7 +41,8 @@ export const createUserChannelMap = async (
     channelSid: string;
   },
 ) => {
-  const userChannelMap = await context
+  // const userChannelMap =
+  await context
     .getTwilioClient()
     .sync.services(syncServiceSid)
     .documents.create({
@@ -51,8 +50,6 @@ export const createUserChannelMap = async (
       uniqueName: uniqueUserName,
       ttl: 259200, // auto removed after 3 days
     });
-
-  console.log('userChannelMap was created from scratch and its value is: ', userChannelMap.data);
 };
 
 /**
@@ -81,8 +78,6 @@ export const sendChatMessage = async (
       from,
       xTwilioWebhookEnabled: 'true',
     });
-
-  console.log('Message sent: ', messageText);
 
   return message;
 };
@@ -235,7 +230,6 @@ export const sendMessageToFlex = async (
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
   if (senderExternalId === subscribedExternalId) {
-    console.log('Message ignored (do not re-send self messages)');
     return { status: 'ignored' };
   }
 
@@ -248,8 +242,6 @@ export const sendMessageToFlex = async (
     });
 
     if (!channelSid) {
-      console.log('Creating new channel');
-
       const newChannelSid = await createFlexChannel(context, {
         flexFlowSid,
         chatServiceSid,
@@ -283,8 +275,6 @@ export const sendMessageToFlex = async (
 
     throw err;
   }
-
-  console.log('Code excecution continued with channelSid: ', channelSid);
 
   const response = await sendChatMessage(context, {
     chatServiceSid,

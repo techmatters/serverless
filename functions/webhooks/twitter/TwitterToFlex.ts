@@ -87,8 +87,6 @@ export const handler = async (
   }
 
   try {
-    console.log('------ TwitterToFlex excecution ------');
-
     // Listen for incoming direct messages
     if (event.direct_message_events) {
       const { for_user_id: forUserId, direct_message_events: directMessageEvents, users } = event;
@@ -107,9 +105,6 @@ export const handler = async (
       const senderScreenName = users[senderExternalId].screen_name;
       const messageText = directMessageEvents[0].message_create.message_data.text;
       const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/twitter/FlexToTwitter?recipientId=${senderExternalId}`;
-
-      console.log(`New message from: ${users[senderExternalId].name}`);
-      console.log(directMessageEvents[0].message_create.message_data.text);
 
       const result = await channelToFlex.sendMessageToFlex(context, {
         flexFlowSid: context.TWITTER_FLEX_FLOW_SID,

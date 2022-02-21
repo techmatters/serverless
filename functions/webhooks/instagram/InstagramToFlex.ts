@@ -70,6 +70,7 @@ const isValidFacebookPayload = (event: Body, appSecret: string) => {
       Buffer.from(`sha1=${expectedSignature}`),
     );
   } catch (e) {
+    // eslint-disable-next-line no-console
     console.warn('Unknown error validating signature (rejecting with 403):', e);
     return false;
   }
@@ -89,8 +90,6 @@ export const handler = async (
   }
 
   try {
-    console.log('------ InstagramToFlex excecution ------');
-
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
 
@@ -105,9 +104,6 @@ export const handler = async (
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
     const messageText = message.text;
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
-
-    console.log(`New message from: ${senderExternalId}`);
-    console.log(message.text);
 
     const result = await channelToFlex.sendMessageToFlex(context, {
       flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,

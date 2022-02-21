@@ -92,9 +92,6 @@ export const handler = async (
       resolve(error400('Source'));
       return;
     }
-
-    console.log('------ FlexToTwitter excecution ------');
-
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
