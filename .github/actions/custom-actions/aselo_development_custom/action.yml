@@ -54,7 +54,7 @@ runs:
     with:
       ssm_parameter: "DEV_TWILIO_AS_TWITTER_FLEX_FLOW_SID"
       env_variable_name: "TWITTER_FLEX_FLOW_SID"
-  - name: Set helpline Facebook Page Access Token
+  - name: Set Aselo Facebook App Secret
     uses: "marvinpinto/action-inject-ssm-secrets@latest"
     with:
       ssm_parameter: "FACEBOOK_APP_SECRET"
