@@ -65,7 +65,6 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    console.log('------ FlexChannelUpdate excecution ------');
     const client = context.getTwilioClient();
 
     if (event.EventType === 'onChannelUpdated') {
@@ -87,8 +86,6 @@ export const handler = async (
         await timeout(1000); // set small timeout just in case some cleanup is still going on
 
         const removed = await cleanupUserChannelMap(context, from);
-
-        console.log(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`);
 
         resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
         return;

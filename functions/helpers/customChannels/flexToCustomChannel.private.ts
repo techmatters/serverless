@@ -22,7 +22,6 @@ export const redirectMessageToExternalChat = async (
 
   if (Source === 'SDK') {
     const response = await sendExternalMessage(recipientId, Body);
-    console.log('Message sent from SDK call: ', Body);
     return { status: 'sent', response };
   }
 
@@ -38,11 +37,8 @@ export const redirectMessageToExternalChat = async (
     // Redirect bot, system or third participant, but not self
     if (channelAttributes.from !== From) {
       const response = await sendExternalMessage(recipientId, Body);
-      console.log('Message sent from API call: ', Body);
       return { status: 'sent', response };
     }
-
-    console.log('Message ignored (do not re-send self messages)');
   }
 
   // This ignores self messages and not supported sources

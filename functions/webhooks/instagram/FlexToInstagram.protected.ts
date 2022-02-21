@@ -1,6 +1,5 @@
 /* eslint-disable global-require */
 /* eslint-disable import/no-dynamic-require */
-import Twit from 'twit';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
@@ -10,52 +9,45 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+import axios from 'axios';
 import {
   WebhookEvent,
   FlexToCustomChannel,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
-  TWITTER_CONSUMER_KEY: string;
-  TWITTER_CONSUMER_SECRET: string;
-  TWITTER_ACCESS_TOKEN: string;
-  TWITTER_ACCESS_TOKEN_SECRET: string;
   CHAT_SERVICE_SID: string;
+  // FACEBOOK_APP_ID: string;
+  FACEBOOK_PAGE_ACCESS_TOKEN: string;
 };
 
 export type Body = Partial<WebhookEvent> & {
-  recipientId?: string; // The Twitter id of the user that started the conversation. Provided as query parameter
+  recipientId?: string; // The IGSID of the user that started the conversation. Provided as query parameter
 };
 
-const sendTwitterMessage = (context: Context<EnvVars>) => async (
+const sendInstagramMessage = (context: Context<EnvVars>) => async (
   recipientId: string,
   messageText: string,
 ) => {
-  const T = new Twit({
-    consumer_key: context.TWITTER_CONSUMER_KEY,
-    consumer_secret: context.TWITTER_CONSUMER_SECRET,
-    access_token: context.TWITTER_ACCESS_TOKEN,
-    access_token_secret: context.TWITTER_ACCESS_TOKEN_SECRET,
-    timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
-    strictSSL: true, // optional - requires SSL certificates to be valid.
-  });
-
-  const sendTo = {
-    event: {
-      type: 'message_create',
-      message_create: {
-        target: {
-          recipient_id: recipientId,
-        },
-        message_data: {
-          text: messageText,
-        },
-      },
+  const body = {
+    recipient: {
+      id: recipientId,
+    },
+    message: {
+      text: messageText,
     },
   };
 
-  // @ts-ignore
-  return T.post('direct_messages/events/new', sendTo);
+  const response = await axios({
+    url: `https://graph.facebook.com/v12.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+    method: 'POST',
+    data: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  return response.data;
 };
 
 export const handler = async (
@@ -92,18 +84,7 @@ export const handler = async (
       resolve(error400('Source'));
       return;
     }
-    if (ChannelSid === undefined) {
-      resolve(error400('ChannelSid'));
-      return;
-    }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
+
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
@@ -112,7 +93,7 @@ export const handler = async (
     const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
       event: sanitizedEvent,
       recipientId,
-      sendExternalMessage: sendTwitterMessage(context),
+      sendExternalMessage: sendInstagramMessage(context),
     });
 
     switch (result.status) {
