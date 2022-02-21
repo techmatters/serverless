@@ -1,0 +1,48 @@
+name: 'Zambia PRoduction release custom action'
+description: 'Adds Twitter and Instagram related environment variables to the Zambia Production environment'
+runs:
+  using: "composite"
+  steps:
+
+    - name: Set Aselo Twitter Consumer Key
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_CONSUMER_KEY"
+        env_variable_name: "TWITTER_CONSUMER_KEY"
+    - name: Set Aselo Twitter Consumer Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_CONSUMER_SECRET"
+        env_variable_name: "TWITTER_CONSUMER_SECRET"
+    - name: Set helpline Twitter Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_ACCESS_TOKEN_1272835464379105280_clzambia"
+        env_variable_name: "TWITTER_ACCESS_TOKEN"
+    - name: Set helpline Twitter Access Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1272835464379105280_clzambia"
+        env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET"
+    - name: Set helpline Twitter Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_ZM_TWITTER_FLEX_FLOW_SID"
+        env_variable_name: "TWITTER_FLEX_FLOW_SID"
+    # Append environment variables
+    - name: Add TWITTER_CONSUMER_KEY
+      run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
+      shell: bash
+    - name: Add TWITTER_CONSUMER_SECRET
+      run: echo "TWITTER_CONSUMER_SECRET=${{ env.TWITTER_CONSUMER_SECRET }}" >> .env
+      shell: bash
+    - name: Add TWITTER_ACCESS_TOKEN
+      run: echo "TWITTER_ACCESS_TOKEN=${{ env.TWITTER_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add TWITTER_ACCESS_TOKEN_SECRET
+      run: echo "TWITTER_ACCESS_TOKEN_SECRET=${{ env.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
+      shell: bash
+    - name: Add TWITTER_FLEX_FLOW_SID
+      run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    
