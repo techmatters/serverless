@@ -108,7 +108,7 @@ const getTriggerMessage = (event: Body): string => {
     }
   }
 
-  return 'Before you leave, would you be willing to answer a few questions about the service you recieved today?';
+  return 'Before you leave, would you be willing to answer a few questions about the service you received today? Please answer Yes or No.';
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
