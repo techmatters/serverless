@@ -19,16 +19,16 @@ runs:
       with:
         ssm_parameter: "IWF_API_URL"
         env_variable_name: "IWF_API_URL"
-    # - name: Set IWF_API_ENVIRONMENT
-    #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
-    #   with:
-    #     ssm_parameter: "DEV_AS_IWF_API_ENVIRONMENT"
-    #     env_variable_name: "IWF_API_ENVIRONMENT"
-    # - name: Set IWF_API_COUNTRY_CODE
-    #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
-    #   with:
-    #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
-    #     env_variable_name: "IWF_API_COUNTRY_CODE"
+  # - name: Set IWF_API_ENVIRONMENT
+  #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
+  #   with:
+  #     ssm_parameter: "DEV_AS_IWF_API_ENVIRONMENT"
+  #     env_variable_name: "IWF_API_ENVIRONMENT"
+  # - name: Set IWF_API_COUNTRY_CODE
+  #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
+  #   with:
+  #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
+  #     env_variable_name: "IWF_API_COUNTRY_CODE"
   - name: Set Aselo Twitter Consumer Key
     uses: "marvinpinto/action-inject-ssm-secrets@latest"
     with:
