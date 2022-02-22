@@ -20,7 +20,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '12.x'
+          node-version: '14.x'
       # Setup credentials to access AWS for parameters
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -89,9 +89,9 @@ jobs:
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TEST_STG_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TEST_STG_AUTH_TOKEN }}
-        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
+        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=dev --force
       - name: Run deploy command to production
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TEST_STG_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TEST_STG_AUTH_TOKEN }}
-        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+        run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
