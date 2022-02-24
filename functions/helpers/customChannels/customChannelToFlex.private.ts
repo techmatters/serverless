@@ -99,7 +99,7 @@ export const removeChatChannel = async (
     .remove();
 
 export enum AseloCustomChannels {
-  Twtter = 'twitter',
+  Twitter = 'twitter',
   Instagram = 'instagram',
 }
 
