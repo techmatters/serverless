@@ -30,7 +30,8 @@ type InstagramMessageObject = {
   timestamp: number; // message timestamp
   message: {
     mid: string;
-    text: string; // the body of the message
+    text?: string; // the body of the message
+    attachments?: { type: string; payload: { url: string } }[];
   };
 };
 
@@ -52,6 +53,13 @@ type InstagramMessageEvent = {
 export type Body = InstagramMessageEvent & {
   xHubSignature?: string; // x-hub-signature header sent from Facebook
   bodyAsString?: string; // entire payload as string (preserves the ordering to decode and compare with xHubSignature)
+};
+
+const shouldFilterMessage = (message: InstagramMessageObject['message']) => {
+  // Filter story mention
+  if (message.attachments && message.attachments[0].type === 'story_mention') return true;
+
+  return false;
 };
 
 /**
@@ -95,6 +103,11 @@ export const handler = async (
 
     const { message, sender } = event.entry[0].messaging[0];
 
+    if (shouldFilterMessage(message)) {
+      resolve(success('Filtered event.'));
+      return;
+    }
+
     const senderExternalId = sender.id;
     const subscribedExternalId = event.entry[0].id;
     const channelType = channelToFlex.AseloCustomChannels.Instagram;
@@ -102,7 +115,7 @@ export const handler = async (
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
-    const messageText = message.text;
+    const messageText = message.text || '';
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
 
     const result = await channelToFlex.sendMessageToFlex(context, {
