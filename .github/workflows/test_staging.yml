@@ -89,9 +89,9 @@ jobs:
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TEST_STG_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TEST_STG_AUTH_TOKEN }}
-        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=dev --force
+        run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=dev --force
       - name: Run deploy command to production
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TEST_STG_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TEST_STG_AUTH_TOKEN }}
-        run: twilio serverless:deploy --runtime=node12 --service-name=serverless --environment=production --force
+        run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
