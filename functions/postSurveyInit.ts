@@ -45,7 +45,7 @@ const createSurveyTask = async (
     workflowSid: context.SURVEY_WORKFLOW_SID,
     taskChannel: 'survey',
     attributes: JSON.stringify(taskAttributes),
-    timeout: 30,
+    timeout: 120,
   });
 
   const channel = await client.chat
