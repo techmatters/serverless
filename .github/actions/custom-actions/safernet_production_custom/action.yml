@@ -13,7 +13,7 @@ runs:
       with:
         ssm_parameter: "PROD_SAFERNET_TOKEN"
         env_variable_name: "SAFERNET_TOKEN"
-    - name: Set SAFERNET_ENDPOINT
+    - name: Set SAVE_PENDING_CONTACTS_STATIC_KEY
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "PROD_TWILIO_BR_SAVE_PENDING_CONTACTS_STATIC_KEY"
