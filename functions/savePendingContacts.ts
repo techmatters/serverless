@@ -75,17 +75,19 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
+  const { SYNC_SERVICE_SID, SAVE_CONTACT_FN, SAVE_PENDING_CONTACTS_STATIC_KEY } = context;
+
+  if (!SAVE_CONTACT_FN) throw new Error('SAVE_CONTACT_FN env var not provided.');
+  if (!SAVE_PENDING_CONTACTS_STATIC_KEY)
+    throw new Error('SAVE_PENDING_CONTACTS_STATIC_KEY env var not provided.');
+
   const isValid = await isValidRequest(context, event);
 
   if (!isValid) {
     return resolve(error403('No ApiKey was found'));
   }
 
-  const { SYNC_SERVICE_SID, SAVE_CONTACT_FN } = context;
-
   try {
-    if (!SAVE_CONTACT_FN) throw new Error('SAVE_CONTACT_FN env var not provided.');
-
     const saveContactFn = getSaveContactFn(SAVE_CONTACT_FN, context, event);
     if (!saveContactFn) {
       return resolve(error500(new Error('Could not find a saveContact function'))); // Should it be HTTP 404?

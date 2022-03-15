@@ -56,6 +56,13 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
+  const { SAFERNET_ENDPOINT, SAFERNET_TOKEN, SAVE_PENDING_CONTACTS_STATIC_KEY } = context;
+
+  if (!SAFERNET_ENDPOINT) throw new Error('SAFERNET_ENDPOINT env var not provided.');
+  if (!SAFERNET_TOKEN) throw new Error('SAFERNET_TOKEN env var not provided.');
+  if (!SAVE_PENDING_CONTACTS_STATIC_KEY)
+    throw new Error('SAVE_PENDING_CONTACTS_STATIC_KEY env var not provided.');
+
   const isValid = await isValidRequest(context, event);
 
   if (!isValid) {
@@ -64,11 +71,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
   }
 
   try {
-    const { SAFERNET_ENDPOINT, SAFERNET_TOKEN } = context;
-
-    if (!SAFERNET_ENDPOINT) throw new Error('SAFERNET_ENDPOINT env var not provided.');
-    if (!SAFERNET_TOKEN) throw new Error('SAFERNET_TOKEN env var not provided.');
-
     const { payload } = event;
 
     const signedPayload = crypto
