@@ -13,6 +13,11 @@ runs:
       with:
         ssm_parameter: "STG_SAFERNET_TOKEN"
         env_variable_name: "SAFERNET_TOKEN"
+    - name: Set SAVE_PENDING_CONTACTS_STATIC_KEY
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_TWILIO_BR_SAVE_PENDING_CONTACTS_STATIC_KEY"
+        env_variable_name: "SAVE_PENDING_CONTACTS_STATIC_KEY"
     # Append environment variables
     - name: Add SAFERNET_ENDPOINT
       run: echo "SAFERNET_ENDPOINT=${{ env.SAFERNET_ENDPOINT }}" >> .env
@@ -22,5 +27,8 @@ runs:
       shell: bash
     - name: Add SAVE_CONTACT_FN
       run: echo "SAVE_CONTACT_FN=saveContactToSaferNet" >> .env
+      shell: bash
+    - name: Add SAVE_PENDING_CONTACTS_STATIC_KEY
+      run: echo "SAVE_PENDING_CONTACTS_STATIC_KEY=${{ env.SAVE_PENDING_CONTACTS_STATIC_KEY }}" >> .env
       shell: bash
     
