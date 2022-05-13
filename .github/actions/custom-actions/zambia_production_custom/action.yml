@@ -3,7 +3,7 @@ description: 'Adds Twitter and Instagram related environment variables to the Za
 runs:
   using: "composite"
   steps:
-
+    # Set Twitter variables
     - name: Set Aselo Twitter Consumer Key
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -29,6 +29,32 @@ runs:
       with:
         ssm_parameter: "PROD_TWILIO_ZM_TWITTER_FLEX_FLOW_SID"
         env_variable_name: "TWITTER_FLEX_FLOW_SID"
+    # Set IWF credentials
+    - name: Set IWF_API_USERNAME
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_USERNAME"
+        env_variable_name: "IWF_API_USERNAME"
+    - name: Set IWF_API_PASSWORD
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_PASSWORD"
+        env_variable_name: "IWF_API_PASSWORD"
+    - name: Set IWF_API_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_URL"
+        env_variable_name: "IWF_API_URL"
+    - name: Set IWF_API_ENVIRONMENT
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_ZM_IWF_API_ENVIRONMENT"
+        env_variable_name: "IWF_API_ENVIRONMENT"
+    - name: Set IWF_API_COUNTRY_CODE
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_ZM_IWF_API_COUNTRY_CODE"
+        env_variable_name: "IWF_API_COUNTRY_CODE"
     # Append environment variables
     - name: Add TWITTER_CONSUMER_KEY
       run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
@@ -45,4 +71,18 @@ runs:
     - name: Add TWITTER_FLEX_FLOW_SID
       run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
       shell: bash
-    
+    - name: Add IWF_API_USERNAME
+      run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
+      shell: bash
+    - name: Add IWF_API_PASSWORD
+      run: echo "IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}" >> .env
+      shell: bash
+    - name: Add IWF_API_URL
+      run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_API_ENVIRONMENT
+      run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
+      shell: bash
+    - name: Add IWF_API_COUNTRY_CODE
+      run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
+      shell: bash
