@@ -117,7 +117,7 @@ jobs:
         uses: ./.github/actions/main-action
         with:
           account-sid: ${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}
-          auth-token: ${{ secrets[TWILIO_AUTH_TOKEN_SECRET_NAME] }}
+          auth-token: ${{ secrets[env.TWILIO_AUTH_TOKEN_SECRET_NAME] }}
           workspace-sid: $TWILIO_WORKSPACE_SID
           transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
           sync-service-api-key: $SYNC_SERVICE_API_KEY
