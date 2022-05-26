@@ -110,7 +110,11 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    - run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
+    - uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 120
+        max_attempts: 20
+        command: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
