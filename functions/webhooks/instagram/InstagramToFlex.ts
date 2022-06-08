@@ -32,6 +32,7 @@ type InstagramMessageObject = {
     mid: string;
     text?: string; // the body of the message
     attachments?: { type: string; payload: { url: string } }[];
+    is_deleted?: boolean;
   };
 };
 
@@ -60,6 +61,29 @@ const shouldFilterMessage = (message: InstagramMessageObject['message']) => {
   if (message.attachments && message.attachments[0].type === 'story_mention') return true;
 
   return false;
+};
+
+const unsendMessage = async (
+  context: Context,
+  {
+    chatServiceSid,
+    channelSid,
+    messageExternalId,
+  }: { chatServiceSid: string; channelSid: string; messageExternalId: string },
+) => {
+  const client = context.getTwilioClient();
+  const messages = await client.chat
+    .services(chatServiceSid)
+    .channels(channelSid)
+    .messages.list();
+
+  const messageToUnsed = messages.find(
+    m => JSON.parse(m.attributes).messageExternalId === messageExternalId,
+  );
+
+  const unsent = await messageToUnsed?.update({ body: 'The user has unsent this message' });
+
+  return unsent;
 };
 
 /**
@@ -109,6 +133,7 @@ export const handler = async (
     }
 
     const senderExternalId = sender.id;
+    const messageExternalId = message.mid;
     const subscribedExternalId = event.entry[0].id;
     const channelType = channelToFlex.AseloCustomChannels.Instagram;
     const twilioNumber = `${channelType}:${subscribedExternalId}`;
@@ -116,12 +141,42 @@ export const handler = async (
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
     const messageText = message.text || '';
+    const messageAttributes = JSON.stringify({ messageExternalId });
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
+    const chatServiceSid = context.CHAT_SERVICE_SID;
+    const syncServiceSid = context.SYNC_SERVICE_SID;
+
+    // Handle message deletion for active conversations
+    if (message.is_deleted) {
+      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+        syncServiceSid,
+        uniqueUserName,
+      });
+
+      if (channelSid) {
+        // const unsentMessage =
+        await unsendMessage(context, {
+          channelSid,
+          chatServiceSid,
+          messageExternalId,
+        });
+
+        resolve(success(`Message with external id ${messageExternalId} unsent.`));
+        return;
+      }
+
+      resolve(
+        success(
+          `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
+        ),
+      );
+      return;
+    }
 
     const result = await channelToFlex.sendMessageToFlex(context, {
       flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
-      chatServiceSid: context.CHAT_SERVICE_SID,
-      syncServiceSid: context.SYNC_SERVICE_SID,
+      chatServiceSid,
+      syncServiceSid,
       channelType,
       twilioNumber,
       chatFriendlyName,
@@ -129,6 +184,7 @@ export const handler = async (
       senderScreenName,
       onMessageSentWebhookUrl,
       messageText,
+      messageAttributes,
       senderExternalId,
       subscribedExternalId,
     });
