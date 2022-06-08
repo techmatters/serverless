@@ -11,12 +11,13 @@ const MOCK_CHANNEL_TYPE = 'instagram';
 const MOCK_SENDER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:sender_id`;
 const MOCK_OTHER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:other_id`;
 
-const newChannel = (sid: string) => {
+const newChannel = (sid: string, messages: any[] = []) => {
   return {
     attributes: '{}',
     sid,
     messages: {
       create: jest.fn().mockResolvedValue(`Message sent in channel ${sid}.`),
+      list: async () => messages,
     },
     webhooks: {
       create: async () => {},
@@ -25,8 +26,14 @@ const newChannel = (sid: string) => {
   };
 };
 
+const mockOneMessage = {
+  sid: 'message_1',
+  attributes: JSON.stringify({ messageExternalId: 'test_message_mid' }),
+  update: jest.fn(),
+};
+
 const channels: { [x: string]: any } = {
-  [MOCK_SENDER_CHANNEL_SID]: newChannel(MOCK_SENDER_CHANNEL_SID),
+  [MOCK_SENDER_CHANNEL_SID]: newChannel(MOCK_SENDER_CHANNEL_SID, [mockOneMessage]),
   [MOCK_OTHER_CHANNEL_SID]: newChannel(MOCK_OTHER_CHANNEL_SID),
 };
 
@@ -69,7 +76,11 @@ const expectedSignature = crypto
   .update(defaultBodyAsString)
   .digest('hex');
 
-const validEventBody = ({ senderId = 'sender_id', recipientId = 'recipient_id' } = {}): Body => ({
+const validEventBody = ({
+  senderId = 'sender_id',
+  recipientId = 'recipient_id',
+  isDeleted = false,
+} = {}): Body => ({
   object: 'instagram',
   bodyAsString: defaultBodyAsString,
   xHubSignature: `sha1=${expectedSignature}`,
@@ -89,6 +100,7 @@ const validEventBody = ({ senderId = 'sender_id', recipientId = 'recipient_id' }
           message: {
             mid: 'test_message_mid',
             text: 'test message text',
+            is_deleted: isDeleted,
           },
         },
       ],
@@ -140,6 +152,9 @@ describe('InstagramToFlex', () => {
         }),
       },
     };
+
+    Object.entries(channels).forEach(([, c]) => c.messages.create.mockClear());
+    mockOneMessage.update.mockClear();
   });
 
   afterAll(() => {
@@ -249,8 +264,26 @@ describe('InstagramToFlex', () => {
       expectedToBeSentOnChannel: MOCK_OTHER_CHANNEL_SID,
       expectedToCreateChannel: MOCK_OTHER_CHANNEL_SID,
     },
+    {
+      conditionDescription: 'deleting a message from an innactive conversation',
+      event: validEventBody({ senderId: 'no_active_chat', isDeleted: true }),
+      expectedStatus: 200,
+      expectedMessage:
+        'Message unsent with external id test_message_mid is not part of an active conversation.',
+      expectedToBeSentOnChannel: undefined,
+      expectedToCreateChannel: undefined,
+    },
+    {
+      conditionDescription: 'deleting a message from an active conversation',
+      event: validEventBody({ senderId: 'sender_id', isDeleted: true }),
+      expectedStatus: 200,
+      expectedMessage: 'Message with external id test_message_mid unsent.',
+      expectedToBeSentOnChannel: undefined,
+      expectedToCreateChannel: undefined,
+      expectedToDeleteMessage: true,
+    },
   ]).test(
-    "Should return error expectedStatus '$expectedMessage' when $conditionDescription",
+    "Should return expectedStatus '$expectedMessage' when $conditionDescription",
     async ({
       event,
       expectedStatus,
@@ -259,6 +292,7 @@ describe('InstagramToFlex', () => {
       chatServiceSid = 'CHAT_SERVICE_SID',
       expectedToBeSentOnChannel,
       expectedToCreateChannel,
+      expectedToDeleteMessage = false,
     }) => {
       let response: MockedResponse | undefined;
 
@@ -306,6 +340,8 @@ describe('InstagramToFlex', () => {
         } else {
           expect(mockTwilioClient.flexApi.channel.create).not.toBeCalled();
         }
+
+        if (expectedToDeleteMessage) expect(mockOneMessage.update).toHaveBeenCalled();
       }
     },
   );
