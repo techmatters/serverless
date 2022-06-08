@@ -27,7 +27,7 @@ runs:
     - name: Set helpline Twitter Flex Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "BETA_TWILIO_DEMO_TWITTER_FLEX_FLOW_SID"
+        ssm_parameter: "STG_TWILIO_AS_TWITTER_FLEX_FLOW_SID"
         env_variable_name: "TWITTER_FLEX_FLOW_SID"
 
     # Append environment variables
