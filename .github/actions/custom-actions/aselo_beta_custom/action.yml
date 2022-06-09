@@ -1,5 +1,5 @@
 name: 'Aselo Beta release custom action'
-description: 'Adds Twitter related environment variables to the Aselo Beta environment'
+description: 'Sets up environment variables related to non-standard additional features in use in the beta environment'
 runs:
   using: "composite"
   steps:
