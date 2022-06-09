@@ -6,6 +6,9 @@ runs:
     - name: Aselo Development release custom action
       if: github.workflow == format('Aselo Development release')
       uses: ./.github/actions/custom-actions/aselo_development_custom
+    - name: Aselo Beta release custom action
+      if: github.workflow == format('Aselo Beta release')
+      uses: ./.github/actions/custom-actions/aselo_beta_custom
     - name: Malawi Staging release custom action
       if: github.workflow == format('Malawi Staging release')
       uses: ./.github/actions/custom-actions/malawi_staging_custom
@@ -24,4 +27,3 @@ runs:
     - name: Zambia Production release custom action
       if: github.workflow == format('Zambia Production release')
       uses: ./.github/actions/custom-actions/zambia_production_custom
-
