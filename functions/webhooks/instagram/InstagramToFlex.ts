@@ -173,9 +173,6 @@ export const handler = async (
 
     // Handle story tags for active conversations
     if (isStoryMention(message)) {
-      console.log(fromStoryMention(message));
-      console.log(message.attachments && message.attachments[0].payload);
-
       const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
         syncServiceSid,
         uniqueUserName,
