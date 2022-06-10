@@ -56,12 +56,15 @@ export type Body = InstagramMessageEvent & {
   bodyAsString?: string; // entire payload as string (preserves the ordering to decode and compare with xHubSignature)
 };
 
-const shouldFilterMessage = (message: InstagramMessageObject['message']) => {
-  // Filter story mention
-  if (message.attachments && message.attachments[0].type === 'story_mention') return true;
+const isMessageDeleted = (message: InstagramMessageObject['message']) => message.is_deleted;
 
-  return false;
-};
+const isStoryMention = (message: InstagramMessageObject['message']) =>
+  message.attachments && message.attachments[0].type === 'story_mention';
+
+const fromStoryMention = (message: InstagramMessageObject['message']) =>
+  message.attachments
+    ? `Story mention: ${message.attachments[0].payload.url}`
+    : 'Looks like this event does not incluydes a valid url in the payload';
 
 const unsendMessage = async (
   context: Context,
@@ -127,11 +130,7 @@ export const handler = async (
 
     const { message, sender } = event.entry[0].messaging[0];
 
-    if (shouldFilterMessage(message)) {
-      resolve(success('Filtered event.'));
-      return;
-    }
-
+    let messageText = '';
     const senderExternalId = sender.id;
     const messageExternalId = message.mid;
     const subscribedExternalId = event.entry[0].id;
@@ -140,14 +139,13 @@ export const handler = async (
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
-    const messageText = message.text || '';
     const messageAttributes = JSON.stringify({ messageExternalId });
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
     const chatServiceSid = context.CHAT_SERVICE_SID;
     const syncServiceSid = context.SYNC_SERVICE_SID;
 
     // Handle message deletion for active conversations
-    if (message.is_deleted) {
+    if (isMessageDeleted(message)) {
       const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
         syncServiceSid,
         uniqueUserName,
@@ -172,6 +170,31 @@ export const handler = async (
       );
       return;
     }
+
+    // Handle story tags for active conversations
+    if (isStoryMention(message)) {
+      console.log(fromStoryMention(message));
+      console.log(message.attachments && message.attachments[0].payload);
+
+      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+        syncServiceSid,
+        uniqueUserName,
+      });
+
+      if (channelSid) {
+        messageText = fromStoryMention(message);
+      } else {
+        resolve(
+          success(
+            `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
+          ),
+        );
+        return;
+      }
+    }
+
+    // If messageText is empty at this point, handle as a "regular Instagram message"
+    messageText = messageText || message.text || '';
 
     const result = await channelToFlex.sendMessageToFlex(context, {
       flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
