@@ -80,6 +80,12 @@ const validEventBody = ({
   senderId = 'sender_id',
   recipientId = 'recipient_id',
   isDeleted = false,
+  attachments = undefined,
+}: {
+  senderId?: string;
+  recipientId?: string;
+  isDeleted?: boolean;
+  attachments?: any[];
 } = {}): Body => ({
   object: 'instagram',
   bodyAsString: defaultBodyAsString,
@@ -101,6 +107,7 @@ const validEventBody = ({
             mid: 'test_message_mid',
             text: 'test message text',
             is_deleted: isDeleted,
+            attachments,
           },
         },
       ],
@@ -282,6 +289,30 @@ describe('InstagramToFlex', () => {
       expectedToCreateChannel: undefined,
       expectedToDeleteMessage: true,
     },
+    {
+      conditionDescription: 'story tagging from an innactive conversation',
+      event: validEventBody({
+        senderId: 'no_active_chat',
+        attachments: [{ type: 'story_mention', payload: { url: 'some fake url' } }],
+      }),
+      expectedStatus: 200,
+      expectedMessage:
+        'Story mention with external id test_message_mid is not part of an active conversation.',
+      expectedToBeSentOnChannel: undefined,
+      expectedToCreateChannel: undefined,
+    },
+    {
+      conditionDescription: 'story tagging from an innactive conversation',
+      event: validEventBody({
+        senderId: 'sender_id',
+        attachments: [{ type: 'story_mention', payload: { url: 'some fake url' } }],
+      }),
+      expectedStatus: 200,
+      expectedMessage: `Message sent in channel ${MOCK_SENDER_CHANNEL_SID}.`,
+      expectedToBeSentOnChannel: MOCK_SENDER_CHANNEL_SID,
+      expectedToCreateChannel: undefined,
+      expectedMessageText: 'Story mention: some fake url',
+    },
   ]).test(
     "Should return expectedStatus '$expectedMessage' when $conditionDescription",
     async ({
@@ -293,6 +324,7 @@ describe('InstagramToFlex', () => {
       expectedToBeSentOnChannel,
       expectedToCreateChannel,
       expectedToDeleteMessage = false,
+      expectedMessageText = undefined,
     }) => {
       let response: MockedResponse | undefined;
 
@@ -317,9 +349,10 @@ describe('InstagramToFlex', () => {
         if (expectedToBeSentOnChannel) {
           expect(channels[expectedToBeSentOnChannel].messages.create).toBeCalledWith(
             expect.objectContaining({
-              body: 'test message text',
+              body: expectedMessageText || 'test message text',
               from: expectedToBeSentOnChannel,
               xTwilioWebhookEnabled: 'true',
+              attributes: JSON.stringify({ messageExternalId: 'test_message_mid' }),
             }),
           );
         } else {
