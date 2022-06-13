@@ -1,6 +1,6 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: STG_Te Guio Colombia Staging release
+name: Te Guio Colombia Staging release
 
 # Controls when the action will run.
 on:
