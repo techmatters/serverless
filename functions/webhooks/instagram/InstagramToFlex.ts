@@ -80,11 +80,11 @@ const unsendMessage = async (
     .channels(channelSid)
     .messages.list();
 
-  const messageToUnsed = messages.find(
+  const messageToUnsend = messages.find(
     m => JSON.parse(m.attributes).messageExternalId === messageExternalId,
   );
 
-  const unsent = await messageToUnsed?.update({ body: 'The user has unsent this message' });
+  const unsent = await messageToUnsend?.update({ body: 'The user has unsent this message' });
 
   return unsent;
 };
