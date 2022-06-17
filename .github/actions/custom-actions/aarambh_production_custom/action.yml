@@ -1,0 +1,48 @@
+name: 'Aarambh Production release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the Aarambh Production environment'
+runs:
+  using: "composite"
+  steps:
+    # Set IWF credentials
+    - name: Set IWF_API_USERNAME
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_USERNAME"
+        env_variable_name: "IWF_API_USERNAME"
+    - name: Set IWF_API_PASSWORD
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_PASSWORD"
+        env_variable_name: "IWF_API_PASSWORD"
+    - name: Set IWF_API_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "IWF_API_URL"
+        env_variable_name: "IWF_API_URL"
+    # - name: Set IWF_API_ENVIRONMENT
+    #   uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    #   with:
+    #     ssm_parameter: "PROD_IN_IWF_API_ENVIRONMENT"
+    #     env_variable_name: "IWF_API_ENVIRONMENT"
+    - name: Set IWF_API_COUNTRY_CODE
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_IN_IWF_API_COUNTRY_CODE"
+        env_variable_name: "IWF_API_COUNTRY_CODE"
+    # Append environment variables
+    - name: Add IWF_API_USERNAME
+      run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
+      shell: bash
+    - name: Add IWF_API_PASSWORD
+      run: echo "IWF_API_PASSWORD=${{ env.IWF_API_PASSWORD }}" >> .env
+      shell: bash
+    - name: Add IWF_API_URL
+      run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
+      shell: bash
+    # - name: Add IWF_API_ENVIRONMENT
+    #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
+    #   shell: bash
+    - name: Add IWF_API_COUNTRY_CODE
+      run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
+      shell: bash
+
