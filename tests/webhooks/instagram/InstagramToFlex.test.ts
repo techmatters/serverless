@@ -272,7 +272,7 @@ describe('InstagramToFlex', () => {
       expectedToCreateChannel: MOCK_OTHER_CHANNEL_SID,
     },
     {
-      conditionDescription: 'deleting a message from an innactive conversation',
+      conditionDescription: 'deleting a message from an inactive conversation',
       event: validEventBody({ senderId: 'no_active_chat', isDeleted: true }),
       expectedStatus: 200,
       expectedMessage:
@@ -290,7 +290,7 @@ describe('InstagramToFlex', () => {
       expectedToDeleteMessage: true,
     },
     {
-      conditionDescription: 'story tagging from an innactive conversation',
+      conditionDescription: 'story tagging from an inactive conversation',
       event: validEventBody({
         senderId: 'no_active_chat',
         attachments: [{ type: 'story_mention', payload: { url: 'some fake url' } }],
@@ -302,7 +302,7 @@ describe('InstagramToFlex', () => {
       expectedToCreateChannel: undefined,
     },
     {
-      conditionDescription: 'story tagging from an innactive conversation',
+      conditionDescription: 'story tagging from an inactive conversation',
       event: validEventBody({
         senderId: 'sender_id',
         attachments: [{ type: 'story_mention', payload: { url: 'some fake url' } }],

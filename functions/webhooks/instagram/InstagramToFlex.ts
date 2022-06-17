@@ -61,10 +61,10 @@ const isMessageDeleted = (message: InstagramMessageObject['message']) => message
 const isStoryMention = (message: InstagramMessageObject['message']) =>
   message.attachments && message.attachments[0].type === 'story_mention';
 
-const fromStoryMention = (message: InstagramMessageObject['message']) =>
+const getStoryMentionText = (message: InstagramMessageObject['message']) =>
   message.attachments
     ? `Story mention: ${message.attachments[0].payload.url}`
-    : 'Looks like this event does not incluydes a valid url in the payload';
+    : 'Looks like this event does not includes a valid url in the payload';
 
 const unsendMessage = async (
   context: Context,
@@ -179,7 +179,7 @@ export const handler = async (
       });
 
       if (channelSid) {
-        messageText = fromStoryMention(message);
+        messageText = getStoryMentionText(message);
       } else {
         resolve(
           success(
