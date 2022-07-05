@@ -24,6 +24,9 @@ runs:
     - name: Safernet Production release custom action
       if: github.workflow == format('SaferNet Production release')
       uses: ./.github/actions/custom-actions/safernet_production_custom
+    - name: TeGuio Staging release custom action
+      if: github.workflow == format('TeGuio Staging release')
+      uses: ./.github/actions/custom-actions/teguio_staging_custom
     - name: Zambia Staging release custom action
       if: github.workflow == format('Zambia Staging release')
       uses: ./.github/actions/custom-actions/zambia_staging_custom
