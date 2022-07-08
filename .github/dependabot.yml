@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    allow:
+      - dependency-name: "*"
+        dependency-type: "production"
+        
+  - package-ecosystem: "npm"
+    directory: "/tech-matters-serverless-helpers-lib/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    allow:
+      - dependency-name: "*"
+        dependency-type: "production"
+        
+  - package-ecosystem: "npm"
+    directory: "/.github/actions/main-action/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    allow:
+      - dependency-name: "*"
+        dependency-type: "production"
+
+  - package-ecosystem: "npm"
+    directory: "/.github/actions/deploy-beta/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    allow:
+      - dependency-name: "*"
+        dependency-type: "production"
