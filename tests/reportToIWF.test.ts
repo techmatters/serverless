@@ -1,6 +1,6 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios from 'axios';
-import { handler as reportToIWF, Event as Body } from '../functions/reportToIWF';
+import { handler as reportToIWF, Event as Body, IWFReportPayload } from '../functions/reportToIWF';
 
 import helpers, { MockedResponse } from './helpers';
 
@@ -12,6 +12,23 @@ const baseContext = {
   IWF_API_USERNAME: 'IWF_API_USERNAME',
   IWF_API_PASSWORD: 'IWF_API_PASSWORD',
   IWF_API_URL: 'IWF_API_URL',
+};
+
+const defaultPayload = {
+  Reporting_Type: 'R',
+  Live_Report: 'T',
+  Media_Type_ID: 1,
+  Report_Channel_ID: 51,
+  Origin_ID: 5,
+  Submission_Type_ID: 1,
+  Reported_Category_ID: 2,
+  Reported_URL: 'Reported_URL',
+  Reporter_Anonymous: 'Y',
+  Reporter_First_Name: null,
+  Reporter_Last_Name: null,
+  Reporter_Email_ID: null,
+  Reporter_Description: null,
+  Reporter_Country_ID: null,
 };
 
 describe('reportToIWF', () => {
@@ -61,14 +78,16 @@ describe('reportToIWF', () => {
     await reportToIWF(baseContext, event, callback);
   });
 
-  test('Should return status 200', async () => {
+  test('Should POST a payload to IWF_API_URL and return 200', async () => {
+    let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce(() =>
-      Promise.resolve({
+    axios.mockImplementationOnce(request => {
+      postedPayload = JSON.parse(request.data);
+      return Promise.resolve({
         status: 200,
         data: 'Returned ok',
-      }),
-    );
+      });
+    });
 
     const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y' };
 
@@ -80,6 +99,103 @@ describe('reportToIWF', () => {
     };
 
     await reportToIWF(baseContext, event, callback);
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: baseContext.IWF_API_URL,
+        method: 'POST',
+        data: expect.anything(),
+      }),
+    );
+    expect(postedPayload).toMatchObject(defaultPayload);
+  });
+
+  test('Extra report details should be copied into POST payload', async () => {
+    let postedPayload: IWFReportPayload | undefined;
+    // @ts-ignore
+    axios.mockImplementationOnce(request => {
+      postedPayload = JSON.parse(request.data);
+      return Promise.resolve({
+        status: 200,
+        data: 'Returned ok',
+      });
+    });
+
+    const event: Body = {
+      Reported_URL: 'Reported_URL',
+      Reporter_Anonymous: 'Y',
+      Reporter_First_Name: 'Lorna',
+      Reporter_Last_Name: 'Ballantyne',
+      Reporter_Email_ID: 'lorn@aballan.tyne',
+      Reporter_Description: 'description',
+    };
+
+    await reportToIWF(
+      {
+        ...baseContext,
+        IWF_API_COUNTRY_CODE: '1337',
+        IWF_API_CHANNEL_ID: '42',
+        IWF_API_ENVIRONMENT: 'L',
+      },
+      event,
+      () => {},
+    );
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: baseContext.IWF_API_URL,
+        method: 'POST',
+        data: expect.anything(),
+      }),
+    );
+
+    expect(postedPayload).toMatchObject({
+      ...defaultPayload,
+      ...event,
+      Report_Channel_ID: 42,
+      Live_Report: 'L',
+      Reporter_Country_ID: 1337,
+    });
+  });
+
+  test('Environment variables should override default values in POST', async () => {
+    let postedPayload: IWFReportPayload | undefined;
+    // @ts-ignore
+    axios.mockImplementationOnce(request => {
+      postedPayload = JSON.parse(request.data);
+      return Promise.resolve({
+        status: 200,
+        data: 'Returned ok',
+      });
+    });
+
+    const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y' };
+
+    await reportToIWF(
+      {
+        ...baseContext,
+        IWF_API_COUNTRY_CODE: '1337',
+        IWF_API_CHANNEL_ID: '42',
+        IWF_API_ENVIRONMENT: 'L',
+      },
+      event,
+      () => {},
+    );
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: baseContext.IWF_API_URL,
+        method: 'POST',
+        data: expect.anything(),
+      }),
+    );
+
+    expect(postedPayload).toMatchObject({
+      ...defaultPayload,
+      Report_Channel_ID: 42,
+      Live_Report: 'L',
+      Reporter_Country_ID: 1337,
+    });
   });
 
   test('Should return error code if axios call fails (redirect IWF payload)', async () => {

@@ -29,6 +29,11 @@ runs:
       with:
         ssm_parameter: "PROD_MW_IWF_API_COUNTRY_CODE"
         env_variable_name: "IWF_API_COUNTRY_CODE"
+    - name: Set IWF_API_CHANNEL_ID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_MW_IWF_API_CHANNEL_ID"
+        env_variable_name: "IWF_API_CHANNEL_ID"
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
