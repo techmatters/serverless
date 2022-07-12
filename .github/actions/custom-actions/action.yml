@@ -6,6 +6,9 @@ runs:
     - name: Aarambh Staging release custom action
       if: github.workflow == format('Aarambh Staging release')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
+    - name: Aarambh Production release custom action
+      if: github.workflow == format('Aarambh Production release')
+      uses: ./.github/actions/custom-actions/aarambh_production_custom
     - name: Aselo Development release custom action
       if: github.workflow == format('Aselo Development release')
       uses: ./.github/actions/custom-actions/aselo_development_custom
