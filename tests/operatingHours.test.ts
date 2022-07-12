@@ -1,6 +1,6 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import MockDate from 'mockdate';
-import { handler as operatingHours, Body } from '../functions/operatingHours.protected';
+import { handler as operatingHours, Body } from '../functions/operatingHours';
 
 import helpers, { MockedResponse } from './helpers';
 
