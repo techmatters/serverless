@@ -21,13 +21,14 @@ type EnvVars = {
   IWF_API_URL: string;
   IWF_API_ENVIRONMENT?: string;
   IWF_API_COUNTRY_CODE?: string;
+  IWF_API_CHANNEL_ID?: string;
 };
 
-type IWFReportPayload = {
+export type IWFReportPayload = {
   Reporting_Type: 'R'; // "R" for report
   Live_Report: 'L' | 'T'; // "L" for Live, "T" for test
   Media_Type_ID: 1; // 1 for a URL report
-  Report_Channel_ID: 51; // 51 for online report
+  Report_Channel_ID: number; // 51 for online report
   Origin_ID: 5; // 5 for public report
   Submission_Type_ID: 1; // 1 for online report
   Reported_Category_ID: 2; // 2 for suspected child sexual abuse report (remit child)
@@ -72,11 +73,13 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
         ? parseInt(context.IWF_API_COUNTRY_CODE, 10)
         : null;
 
+      const channelID = context.IWF_API_CHANNEL_ID ? parseInt(context.IWF_API_CHANNEL_ID, 10) : 51;
+
       const body: IWFReportPayload = {
         Reporting_Type: 'R',
         Live_Report: liveReportFlag,
         Media_Type_ID: 1,
-        Report_Channel_ID: 51,
+        Report_Channel_ID: channelID,
         Origin_ID: 5,
         Submission_Type_ID: 1,
         Reported_Category_ID: 2,
