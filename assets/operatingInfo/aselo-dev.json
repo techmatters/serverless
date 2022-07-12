@@ -1,18 +1,17 @@
 {
   "timezone": "America/New_York",
-  "holidays": {
-    "07/12/2022": "Test holiday",
+  "holidays": { 
     "12/25/2021": "Christmas"
   },
   "operatingHours": {
     "webchat": {
-      "1": [{ "open": 800, "close": 1700 }],
-      "2": [{ "open": 800, "close": 1700 }],
-      "3": [{ "open": 800, "close": 1700 }],
-      "4": [{ "open": 800, "close": 1700 }],
-      "5": [{ "open": 800, "close": 1700 }],
-      "6": [{ "open": 800, "close": 1700 }],
-      "7": [{ "open": 800, "close": 1700 }]
+      "1": [{ "open": 0, "close": 2400 }],
+      "2": [{ "open": 0, "close": 2400 }],
+      "3": [{ "open": 0, "close": 2400 }],
+      "4": [{ "open": 0, "close": 2400 }],
+      "5": [{ "open": 0, "close": 2400 }],
+      "6": [{ "open": 0, "close": 2400 }],
+      "7": [{ "open": 0, "close": 2400 }]
     },
     "facebook": {
       "1": [],
