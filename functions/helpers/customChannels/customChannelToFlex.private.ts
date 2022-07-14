@@ -3,7 +3,7 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 /**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
-const retrieveChannelFromUserChannelMap = async (
+export const retrieveChannelFromUserChannelMap = async (
   context: Context,
   {
     syncServiceSid,
@@ -62,11 +62,13 @@ export const sendChatMessage = async (
     channelSid,
     from,
     messageText,
+    messageAttributes,
   }: {
     chatServiceSid: string;
     channelSid: string;
     from: string;
     messageText: string;
+    messageAttributes?: string;
   },
 ) => {
   const message = await context
@@ -77,6 +79,7 @@ export const sendChatMessage = async (
       body: messageText,
       from,
       xTwilioWebhookEnabled: 'true',
+      ...(messageAttributes && { attributes: messageAttributes }),
     });
 
   return message;
@@ -199,6 +202,7 @@ const createFlexChannel = async (
 type SendMessageToFlexParams = CreateFlexChannelParams & {
   syncServiceSid: string; // The Sync Service sid where user channel maps are stored
   messageText: string; // The body of the message to send
+  messageAttributes?: string; // [optional] The message attributes
   senderExternalId: string; // The id in the external chat system of the user sending the message
   subscribedExternalId: string; // The id in the external chat system of the user that is subscribed to the webhook
 };
@@ -224,6 +228,7 @@ export const sendMessageToFlex = async (
     onChannelUpdatedWebhookUrl,
     syncServiceSid,
     messageText,
+    messageAttributes = undefined,
     senderExternalId,
     subscribedExternalId,
   }: SendMessageToFlexParams,
@@ -281,6 +286,7 @@ export const sendMessageToFlex = async (
     channelSid,
     from: uniqueUserName,
     messageText,
+    messageAttributes,
   });
 
   return { status: 'sent', response };
@@ -288,5 +294,6 @@ export const sendMessageToFlex = async (
 
 export type ChannelToFlex = {
   sendMessageToFlex: typeof sendMessageToFlex;
+  retrieveChannelFromUserChannelMap: typeof retrieveChannelFromUserChannelMap;
   AseloCustomChannels: typeof AseloCustomChannels;
 };

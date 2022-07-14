@@ -3,6 +3,12 @@ description: Compound 'routing' action to load custom deployment actions for the
 runs:
   using: "composite"
   steps:
+    - name: Aarambh Staging release custom action
+      if: github.workflow == format('Aarambh Staging release')
+      uses: ./.github/actions/custom-actions/aarambh_staging_custom
+    - name: Aarambh Production release custom action
+      if: github.workflow == format('Aarambh Production release')
+      uses: ./.github/actions/custom-actions/aarambh_production_custom
     - name: Aselo Development release custom action
       if: github.workflow == format('Aselo Development release')
       uses: ./.github/actions/custom-actions/aselo_development_custom
@@ -21,6 +27,9 @@ runs:
     - name: Safernet Production release custom action
       if: github.workflow == format('SaferNet Production release')
       uses: ./.github/actions/custom-actions/safernet_production_custom
+    - name: TeGuio Colombia II Staging release custom action
+      if: github.workflow == format('Te Guio Colombia II Staging release')
+      uses: ./.github/actions/custom-actions/teguio_staging_custom
     - name: Zambia Staging release custom action
       if: github.workflow == format('Zambia Staging release')
       uses: ./.github/actions/custom-actions/zambia_staging_custom
