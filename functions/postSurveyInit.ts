@@ -19,49 +19,96 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
   POST_SURVEY_BOT_CHAT_URL: string;
+  SYNC_SERVICE_SID: string;
 };
 
-export type Body = {
-  channelSid?: string;
-  taskSid?: string;
+export type ChatBody = {
+  eventType: 'chat';
+  channelSid: string;
+  taskSid: string;
   taskLanguage?: string;
 };
 
-const createSurveyTask = async (
-  context: Context<EnvVars>,
-  event: Required<Omit<Body, 'taskLanguage'>>,
-) => {
+export type VoiceBody = {
+  eventType: 'voice';
+  callerAddress: string;
+  taskSid: string;
+  taskLanguage?: string;
+};
+
+export type Body = ChatBody | VoiceBody;
+
+const createSurveyTask = async (context: Context<EnvVars>, event: Body) => {
   const client = context.getTwilioClient();
-  const { channelSid, taskSid } = event;
 
-  const taskAttributes = {
-    isSurveyTask: true,
-    channelSid,
-    contactTaskId: taskSid,
-    conversations: { conversation_id: taskSid },
-  };
+  if (event.eventType === 'chat') {
+    const { channelSid, taskSid } = event;
 
-  const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
-    workflowSid: context.SURVEY_WORKFLOW_SID,
-    taskChannel: 'survey',
-    attributes: JSON.stringify(taskAttributes),
-    timeout: 120,
-  });
+    const taskAttributes = {
+      isSurveyTask: true,
+      channelSid,
+      contactTaskId: taskSid,
+      conversations: { conversation_id: taskSid },
+    };
 
-  const channel = await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .fetch();
+    const surveyTask = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        taskChannel: 'survey',
+        attributes: JSON.stringify(taskAttributes),
+        timeout: 120,
+      });
 
-  // Add the surveyTask sid so we can retrieve it just by looking at the channel
-  await channel.update({
-    attributes: JSON.stringify({
-      ...JSON.parse(channel.attributes),
-      surveyTaskSid: surveyTask.sid,
-    }),
-  });
+    const channel = await client.chat
+      .services(context.CHAT_SERVICE_SID)
+      .channels(channelSid)
+      .fetch();
 
-  return surveyTask;
+    // Add the surveyTask sid so we can retrieve it just by looking at the channel
+    await channel.update({
+      attributes: JSON.stringify({
+        ...JSON.parse(channel.attributes),
+        surveyTaskSid: surveyTask.sid,
+      }),
+    });
+
+    return surveyTask;
+  }
+
+  if (event.eventType === 'voice') {
+    const { callerAddress, taskSid } = event;
+
+    const taskAttributes = {
+      isSurveyTask: true,
+      callerAddress,
+      contactTaskId: taskSid,
+      conversations: { conversation_id: taskSid },
+    };
+
+    const surveyTask = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        taskChannel: 'survey',
+        attributes: JSON.stringify(taskAttributes),
+        timeout: 120,
+      });
+
+    // Add the surveyTask sid to a sync document we can retrieve it just by callerAddress
+    await context
+      .getTwilioClient()
+      .sync.services(context.SYNC_SERVICE_SID)
+      .documents.create({
+        data: { surveyTaskSid: surveyTask.sid },
+        uniqueName: `pending-voice-post-survey-${callerAddress}`,
+        ttl: 86400, // auto removed after 24 hours
+      });
+
+    return surveyTask;
+  }
+
+  return `Reached unhandled case with event ${event}`;
 };
 
 const triggerPostSurveyFlow = async (
@@ -118,16 +165,27 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { channelSid, taskSid } = event;
-
     try {
-      if (channelSid === undefined) return resolve(error400('channelSid'));
-      if (taskSid === undefined) return resolve(error400('taskSid'));
+      if (event.eventType === 'chat') {
+        const { channelSid, taskSid } = event;
 
-      const triggerMessage = getTriggerMessage(event);
+        if (channelSid === undefined) return resolve(error400('channelSid'));
+        if (taskSid === undefined) return resolve(error400('taskSid'));
 
-      await createSurveyTask(context, { channelSid, taskSid });
-      await triggerPostSurveyFlow(context, channelSid, triggerMessage);
+        const triggerMessage = getTriggerMessage(event);
+
+        await createSurveyTask(context, event);
+        await triggerPostSurveyFlow(context, channelSid, triggerMessage);
+      }
+
+      if (event.eventType === 'voice') {
+        const { callerAddress, taskSid } = event;
+
+        if (callerAddress === undefined) return resolve(error400('channelSid'));
+        if (taskSid === undefined) return resolve(error400('taskSid'));
+
+        await createSurveyTask(context, event);
+      }
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
     } catch (err) {

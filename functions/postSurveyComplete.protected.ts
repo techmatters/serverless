@@ -15,10 +15,28 @@ import type { BuildSurveyInsightsData, OneToManyConfigSpec } from './helpers/ins
 import type { BuildDataObject, PostSurveyData } from './helpers/hrmDataManipulation.private';
 
 export type BotMemory = {
-  memory: {
-    twilio: { collected_data: { collect_survey: { [question: string]: string | number } } };
-  };
+  twilio: { collected_data: { collect_survey: { answers: {[question: string]: { answer: string | number} } } } };
 };
+
+type ChatBotMemory = {
+  twilio: { chat: { ServiceSid: string, ChannelSid: string } }
+};
+
+type VoiceBotMemory = {
+  twilio: { voice: { CallSid: string, Direction: string, From: string, To: string, } }
+};
+
+type ChatEvent = {
+  Channel: 'chat',
+  Memory: string,
+};
+
+type VoiceEvent = {
+  Channel: 'voice',
+  Memory: string
+};
+
+type AssistantEvent = ChatEvent | VoiceEvent;
 
 type PostSurveyBody = {
   contactTaskId: string;
@@ -26,16 +44,15 @@ type PostSurveyBody = {
   data: PostSurveyData;
 };
 
-export interface Event {
-  Channel: string;
+export type Event = {
   CurrentTask: string;
-  Memory: string;
   UserIdentifier: string;
-}
+} & AssistantEvent;
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   HRM_STATIC_KEY: string;
+  SYNC_SERVICE_SID: string;
 };
 
 const saveSurveyInInsights = async (postSurveyConfigJson: OneToManyConfigSpec[], memory: BotMemory, surveyTask: TaskInstance) => {
@@ -76,6 +93,36 @@ const saveSurveyInHRM = async (postSurveyConfigJson: OneToManyConfigSpec[], memo
   });
 };
 
+const saveResultsAndCompleteTask = async (context: Context<EnvVars>, memory: BotMemory, surveyTask: TaskInstance) => {
+  // get the postSurvey definition
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
+  const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
+  const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
+
+  if (definitionVersion && postSurveyConfigJson && postSurveyConfigJson.open) {
+    const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open()) as OneToManyConfigSpec[];
+
+    // parallel execution to save survey collected data in insights and hrm
+    await Promise.all([
+      saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask),
+      saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.HRM_STATIC_KEY),
+    ]);
+  } else {
+    const errorMEssage =
+    // eslint-disable-next-line no-nested-ternary
+    !definitionVersion
+      ? 'Current definitionVersion is missing in service configuration.'
+      : !postSurveyConfigJson
+        ? `No postSurveyConfigJson found for definitionVersion ${definitionVersion}.`
+        : `postSurveyConfigJson for definitionVersion ${definitionVersion} is not a Twilio asset as expected`; // This should removed when if we move definition versions to an external source.
+    console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
+  }
+
+  // As survey tasks will never be assigned to a worker, they'll be kept in pending state. A pending can't transition to completed state, so we cancel them here to raise a task.canceled taskrouter event.
+  await surveyTask.update({ assignmentStatus: 'canceled' });
+};
+
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   context: Context<EnvVars>,
   event: Event,
@@ -85,12 +132,13 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
 
   try {
-    const memory = JSON.parse(event.Memory);
-    const { ServiceSid, ChannelSid } = memory.twilio.chat;
-
     const client = context.getTwilioClient();
 
     if (event.Channel === 'chat' && event.CurrentTask === 'complete_post_survey') {
+      console.log('IS CHAT')
+      const memory = JSON.parse(event.Memory) as BotMemory & ChatBotMemory;
+      const { ServiceSid, ChannelSid } = memory.twilio.chat;
+  
       const channel = await client.chat
         .services(ServiceSid)
         .channels(ChannelSid)
@@ -99,39 +147,35 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       const channelAttributes = JSON.parse(channel.attributes);
 
       if (channelAttributes.surveyTaskSid) {
-        // get the postSurvey definition
-        const serviceConfig = await client.flexApi.configuration.get().fetch();
-        const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
-        const postSurveyConfigJson = Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
-        const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
-
-        // get the survey task
         const surveyTask = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(channelAttributes.surveyTaskSid)
           .fetch();
 
-        if (definitionVersion && postSurveyConfigJson && postSurveyConfigJson.open) {
-          const postSurveyConfigSpecs = JSON.parse(postSurveyConfigJson.open()) as OneToManyConfigSpec[];
+        await saveResultsAndCompleteTask(context, memory, surveyTask);
+      }
+    }
 
-          // parallel execution to save survey collected data in insights and hrm
-          await Promise.all([
-            saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask),
-            saveSurveyInHRM(postSurveyConfigSpecs, memory, surveyTask, hrmBaseUrl, context.HRM_STATIC_KEY),
-          ]);
-        } else {
-          const errorMEssage =
-          // eslint-disable-next-line no-nested-ternary
-          !definitionVersion
-            ? 'Current definitionVersion is missing in service configuration.'
-            : !postSurveyConfigJson
-              ? `No postSurveyConfigJson found for definitionVersion ${definitionVersion}.`
-              : `postSurveyConfigJson for definitionVersion ${definitionVersion} is not a Twilio asset as expected`; // This should removed when if we move definition versions to an external source.
-          console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
-        }
+    if (event.Channel === 'voice' && event.CurrentTask === 'complete_post_survey') {
+      console.log('IS VOICE')
+      Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
+      const memory = JSON.parse(event.Memory) as BotMemory & VoiceBotMemory;
 
-        // As survey tasks will never be assigned to a worker, they'll be kept in pending state. A pending can't transition to completed state, so we cancel them here to raise a task.canceled taskrouter event.
-        await surveyTask.update({ assignmentStatus: 'canceled' });
+      const callerAddress = event.UserIdentifier;
+      
+      const document = await client
+        .sync.services(context.SYNC_SERVICE_SID)
+        .documents(`pending-voice-post-survey-${callerAddress}`).fetch();
+
+      const { surveyTaskSid } = document.data;
+
+      if (surveyTaskSid) {
+        const surveyTask = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(surveyTaskSid)
+          .fetch();
+
+        await saveResultsAndCompleteTask(context, memory, surveyTask);
       }
     }
 
