@@ -26,18 +26,6 @@ type VoiceBotMemory = {
   twilio: { voice: { CallSid: string, Direction: string, From: string, To: string, } }
 };
 
-type ChatEvent = {
-  Channel: 'chat',
-  Memory: string,
-};
-
-type VoiceEvent = {
-  Channel: 'voice',
-  Memory: string
-};
-
-type AssistantEvent = ChatEvent | VoiceEvent;
-
 type PostSurveyBody = {
   contactTaskId: string;
   taskId: string;
@@ -45,9 +33,11 @@ type PostSurveyBody = {
 };
 
 export type Event = {
+  Channel: 'chat' | 'voice'
   CurrentTask: string;
   UserIdentifier: string;
-} & AssistantEvent;
+  Memory: string;
+};
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -135,7 +125,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     const client = context.getTwilioClient();
 
     if (event.Channel === 'chat' && event.CurrentTask === 'complete_post_survey') {
-      console.log('IS CHAT')
       const memory = JSON.parse(event.Memory) as BotMemory & ChatBotMemory;
       const { ServiceSid, ChannelSid } = memory.twilio.chat;
   
@@ -157,7 +146,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     }
 
     if (event.Channel === 'voice' && event.CurrentTask === 'complete_post_survey') {
-      console.log('IS VOICE')
       Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
       const memory = JSON.parse(event.Memory) as BotMemory & VoiceBotMemory;
 
