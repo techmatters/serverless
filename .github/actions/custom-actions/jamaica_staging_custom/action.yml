@@ -1,0 +1,31 @@
+name: 'SafeSpot Staging release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in SafeSpot (JM) Staging environment'
+runs:
+  using: "composite"
+  steps:
+    # Set Instagram variables
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_109800128459980_SafeSpot-Staging"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_TWILIO_JM_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+    # Append environment variables
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash
