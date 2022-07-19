@@ -1,5 +1,5 @@
 name: 'SafeSpot Staging release custom action'
-description: 'Sets up environment variables related to non-standard additional features in use in the beta environment'
+description: 'Sets up environment variables related to non-standard additional features in use in SafeSpot (JM) Staging environment'
 runs:
   using: "composite"
   steps:
