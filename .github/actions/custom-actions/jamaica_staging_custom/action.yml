@@ -3,7 +3,7 @@ description: 'Sets up environment variables related to non-standard additional f
 runs:
   using: "composite"
   steps:
-    # Set Twitter variables
+    # Set Instagram variables
     - name: Set Aselo Facebook App Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
