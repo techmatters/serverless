@@ -106,6 +106,9 @@ export enum AseloCustomChannels {
   Instagram = 'instagram',
 }
 
+export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
+  Object.values(AseloCustomChannels).includes(s as any);
+
 type CreateFlexChannelParams = {
   flexFlowSid: string;
   chatServiceSid: string;
@@ -296,4 +299,5 @@ export type ChannelToFlex = {
   sendMessageToFlex: typeof sendMessageToFlex;
   retrieveChannelFromUserChannelMap: typeof retrieveChannelFromUserChannelMap;
   AseloCustomChannels: typeof AseloCustomChannels;
+  isAseloCustomChannel: typeof isAseloCustomChannel;
 };
