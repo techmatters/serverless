@@ -57,7 +57,7 @@ const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTas
   (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) && taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
-  if (!(eventType === TASK_DELETED_EVENT || eventType === TASK_SYSTEM_DELETED_EVENT)) return false;
+  if (!(eventType === TASK_DELETED_EVENT || eventType === TASK_SYSTEM_DELETED_EVENT || eventType === TASK_CANCELED_EVENT)) return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
