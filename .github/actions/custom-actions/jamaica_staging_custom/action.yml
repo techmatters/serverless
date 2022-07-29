@@ -12,7 +12,7 @@ runs:
     - name: Set helpline Facebook Page Access Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_109800128459980_SafeSpot-Staging"
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_104423992367481_SafeSpot.Staging---JM"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
     - name: Set helpline Instagram Flex Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
