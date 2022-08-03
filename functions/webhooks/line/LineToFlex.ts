@@ -59,14 +59,18 @@ const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => 
 
   if (!xLineSignature) return false;
 
+  // Twilio Serverless adds a 'request' property the payload
+  const { request, ...originalPayload } = event;
+  const originalPayloadAsString = JSON.stringify(originalPayload);
+
   const expectedSignature = crypto
     .createHmac('sha256', lineChannelSecret)
-    .update(JSON.stringify(event))
+    .update(originalPayloadAsString)
     .digest('base64');
 
   const isValidRequest = crypto.timingSafeEqual(
     Buffer.from(xLineSignature),
-    Buffer.from(`sha256=${expectedSignature}`),
+    Buffer.from(expectedSignature),
   );
 
   return isValidRequest;
@@ -123,10 +127,10 @@ export const handler = async (
       switch (result.status) {
         case 'sent':
           console.log(result.response);
-          return;
+          break;
         case 'ignored':
           console.log('Ignored event.');
-          return;
+          break;
         default:
           throw new Error('Reached unexpected default case');
       }
