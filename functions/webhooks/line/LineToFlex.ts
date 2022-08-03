@@ -2,7 +2,14 @@
 /* eslint-disable global-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
+import {
+  responseWithCors,
+  bindResolve,
+  error500,
+  error403,
+  success,
+} from '@tech-matters/serverless-helpers';
+import crypto from 'crypto';
 
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
@@ -10,6 +17,7 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;
+  LINE_CHANNEL_SECRET: string;
 };
 
 type LineMessage = {
@@ -31,11 +39,37 @@ type LineEvent = {
   source: LineSource;
 };
 
+type Request = {
+  headers: {
+    [header: string]: string;
+  };
+};
+
 export type Body = {
   destination: string;
   events: LineEvent[];
-  'x-line-signature': string;
-  request: any;
+  request: Request;
+};
+
+/**
+ * Validates that the payload is signed with LINE_CHANNEL_SECRET so we know it's comming from Line
+ */
+const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => {
+  const xLineSignature = event.request.headers['x-line-signature'];
+
+  if (!xLineSignature) return false;
+
+  const expectedSignature = crypto
+    .createHmac('sha256', lineChannelSecret)
+    .update(JSON.stringify(event))
+    .digest('base64');
+
+  const isValidRequest = crypto.timingSafeEqual(
+    Buffer.from(xLineSignature),
+    Buffer.from(`sha256=${expectedSignature}`),
+  );
+
+  return isValidRequest;
 };
 
 export const handler = async (
@@ -46,11 +80,13 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
+  if (!isValidLinePayload(event, context.LINE_CHANNEL_SECRET)) {
+    resolve(error403('Forbidden'));
+    return;
+  }
+
   try {
     const { destination, events } = event;
-    const { 'x-line-signature': signature } = event.request.headers;
-
-    console.log('>> signature:', signature);
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
