@@ -92,11 +92,21 @@ export const handler = async (
   try {
     const { destination, events } = event;
 
+    const messageEvents = events.filter(e => e.type === 'message');
+
+    if (messageEvents.length === 0) {
+      resolve(success('No messages to send'));
+      return;
+    }
+
+    if (!destination) {
+      throw new Error('Missing destination property');
+    }
+
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
 
-    const messageEvents = events.filter(e => e.type === 'message');
-
+    const responses = [];
     for (let i = 0; i < messageEvents.length; i += 1) {
       const messageText = messageEvents[i].message.text;
       const channelType = channelToFlex.AseloCustomChannels.Line;
@@ -126,17 +136,17 @@ export const handler = async (
 
       switch (result.status) {
         case 'sent':
-          console.log(result.response);
+          responses.push(result.response);
           break;
         case 'ignored':
-          console.log('Ignored event.');
+          responses.push('Ignored event.');
           break;
         default:
           throw new Error('Reached unexpected default case');
       }
     }
 
-    resolve(success('Finished sending Line messages to Flex'));
+    resolve(success(responses.join()));
   } catch (err) {
     // eslint-disable-next-line no-console
     console.log(err);
