@@ -85,14 +85,6 @@ export const handler = async (
       resolve(error400('Source'));
       return;
     }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
