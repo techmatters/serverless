@@ -27,7 +27,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+          aws-region: "eu-west-1"
       # Get AWS parameters to setup environment variables for Serveless function
       - name: Set Twilio Sync API key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
