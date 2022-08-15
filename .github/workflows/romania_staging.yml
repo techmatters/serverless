@@ -21,14 +21,14 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
-      # Setup credentials to access AWS for parameters
+      # Setup credentials to access AWS for regional parameters
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: "eu-west-1"
-      # Get AWS parameters to setup environment variables for Serveless function
+      # Get AWS parameters to setup environment variables for Serverless function
       - name: Set Twilio Sync API key
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
@@ -84,6 +84,19 @@ jobs:
         with:
           ssm_parameter: "STG_TWILIO_RO_POST_SURVEY_BOT_CHAT_URL"
           env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
+      - name: Set S3 bucket name where Aselo documents are stored
+        uses: "marvinpinto/action-inject-ssm-secrets@latest"
+        with:
+          ssm_parameter: "STG_TWILIO_RO_S3_BUCKET_DOCS"
+          env_variable_name: "S3_BUCKET"
+
+      # Setup credentials to access AWS for US parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1"
       - name: Set AWS credentials for Aselo user
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
@@ -94,16 +107,6 @@ jobs:
         with:
           ssm_parameter: "ASELO_APP_SECRET_KEY"
           env_variable_name: "ASELO_APP_SECRET_KEY"
-      - name: AWS region where Aselo documents bucket is hosted
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "REGION"
-          env_variable_name: "AWS_REGION"
-      - name: Set S3 bucket name where Aselo documents are stored
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_RO_S3_BUCKET_DOCS"
-          env_variable_name: "S3_BUCKET"
       # Call main-action to compile and deploy
       - name: Executing main-action
         uses: ./.github/actions/main-action
@@ -123,5 +126,5 @@ jobs:
           post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
           aselo-app-access-key: $ASELO_APP_ACCESS_KEY
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
-          aws-region: $AWS_REGION
+          aws-region: 'eu-west-1'
           s3-bucket: $S3_BUCKET
