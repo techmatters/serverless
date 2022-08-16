@@ -104,6 +104,7 @@ export const removeChatChannel = async (
 export enum AseloCustomChannels {
   Twitter = 'twitter',
   Instagram = 'instagram',
+  Line = 'line',
 }
 
 export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
