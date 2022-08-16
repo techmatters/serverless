@@ -16,6 +16,8 @@ import {
   FlexToCustomChannel,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
+const LINE_SEND_MESSAGE_URL = 'https://api.line.me/v2/bot/message/push';
+
 type EnvVars = {
   LINE_CHANNEL_ACCESS_TOKEN: string;
   CHAT_SERVICE_SID: string;
@@ -40,7 +42,7 @@ const sendLineMessage = (context: Context<EnvVars>) => async (
   };
 
   return axios({
-    url: 'https://api.line.me/v2/bot/message/push', // TODO: Move to env var?
+    url: LINE_SEND_MESSAGE_URL,
     method: 'POST',
     data: JSON.stringify(payload),
     headers: {
