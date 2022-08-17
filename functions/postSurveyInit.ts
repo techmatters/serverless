@@ -131,8 +131,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
       return resolve(error500(err));
     }
   },
