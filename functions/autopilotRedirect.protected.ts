@@ -72,8 +72,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     callback(null, returnObj);
   } catch (err) {
     // If something goes wrong, just handoff to counselor so contact is not lost
-    // eslint-disable-next-line no-console
-    console.error(err);
     callback(null, { actions: [{ redirect: 'task://counselor_handoff' }] });
   }
 };

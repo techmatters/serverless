@@ -53,6 +53,9 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
+const isCreateContactTask = (eventType: EventType, taskAttributes: { isContactlessTask?: boolean }) => 
+  eventType === TASK_CREATED_EVENT && taskAttributes.isContactlessTask;
+
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
   (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) && taskAttributes.isSurveyTask;
 
@@ -76,7 +79,10 @@ export const handler = async (
   try {
     const { EventType: eventType } = event;
 
-    if (eventType === TASK_CREATED_EVENT) {
+    const taskAttributes = JSON.parse(event.TaskAttributes!);
+
+    if (isCreateContactTask(eventType, taskAttributes)) {
+      // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
       const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
       const addCustomerExternalId = require(handlerPath).addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
@@ -92,8 +98,6 @@ export const handler = async (
       );
       return;
     }
-
-    const taskAttributes = JSON.parse(event.TaskAttributes!);
 
     if (isCleanupPostSurvey(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
