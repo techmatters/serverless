@@ -1,0 +1,22 @@
+[
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_9",
+    "questions": ["didUserFeelSupported"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_attribute_10",
+    "questions": ["wouldRecommend"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_4",
+    "questions": ["wouldRepeat"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "conversation_measure_5",
+    "questions": ["wasHelpful"]
+  }
+]
