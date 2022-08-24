@@ -1,6 +1,6 @@
 {
   "name": "@tech-matters/serverless-helpers",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Helpers and utilities used by Tech Matters for our serverless functions, hosted in Twilio Serverless Toolkit",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -9,26 +9,26 @@
     "build": "tsc"
   },
   "devDependencies": {
-    "@types/jest": "^25.1.4",
-    "@typescript-eslint/eslint-plugin": "^2.24.0",
-    "@typescript-eslint/parser": "^2.24.0",
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.1.0",
-    "eslint-config-airbnb-typescript": "^7.2.0",
-    "eslint-config-prettier": "^6.10.1",
-    "eslint-import-resolver-typescript": "^2.0.0",
-    "eslint-plugin-import": "^2.20.1",
-    "eslint-plugin-prettier": "^3.1.2",
-    "jest": "^25.1.0",
-    "prettier": "^2.0.1",
-    "ts-jest": "^25.2.1",
-    "typescript": "^3.8.3"
+    "@types/jest": "^28.1.7",
+    "@typescript-eslint/eslint-plugin": "^5.33.1",
+    "@typescript-eslint/parser": "^5.33.1",
+    "eslint": "^8.22.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-typescript": "^3.4.2",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^28.1.3",
+    "prettier": "^2.7.1",
+    "ts-jest": "^28.0.8",
+    "typescript": "^4.7.4"
   },
   "files": [
     "lib/**/*"
   ],
   "dependencies": {
-    "@twilio-labs/serverless-runtime-types": "^1.1.8"
+    "@twilio-labs/serverless-runtime-types": "^2.2.3"
   },
   "directories": {
     "lib": "lib"

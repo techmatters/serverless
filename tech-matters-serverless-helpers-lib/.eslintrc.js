@@ -18,5 +18,8 @@ module.exports = {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     // e.g. "@typescript-eslint/explicit-function-return-type": "off",
     "import/prefer-default-export": "off",
+    "import/no-dynamic-require": "off",
+    "@typescript-eslint/dot-notation": "off",
+    "global-require": "off"
   },
 };
