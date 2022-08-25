@@ -6,6 +6,9 @@ import helpers, { MockedResponse } from './helpers';
 const baseContext = {
   getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('getTranslation', () => {
@@ -23,7 +26,7 @@ describe('getTranslation', () => {
   });
 
   test('Should return status 400', async () => {
-    const event: Body = { language: undefined };
+    const event: Body = { language: undefined, request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -31,12 +34,12 @@ describe('getTranslation', () => {
       expect(response.getStatus()).toBe(400);
     };
 
-    await getTranslation(baseContext, {}, callback);
+    await getTranslation(baseContext, event, callback);
     await getTranslation(baseContext, event, callback);
   });
 
   test('Should return status 500', async () => {
-    const event: Body = { language: 'non-existing' };
+    const event: Body = { language: 'non-existing', request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -48,7 +51,7 @@ describe('getTranslation', () => {
   });
 
   test('Should return status 200', async () => {
-    const event: Body = { language: 'es' };
+    const event: Body = { language: 'es', request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();

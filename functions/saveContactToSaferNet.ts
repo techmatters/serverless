@@ -20,6 +20,7 @@ export type Body = {
   payload: string;
   Token?: string;
   ApiKey?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 type EnvVars = {
@@ -98,7 +99,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
       console.warn(errorMessage);
       resolve(error500(new Error(errorMessage)));
     }
-  } catch (err) {
+  } catch (err: any) {
     // eslint-disable-next-line no-console
     console.warn(err);
     resolve(error500(err));

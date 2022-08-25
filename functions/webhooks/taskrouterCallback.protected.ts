@@ -53,7 +53,8 @@ export const handler = async (
 
     if (EventType === TASK_CREATED_EVENT) {
       const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
-      const addCustomerExternalId = require(handlerPath).addCustomerExternalId as AddCustomerExternalId;
+      const addCustomerExternalId = require(handlerPath)
+        .addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
       const message = `Event ${EventType} handled by /helpers/addCustomerExternalId`;
@@ -76,8 +77,11 @@ export const handler = async (
 
         const handlerPath = Runtime.getFunctions()['helpers/postSurveyJanitor'].path;
         const postSurveyJanitor = require(handlerPath).postSurveyJanitor as PostSurveyJanitor;
-        await postSurveyJanitor(context, { channelSid: taskAttributes.channelSid, channelType: 'chat' });
-  
+        await postSurveyJanitor(context, {
+          channelSid: taskAttributes.channelSid,
+          channelType: 'chat',
+        });
+
         const message = `Event ${EventType} handled by /helpers/postSurveyJanitor`;
         console.log(message);
         resolve(
@@ -92,7 +96,7 @@ export const handler = async (
     }
 
     resolve(success(JSON.stringify({ message: 'Ignored event', EventType })));
-  } catch (err) {
+  } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error(err);
     resolve(error500(err));

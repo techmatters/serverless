@@ -6,7 +6,6 @@ import {
   ServerlessCallback,
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
-import { PromiseValue } from 'type-fest';
 import {
   responseWithCors,
   bindResolve,
@@ -32,6 +31,7 @@ export type Body = {
   ignoreAgent?: string;
   mode?: string;
   memberToKick?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 async function closeTask(context: Context<EnvVars>, sid: string, taskToCloseAttributes: any) {
@@ -113,10 +113,7 @@ async function validateChannelIfWorker(
   const client = context.getTwilioClient();
 
   const [worker, workerChannel] = await Promise.all([
-    client.taskrouter
-      .workspaces(context.TWILIO_WORKSPACE_SID)
-      .workers(targetSid)
-      .fetch(),
+    client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).workers(targetSid).fetch(),
     client.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .workers(targetSid)
@@ -134,12 +131,11 @@ async function validateChannelIfWorker(
 
   const unavailableVoice = channelType === 'voice' && !workerChannel.availableCapacityPercentage;
   // if maxMessageCapacity is not set, just use configuredCapacity without adjustChatCapacity
-  const unavailableChat =
-    workerAttr.maxMessageCapacity 
-      ? channelType !== 'voice' &&
-    !workerChannel.availableCapacityPercentage &&
-    workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity
-      : channelType !== 'voice' && !workerChannel.availableCapacityPercentage;
+  const unavailableChat = workerAttr.maxMessageCapacity
+    ? channelType !== 'voice' &&
+      !workerChannel.availableCapacityPercentage &&
+      workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity
+    : channelType !== 'voice' && !workerChannel.availableCapacityPercentage;
 
   if (unavailableVoice || unavailableChat)
     return {
@@ -158,7 +154,7 @@ async function validateChannelIfWorker(
 
 async function increaseChatCapacity(
   context: Context<EnvVars>,
-  validationResult: PromiseValue<ReturnType<typeof validateChannelIfWorker>>,
+  validationResult: Awaited<ReturnType<typeof validateChannelIfWorker>>,
 ) {
   // once created the task, increase worker chat capacity if needed
   if (validationResult.shouldIncrease) {
@@ -169,8 +165,9 @@ async function increaseChatCapacity(
     const { worker } = validationResult;
 
     const body = {
-      workerSid: worker.sid,
+      workerSid: worker?.sid as string,
       adjustment: 'increase',
+      request: { cookies: {}, headers: {} },
     } as const;
 
     await adjustChatCapacity(context, body);
@@ -184,7 +181,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, targetSid, ignoreAgent, mode, memberToKick } = event;
+    const { taskSid, targetSid, ignoreAgent, mode, memberToKick, request } = event;
 
     try {
       if (taskSid === undefined) {
@@ -205,6 +202,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       }
       if (memberToKick === undefined) {
         resolve(error400('memberToKick'));
+        return;
+      }
+
+      if (request === undefined) {
+        resolve(error400('request'));
         return;
       }
 
@@ -255,11 +257,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
         increaseChatCapacity(context, validationResult),
-        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid }),
+        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid, request }),
       ]);
 
       resolve(success({ taskSid: newTask.sid }));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       resolve(error500(err));

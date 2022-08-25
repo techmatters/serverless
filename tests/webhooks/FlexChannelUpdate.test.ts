@@ -53,6 +53,9 @@ const baseContext = {
   DOMAIN_NAME: 'serverless',
   CHAT_SERVICE_SID: 'chatService',
   SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('FlexChannelUpdate', () => {

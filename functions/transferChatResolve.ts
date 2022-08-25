@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import '@twilio-labs/serverless-runtime-types';
 import {
   Context,
@@ -25,6 +27,7 @@ export type Body = {
   keepSid?: string;
   memberToKick?: string;
   newStatus?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 async function closeTask(
@@ -153,7 +156,13 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const validBody = { closeSid, keepSid, memberToKick, newStatus };
+      const validBody = {
+        closeSid,
+        keepSid,
+        memberToKick,
+        newStatus,
+        request: { cookies: {}, headers: {} },
+      };
 
       const [closedTask, keptTask] = await Promise.all([
         closeTaskAndKick(context, validBody),
@@ -161,10 +170,12 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       ]);
 
       resolve(success({ closed: closedTask.sid, kept: keptTask.sid }));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       resolve(error500(err));
     }
   },
 );
+
+

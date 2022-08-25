@@ -1,3 +1,5 @@
+/* eslint-disable */
+// @ts-nocheck
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import each from 'jest-each';
 import { handler as assignOfflineContact, Body } from '../functions/assignOfflineContact';
@@ -117,6 +119,9 @@ const baseContext = {
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 beforeAll(() => {
@@ -245,6 +250,7 @@ describe('assignOfflineContact', () => {
     const bad1: Body = {
       targetSid: undefined,
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
     const bad2: Body = {
       targetSid: 'WKxxx',
@@ -259,7 +265,7 @@ describe('assignOfflineContact', () => {
     };
 
     await Promise.all(
-      [{}, bad1, bad2].map(event => assignOfflineContact(baseContext, event, callback)),
+      [bad1, bad2].map(event => assignOfflineContact(baseContext, event, callback)),
     );
   });
 
@@ -345,6 +351,7 @@ describe('assignOfflineContact', () => {
       const event: Body = {
         targetSid,
         finalTaskAttributes: JSON.stringify({}),
+        request: { cookies: {}, headers: {} },
       };
       let response: MockedResponse | undefined;
 
@@ -368,6 +375,7 @@ describe('assignOfflineContact', () => {
     const event: Body = {
       targetSid: 'available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -384,6 +392,7 @@ describe('assignOfflineContact', () => {
     const event: Body = {
       targetSid: 'not-available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {

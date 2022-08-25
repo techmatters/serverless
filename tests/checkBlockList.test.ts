@@ -6,6 +6,9 @@ import helpers from './helpers';
 const baseContext = {
   getTwilioClient: (): any => ({}),
   DOMAIN_NAME: 'serverless',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('checkBlockList defined', () => {

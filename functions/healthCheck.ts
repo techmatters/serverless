@@ -8,6 +8,7 @@ import { responseWithCors, bindResolve, error500, success } from '@tech-matters/
 
 export type Body = {
   language?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = async (
@@ -21,7 +22,7 @@ export const handler: ServerlessFunctionSignature = async (
   const msg = 'serverless is up and running!';
   try {
     resolve(success(msg));
-  } catch (err) {
+  } catch (err: any) {
     // eslint-disable-next-line no-console
     console.error(err);
     resolve(error500(err));

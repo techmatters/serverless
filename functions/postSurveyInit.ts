@@ -48,10 +48,7 @@ const createSurveyTask = async (
     timeout: 120,
   });
 
-  const channel = await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .fetch();
+  const channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
 
   // Add the surveyTask sid so we can retrieve it just by looking at the channel
   await channel.update({
@@ -72,13 +69,10 @@ const triggerPostSurveyFlow = async (
   const client = context.getTwilioClient();
 
   /** const messageResult = */
-  await client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .messages.create({
-      body: message,
-      xTwilioWebhookEnabled: 'true',
-    });
+  await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).messages.create({
+    body: message,
+    xTwilioWebhookEnabled: 'true',
+  });
 
   return client.chat
     .services(context.CHAT_SERVICE_SID)
@@ -130,7 +124,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       await triggerPostSurveyFlow(context, channelSid, triggerMessage);
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       return resolve(error500(err));

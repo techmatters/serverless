@@ -25,30 +25,28 @@ export type Body = Partial<WebhookEvent> & {
   recipientId?: string; // The IGSID of the user that started the conversation. Provided as query parameter
 };
 
-const sendInstagramMessage = (context: Context<EnvVars>) => async (
-  recipientId: string,
-  messageText: string,
-) => {
-  const body = {
-    recipient: {
-      id: recipientId,
-    },
-    message: {
-      text: messageText,
-    },
+const sendInstagramMessage =
+  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
+    const body = {
+      recipient: {
+        id: recipientId,
+      },
+      message: {
+        text: messageText,
+      },
+    };
+
+    const response = await axios({
+      url: `https://graph.facebook.com/v12.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+      method: 'POST',
+      data: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data;
   };
-
-  const response = await axios({
-    url: `https://graph.facebook.com/v12.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-    method: 'POST',
-    data: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  return response.data;
-};
 
 export const handler = async (
   context: Context<EnvVars>,

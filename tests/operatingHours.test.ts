@@ -10,6 +10,9 @@ const baseContext = {
   getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
   OPERATING_INFO_KEY: 'test',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const testday = 1617911935784; // timeOfDay: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'

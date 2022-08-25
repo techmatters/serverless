@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   Context,
   ServerlessCallback,
@@ -39,6 +38,7 @@ export type IWFReportPayload = {
   Reporter_Email_ID: string | null; // Max 100 characters
   Reporter_Country_ID: number | null; // Reporter's country (Helpline specific)
   Reporter_Description: string | null; // Max 500 characters
+  request: { cookies: {}; headers: {} };
 };
 
 export type Event = {
@@ -48,6 +48,7 @@ export type Event = {
   Reporter_Last_Name?: string;
   Reporter_Email_ID?: string;
   Reporter_Description?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidator(
@@ -90,6 +91,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
         Reporter_Email_ID: Reporter_Email_ID || null,
         Reporter_Description: Reporter_Description || null,
         Reporter_Country_ID: countryID,
+        request: { cookies: {}, headers: {} },
       };
 
       const hash = Buffer.from(`${context.IWF_API_USERNAME}:${context.IWF_API_PASSWORD}`).toString(

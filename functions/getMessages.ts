@@ -16,6 +16,7 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 export type Body = {
   language?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -34,7 +35,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const translation = Runtime.getAssets()[`/translations/${language}/messages.json`].open();
 
       resolve(success(translation));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       resolve(error500(err));

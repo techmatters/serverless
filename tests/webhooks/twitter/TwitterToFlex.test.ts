@@ -94,6 +94,9 @@ const baseContext = {
   TWITTER_ACCESS_TOKEN_SECRET: 'TWITTER_ACCESS_TOKEN_SECRET',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
   TWITTER_FLEX_FLOW_SID: 'TWITTER_FLEX_FLOW_SID',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const validEventBody = ({ senderId = 'sender_id', recipientId = 'recipient_id' } = {}): Body => ({

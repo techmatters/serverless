@@ -50,7 +50,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const downloadUrl = await s3Client.getSignedUrl('getObject', getUrlParams);
 
       resolve(success({ downloadUrl }));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       resolve(error500(err));

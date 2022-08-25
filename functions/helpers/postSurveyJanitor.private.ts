@@ -50,17 +50,14 @@ const deactivateChannel = async (
 ) => {
   const client = context.getTwilioClient();
 
-  const channel = await client.chat
-    .services(serviceSid)
-    .channels(channelSid)
-    .fetch();
+  const channel = await client.chat.services(serviceSid).channels(channelSid).fetch();
 
   const attributes = JSON.parse(channel.attributes);
-  
+
   if (attributes.proxySession) {
     await deleteProxySession(context, attributes.proxySession);
   }
-  
+
   const newAttributes = { ...attributes, status: 'INACTIVE' };
   const updated = await channel.update({
     attributes: JSON.stringify(newAttributes),
@@ -70,10 +67,7 @@ const deactivateChannel = async (
   return updated;
 };
 
-export const postSurveyJanitor = async (
-  context: Context<EnvVars>,
-  event: Event
-) => {
+export const postSurveyJanitor = async (context: Context<EnvVars>, event: Event) => {
   console.log('-------- postSurveyJanitor execution --------');
 
   if (event.channelType === 'chat') {

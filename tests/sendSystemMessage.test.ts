@@ -7,12 +7,12 @@ const tasks: any[] = [
   {
     sid: 'task-123',
     attributes: '{"channelSid":"channel-123"}',
-    fetch: async () => tasks.find(t => t.sid === 'task-123'),
+    fetch: async () => tasks.find((t) => t.sid === 'task-123'),
   },
   {
     sid: 'broken-task',
     attributes: '{"channelSid":"non-existing"}',
-    fetch: async () => tasks.find(t => t.sid === 'broken-task'),
+    fetch: async () => tasks.find((t) => t.sid === 'broken-task'),
   },
 ];
 const channels: { [x: string]: any } = {
@@ -22,7 +22,7 @@ const channels: { [x: string]: any } = {
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
-      const task = tasks.find(t => t.sid === taskSid);
+      const task = tasks.find((t) => t.sid === taskSid);
       if (task) return task;
 
       throw new Error('Task does not exists');
@@ -57,6 +57,9 @@ const baseContext = {
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   CHAT_SERVICE_SID: 'ISxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('sendSystemMessage', () => {
@@ -70,8 +73,12 @@ describe('sendSystemMessage', () => {
   });
 
   test('Should return status 400', async () => {
-    const event1: Body = { taskSid: undefined };
-    const event2: Body = { taskSid: 'task-123', message: undefined };
+    const event1: Body = { taskSid: undefined, request: { cookies: {}, headers: {} } };
+    const event2: Body = {
+      taskSid: 'task-123',
+      message: undefined,
+      request: { cookies: {}, headers: {} },
+    };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -79,15 +86,27 @@ describe('sendSystemMessage', () => {
       expect(response.getStatus()).toBe(400);
     };
 
-    await sendSystemMessage(baseContext, {}, callback);
+    await sendSystemMessage(baseContext, event1, callback);
     await sendSystemMessage(baseContext, event1, callback);
     await sendSystemMessage(baseContext, event2, callback);
   });
 
   test('Should return status 500', async () => {
-    const event1: Body = { taskSid: 'task-123', message: 'Something to say' };
-    const event2: Body = { taskSid: 'non-existing', message: 'Something to say' };
-    const event3: Body = { taskSid: 'broken-task', message: 'Something to say' };
+    const event1: Body = {
+      taskSid: 'task-123',
+      message: 'Something to say',
+      request: { cookies: {}, headers: {} },
+    };
+    const event2: Body = {
+      taskSid: 'non-existing',
+      message: 'Something to say',
+      request: { cookies: {}, headers: {} },
+    };
+    const event3: Body = {
+      taskSid: 'broken-task',
+      message: 'Something to say',
+      request: { cookies: {}, headers: {} },
+    };
 
     const callback1: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -111,13 +130,18 @@ describe('sendSystemMessage', () => {
     };
 
     const { getTwilioClient, DOMAIN_NAME } = baseContext;
-    await sendSystemMessage({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
+    const payload: any = { getTwilioClient, DOMAIN_NAME };
+    await sendSystemMessage(payload, event1, callback1);
     await sendSystemMessage(baseContext, event2, callback2);
     await sendSystemMessage(baseContext, event3, callback3);
   });
 
   test('Should return status 200', async () => {
-    const event: Body = { taskSid: 'task-123', message: 'Something to say' };
+    const event: Body = {
+      taskSid: 'task-123',
+      message: 'Something to say',
+      request: { cookies: {}, headers: {} },
+    };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();

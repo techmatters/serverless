@@ -8,7 +8,7 @@ let tasks: any[] = [
     sid: 'task1',
     taskChannelUniqueName: 'channel',
     attributes: '{"channelSid":"channel"}',
-    fetch: async () => tasks.find(t => t.sid === 'task1'),
+    fetch: async () => tasks.find((t) => t.sid === 'task1'),
     update: async ({
       attributes,
       assignmentStatus,
@@ -18,8 +18,8 @@ let tasks: any[] = [
       assignmentStatus: string;
       reason: string;
     }) => {
-      const task = tasks.find(t => t.sid === 'task1');
-      tasks = tasks.map(t => {
+      const task = tasks.find((t) => t.sid === 'task1');
+      tasks = tasks.map((t) => {
         if (t.sid === task.sid)
           return {
             ...task,
@@ -37,7 +37,7 @@ let tasks: any[] = [
     sid: 'task2',
     taskChannelUniqueName: 'channel2',
     attributes: '{"channelSid":"channel"}',
-    fetch: async () => tasks.find(t => t.sid === 'task2'),
+    fetch: async () => tasks.find((t) => t.sid === 'task2'),
     update: async ({
       attributes,
       assignmentStatus,
@@ -47,8 +47,8 @@ let tasks: any[] = [
       assignmentStatus: string;
       reason: string;
     }) => {
-      const task = tasks.find(t => t.sid === 'task2');
-      tasks = tasks.map(t => {
+      const task = tasks.find((t) => t.sid === 'task2');
+      tasks = tasks.map((t) => {
         if (t.sid === task.sid)
           return {
             ...task,
@@ -71,7 +71,7 @@ let configurableCapacity: number | undefined = 1;
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
-      const task = tasks.find(t => t.sid === taskSid);
+      const task = tasks.find((t) => t.sid === taskSid);
       if (task) return task;
 
       throw new Error('Task does not exists');
@@ -143,7 +143,9 @@ const baseContext = {
                     if (channels[channelSid].includes(memberSid))
                       return {
                         remove: async () => {
-                          channels[channelSid] = channels[channelSid].filter(v => v !== memberSid);
+                          channels[channelSid] = channels[channelSid].filter(
+                            (v) => v !== memberSid,
+                          );
                           return true;
                         },
                       };
@@ -164,6 +166,9 @@ const baseContext = {
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
   CHAT_SERVICE_SID: 'ISxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 beforeAll(() => {
@@ -189,6 +194,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const event2: Body = {
       taskSid: 'task1',
@@ -196,6 +202,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const event3: Body = {
       taskSid: 'task1',
@@ -203,6 +210,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: undefined,
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const event4: Body = {
       taskSid: 'task1',
@@ -210,6 +218,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: undefined,
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const event5: Body = {
       taskSid: 'task1',
@@ -217,6 +226,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: undefined,
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -226,7 +236,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
     };
 
     await Promise.all(
-      [{}, event1, event2, event3, event4, event5].map(event =>
+      [event1, event2, event3, event4, event5].map((event) =>
         transferChatStart(baseContext, event, callback),
       ),
     );
@@ -239,6 +249,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const event2: Body = {
@@ -247,6 +258,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -274,6 +286,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const event2: Body = {
@@ -282,6 +295,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -299,7 +313,8 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
     };
 
     const { getTwilioClient, DOMAIN_NAME } = baseContext;
-    await transferChatStart({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
+    const payload: any = { getTwilioClient, DOMAIN_NAME };
+    await transferChatStart(payload, event1, callback1);
     await transferChatStart(baseContext, event2, callback2);
   });
 
@@ -310,13 +325,14 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'WARM',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const before = Array.from(tasks);
     const expected = { taskSid: 'newTaskSid' };
 
     const callback: ServerlessCallback = (err, result) => {
-      const originalTask = tasks.find(t => t.sid === 'task1');
-      const newTask = tasks.find(t => t.sid === 'newTaskSid');
+      const originalTask = tasks.find((t) => t.sid === 'task1');
+      const newTask = tasks.find((t) => t.sid === 'newTaskSid');
 
       const expectedNewAttr =
         '{"channelSid":"channel","conversations":{"conversation_id":"task1"},"ignoreAgent":"worker1","targetSid":"WKxxx","transferTargetType":"worker"}';
@@ -345,6 +361,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
       '{"channelSid":"CH00000000000000000000000000000000","proxySessionSID":"KC00000000000000000000000000000000"}';
@@ -354,8 +371,8 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
     const expected = { taskSid: 'newTaskSid' };
 
     const callback: ServerlessCallback = (err, result) => {
-      const originalTask = tasks.find(t => t.sid === 'task1');
-      const newTask = tasks.find(t => t.sid === 'newTaskSid');
+      const originalTask = tasks.find((t) => t.sid === 'task1');
+      const newTask = tasks.find((t) => t.sid === 'newTaskSid');
 
       expect(result).toBeDefined();
       const response = result as MockedResponse;
@@ -387,6 +404,7 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const event2: Body = {
@@ -395,6 +413,7 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -429,6 +448,7 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       ignoreAgent: 'worker1',
       mode: 'COLD',
       memberToKick: 'worker1',
+      request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
       '{"channelSid":"CH00000000000000000000000000000000","proxySessionSID":"KC00000000000000000000000000000000"}';
@@ -438,8 +458,8 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
     const expected = { taskSid: 'newTaskSid' };
 
     const callback: ServerlessCallback = (err, result) => {
-      const originalTask = tasks.find(t => t.sid === 'task1');
-      const newTask = tasks.find(t => t.sid === 'newTaskSid');
+      const originalTask = tasks.find((t) => t.sid === 'task1');
+      const newTask = tasks.find((t) => t.sid === 'newTaskSid');
 
       expect(result).toBeDefined();
       const response = result as MockedResponse;

@@ -18,7 +18,6 @@ export type OneToManyConfigSpec = {
   questions: string[]; // Array of questions names (as they are named in the bot definition) to grab and concatenate to drop in above property
 };
 
-
 type SurveyInsightsUpdateFunction = (memory: BotMemory) => InsightsAttributes;
 
 const delimiter = ';';
@@ -41,12 +40,12 @@ const mergeAttributes = (
 };
 
 const applyCustomUpdate = (customUpdate: OneToManyConfigSpec): SurveyInsightsUpdateFunction => {
-  return memory => {
+  return (memory) => {
     const updatePaths = customUpdate.questions.map(
-      question => `twilio.collected_data.collect_survey.answers.${question}.answer`, // Path where the answer for each question should be in bot memory
+      (question) => `twilio.collected_data.collect_survey.answers.${question}.answer`, // Path where the answer for each question should be in bot memory
     );
     // concatenate the values, taken from dataSource using paths (e.g. 'contactForm.childInformation.province')
-    const value = updatePaths.map(path => get(memory, path, '')).join(delimiter);
+    const value = updatePaths.map((path) => get(memory, path, '')).join(delimiter);
 
     return {
       [customUpdate.insightsObject]: {
@@ -75,7 +74,7 @@ export const buildSurveyInsightsData = (
   const applyCustomUpdates = bindApplyCustomUpdates(oneToManyConfigSpecs);
 
   const finalAttributes: TaskAttributes = applyCustomUpdates
-    .map(f => f(memory))
+    .map((f) => f(memory))
     .reduce(
       (acc: TaskAttributes, curr: InsightsAttributes) => mergeAttributes(acc, curr),
       taskAttributes,

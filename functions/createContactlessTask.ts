@@ -23,6 +23,7 @@ export type Body = {
   targetSid?: string;
   transferTargetType?: string;
   helpline?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -67,7 +68,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         });
 
       resolve(success(newTask));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       resolve(error500(err));

@@ -75,13 +75,10 @@ const unsendMessage = async (
   }: { chatServiceSid: string; channelSid: string; messageExternalId: string },
 ) => {
   const client = context.getTwilioClient();
-  const messages = await client.chat
-    .services(chatServiceSid)
-    .channels(channelSid)
-    .messages.list();
+  const messages = await client.chat.services(chatServiceSid).channels(channelSid).messages.list();
 
   const messageToUnsend = messages.find(
-    m => JSON.parse(m.attributes).messageExternalId === messageExternalId,
+    (m) => JSON.parse(m.attributes).messageExternalId === messageExternalId,
   );
 
   const unsent = await messageToUnsend?.update({ body: 'The user has unsent this message' });

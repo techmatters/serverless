@@ -36,6 +36,9 @@ const baseContext = {
   TWITTER_ACCESS_TOKEN: 'TWITTER_ACCESS_TOKEN',
   TWITTER_ACCESS_TOKEN_SECRET: 'TWITTER_ACCESS_TOKEN_SECRET',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 let successfulTwitterPost: jest.Mock;

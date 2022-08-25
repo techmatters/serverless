@@ -8,10 +8,10 @@ const createTask = (sid: string, options: any) => {
   return {
     sid,
     ...options,
-    fetch: async () => tasks.find(t => t.sid === sid),
+    fetch: async () => tasks.find((t) => t.sid === sid),
     update: async ({ attributes }: { attributes: any }) => {
-      tasks = tasks.map(t => (t.sid === sid ? { ...t, attributes } : t));
-      const task = tasks.find(t => t.sid === sid);
+      tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
+      const task = tasks.find((t) => t.sid === sid);
       return task;
     },
   };
@@ -21,7 +21,7 @@ const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (sid: string) => {
       if (sid === 'non-existing') throw new Error('Not existing task');
-      return tasks.find(t => t.sid === sid);
+      return tasks.find((t) => t.sid === sid);
     },
   },
 };
@@ -38,6 +38,9 @@ const baseContext = {
   }),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
@@ -88,7 +91,7 @@ test('Should return status 200 (ignores offline contact)', async () => {
 
   const result = await addCustomerExternalId(baseContext, event);
   expect(result.message).toBe('Is contactless task');
-  expect(JSON.parse(tasks.find(t => t.sid === 'offline-contact').attributes)).toEqual(
+  expect(JSON.parse(tasks.find((t) => t.sid === 'offline-contact').attributes)).toEqual(
     offlineAttributes,
   );
 });

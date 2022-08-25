@@ -21,6 +21,7 @@ type EnvVars = {
 export type Body = {
   workerSid?: string;
   adjustment?: 'increase' | 'decrease';
+  request: { cookies: {}; headers: {} };
 };
 
 export const adjustChatCapacity = async (
@@ -46,7 +47,7 @@ export const adjustChatCapacity = async (
     };
 
   const channels = await worker.workerChannels().list();
-  const channel = channels.find(c => c.taskChannelUniqueName === 'chat');
+  const channel = channels.find((c) => c.taskChannelUniqueName === 'chat');
 
   if (!channel) return { status: 404, message: 'Could not find chat channel.' };
 
@@ -85,12 +86,12 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       if (workerSid === undefined) return resolve(error400('workerSid'));
       if (adjustment === undefined) return resolve(error400('adjustment'));
 
-      const validBody = { workerSid, adjustment };
+      const validBody = { workerSid, adjustment, request: { cookies: {}, headers: {} } };
 
       const { status, message } = await adjustChatCapacity(context, validBody);
 
       return resolve(send(status)({ message, status }));
-    } catch (err) {
+    } catch (err: any) {
       // eslint-disable-next-line no-console
       console.error(err);
       return resolve(error500(err));
