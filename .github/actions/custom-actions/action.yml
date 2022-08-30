@@ -18,6 +18,9 @@ runs:
     - name: SafeSpot Staging release custom action
       if: github.workflow == format('SafeSpot Staging release')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
+    - name: SafeSpot Production release custom action
+      if: github.workflow == format('SafeSpot Production release')
+      uses: ./.github/actions/custom-actions/jamaica_production_custom
     - name: Malawi Staging release custom action
       if: github.workflow == format('Malawi Staging release')
       uses: ./.github/actions/custom-actions/malawi_staging_custom
