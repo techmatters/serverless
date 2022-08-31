@@ -15,14 +15,8 @@ import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
-// eslint-disable-next-line prettier/prettier
-import type { PostSurveyJanitor } from '../helpers/postSurveyJanitor.private';
-
-export type Body = {
-  EventType: string;
-  TaskSid?: string;
-  TaskAttributes?: string;
-};
+import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
+import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -33,11 +27,45 @@ type EnvVars = {
 const TASK_CREATED_EVENT = 'task.created';
 const TASK_CANCELED_EVENT = 'task.canceled';
 const TASK_COMPLETED_EVENT = 'task.completed';
+const TASK_DELETED_EVENT = 'task.deleted';
+const TASK_SYSTEM_DELETED_EVENT = 'task.system-deleted';
+
+// Note: there are more of this, we just list the ones we care about. https://www.twilio.com/docs/taskrouter/api/event/reference
+const eventTypes = [
+  TASK_CREATED_EVENT,
+  TASK_CANCELED_EVENT,
+  TASK_COMPLETED_EVENT,
+  TASK_DELETED_EVENT,
+  TASK_SYSTEM_DELETED_EVENT,
+] as const;
+
+type EventType = typeof eventTypes[number];
+
+export type Body = {
+  EventType: EventType;
+  TaskSid?: string;
+  TaskAttributes?: string;
+};
 
 const wait = (ms: number): Promise<void> => {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+};
+
+const isCreateContactTask = (eventType: EventType, taskAttributes: { isContactlessTask?: boolean }) => 
+  eventType === TASK_CREATED_EVENT && taskAttributes.isContactlessTask;
+
+const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
+  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) && taskAttributes.isSurveyTask;
+
+const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
+  if (!(eventType === TASK_DELETED_EVENT || eventType === TASK_SYSTEM_DELETED_EVENT || eventType === TASK_CANCELED_EVENT)) return false;
+
+  const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
+  const channelToFlex = require(handlerPath) as ChannelToFlex;
+
+  return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
 };
 
 export const handler = async (
@@ -49,15 +77,18 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType } = event;
+    const { EventType: eventType } = event;
 
-    if (EventType === TASK_CREATED_EVENT) {
+    const taskAttributes = JSON.parse(event.TaskAttributes!);
+
+    if (isCreateContactTask(eventType, taskAttributes)) {
+      // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
       const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
       const addCustomerExternalId = require(handlerPath)
         .addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
-      const message = `Event ${EventType} handled by /helpers/addCustomerExternalId`;
+      const message = `Event ${eventType} handled by /helpers/addCustomerExternalId`;
       console.log(message);
       resolve(
         success(
@@ -69,9 +100,10 @@ export const handler = async (
       return;
     }
 
-    if (EventType === TASK_CANCELED_EVENT || EventType === TASK_COMPLETED_EVENT) {
-      const taskAttributes = JSON.parse(event.TaskAttributes!);
+    if (isCleanupPostSurvey(eventType, taskAttributes)) {
+      await wait(3000); // wait 3 seconds just in case some bot message is pending
 
+<<<<<<< HEAD
       if (taskAttributes.isSurveyTask) {
         await wait(3000); // wait 3 seconds just in case some bot message is pending
 
@@ -100,5 +132,45 @@ export const handler = async (
     // eslint-disable-next-line no-console
     console.error(err);
     resolve(error500(err));
+=======
+      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
+      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
+      await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+  
+      const message = `Event matched isCleanupPostSurvey for task sid ${event.TaskSid}`;
+      console.log(message);
+      resolve(
+        success(
+          JSON.stringify({
+            message,
+          }),
+        ),
+      );
+      return;
+    }
+
+    if (isCleanupCustomChannel(eventType, taskAttributes)) {
+      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
+      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
+
+      await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+
+      const message = `Event matched isCleanupCustomChannel for task sid ${event.TaskSid}`;
+      console.log(message);
+      resolve(
+        success(
+          JSON.stringify({
+            message,
+          }),
+        ),
+      );
+      return;
+    }
+
+    resolve(success(JSON.stringify({ message: 'Ignored event', eventType })));
+  } catch (err) {
+    if (err instanceof Error) resolve(error500(err));
+    else resolve(error500(new Error(String(err))));
+>>>>>>> master
   }
 };

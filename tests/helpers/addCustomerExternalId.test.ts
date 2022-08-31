@@ -2,7 +2,22 @@ import { addCustomerExternalId, Body } from '../../functions/helpers/addCustomer
 
 import helpers from '../helpers';
 
-let tasks: any[] = [];
+let tasks: any[] = [
+  {
+    sid: 'non-existing',
+    fetch: () => {
+      throw new Error("can't fetch this one!");
+    },
+  },
+  {
+    sid: 'non-updateable',
+    attributes: JSON.stringify({}),
+    fetch: async () => tasks.find(t => t.sid === 'non-updateable'),
+    update: () => {
+      throw new Error("can't update this one!");
+    },
+  },
+];
 
 const createTask = (sid: string, options: any) => {
   return {
@@ -19,10 +34,7 @@ const createTask = (sid: string, options: any) => {
 
 const workspaces: { [x: string]: any } = {
   WSxxx: {
-    tasks: (sid: string) => {
-      if (sid === 'non-existing') throw new Error('Not existing task');
-      return tasks.find((t) => t.sid === sid);
-    },
+    tasks: (sid: string) => tasks.find(t => t.sid === sid),
   },
 };
 
@@ -44,29 +56,46 @@ const baseContext = {
 };
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
-const offlineAttributes = { some: 'some', isContactlessTask: true };
+
+const logSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 beforeAll(() => {
   helpers.setup({});
-  tasks = [
-    ...tasks,
-    createTask('live-contact', { attributes: JSON.stringify(liveAttributes) }),
-    createTask('offline-contact', {
-      attributes: JSON.stringify(offlineAttributes),
-    }),
-  ];
+  tasks = [...tasks, createTask('live-contact', { attributes: JSON.stringify(liveAttributes) })];
 });
 afterAll(() => {
   helpers.teardown();
 });
+afterEach(() => {
+  logSpy.mockClear();
+});
 
-test('Should throw (Not existing task)', async () => {
+test("Should log and return error (can't fetch task)", async () => {
   const event: Body = {
     EventType: 'task.created',
     TaskSid: 'non-existing',
   };
 
-  expect(() => addCustomerExternalId(baseContext, event)).rejects.toThrowError('Not existing task');
+  const expectedError =
+    'Error at addCustomerExternalId: task with sid non-existing does not exists in workspace WSxxx when trying to fetch it.';
+
+  const result = await addCustomerExternalId(baseContext, event);
+  expect(result.message).toBe(expectedError);
+  expect(logSpy).toHaveBeenCalledWith(expectedError, new Error("can't fetch this one!"));
+});
+
+test("Should log and return error (can't update task)", async () => {
+  const event: Body = {
+    EventType: 'task.created',
+    TaskSid: 'non-updateable',
+  };
+
+  const expectedError =
+    'Error at addCustomerExternalId: task with sid non-updateable does not exists in workspace WSxxx when trying to update it.';
+
+  const result = await addCustomerExternalId(baseContext, event);
+  expect(result.message).toBe(expectedError);
+  expect(logSpy).toHaveBeenCalledWith(expectedError, new Error("can't update this one!"));
 });
 
 test('Should return OK (modify live contact)', async () => {
@@ -83,23 +112,10 @@ test('Should return OK (modify live contact)', async () => {
   });
 });
 
-test('Should return status 200 (ignores offline contact)', async () => {
-  const event: Body = {
-    EventType: 'task.created',
-    TaskSid: 'offline-contact',
-  };
-
-  const result = await addCustomerExternalId(baseContext, event);
-  expect(result.message).toBe('Is contactless task');
-  expect(JSON.parse(tasks.find((t) => t.sid === 'offline-contact').attributes)).toEqual(
-    offlineAttributes,
-  );
-});
-
 test('Should return status 200 (ignores other events)', async () => {
   const event: Body = {
     EventType: 'other.event',
-    TaskSid: 'something',
+    TaskSid: 'live-contact',
   };
 
   const result = await addCustomerExternalId(baseContext, event);

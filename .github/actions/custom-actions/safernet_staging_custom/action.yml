@@ -18,7 +18,27 @@ runs:
       with:
         ssm_parameter: "STG_TWILIO_BR_SAVE_PENDING_CONTACTS_STATIC_KEY"
         env_variable_name: "SAVE_PENDING_CONTACTS_STATIC_KEY"
+
+    # Set Instagram variables
+
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_106330932198223_SaferNet---Staging"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_TWILIO_BR_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+
     # Append environment variables
+
     - name: Add SAFERNET_ENDPOINT
       run: echo "SAFERNET_ENDPOINT=${{ env.SAFERNET_ENDPOINT }}" >> .env
       shell: bash
@@ -31,4 +51,15 @@ runs:
     - name: Add SAVE_PENDING_CONTACTS_STATIC_KEY
       run: echo "SAVE_PENDING_CONTACTS_STATIC_KEY=${{ env.SAVE_PENDING_CONTACTS_STATIC_KEY }}" >> .env
       shell: bash
-    
+
+    # Append Facebook and Instagram environment variables
+
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash

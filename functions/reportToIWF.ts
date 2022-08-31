@@ -111,8 +111,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
 
       return resolve(send(report.status)(report.data));
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
       return resolve(error500(err as any));
     }
   },
