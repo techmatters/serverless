@@ -116,6 +116,7 @@ describe('transferChatResolve', () => {
   });
 
   test('Should return status 400', async () => {
+    const event0 = { request: { cookies: {}, headers: {} } };
     const event1: Body = {
       closeSid: undefined,
       keepSid: 'task2',
@@ -152,7 +153,7 @@ describe('transferChatResolve', () => {
     };
 
     await Promise.all(
-      [event1, event2, event3, event4].map((event) =>
+      [event0, event1, event2, event3, event4].map((event) =>
         transferChatResolve(baseContext, event, callback),
       ),
     );

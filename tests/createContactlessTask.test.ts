@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { handler as createContactlessTask, Body } from '../functions/createContactlessTask';
 
@@ -77,7 +75,7 @@ describe('createContactlessTask', () => {
     };
 
     await Promise.all(
-      [bad1, bad2, bad3].map(event => createContactlessTask(baseContext, event, callback)),
+      [bad1, bad2, bad3].map((event) => createContactlessTask(baseContext, event, callback)),
     );
   });
 

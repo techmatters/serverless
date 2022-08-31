@@ -73,6 +73,7 @@ describe('sendSystemMessage', () => {
   });
 
   test('Should return status 400', async () => {
+    const event = { request: { cookies: {}, headers: {} } };
     const event1: Body = { taskSid: undefined, request: { cookies: {}, headers: {} } };
     const event2: Body = {
       taskSid: 'task-123',
@@ -86,7 +87,7 @@ describe('sendSystemMessage', () => {
       expect(response.getStatus()).toBe(400);
     };
 
-    await sendSystemMessage(baseContext, event1, callback);
+    await sendSystemMessage(baseContext, event, callback);
     await sendSystemMessage(baseContext, event1, callback);
     await sendSystemMessage(baseContext, event2, callback);
   });

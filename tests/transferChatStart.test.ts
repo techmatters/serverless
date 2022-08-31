@@ -188,6 +188,7 @@ afterEach(() => {
 
 describe('transferChatStart (with maxMessageCapacity set)', () => {
   test('Should return status 400', async () => {
+    const event0 = { request: { cookies: {}, headers: {} } };
     const event1: Body = {
       taskSid: undefined,
       targetSid: 'WKxxx',
@@ -236,7 +237,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
     };
 
     await Promise.all(
-      [event1, event2, event3, event4, event5].map((event) =>
+      [event0, event1, event2, event3, event4, event5].map((event) =>
         transferChatStart(baseContext, event, callback),
       ),
     );

@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { handler as adjustChatCapacity, Body } from '../functions/adjustChatCapacity';
 
@@ -89,7 +87,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         expect(response.getStatus()).toBe(400);
       };
 
-      await Promise.all(events.map(e => adjustChatCapacity(baseContext, e, callback)));
+      await Promise.all(events.map((e) => adjustChatCapacity(baseContext, e, callback)));
     });
 
     test('Should return status 500', async () => {

@@ -71,6 +71,7 @@ describe('populateCounselors', () => {
 
   test('Should return status 400', async () => {
     const event: Body = { workspaceSID: undefined, request: { cookies: {}, headers: {} } };
+    const emptyEvent = { request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -78,7 +79,7 @@ describe('populateCounselors', () => {
       expect(response.getStatus()).toBe(400);
     };
 
-    await populateCounselors(baseContext, event, callback);
+    await populateCounselors(baseContext, emptyEvent, callback);
     await populateCounselors(baseContext, event, callback);
   });
 
