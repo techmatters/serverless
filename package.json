@@ -52,7 +52,7 @@
     "aws-sdk": "^2.975.0",
     "axios": "^0.21.2",
     "lodash": "^4.17.21",
-    "moment-timezone": "^0.5.33",
+    "moment-timezone": "^0.5.35",
     "swagger-ui-express": "^4.1.4",
     "twilio": "^3.67.0",
     "twilio-flex-token-validator": "^1.5.3",
