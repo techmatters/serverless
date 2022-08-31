@@ -92,7 +92,7 @@ export const handler = async (
   try {
     const { destination, events } = event;
 
-    const messageEvents = events.filter(e => e.type === 'message');
+    const messageEvents = events.filter((e) => e.type === 'message');
 
     if (messageEvents.length === 0) {
       resolve(success('No messages to send'));

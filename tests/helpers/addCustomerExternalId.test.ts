@@ -12,7 +12,7 @@ let tasks: any[] = [
   {
     sid: 'non-updateable',
     attributes: JSON.stringify({}),
-    fetch: async () => tasks.find(t => t.sid === 'non-updateable'),
+    fetch: async () => tasks.find((t) => t.sid === 'non-updateable'),
     update: () => {
       throw new Error("can't update this one!");
     },
@@ -34,7 +34,7 @@ const createTask = (sid: string, options: any) => {
 
 const workspaces: { [x: string]: any } = {
   WSxxx: {
-    tasks: (sid: string) => tasks.find(t => t.sid === sid),
+    tasks: (sid: string) => tasks.find((t) => t.sid === sid),
   },
 };
 

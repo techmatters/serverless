@@ -53,14 +53,24 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
-const isCreateContactTask = (eventType: EventType, taskAttributes: { isContactlessTask?: boolean }) => 
-  eventType === TASK_CREATED_EVENT && taskAttributes.isContactlessTask;
+const isCreateContactTask = (
+  eventType: EventType,
+  taskAttributes: { isContactlessTask?: boolean },
+) => eventType === TASK_CREATED_EVENT && taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) && taskAttributes.isSurveyTask;
+  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) &&
+  taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
-  if (!(eventType === TASK_DELETED_EVENT || eventType === TASK_SYSTEM_DELETED_EVENT || eventType === TASK_CANCELED_EVENT)) return false;
+  if (
+    !(
+      eventType === TASK_DELETED_EVENT ||
+      eventType === TASK_SYSTEM_DELETED_EVENT ||
+      eventType === TASK_CANCELED_EVENT
+    )
+  )
+    return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
@@ -103,40 +113,10 @@ export const handler = async (
     if (isCleanupPostSurvey(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
-<<<<<<< HEAD
-      if (taskAttributes.isSurveyTask) {
-        await wait(3000); // wait 3 seconds just in case some bot message is pending
-
-        const handlerPath = Runtime.getFunctions()['helpers/postSurveyJanitor'].path;
-        const postSurveyJanitor = require(handlerPath).postSurveyJanitor as PostSurveyJanitor;
-        await postSurveyJanitor(context, {
-          channelSid: taskAttributes.channelSid,
-          channelType: 'chat',
-        });
-
-        const message = `Event ${EventType} handled by /helpers/postSurveyJanitor`;
-        console.log(message);
-        resolve(
-          success(
-            JSON.stringify({
-              message,
-            }),
-          ),
-        );
-        return;
-      }
-    }
-
-    resolve(success(JSON.stringify({ message: 'Ignored event', EventType })));
-  } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.error(err);
-    resolve(error500(err));
-=======
       const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
       const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
-  
+
       const message = `Event matched isCleanupPostSurvey for task sid ${event.TaskSid}`;
       console.log(message);
       resolve(
@@ -171,6 +151,5 @@ export const handler = async (
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
->>>>>>> master
   }
 };

@@ -205,10 +205,12 @@ describe('LineToFlex', () => {
       };
       await LineToFlex(
         {
-          ...baseContext, LINE_FLEX_FLOW_SID: flexFlowSid, CHAT_SERVICE_SID: chatServiceSid,
+          ...baseContext,
+          LINE_FLEX_FLOW_SID: flexFlowSid,
+          CHAT_SERVICE_SID: chatServiceSid,
           PATH: '',
           SERVICE_SID: undefined,
-          ENVIRONMENT_SID: undefined
+          ENVIRONMENT_SID: undefined,
         },
         event,
         callback,

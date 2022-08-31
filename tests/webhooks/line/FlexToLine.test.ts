@@ -35,7 +35,7 @@ const baseContext = {
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
   PATH: '',
   SERVICE_SID: undefined,
-  ENVIRONMENT_SID: undefined
+  ENVIRONMENT_SID: undefined,
 };
 
 const validEvent = ({ recipientId = 'recipientIdX', From = 'senderId', Source = 'API' } = {}) => ({
@@ -117,12 +117,17 @@ describe('FlexToLine', () => {
         response = result as MockedResponse | undefined;
       };
 
-      await FlexToLine({
-        ...baseContext, CHAT_SERVICE_SID: sid,
-        PATH: '',
-        SERVICE_SID: undefined,
-        ENVIRONMENT_SID: undefined
-      }, event, callback);
+      await FlexToLine(
+        {
+          ...baseContext,
+          CHAT_SERVICE_SID: sid,
+          PATH: '',
+          SERVICE_SID: undefined,
+          ENVIRONMENT_SID: undefined,
+        },
+        event,
+        callback,
+      );
 
       expect(response).toBeDefined();
       if (response) {
