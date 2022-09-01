@@ -3,13 +3,6 @@ name: Test workflow calls workflow
 # Controls when the action will run.
 on:
   workflow_dispatch:
-    inputs:
-      tag-prefix:
-        description: Release tag name.
-        required: true
-      title:
-        description: Release title - The title that will be given to this pre-release.
-        required: true
 
 jobs:
   # This workflow contains a single job called "build"
