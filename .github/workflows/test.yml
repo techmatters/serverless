@@ -16,4 +16,4 @@ jobs:
       - uses: actions/checkout@v2
   call-workflow:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: techmatters/serverless/.github/workflows/aselo_development.yml@gian_test-workflow-from-workflow
+    uses: techmatters/serverless/.github/workflows/aselo_development.yml@gian_test-workflow-from-workflow
