@@ -126,16 +126,6 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    # Test why message is not sended
-    - name: Test why message is not sended
-      run: echo ${{ inputs.send-slack-message }}
-      shell: bash
-    - name: Test why message is not sended
-      run: echo ${{ inputs.send-slack-message == true }}
-      shell: bash
-    - name: Test why message is not sended
-      run: echo ${{ github.workflow }}
-      shell: bash
     # Send Slack notifying success
     - name: Slack Aselo channel
       id: slack
