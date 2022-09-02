@@ -127,12 +127,6 @@ runs:
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
 
-    - name: debug
-      run: echo ${{ inputs.send-slack-message }}
-      shell: bash
-    - name: debug
-      run: echo ${{ inputs.send-slack-message != 'false' }}
-      shell: bash
     # Send Slack notifying success
     - name: Slack Aselo channel
       id: slack
