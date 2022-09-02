@@ -15,6 +15,12 @@ on:
         required: true
       E2E_DEV_AUTH_TOKEN:
         required: true
+    inputs:
+      send-slack-message:
+        description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
+        required: false
+        default: true
+        type: boolean
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -136,3 +142,4 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
+          send-slack-message: ${{ inputs.send-slack-message }}
