@@ -121,6 +121,18 @@ jobs:
         with:
           ssm_parameter: DEV_TWILIO_E2E_S3_BUCKET_DOCS
           env_variable_name: "S3_BUCKET"
+
+      # Set SEND_SLACK_MESSAGE
+      - name: "Set SEND_SLACK_MESSAGE"
+        env:
+          SEND_SLACK_MESSAGE: ${{ inputs.send-slack-message }}
+        run: |
+          if ${SEND_SLACK_MESSAGE} == ''; then
+            echo "SEND_SLACK_MESSAGE=true" >> $GITHUB_ENV
+          else
+            echo "SEND_SLACK_MESSAGE=${SEND_SLACK_MESSAGE}" >> $GITHUB_ENV
+          fi
+        shell: bash
       # Call main-action to compile and deploy
       - name: Executing main-action
         uses: ./.github/actions/main-action
@@ -142,4 +154,4 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-          send-slack-message: ${{ inputs.send-slack-message }}
+          send-slack-message: $SEND_SLACK_MESSAGE
