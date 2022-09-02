@@ -2,7 +2,18 @@ name: Deploy Development (E2E) End to End
 
 # Controls when the action will run.
 on:
-  [workflow_dispatch, workflow_call]
+  [workflow_dispatch, workflow_call]:
+    secrets: 
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_DEFAULT_REGION:
+        required: true
+      E2E_DEV_ACCOUNT_SID:
+        required: true
+      E2E_DEV_AUTH_TOKEN:
+        required: true
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
