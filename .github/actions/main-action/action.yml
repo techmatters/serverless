@@ -56,8 +56,8 @@ inputs:
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
-    default: true
-    type: boolean
+    default: 'true'
+    type: string
 runs:
   using: "composite"
   steps:
@@ -131,13 +131,13 @@ runs:
       run: echo ${{ inputs.send-slack-message }}
       shell: bash
     - name: debug
-      run: echo ${{ inputs.send-slack-message != false && inputs.send-slack-message != 'false' }}
+      run: echo ${{ inputs.send-slack-message != 'false' }}
       shell: bash
     # Send Slack notifying success
     - name: Slack Aselo channel
       id: slack
       uses: slackapi/slack-github-action@v1.14.0
-      if: ${{ inputs.send-slack-message != false && inputs.send-slack-message != 'false' }}
+      if: ${{ inputs.send-slack-message != 'false' }}
       with:
         channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
         slack-message: "`[Serverless]` Action ${{ github.workflow }} completed with SHA ${{ github.sha }} :rocket:."
