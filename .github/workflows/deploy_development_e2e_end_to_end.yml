@@ -2,7 +2,7 @@ name: Deploy Development (E2E) End to End
 
 # Controls when the action will run.
 on:
-  [workflow_dispatch, workflow_call]:
+  [workflow_dispatch, workflow_call]
     secrets: 
       AWS_ACCESS_KEY_ID:
         required: true
