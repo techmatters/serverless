@@ -129,7 +129,7 @@ runs:
     # Test why message is not sended
     - name: Test why message is not sended
       run: echo ${{ inputs.send-slack-message }}
-      shel: bash
+      shell: bash
     # Send Slack notifying success
     - name: Slack Aselo channel
       id: slack
