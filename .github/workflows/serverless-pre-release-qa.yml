@@ -53,16 +53,14 @@ jobs:
       - name: Run Playwright tests
         run: DEBUG=pw:api PLAYWRIGHT_BASEURL=${{secrets.PLAYWRIGHT_BASEURL_E2E}} PLAYWRIGHT_USER_USERNAME=${{secrets.PLAYWRIGHT_USER_USERNAME}} PLAYWRIGHT_USER_PASSWORD=${{secrets.PLAYWRIGHT_USER_PASSWORD}} TWILIO_ACCOUNT_SID=${{secrets.E2E_DEV_ACCOUNT_SID}} TWILIO_AUTH_TOKEN=${{secrets.E2E_DEV_AUTH_TOKEN}} npx playwright test
         working-directory: ./flex-plugins/e2e-tests
-      # Test log
-      - name: Test log
-        run: ls
       # Upload artifacts
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
         with:
           name: test-artifacts
-          path: ./flex-plugins/e2e-tests/test-results
+          path: flex-plugins/e2e-tests/test-results
 
+  # TODO: move to an action so that can be shared across repos
   generate-pre-release:
     needs: run-e2e-tests
 
