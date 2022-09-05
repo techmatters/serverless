@@ -79,7 +79,7 @@ async function kickMember(context: Context<EnvVars>, memberToKick: string, chatC
   return false;
 }
 
-async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Pick<Body,  'taskSid' | 'targetSid' | 'ignoreAgent' | 'memberToKick' | 'mode'>>) {
   if (body.mode !== 'COLD') return null;
 
   const client = context.getTwilioClient();
@@ -167,7 +167,6 @@ async function increaseChatCapacity(
     const body = {
       workerSid: worker?.sid as string,
       adjustment: 'increase',
-      request: { cookies: {}, headers: {} },
     } as const;
 
     await adjustChatCapacity(context, body);
@@ -181,7 +180,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, targetSid, ignoreAgent, mode, memberToKick, request } = event;
+    const { taskSid, targetSid, ignoreAgent, mode, memberToKick } = event;
 
     try {
       if (taskSid === undefined) {
@@ -202,11 +201,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       }
       if (memberToKick === undefined) {
         resolve(error400('memberToKick'));
-        return;
-      }
-
-      if (request === undefined) {
-        resolve(error400('request'));
         return;
       }
 
@@ -257,7 +251,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
         increaseChatCapacity(context, validationResult),
-        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid, request }),
+        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid }),
       ]);
 
       resolve(success({ taskSid: newTask.sid }));

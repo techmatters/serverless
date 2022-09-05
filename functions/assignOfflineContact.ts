@@ -188,7 +188,7 @@ const assignOfflineContact = async (
 
   const mergedAttributes = {
     ...newTaskAttributes,
-    ...parsedFinalAttributes,
+    ...parsedFinalAttributes, 
     ...routingAttributes,
     customers: {
       ...parsedFinalAttributes.customers,

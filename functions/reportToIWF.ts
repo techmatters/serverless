@@ -38,7 +38,6 @@ export type IWFReportPayload = {
   Reporter_Email_ID: string | null; // Max 100 characters
   Reporter_Country_ID: number | null; // Reporter's country (Helpline specific)
   Reporter_Description: string | null; // Max 500 characters
-  request: { cookies: {}; headers: {} };
 };
 
 export type Event = {
@@ -48,11 +47,11 @@ export type Event = {
   Reporter_Last_Name?: string;
   Reporter_Email_ID?: string;
   Reporter_Description?: string;
-  request: { cookies: {}; headers: {} };
+  request: { cookies: {}; headers: {}; }
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidator(
-  async (context: Context<EnvVars>, event: Event, callback: ServerlessCallback) => {
+  async (context: Context<EnvVars>, event: Required<Pick<Event, 'Reported_URL' | 'Reporter_Anonymous' | 'Reporter_Description' | 'Reporter_Email_ID' | 'Reporter_First_Name' | 'Reporter_Last_Name'>>, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
     try {
@@ -76,7 +75,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
 
       const channelID = context.IWF_API_CHANNEL_ID ? parseInt(context.IWF_API_CHANNEL_ID, 10) : 51;
 
-      const body: IWFReportPayload = {
+      const body: Required<Pick<IWFReportPayload, 'Reporting_Type' | 'Live_Report' | 'Media_Type_ID' | 'Report_Channel_ID' | 'Origin_ID' | 'Submission_Type_ID' | 'Reported_Category_ID' | 'Reported_URL' | 'Reporter_Anonymous' | 'Reporter_First_Name' | 'Reporter_Last_Name' | 'Reporter_Email_ID' | 'Reporter_Country_ID' | 'Reporter_Description'>> = {
         Reporting_Type: 'R',
         Live_Report: liveReportFlag,
         Media_Type_ID: 1,
@@ -91,7 +90,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
         Reporter_Email_ID: Reporter_Email_ID || null,
         Reporter_Description: Reporter_Description || null,
         Reporter_Country_ID: countryID,
-        request: { cookies: {}, headers: {} },
       };
 
       const hash = Buffer.from(`${context.IWF_API_USERNAME}:${context.IWF_API_PASSWORD}`).toString(

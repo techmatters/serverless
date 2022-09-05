@@ -49,21 +49,9 @@ describe('reportToIWF', () => {
   });
 
   test('Should return status 400', async () => {
-    const event1: Body = {
-      Reported_URL: undefined,
-      Reporter_Anonymous: 'Y',
-      request: { cookies: {}, headers: {} },
-    };
-    const event2: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: undefined,
-      request: { cookies: {}, headers: {} },
-    };
-    const event3: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: 'Other',
-      request: { cookies: {}, headers: {} },
-    };
+    const event1: Body = { Reported_URL: undefined, Reporter_Anonymous: 'Y', request: {cookies: {}, headers: {}} };
+    const event2: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: undefined, request: {cookies: {}, headers: {}} };
+    const event3: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Other', request: {cookies: {}, headers: {}} };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -81,11 +69,7 @@ describe('reportToIWF', () => {
       throw new Error('Boom!');
     });
 
-    const event: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: 'Y',
-      request: { cookies: {}, headers: {} },
-    };
+    const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y', request: {cookies: {}, headers: {}} };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -100,7 +84,7 @@ describe('reportToIWF', () => {
   test('Should POST a payload to IWF_API_URL and return 200', async () => {
     let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.mockImplementationOnce(request => {
       postedPayload = JSON.parse(request.data);
       return Promise.resolve({
         status: 200,
@@ -108,11 +92,7 @@ describe('reportToIWF', () => {
       });
     });
 
-    const event: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: 'Y',
-      request: { cookies: {}, headers: {} },
-    };
+    const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y', request: {cookies: {}, headers: {}} };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -134,9 +114,9 @@ describe('reportToIWF', () => {
   });
 
   test('Extra report details should be copied into POST payload', async () => {
-    let postedPayload: IWFReportPayload | undefined;
+    let postedPayload: Required<Pick<IWFReportPayload, 'Reporting_Type' | 'Live_Report' | 'Media_Type_ID' | 'Report_Channel_ID' | 'Origin_ID' | 'Submission_Type_ID' | 'Reported_Category_ID' | 'Reported_URL' | 'Reporter_Anonymous' | 'Reporter_First_Name' | 'Reporter_Last_Name' | 'Reporter_Email_ID' | 'Reporter_Country_ID' | 'Reporter_Description'>> | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.mockImplementationOnce(request => {
       postedPayload = JSON.parse(request.data);
       return Promise.resolve({
         status: 200,
@@ -151,7 +131,7 @@ describe('reportToIWF', () => {
       Reporter_Last_Name: 'Ballantyne',
       Reporter_Email_ID: 'lorn@aballan.tyne',
       Reporter_Description: 'description',
-      request: { cookies: {}, headers: {} },
+      request: { cookies: {}, headers: {} }
     };
 
     await reportToIWF(
@@ -185,7 +165,7 @@ describe('reportToIWF', () => {
   test('Environment variables should override default values in POST', async () => {
     let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.mockImplementationOnce(request => {
       postedPayload = JSON.parse(request.data);
       return Promise.resolve({
         status: 200,
@@ -193,11 +173,7 @@ describe('reportToIWF', () => {
       });
     });
 
-    const event: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: 'Y',
-      request: { cookies: {}, headers: {} },
-    };
+    const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y', request: { cookies: {}, headers: {} } };
 
     await reportToIWF(
       {
@@ -235,11 +211,7 @@ describe('reportToIWF', () => {
       }),
     );
 
-    const event: Body = {
-      Reported_URL: 'Reported_URL',
-      Reporter_Anonymous: 'Y',
-      request: { cookies: {}, headers: {} },
-    };
+    const event: Body = { Reported_URL: 'Reported_URL', Reporter_Anonymous: 'Y', request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();

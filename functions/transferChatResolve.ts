@@ -84,7 +84,7 @@ async function kickMember(context: Context<EnvVars>, memberToKick: string, chatC
   return false;
 }
 
-async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Pick<Body,  'closeSid' | 'keepSid' | 'memberToKick' | 'newStatus'>>) {
   const client = context.getTwilioClient();
 
   // retrieve attributes of the task to close
@@ -140,7 +140,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
     try {
       if (closeSid === undefined) {
-        resolve(error400('closeSid'));
+        resolve(error400('closeSid')); 
         return;
       }
       if (keepSid === undefined) {
@@ -161,7 +161,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         keepSid,
         memberToKick,
         newStatus,
-        request: { cookies: {}, headers: {} },
       };
 
       const [closedTask, keptTask] = await Promise.all([

@@ -26,7 +26,7 @@ export type Body = {
 
 export const adjustChatCapacity = async (
   context: Context<EnvVars>,
-  body: Required<Body>,
+  body: Required<Pick<Body,  'adjustment' | 'workerSid'>>,
 ): Promise<{ status: number; message: string }> => {
   const client = context.getTwilioClient();
 
@@ -86,7 +86,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       if (workerSid === undefined) return resolve(error400('workerSid'));
       if (adjustment === undefined) return resolve(error400('adjustment'));
 
-      const validBody = { workerSid, adjustment, request: { cookies: {}, headers: {} } };
+      const validBody = { workerSid, adjustment };
 
       const { status, message } = await adjustChatCapacity(context, validBody);
 
