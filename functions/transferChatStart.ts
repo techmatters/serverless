@@ -79,7 +79,10 @@ async function kickMember(context: Context<EnvVars>, memberToKick: string, chatC
   return false;
 }
 
-async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Pick<Body,  'taskSid' | 'targetSid' | 'ignoreAgent' | 'memberToKick' | 'mode'>>) {
+async function closeTaskAndKick(
+  context: Context<EnvVars>,
+  body: Required<Pick<Body, 'taskSid' | 'targetSid' | 'ignoreAgent' | 'memberToKick' | 'mode'>>,
+) {
   if (body.mode !== 'COLD') return null;
 
   const client = context.getTwilioClient();

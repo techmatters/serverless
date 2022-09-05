@@ -47,11 +47,25 @@ export type Event = {
   Reporter_Last_Name?: string;
   Reporter_Email_ID?: string;
   Reporter_Description?: string;
-  request: { cookies: {}; headers: {}; }
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidator(
-  async (context: Context<EnvVars>, event: Required<Pick<Event, 'Reported_URL' | 'Reporter_Anonymous' | 'Reporter_Description' | 'Reporter_Email_ID' | 'Reporter_First_Name' | 'Reporter_Last_Name'>>, callback: ServerlessCallback) => {
+  async (
+    context: Context<EnvVars>,
+    event: Required<
+      Pick<
+        Event,
+        | 'Reported_URL'
+        | 'Reporter_Anonymous'
+        | 'Reporter_Description'
+        | 'Reporter_Email_ID'
+        | 'Reporter_First_Name'
+        | 'Reporter_Last_Name'
+      >
+    >,
+    callback: ServerlessCallback,
+  ) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
     try {
@@ -75,7 +89,25 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidat
 
       const channelID = context.IWF_API_CHANNEL_ID ? parseInt(context.IWF_API_CHANNEL_ID, 10) : 51;
 
-      const body: Required<Pick<IWFReportPayload, 'Reporting_Type' | 'Live_Report' | 'Media_Type_ID' | 'Report_Channel_ID' | 'Origin_ID' | 'Submission_Type_ID' | 'Reported_Category_ID' | 'Reported_URL' | 'Reporter_Anonymous' | 'Reporter_First_Name' | 'Reporter_Last_Name' | 'Reporter_Email_ID' | 'Reporter_Country_ID' | 'Reporter_Description'>> = {
+      const body: Required<
+        Pick<
+          IWFReportPayload,
+          | 'Reporting_Type'
+          | 'Live_Report'
+          | 'Media_Type_ID'
+          | 'Report_Channel_ID'
+          | 'Origin_ID'
+          | 'Submission_Type_ID'
+          | 'Reported_Category_ID'
+          | 'Reported_URL'
+          | 'Reporter_Anonymous'
+          | 'Reporter_First_Name'
+          | 'Reporter_Last_Name'
+          | 'Reporter_Email_ID'
+          | 'Reporter_Country_ID'
+          | 'Reporter_Description'
+        >
+      > = {
         Reporting_Type: 'R',
         Live_Report: liveReportFlag,
         Media_Type_ID: 1,

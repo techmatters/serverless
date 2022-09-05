@@ -26,7 +26,7 @@ export type Body = {
 
 export const adjustChatCapacity = async (
   context: Context<EnvVars>,
-  body: Required<Pick<Body,  'adjustment' | 'workerSid'>>,
+  body: Required<Pick<Body, 'adjustment' | 'workerSid'>>,
 ): Promise<{ status: number; message: string }> => {
   const client = context.getTwilioClient();
 
