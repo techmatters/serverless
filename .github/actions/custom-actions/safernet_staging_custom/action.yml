@@ -37,6 +37,23 @@ runs:
         ssm_parameter: "STG_TWILIO_BR_INSTAGRAM_FLEX_FLOW_SID"
         env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
 
+    # Set Line variables
+    - name: Set helpline Line Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_TWILIO_BR_LINE_FLEX_FLOW_SID"
+        env_variable_name: "LINE_FLEX_FLOW_SID"
+    - name: Set Line Channel Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_LINE_BR_CHANNEL_SECRET"
+        env_variable_name: "LINE_CHANNEL_SECRET"
+    - name: Set Line Channel Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_LINE_BR_CHANNEL_ACCESS_TOKEN"
+        env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
+
     # Append environment variables
 
     - name: Add SAFERNET_ENDPOINT
@@ -62,4 +79,16 @@ runs:
       shell: bash
     - name: Add INSTAGRAM_FLEX_FLOW_SID
       run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+
+      # Append Line environment variables
+
+    - name: Add LINE_FLEX_FLOW_SID
+      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_SECRET
+      run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_ACCESS_TOKEN
+      run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
       shell: bash
