@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 import '@twilio-labs/serverless-runtime-types';
 import {
   Context,
@@ -103,7 +101,7 @@ async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Pick<B
   return closedTask;
 }
 
-async function updateTaskToKeep(context: Context<EnvVars>, body: Required<Body>) {
+async function updateTaskToKeep(context: Context<EnvVars>, body: Required<Pick<Body,  'closeSid' | 'keepSid' | 'memberToKick' | 'newStatus'>>) {
   const client = context.getTwilioClient();
 
   // retrieve attributes of the preserved task
