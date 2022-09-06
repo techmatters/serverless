@@ -157,8 +157,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
       // Function should not fail or alarm if the sync list 'pending-contacts' doesn't exist yet
       return resolve(success('The sync list pending-contacts was not found'));
     }
-    // eslint-disable-next-line no-console
-    console.warn(err);
     return resolve(error500(err));
   }
 };

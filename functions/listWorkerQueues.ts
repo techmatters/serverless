@@ -39,8 +39,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       return resolve(success({ workerQueues }));
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error(err);
       return resolve(error500(err));
     }
   },

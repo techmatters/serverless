@@ -170,8 +170,6 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       resolve(success({ closed: closedTask.sid, kept: keptTask.sid }));
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-      console.error(err);
       resolve(error500(err));
     }
   },

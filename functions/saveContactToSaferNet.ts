@@ -100,8 +100,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
       resolve(error500(new Error(errorMessage)));
     }
   } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.warn(err);
     resolve(error500(err));
   }
 };

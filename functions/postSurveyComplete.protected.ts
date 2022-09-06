@@ -166,8 +166,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
 
     callback(null, JSON.stringify(returnObj));
   } catch (err: any) {
-    // eslint-disable-next-line no-console
-    console.error(err);
     callback(null, { actions: [] });
   }
 };
