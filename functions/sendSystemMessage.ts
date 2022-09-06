@@ -25,6 +25,8 @@ export type Body = {
   taskSid?: string;
   message?: string;
   from?: string;
+  newStatus?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -69,7 +71,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         });
 
       resolve(success(messageResult));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

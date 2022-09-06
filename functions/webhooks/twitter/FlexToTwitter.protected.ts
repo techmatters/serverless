@@ -27,36 +27,34 @@ export type Body = Partial<WebhookEvent> & {
   recipientId?: string; // The Twitter id of the user that started the conversation. Provided as query parameter
 };
 
-const sendTwitterMessage = (context: Context<EnvVars>) => async (
-  recipientId: string,
-  messageText: string,
-) => {
-  const T = new Twit({
-    consumer_key: context.TWITTER_CONSUMER_KEY,
-    consumer_secret: context.TWITTER_CONSUMER_SECRET,
-    access_token: context.TWITTER_ACCESS_TOKEN,
-    access_token_secret: context.TWITTER_ACCESS_TOKEN_SECRET,
-    timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
-    strictSSL: true, // optional - requires SSL certificates to be valid.
-  });
+const sendTwitterMessage =
+  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
+    const T = new Twit({
+      consumer_key: context.TWITTER_CONSUMER_KEY,
+      consumer_secret: context.TWITTER_CONSUMER_SECRET,
+      access_token: context.TWITTER_ACCESS_TOKEN,
+      access_token_secret: context.TWITTER_ACCESS_TOKEN_SECRET,
+      timeout_ms: 60 * 1000, // optional HTTP request timeout to apply to all requests.
+      strictSSL: true, // optional - requires SSL certificates to be valid.
+    });
 
-  const sendTo = {
-    event: {
-      type: 'message_create',
-      message_create: {
-        target: {
-          recipient_id: recipientId,
-        },
-        message_data: {
-          text: messageText,
+    const sendTo = {
+      event: {
+        type: 'message_create',
+        message_create: {
+          target: {
+            recipient_id: recipientId,
+          },
+          message_data: {
+            text: messageText,
+          },
         },
       },
-    },
-  };
+    };
 
-  // @ts-ignore
-  return T.post('direct_messages/events/new', sendTo);
-};
+    // @ts-ignore
+    return T.post('direct_messages/events/new', sendTo);
+  };
 
 export const handler = async (
   context: Context<EnvVars>,

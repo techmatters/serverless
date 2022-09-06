@@ -60,6 +60,9 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       },
     }),
     DOMAIN_NAME: 'serverless',
+    PATH: 'PATH',
+    SERVICE_SID: undefined,
+    ENVIRONMENT_SID: undefined,
   };
 
   describe('adjustChatCapacity', () => {
@@ -73,7 +76,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     test('Should return status 400', async () => {
       const workerSid = 'worker123';
       // const adjustment = 'increase';
-      const event1 = {};
+      const event1 = { request: { cookies: {}, headers: {} } };
       const event2 = { ...event1, workerSid };
 
       const events = [event1, event2];
@@ -84,13 +87,14 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         expect(response.getStatus()).toBe(400);
       };
 
-      await Promise.all(events.map(e => adjustChatCapacity(baseContext, e, callback)));
+      await Promise.all(events.map((e) => adjustChatCapacity(baseContext, e, callback)));
     });
 
     test('Should return status 500', async () => {
       const event: Body = {
         workerSid: 'non-existing',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       const callback: ServerlessCallback = (err, result) => {
@@ -107,6 +111,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       const callback: ServerlessCallback = (err, result) => {
@@ -126,6 +131,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'decrease',
+        request: { cookies: {}, headers: {} },
       };
 
       const callback: ServerlessCallback = (err, result) => {
@@ -145,6 +151,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'decrease',
+        request: { cookies: {}, headers: {} },
       };
 
       const callback: ServerlessCallback = (err, result) => {
@@ -164,6 +171,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       const callback: ServerlessCallback = (err, result) => {
@@ -185,6 +193,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       await adjustChatCapacity(baseContext, event, () => {});
@@ -207,6 +216,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'nonExisting',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       await adjustChatCapacity(baseContext, event, () => {});
@@ -227,6 +237,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'withoutChannel',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       await adjustChatCapacity(baseContext, event, () => {});
@@ -246,6 +257,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'withoutAttr',
         adjustment: 'increase',
+        request: { cookies: {}, headers: {} },
       };
 
       await adjustChatCapacity(baseContext, event, () => {});

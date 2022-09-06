@@ -25,6 +25,9 @@ const baseContext = {
   INSTAGRAM_FLEX_FLOW_SID: 'INSTAGRAM_FLEX_FLOW_SID',
   FACEBOOK_APP_SECRET: 'test secret',
   FACEBOOK_PAGE_ACCESS_TOKEN: 'test token',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const validEvent = ({ recipientId = 'recipientId', From = 'senderId', Source = 'API' } = {}) => ({

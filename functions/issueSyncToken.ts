@@ -20,6 +20,7 @@ export type AuthEvent = {
   TokenResult: {
     identity: string;
   };
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -30,12 +31,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     try {
       const { identity } = event.TokenResult;
 
-      const {
-        ACCOUNT_SID,
-        SYNC_SERVICE_API_KEY,
-        SYNC_SERVICE_API_SECRET,
-        SYNC_SERVICE_SID,
-      } = context;
+      const { ACCOUNT_SID, SYNC_SERVICE_API_KEY, SYNC_SERVICE_API_SECRET, SYNC_SERVICE_SID } =
+        context;
 
       if (!identity) {
         throw new Error('Identity is missing, something is wrong with the token provided');
@@ -59,7 +56,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       accessToken.addGrant(syncGrant);
 
       resolve(success({ token: accessToken.toJwt() }));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

@@ -12,7 +12,7 @@ let tasks: any[] = [
   {
     sid: 'non-updateable',
     attributes: JSON.stringify({}),
-    fetch: async () => tasks.find(t => t.sid === 'non-updateable'),
+    fetch: async () => tasks.find((t) => t.sid === 'non-updateable'),
     update: () => {
       throw new Error("can't update this one!");
     },
@@ -23,10 +23,10 @@ const createTask = (sid: string, options: any) => {
   return {
     sid,
     ...options,
-    fetch: async () => tasks.find(t => t.sid === sid),
+    fetch: async () => tasks.find((t) => t.sid === sid),
     update: async ({ attributes }: { attributes: any }) => {
-      tasks = tasks.map(t => (t.sid === sid ? { ...t, attributes } : t));
-      const task = tasks.find(t => t.sid === sid);
+      tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
+      const task = tasks.find((t) => t.sid === sid);
       return task;
     },
   };
@@ -34,7 +34,7 @@ const createTask = (sid: string, options: any) => {
 
 const workspaces: { [x: string]: any } = {
   WSxxx: {
-    tasks: (sid: string) => tasks.find(t => t.sid === sid),
+    tasks: (sid: string) => tasks.find((t) => t.sid === sid),
   },
 };
 
@@ -50,6 +50,9 @@ const baseContext = {
   }),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };

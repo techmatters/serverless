@@ -13,7 +13,12 @@ type EnvVars = {
 
 const TASK_CREATED_EVENT = 'task.created';
 
-const logAndReturnError = (taskSid: TaskInstance['sid'], workspaceSid: EnvVars['TWILIO_WORKSPACE_SID'], step: 'fetch' | 'update', errorInstance: unknown) => {
+const logAndReturnError = (
+  taskSid: TaskInstance['sid'],
+  workspaceSid: EnvVars['TWILIO_WORKSPACE_SID'],
+  step: 'fetch' | 'update',
+  errorInstance: unknown,
+) => {
   const errorMessage = `Error at addCustomerExternalId: task with sid ${taskSid} does not exists in workspace ${workspaceSid} when trying to ${step} it.`;
   console.error(errorMessage, errorInstance);
   return { message: errorMessage };

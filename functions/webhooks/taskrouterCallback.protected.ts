@@ -53,14 +53,24 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
-const isCreateContactTask = (eventType: EventType, taskAttributes: { isContactlessTask?: boolean }) => 
-  eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
+const isCreateContactTask = (
+  eventType: EventType,
+  taskAttributes: { isContactlessTask?: boolean },
+) => eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) && taskAttributes.isSurveyTask;
+  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) &&
+  taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
-  if (!(eventType === TASK_DELETED_EVENT || eventType === TASK_SYSTEM_DELETED_EVENT || eventType === TASK_CANCELED_EVENT)) return false;
+  if (
+    !(
+      eventType === TASK_DELETED_EVENT ||
+      eventType === TASK_SYSTEM_DELETED_EVENT ||
+      eventType === TASK_CANCELED_EVENT
+    )
+  )
+    return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
@@ -84,7 +94,8 @@ export const handler = async (
     if (isCreateContactTask(eventType, taskAttributes)) {
       // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
       const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
-      const addCustomerExternalId = require(handlerPath).addCustomerExternalId as AddCustomerExternalId;
+      const addCustomerExternalId = require(handlerPath)
+        .addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
       const message = `Event ${eventType} handled by /helpers/addCustomerExternalId`;
@@ -105,7 +116,7 @@ export const handler = async (
       const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
       const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
-  
+
       const message = `Event matched isCleanupPostSurvey for task sid ${event.TaskSid}`;
       console.log(message);
       resolve(

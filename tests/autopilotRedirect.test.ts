@@ -40,6 +40,9 @@ const baseContext = {
     },
   }),
   DOMAIN_NAME: 'serverless',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('Redirect forwards to the correct task', () => {
@@ -76,6 +79,7 @@ describe('Redirect forwards to the correct task', () => {
                 },
                 "at": "survey"
             }`,
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -114,6 +118,7 @@ describe('Redirect forwards to the correct task', () => {
                 },
                 "at": "survey"
             }`,
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -153,6 +158,7 @@ describe('Redirect forwards to the correct task', () => {
                 },
                 "at": "survey"
             }`,
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {

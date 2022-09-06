@@ -22,6 +22,7 @@ type EnvVars = {
 
 export type Body = {
   ApiKey: string;
+  request: { cookies: {}; headers: {} };
 };
 
 type Nullable<T> = T | undefined | null;
@@ -53,7 +54,7 @@ const getSaveContactFn = (
   if (!saveContactHandler) return;
 
   // eslint-disable-next-line consistent-return
-  return payload =>
+  return (payload) =>
     new Promise((resolveCallback, rejectCallback) => {
       // Callback passed to saveContactHandler
       const callback: ServerlessCallback = (error: any, callbackPayload: any) => {
@@ -130,7 +131,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
     };
 
     await Promise.all(
-      pendingContacts.map(listItem => {
+      pendingContacts.map((listItem) => {
         const { payload } = listItem.data;
 
         return saveContactFn(payload)
@@ -145,7 +146,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
     };
 
     return resolve(success(result));
-  } catch (err) {
+  } catch (err: any) {
     if (
       err instanceof Error &&
       err.message &&
@@ -156,8 +157,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
       // Function should not fail or alarm if the sync list 'pending-contacts' doesn't exist yet
       return resolve(success('The sync list pending-contacts was not found'));
     }
-    // eslint-disable-next-line no-console
-    console.warn(err);
     return resolve(error500(err));
   }
 };

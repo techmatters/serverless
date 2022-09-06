@@ -68,6 +68,9 @@ const baseContext = {
   INSTAGRAM_FLEX_FLOW_SID: 'INSTAGRAM_FLEX_FLOW_SID',
   FACEBOOK_APP_SECRET: 'test secret',
   FACEBOOK_PAGE_ACCESS_TOKEN: 'test token',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 const defaultBodyAsString = 'fake body';
@@ -356,7 +359,7 @@ describe('InstagramToFlex', () => {
             }),
           );
         } else {
-          Object.values(channels).forEach(channel => {
+          Object.values(channels).forEach((channel) => {
             expect(channel.messages.create).not.toBeCalled();
           });
         }

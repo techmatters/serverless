@@ -7,7 +7,7 @@ import helpers, { MockedResponse } from './helpers';
 let tasks: any[] = [];
 
 const createReservation = (taskSid: string, workerSid: string) => {
-  const task = tasks.find(t => t.sid === taskSid);
+  const task = tasks.find((t) => t.sid === taskSid);
   task.reservationsSource = [
     {
       workerSid,
@@ -67,12 +67,12 @@ const createTask = (sid: string, options: any) => {
       list: async () => [],
     }),
     update: async ({ attributes }: { attributes: any }) => {
-      tasks = tasks.map(t => (t.sid === sid ? { ...t, attributes } : t));
+      tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
 
       const hasReservation =
         (
           await tasks
-            .find(t => t.sid === sid)
+            .find((t) => t.sid === sid)
             .reservations()
             .list()
         ).length > 0;
@@ -91,11 +91,11 @@ const createTask = (sid: string, options: any) => {
       )
         createReservation(sid, targetSid);
 
-      const task = tasks.find(t => t.sid === sid);
+      const task = tasks.find((t) => t.sid === sid);
       return task;
     },
     remove: async () => {
-      tasks = tasks.filter(t => t.sid === sid);
+      tasks = tasks.filter((t) => t.sid === sid);
     },
   };
 };
@@ -117,6 +117,9 @@ const baseContext = {
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 beforeAll(() => {
@@ -142,7 +145,7 @@ beforeEach(() => {
         create: async (options: any) => {
           const newTask = createTask(Math.random().toString(), options);
           tasks = [...tasks, newTask];
-          return tasks.find(t => t.sid === newTask.sid);
+          return tasks.find((t) => t.sid === newTask.sid);
         },
       },
       workers: (workerSid: string) => ({
@@ -245,6 +248,7 @@ describe('assignOfflineContact', () => {
     const bad1: Body = {
       targetSid: undefined,
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
     const bad2: Body = {
       targetSid: 'WKxxx',
@@ -259,7 +263,7 @@ describe('assignOfflineContact', () => {
     };
 
     await Promise.all(
-      [{}, bad1, bad2].map(event => assignOfflineContact(baseContext, event, callback)),
+      [bad1, bad2].map((event) => assignOfflineContact(baseContext, event, callback)),
     );
   });
 
@@ -345,6 +349,7 @@ describe('assignOfflineContact', () => {
       const event: Body = {
         targetSid,
         finalTaskAttributes: JSON.stringify({}),
+        request: { cookies: {}, headers: {} },
       };
       let response: MockedResponse | undefined;
 
@@ -368,6 +373,7 @@ describe('assignOfflineContact', () => {
     const event: Body = {
       targetSid: 'available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -384,6 +390,7 @@ describe('assignOfflineContact', () => {
     const event: Body = {
       targetSid: 'not-available-worker-with-completed',
       finalTaskAttributes: JSON.stringify({}),
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {

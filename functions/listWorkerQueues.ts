@@ -38,7 +38,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         .taskQueues.list({ workerSid });
 
       return resolve(success({ workerQueues }));
-    } catch (err) {
+    } catch (err: any) {
       return resolve(error500(err));
     }
   },

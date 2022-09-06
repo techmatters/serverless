@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/camelcase */
 import {
   Context,
   ServerlessCallback,
@@ -48,6 +47,7 @@ export type Event = {
   Reporter_Last_Name?: string;
   Reporter_Email_ID?: string;
   Reporter_Description?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = TokenValidator(

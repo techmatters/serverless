@@ -27,31 +27,29 @@ export type Body = Partial<WebhookEvent> & {
   recipientId?: string; // The Line id of the user that started the conversation. Provided as query parameter
 };
 
-const sendLineMessage = (context: Context<EnvVars>) => async (
-  recipientId: string,
-  messageText: string,
-) => {
-  const payload = {
-    to: recipientId,
-    messages: [
-      {
-        type: 'text',
-        text: messageText,
-      },
-    ],
-  };
+const sendLineMessage =
+  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
+    const payload = {
+      to: recipientId,
+      messages: [
+        {
+          type: 'text',
+          text: messageText,
+        },
+      ],
+    };
 
-  return axios({
-    url: LINE_SEND_MESSAGE_URL,
-    method: 'POST',
-    data: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
-      Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
-    },
-  });
-};
+    return axios({
+      url: LINE_SEND_MESSAGE_URL,
+      method: 'POST',
+      data: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
+        Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
+      },
+    });
+  };
 
 export const handler = async (
   context: Context<EnvVars>,

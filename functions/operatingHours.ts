@@ -35,8 +35,10 @@ export type Body = {
   channel?: string;
 };
 
-const isOpen = (timeOfDay: number) => (shift: OperatingShift): boolean =>
-  timeOfDay >= shift.open && timeOfDay < shift.close;
+const isOpen =
+  (timeOfDay: number) =>
+  (shift: OperatingShift): boolean =>
+    timeOfDay >= shift.open && timeOfDay < shift.close;
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -69,17 +71,11 @@ export const handler = async (
 
     const { timezone, holidays, operatingHours } = operatingInfo;
     const timeOfDay = parseInt(
-      moment()
-        .tz(timezone)
-        .format('Hmm'), // e.g 123 for 1hs 23m, 1345 for 13hs 45m
+      moment().tz(timezone).format('Hmm'), // e.g 123 for 1hs 23m, 1345 for 13hs 45m
       10,
     );
-    const dayOfWeek = moment()
-      .tz(timezone)
-      .isoWeekday() as DaysOfTheWeek;
-    const currentDate = moment()
-      .tz(timezone)
-      .format('MM/DD/YYYY');
+    const dayOfWeek = moment().tz(timezone).isoWeekday() as DaysOfTheWeek;
+    const currentDate = moment().tz(timezone).format('MM/DD/YYYY');
 
     if (currentDate in holidays) {
       resolve(success('holiday'));
@@ -95,7 +91,7 @@ export const handler = async (
     }
 
     resolve(success('closed'));
-  } catch (err) {
+  } catch (err: any) {
     resolve(error500(err));
   }
 };

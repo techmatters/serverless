@@ -33,7 +33,7 @@ export type Body = {
 };
 
 function timeout(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {

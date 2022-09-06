@@ -51,7 +51,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const uploadUrl = await s3Client.getSignedUrl('putObject', getUrlParams);
 
       resolve(success({ uploadUrl, fileNameAtAws }));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

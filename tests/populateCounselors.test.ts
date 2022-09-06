@@ -56,6 +56,9 @@ const baseContext = {
     },
   }),
   DOMAIN_NAME: 'serverless',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('populateCounselors', () => {
@@ -67,7 +70,8 @@ describe('populateCounselors', () => {
   });
 
   test('Should return status 400', async () => {
-    const event: Body = { workspaceSID: undefined };
+    const event: Body = { workspaceSID: undefined, request: { cookies: {}, headers: {} } };
+    const emptyEvent = { request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -75,12 +79,12 @@ describe('populateCounselors', () => {
       expect(response.getStatus()).toBe(400);
     };
 
-    await populateCounselors(baseContext, {}, callback);
+    await populateCounselors(baseContext, emptyEvent, callback);
     await populateCounselors(baseContext, event, callback);
   });
 
   test('Should return status 500', async () => {
-    const event: Body = { workspaceSID: 'non-existing' };
+    const event: Body = { workspaceSID: 'non-existing', request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -93,10 +97,14 @@ describe('populateCounselors', () => {
   });
 
   test('Should return status 200 (no helpline filter)', async () => {
-    const event1: Body = { workspaceSID: 'WSxxx' };
-    const event2: Body = { workspaceSID: 'WSxxx', helpline: '' };
+    const event1: Body = { workspaceSID: 'WSxxx', request: { cookies: {}, headers: {} } };
+    const event2: Body = {
+      workspaceSID: 'WSxxx',
+      helpline: '',
+      request: { cookies: {}, headers: {} },
+    };
 
-    const expected = [1, 2, 3, 4].map(n => ({ fullName: `worker${n}`, sid: `worker${n}` }));
+    const expected = [1, 2, 3, 4].map((n) => ({ fullName: `worker${n}`, sid: `worker${n}` }));
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -108,14 +116,18 @@ describe('populateCounselors', () => {
     };
 
     await Promise.all(
-      [event1, event2].map(event => populateCounselors(baseContext, event, callback)),
+      [event1, event2].map((event) => populateCounselors(baseContext, event, callback)),
     );
   });
 
   test('Should return status 200 (with helpline filter)', async () => {
-    const event: Body = { workspaceSID: 'WSxxx', helpline: 'helpline1' };
+    const event: Body = {
+      workspaceSID: 'WSxxx',
+      helpline: 'helpline1',
+      request: { cookies: {}, headers: {} },
+    };
 
-    const expected = [1, 2, 3].map(n => ({ fullName: `worker${n}`, sid: `worker${n}` }));
+    const expected = [1, 2, 3].map((n) => ({ fullName: `worker${n}`, sid: `worker${n}` }));
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();

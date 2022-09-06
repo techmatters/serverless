@@ -49,34 +49,28 @@ const deactivateChannel = async (
 ) => {
   const client = context.getTwilioClient();
 
-  const channel = await client.chat
-    .services(serviceSid)
-    .channels(channelSid)
-    .fetch();
+  const channel = await client.chat.services(serviceSid).channels(channelSid).fetch();
 
   const attributes = JSON.parse(channel.attributes);
-  
+
   if (attributes.status !== 'INACTIVE') {
     if (attributes.proxySession) {
       await deleteProxySession(context, attributes.proxySession);
     }
-    
+
     const newAttributes = { ...attributes, status: 'INACTIVE' };
     const updated = await channel.update({
       attributes: JSON.stringify(newAttributes),
       xTwilioWebhookEnabled: 'true',
     });
-  
+
     return { message: 'Channel deactivated', updated };
   }
 
   return { message: 'Channel already INACTIVE, event ignored' };
 };
 
-export const chatChannelJanitor = async (
-  context: Context<EnvVars>,
-  event: Event
-) => {
+export const chatChannelJanitor = async (context: Context<EnvVars>, event: Event) => {
   const result = await deactivateChannel(context, context.CHAT_SERVICE_SID, event.channelSid);
 
   return { message: `Deactivation attempted for channel ${event.channelSid}`, result };

@@ -11,7 +11,7 @@ const createTask = (taskSid: string, worker: string, channel: string = 'channel'
     sid: taskSid,
     taskChannelUniqueName: channel,
     attributes: `{"channelSid":"${channel}"}`,
-    fetch: async () => tasks.find(t => t.sid === taskSid),
+    fetch: async () => tasks.find((t) => t.sid === taskSid),
     update: async ({
       attributes,
       assignmentStatus,
@@ -21,8 +21,8 @@ const createTask = (taskSid: string, worker: string, channel: string = 'channel'
       assignmentStatus: string;
       reason: string;
     }) => {
-      const task = tasks.find(t => t.sid === taskSid);
-      tasks = tasks.map(t => {
+      const task = tasks.find((t) => t.sid === taskSid);
+      tasks = tasks.map((t) => {
         if (t.sid === task.sid)
           return {
             ...task,
@@ -44,7 +44,7 @@ const createTask = (taskSid: string, worker: string, channel: string = 'channel'
 const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: (taskSid: string) => {
-      const task = tasks.find(t => t.sid === taskSid);
+      const task = tasks.find((t) => t.sid === taskSid);
       if (task) return task;
 
       throw new Error('Task does not exists');
@@ -72,7 +72,9 @@ const baseContext = {
                     if (channels[channelSid].includes(memberSid))
                       return {
                         remove: async () => {
-                          channels[channelSid] = channels[channelSid].filter(v => v !== memberSid);
+                          channels[channelSid] = channels[channelSid].filter(
+                            (v) => v !== memberSid,
+                          );
                           return true;
                         },
                       };
@@ -93,6 +95,9 @@ const baseContext = {
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
   CHAT_SERVICE_SID: 'ISxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('transferChatResolve', () => {
@@ -111,29 +116,34 @@ describe('transferChatResolve', () => {
   });
 
   test('Should return status 400', async () => {
+    const event0 = { request: { cookies: {}, headers: {} } };
     const event1: Body = {
       closeSid: undefined,
       keepSid: 'task2',
       memberToKick: 'worker1',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
     const event2: Body = {
       closeSid: 'task1',
       keepSid: undefined,
       memberToKick: 'worker1',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
     const event3: Body = {
       closeSid: 'task1',
       keepSid: 'task2',
       memberToKick: undefined,
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
     const event4: Body = {
       closeSid: 'task1',
       keepSid: 'task2',
       memberToKick: 'worker1',
       newStatus: undefined,
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -143,7 +153,7 @@ describe('transferChatResolve', () => {
     };
 
     await Promise.all(
-      [{}, event1, event2, event3, event4].map(event =>
+      [event0, event1, event2, event3, event4].map((event) =>
         transferChatResolve(baseContext, event, callback),
       ),
     );
@@ -155,12 +165,14 @@ describe('transferChatResolve', () => {
       keepSid: 'task2',
       memberToKick: '',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
     const event2: Body = {
       closeSid: 'task1',
       keepSid: 'non existing',
       memberToKick: '',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -178,7 +190,8 @@ describe('transferChatResolve', () => {
     };
 
     const { getTwilioClient, DOMAIN_NAME } = baseContext;
-    await transferChatResolve({ getTwilioClient, DOMAIN_NAME }, event1, callback1);
+    const payload: any = { getTwilioClient, DOMAIN_NAME };
+    await transferChatResolve(payload, event1, callback1);
     await transferChatResolve(baseContext, event1, callback2);
     await transferChatResolve(baseContext, event2, callback2);
   });
@@ -189,6 +202,7 @@ describe('transferChatResolve', () => {
       keepSid: 'task2',
       memberToKick: 'worker1',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
 
     const expected = { closed: 'task1', kept: 'task2' };
@@ -209,8 +223,8 @@ describe('transferChatResolve', () => {
       expect(response.getBody()).toStrictEqual(expected);
 
       const { closed, kept } = response.getBody();
-      const closedTask = tasks.find(t => t.sid === closed);
-      const keptTask = tasks.find(t => t.sid === kept);
+      const closedTask = tasks.find((t) => t.sid === closed);
+      const keptTask = tasks.find((t) => t.sid === kept);
 
       expect(closedTask.assignmentStatus).toBe('wrapping');
       expect(closedTask.reason).toBe('task transferred');
@@ -227,6 +241,7 @@ describe('transferChatResolve', () => {
       keepSid: 'task1',
       memberToKick: 'worker1',
       newStatus: 'accepted',
+      request: { cookies: {}, headers: {} },
     };
 
     const expected = { closed: 'task2', kept: 'task1' };
@@ -247,8 +262,8 @@ describe('transferChatResolve', () => {
       expect(response.getBody()).toStrictEqual(expected);
 
       const { closed, kept } = response.getBody();
-      const closedTask = tasks.find(t => t.sid === closed);
-      const keptTask = tasks.find(t => t.sid === kept);
+      const closedTask = tasks.find((t) => t.sid === closed);
+      const keptTask = tasks.find((t) => t.sid === kept);
 
       expect(closedTask.assignmentStatus).toBe('wrapping');
       expect(closedTask.reason).toBe('task transferred');

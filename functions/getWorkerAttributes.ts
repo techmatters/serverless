@@ -53,7 +53,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       };
 
       resolve(success(whiteListedAttributes));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

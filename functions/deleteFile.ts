@@ -58,7 +58,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       await deleteObject(s3Client, deleteParams);
 
       resolve(success({ deletedFile: fileName }));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

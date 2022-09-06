@@ -17,6 +17,7 @@ const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 export type Body = {
   workspaceSID?: string;
   helpline?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler: ServerlessFunctionSignature = TokenValidator(
@@ -32,14 +33,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const workspace = await context
-        .getTwilioClient()
-        .taskrouter.workspaces(workspaceSID)
-        .fetch();
+      const workspace = await context.getTwilioClient().taskrouter.workspaces(workspaceSID).fetch();
 
       const workers = await workspace.workers().list();
 
-      const withAttributes = workers.map(w => {
+      const withAttributes = workers.map((w) => {
         const attributes = JSON.parse(w.attributes);
 
         return {
@@ -48,7 +46,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         };
       });
 
-      const withHelpline = withAttributes.map(w => {
+      const withHelpline = withAttributes.map((w) => {
         const fullName = w.attributes.full_name as string;
         const wHelpline = w.attributes.helpline as string;
 
@@ -61,7 +59,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
 
       if (helpline) {
         const filtered = withHelpline.filter(
-          w => w.helpline === helpline || w.helpline === '' || w.helpline === undefined,
+          (w) => w.helpline === helpline || w.helpline === '' || w.helpline === undefined,
         );
         const workerSummaries = filtered.map(({ fullName, sid }) => ({ fullName, sid }));
 
@@ -72,7 +70,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       const workerSummaries = withHelpline.map(({ fullName, sid }) => ({ fullName, sid }));
 
       resolve(success({ workerSummaries }));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

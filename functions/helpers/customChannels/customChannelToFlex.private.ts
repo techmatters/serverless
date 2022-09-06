@@ -94,12 +94,7 @@ export const removeChatChannel = async (
     chatServiceSid: string;
     channelSid: string;
   },
-) =>
-  context
-    .getTwilioClient()
-    .chat.services(chatServiceSid)
-    .channels(channelSid)
-    .remove();
+) => context.getTwilioClient().chat.services(chatServiceSid).channels(channelSid).remove();
 
 export enum AseloCustomChannels {
   Twitter = 'twitter',
@@ -153,12 +148,7 @@ const createFlexChannel = async (
   });
 
   const channelAttributes = JSON.parse(
-    (
-      await client.chat
-        .services(chatServiceSid)
-        .channels(channel.sid)
-        .fetch()
-    ).attributes,
+    (await client.chat.services(chatServiceSid).channels(channel.sid).fetch()).attributes,
   );
 
   await client.chat

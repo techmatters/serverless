@@ -25,6 +25,7 @@ export type Body = {
   keepSid?: string;
   memberToKick?: string;
   newStatus?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 async function closeTask(
@@ -81,7 +82,10 @@ async function kickMember(context: Context<EnvVars>, memberToKick: string, chatC
   return false;
 }
 
-async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>) {
+async function closeTaskAndKick(
+  context: Context<EnvVars>,
+  body: Required<Pick<Body, 'closeSid' | 'keepSid' | 'memberToKick' | 'newStatus'>>,
+) {
   const client = context.getTwilioClient();
 
   // retrieve attributes of the task to close
@@ -100,7 +104,10 @@ async function closeTaskAndKick(context: Context<EnvVars>, body: Required<Body>)
   return closedTask;
 }
 
-async function updateTaskToKeep(context: Context<EnvVars>, body: Required<Body>) {
+async function updateTaskToKeep(
+  context: Context<EnvVars>,
+  body: Required<Pick<Body, 'closeSid' | 'keepSid' | 'memberToKick' | 'newStatus'>>,
+) {
   const client = context.getTwilioClient();
 
   // retrieve attributes of the preserved task
@@ -153,7 +160,12 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const validBody = { closeSid, keepSid, memberToKick, newStatus };
+      const validBody = {
+        closeSid,
+        keepSid,
+        memberToKick,
+        newStatus,
+      };
 
       const [closedTask, keptTask] = await Promise.all([
         closeTaskAndKick(context, validBody),
@@ -161,7 +173,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       ]);
 
       resolve(success({ closed: closedTask.sid, kept: keptTask.sid }));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

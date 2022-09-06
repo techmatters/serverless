@@ -11,6 +11,9 @@ const baseContext = {
   SYNC_SERVICE_API_KEY: 'api-key',
   SYNC_SERVICE_API_SECRET: 'api-secret',
   SYNC_SERVICE_SID: 'ISxxx',
+  PATH: 'PATH',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
 describe('issueSyncToken', () => {
@@ -26,11 +29,13 @@ describe('issueSyncToken', () => {
       TokenResult: {
         identity: '',
       },
+      request: { cookies: {}, headers: {} },
     };
     const event2: AuthEvent = {
       TokenResult: {
         identity: 'worker1',
       },
+      request: { cookies: {}, headers: {} },
     };
 
     const callback1: ServerlessCallback = (err, result) => {
@@ -57,7 +62,7 @@ describe('issueSyncToken', () => {
 
     await issueSyncToken(baseContext, event1, callback1);
     await Promise.all(
-      [anotherContext1, anotherContext2, anotherContext3].map(context =>
+      [anotherContext1, anotherContext2, anotherContext3].map((context) =>
         issueSyncToken(context, event2, callback2),
       ),
     );
@@ -68,6 +73,7 @@ describe('issueSyncToken', () => {
       TokenResult: {
         identity: 'worker1',
       },
+      request: { cookies: {}, headers: {} },
     };
 
     const callback: ServerlessCallback = (err, result) => {

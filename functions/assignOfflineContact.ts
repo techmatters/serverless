@@ -13,7 +13,6 @@ import {
   send,
 } from '@tech-matters/serverless-helpers';
 // eslint-disable-next-line prettier/prettier
-import type { PromiseValue } from 'type-fest';
 
 const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
@@ -25,17 +24,20 @@ type EnvVars = {
 export type Body = {
   targetSid?: string;
   finalTaskAttributes: string;
+  request: { cookies: {}; headers: {} };
 };
 
 // eslint-disable-next-line prettier/prettier
-type TaskInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['tasks']>['fetch']>>;
+type TaskInstance = Awaited<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['tasks']>['fetch']>>;
 // eslint-disable-next-line prettier/prettier
-type WorkerInstance = PromiseValue<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['workers']>['fetch']>>;
+type WorkerInstance = Awaited<ReturnType<ReturnType<ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['workers']>['fetch']>>;
 
-type AssignmentResult = {
-  type: 'error',
-  payload: { status: number, message: string, taskRemoved: boolean, attributes?: string }
-} |  { type: 'success', newTask: TaskInstance };
+type AssignmentResult =
+  | {
+      type: 'error';
+      payload: { status: number; message: string; taskRemoved: boolean; attributes?: string };
+    }
+  | { type: 'success'; newTask: TaskInstance };
 
 const wait = (ms: number): Promise<void> => {
   return new Promise((resolve) => {
@@ -59,7 +61,7 @@ const assignToAvailableWorker = async (
   retry: number = 0,
 ): Promise<AssignmentResult> => {
   const reservations = await newTask.reservations().list();
-  const reservation = reservations.find(r => r.workerSid === event.targetSid);
+  const reservation = reservations.find((r) => r.workerSid === event.targetSid);
 
   if (!reservation) {
     if (retry < 8) {
@@ -102,7 +104,9 @@ const assignToOfflineWorker = async (
 
   if (availableActivity.length > 1) {
     // eslint-disable-next-line no-console
-    console.warn(`There are ${availableActivity.length} available worker activities, but there should only be one.`);
+    console.warn(
+      `There are ${availableActivity.length} available worker activities, but there should only be one.`,
+    );
   }
 
   await targetWorker.update({
@@ -112,12 +116,19 @@ const assignToOfflineWorker = async (
 
   const result = await assignToAvailableWorker(event, newTask);
 
-  await targetWorker.update({ activitySid: previousActivity, attributes: JSON.stringify(previousAttributes), rejectPendingReservations: true });
+  await targetWorker.update({
+    activitySid: previousActivity,
+    attributes: JSON.stringify(previousAttributes),
+    rejectPendingReservations: true,
+  });
 
   return result;
 };
 
-const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Body>): Promise<AssignmentResult> => {
+const assignOfflineContact = async (
+  context: Context<EnvVars>,
+  body: Required<Body>,
+): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
   const { targetSid, finalTaskAttributes } = body;
 
@@ -131,13 +142,22 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
   if (targetWorkerAttributes.helpline === undefined)
     return {
       type: 'error',
-      payload: { status: 500, message: 'Error: the worker does not have helpline attribute set, check the worker configuration.', taskRemoved: false },
+      payload: {
+        status: 500,
+        message:
+          'Error: the worker does not have helpline attribute set, check the worker configuration.',
+        taskRemoved: false,
+      },
     };
 
   if (targetWorkerAttributes.waitingOfflineContact)
     return {
       type: 'error',
-      payload: { status: 500, message: 'Error: the worker is already waiting for an offline contact.', taskRemoved: false },
+      payload: {
+        status: 500,
+        message: 'Error: the worker is already waiting for an offline contact.',
+        taskRemoved: false,
+      },
     };
 
   const queueRequiredTaskAttributes = {
@@ -148,15 +168,13 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
   };
 
   // create New task
-  const newTask = await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks.create({
-      workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
-      taskChannel: 'default',
-      attributes: JSON.stringify(queueRequiredTaskAttributes),
-      priority: 100,
-    });
-  
+  const newTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
+    workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+    taskChannel: 'default',
+    attributes: JSON.stringify(queueRequiredTaskAttributes),
+    priority: 100,
+  });
+
   const newTaskAttributes = JSON.parse(newTask.attributes);
   const parsedFinalAttributes = JSON.parse(finalTaskAttributes);
   const routingAttributes = {
@@ -178,7 +196,7 @@ const assignOfflineContact = async (context: Context<EnvVars>, body: Required<Bo
     },
   };
 
-  const updatedTask = await newTask.update({attributes: JSON.stringify(mergedAttributes)});
+  const updatedTask = await newTask.update({ attributes: JSON.stringify(mergedAttributes) });
 
   if (targetWorker.available) {
     // assign the task, accept and complete it
@@ -205,7 +223,11 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
         return;
       }
 
-      const assignmentResult = await assignOfflineContact(context, {targetSid, finalTaskAttributes});
+      const assignmentResult = await assignOfflineContact(context, {
+        targetSid,
+        finalTaskAttributes,
+        request: { cookies: {}, headers: {} },
+      });
 
       if (assignmentResult.type === 'error') {
         const { payload } = assignmentResult;
@@ -214,7 +236,7 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
       }
 
       resolve(success(assignmentResult.newTask));
-    } catch (err) {
+    } catch (err: any) {
       resolve(error500(err));
     }
   },

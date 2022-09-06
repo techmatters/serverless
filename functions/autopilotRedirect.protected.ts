@@ -9,6 +9,7 @@ export interface Event {
   CurrentTask: string;
   Memory: string;
   UserIdentifier: string;
+  request: { cookies: {}; headers: {} };
 }
 
 type EnvVars = {};
@@ -70,7 +71,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     const returnObj = { actions };
 
     callback(null, returnObj);
-  } catch (err) {
+  } catch (err: any) {
     // If something goes wrong, just handoff to counselor so contact is not lost
     callback(null, { actions: [{ redirect: 'task://counselor_handoff' }] });
   }
