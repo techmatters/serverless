@@ -56,7 +56,7 @@ const wait = (ms: number): Promise<void> => {
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
-) => eventType === TASK_CREATED_EVENT && taskAttributes.isContactlessTask;
+) => eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
   (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) &&
