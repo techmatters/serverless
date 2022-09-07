@@ -15,8 +15,7 @@ on:
 
 jobs:
   build-and-deploy:
-    # TODO: remove branch tag
-    uses: techmatters/serverless/.github/workflows/deploy_development_e2e_end_to_end.yml@gian_CHI-1263
+    uses: techmatters/serverless/.github/workflows/deploy_development_e2e_end_to_end.yml@master
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -73,8 +72,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Create pre release
-        # TODO: remove branch tag
-        uses: techmatters/flex-plugins/.github/actions/generate-pre-release@gian_CHI-1262-p2
+        uses: techmatters/flex-plugins/.github/actions/generate-pre-release@master
         with:
           tag-prefix: ${{ inputs.tag-prefix }}
           tag-suffix: 'qa'
@@ -85,8 +83,7 @@ jobs:
 
       # Send Slack notifying success
       - name: Slack aselo-deploys channel
-        # TODO: remove branch tag
-        uses: techmatters/flex-plugins/.github/actions/notify-deploys@gian_CHI-1262-p2
+        uses: techmatters/flex-plugins/.github/actions/notify-deploys@master
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
