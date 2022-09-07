@@ -63,7 +63,6 @@ jobs:
           name: test-artifacts
           path: flex-plugins/e2e-tests/test-results
 
-  # TODO: move to an action so that can be shared across repos
   generate-pre-release:
     needs: run-e2e-tests
 
@@ -72,68 +71,23 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: '14.x'
-            # Get latest tag for this version
-      - name: Get latest tag
-        uses: oprypin/find-latest-tag@v1
-        with:
-          repository: techmatters/serverless # This repo
-          # releases-only: false  # This repository doesn't use GitHub's "release" feature.
-          prefix: "${{ inputs.tag-prefix }}-qa"
-        id: latest_matching_tag
-        continue-on-error: true
 
-      # Generate next tag
-      - name: Generate next tag
-        # TODO: remove branch tag (gian_CHI-1262-p2)
-        uses: techmatters/flex-plugins/.github/actions/generate-next-tag@gian_CHI-1262-p2
+      - name: Create pre release
+        uses: techmatters/flex-plugins/.github/actions/generate-pre-release@gian_CHI-1262-p2
         with:
-          prefix: "${{ inputs.tag-prefix }}-qa"
-          latest-matching-tag: ${{ steps.latest_matching_tag.outputs.tag }}
-        id: generate_next_tag
-
-      - run: echo ${{ steps.generate_next_tag.outputs.generated-tag }}
-
-      # Create a pre-release
-      - uses: "marvinpinto/action-automatic-releases@v1.2.1"
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: ${{ steps.generate_next_tag.outputs.generated-tag }}
-          prerelease: true
+          tag-prefix: ${{ inputs.tag-prefix }}
+          tag-suffix: 'qa'
           title: ${{ inputs.title }}
-          # files: |
-          #   LICENSE.txt
-          #   *.jar
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
         id: create_pre_release
 
-      ## TODO: Abstract all of this in a custom action reused across repos?
-      # Setup credentials to access AWS for parameters
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      # Send Slack notifying success
+      - name: Slack aselo-deploys channel
+        uses: techmatters/flex-plugins/.github/actions/notify-deploys@gian_CHI-1262-p2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      # Set env vars to send slack message
-      - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
-          env_variable_name: "GITHUB_ACTIONS_SLACK_BOT_TOKEN"
-      - name: Set ASELO_DEPLOYS_CHANNEL_ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "ASELO_DEPLOYS_CHANNEL_ID"
-          env_variable_name: "ASELO_DEPLOYS_CHANNEL_ID"
-      # Send Slack notifying success
-      - name: Slack Aselo channel
-        id: slack
-        uses: slackapi/slack-github-action@v1.14.0
-        with:
-          channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
-          slack-message: "`[Serverless]` Action ${{ github.workflow }} completed with SHA ${{ github.sha }}. Release tag is ${{ steps.create_pre_release.outputs.automatic_releases_tag }} :rocket:."
+          slack-message: "`[Flex]` Action ${{ github.workflow }} completed with SHA ${{ github.sha }}. Release tag is ${{ steps.create_pre_release.outputs.generated-pre-release-tag }} :rocket:."
         env:
           SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
