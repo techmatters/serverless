@@ -15,14 +15,26 @@ on:
       environment_code:
         description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
         required: true
+  workflow_call:
+    inputs:
+      helpline_code:
+        required: true
+        type: string
+      environment_code:
+        required: true
+        type: string
+      changelog:
+        description: Release Changelog - Add a comment about the changes to be included in this release.
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      TWILIO_SSM_PREFIX: ${{github.event.inputs.environment_code}}_TWILIO_${{github.event.inputs.helpline_code}}
-      TWILIO_ACCOUNT_SID_SECRET_NAME: ${{github.event.inputs.helpline_code}}_${{github.event.inputs.environment_code}}_ACCOUNT_SID
-      TWILIO_AUTH_TOKEN_SECRET_NAME: ${{github.event.inputs.helpline_code}}_${{github.event.inputs.environment_code}}_AUTH_TOKEN
+      TWILIO_SSM_PREFIX: ${{inputs.environment_code}}_TWILIO_${{inputs.helpline_code}}
+      TWILIO_ACCOUNT_SID_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_ACCOUNT_SID
+      TWILIO_AUTH_TOKEN_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_AUTH_TOKEN
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
