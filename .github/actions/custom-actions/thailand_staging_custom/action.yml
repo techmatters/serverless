@@ -1,0 +1,30 @@
+name: 'Childline Thailand release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the thailand staging environment'
+runs:
+  using: "composite"
+  steps:
+    # Line environment variables
+    - name: Set helpline Line Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_TWILIO_TH_LINE_FLEX_FLOW_SID"
+        env_variable_name: "LINE_FLEX_FLOW_SID"
+    - name: Set Line Channel Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_LINE_TH_CHANNEL_SECRET"
+        env_variable_name: "LINE_CHANNEL_SECRET"
+    - name: Set Line Channel Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "STG_LINE_TH_CHANNEL_ACCESS_TOKEN"
+        env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
+    - name: Add LINE_FLEX_FLOW_SID
+      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_SECRET
+      run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_ACCESS_TOKEN
+      run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
