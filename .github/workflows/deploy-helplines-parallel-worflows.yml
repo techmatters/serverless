@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        short_helplines: ['CA', 'CL', 'PH', 'ET', 'JM', 'MW', 'IN', 'RO', 'BR', 'ZA', 'CO', 'TH', 'UK', 'UKR', 'ZM', 'ZW']
+        short_helplines: ['IN', 'CA', 'CL', 'PH', 'ET', 'F2', 'JM', 'MW', 'RO', 'BR', 'ZA', 'CO', 'TEST', 'TH', 'UK', 'UKR', 'ZM', 'ZW']
         environment_code: [STG]
     uses: techmatters/serverless/.github/workflows/custom_helpline.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
