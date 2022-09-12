@@ -1,0 +1,49 @@
+# This is a basic workflow to deploy Serverless to all helpline staging environments
+
+name: Deploy Serverless to all Helpline Staging Environments
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: This is dangerous! Are you sure you want to trigger this workflow? Type "deploy helplines workflow" to continue.
+        required: true
+      changelog:
+        description: Release Changelog - Add a comment about the changes to be included in this release.
+        required: true
+  
+
+jobs:
+  deploy-helplines:
+    strategy:
+      fail-fast: false
+      matrix:
+        short_helplines: ['CA', 'CL', 'PH', 'ET', 'JM', 'MW', 'IN', 'RO', 'BR', 'ZA', 'CO', 'TH', 'UK', 'UKR', 'ZM', 'ZW', 'F2']
+        environment_code: [STG]
+    uses: techmatters/serverless/.github/workflows/custom_helpline.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
+    secrets: inherit
+    with:
+      helpline_code: ${{ matrix.short_helplines }}
+      environment_code: ${{ matrix.environment_code }}
+      changelog: ${{ inputs.changelog }}
+
+  deploy-uk_staging_III: 
+    uses: techmatters/serverless/.github/workflows/uk_staging_III.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      UK_STG_III_ACCOUNT_SID: ${{ secrets.UK_STG_III_ACCOUNT_SID }}
+      UK_STG_III_AUTH_TOKEN: ${{ secrets.UK_STG_III_AUTH_TOKEN }}
+    with:
+      changelog: ${{ inputs.changelog }}
+
+  do-something-after:
+    needs: [deploy-helplines, deploy-uk_staging_III]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Echo after
+        run: echo "Success!"
+        shell: bash
