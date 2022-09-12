@@ -1,4 +1,4 @@
-name: 'Childline Thailand release custom action'
+name: 'Childline Thailand Staging release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in the thailand staging environment'
 runs:
   using: "composite"
