@@ -4,7 +4,6 @@ name: RevengePorn Staging III release
 
 # Controls when the action will run.
 on:
-  workflow_dispatch
   workflow_call:
     secrets: 
       AWS_ACCESS_KEY_ID:
@@ -22,6 +21,7 @@ on:
         description: Release Changelog - Add a comment about the changes to be included in this release.
         required: true
         type: string
+  workflow_dispatch
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
