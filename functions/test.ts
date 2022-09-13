@@ -5,12 +5,11 @@ import {
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
+import type { FunctionValidator } from './helpers/tokenValidator';
 
 const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
-console.log(functionValidatorPath);
-console.log(Runtime.getFunctions());
 // eslint-disable-next-line import/no-dynamic-require, global-require
-const TokenValidator = require(functionValidatorPath).functionValidator;
+const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
 
 export type Body = {
   language?: string;
@@ -28,5 +27,8 @@ export const handler: ServerlessFunctionSignature = TokenValidator(
     } catch (err: any) {
       resolve(error500(err));
     }
+  },
+  {
+    allowGuestToken: true,
   },
 );
