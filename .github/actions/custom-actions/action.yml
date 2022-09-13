@@ -3,6 +3,9 @@ description: Compound 'routing' action to load custom deployment actions for the
 runs:
   using: "composite"
   steps:
+    - name: Childline Thailand Staging release custom action
+      if: github.workflow == format('Thailand Staging release')
+      uses: ./.github/actions/custom-actions/thailand_staging_custom
     - name: Aarambh Staging release custom action
       if: github.workflow == format('Aarambh Staging release')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
