@@ -1,5 +1,8 @@
 import { validator } from 'twilio-flex-token-validator';
-import { ServerlessFunctionSignature } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  EnvironmentVariables,
+  ServerlessFunctionSignature,
+} from '@twilio-labs/serverless-runtime-types/types';
 
 type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
@@ -8,19 +11,13 @@ const isWorker = (tokenResult: TokenValidatorResponse) =>
 const isGuest = (tokenResult: TokenValidatorResponse) =>
   Array.isArray(tokenResult.roles) && tokenResult.roles.includes('guest');
 
-type ExpectedContext = {
-  ACCOUNT_SID?: string;
-  AUTH_TOKEN?: string;
-};
-
-type ExpectedEvent = {
-  Token?: string;
-} & { request: { cookies: {}; headers: {} } };
-
-export const functionValidator = (
-  handlerFn: ServerlessFunctionSignature<ExpectedContext, ExpectedEvent>,
+export const functionValidator = <
+  T extends EnvironmentVariables,
+  U extends { request: { cookies: {}; headers: {} }; Token?: string },
+>(
+  handlerFn: ServerlessFunctionSignature<T, U>,
   options: { allowGuestToken?: boolean } = {},
-): ServerlessFunctionSignature<ExpectedContext, ExpectedEvent> => {
+): ServerlessFunctionSignature<T, U> => {
   return (context, event, callback) => {
     const failedResponse = (message: string) => {
       const response = new Twilio.Response();
@@ -53,7 +50,6 @@ export const functionValidator = (
         const isGuestToken = !isWorker(tokenResult) || isGuest(tokenResult);
 
         if (isGuestToken && !options.allowGuestToken) {
-          // throw new Error('Unauthorized: endpoint not open to guest tokens.');
           return failedResponse('Unauthorized: endpoint not open to guest tokens.');
         }
 
