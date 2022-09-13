@@ -4,6 +4,11 @@ import { handler as assignOfflineContact, Body } from '../functions/assignOfflin
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 let tasks: any[] = [];
 
 const createReservation = (taskSid: string, workerSid: string) => {

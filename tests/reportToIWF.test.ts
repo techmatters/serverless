@@ -5,6 +5,11 @@ import { handler as reportToIWF, Event as Body, IWFReportPayload } from '../func
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 jest.mock('axios');
 
 const baseContext = {

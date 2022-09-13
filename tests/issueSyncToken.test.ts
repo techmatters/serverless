@@ -4,6 +4,11 @@ import { handler as issueSyncToken, AuthEvent } from '../functions/issueSyncToke
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 const baseContext = {
   getTwilioClient: (): any => null,
   DOMAIN_NAME: 'serverless',
@@ -56,9 +61,9 @@ describe('issueSyncToken', () => {
       );
     };
 
-    const anotherContext1 = { ...baseContext, SYNC_SERVICE_SID: undefined };
-    const anotherContext2 = { ...baseContext, SYNC_SERVICE_SID: undefined };
-    const anotherContext3 = { ...baseContext, SYNC_SERVICE_SID: undefined };
+    const anotherContext1 = { ...baseContext, SYNC_SERVICE_SID: undefined as any };
+    const anotherContext2 = { ...baseContext, SYNC_SERVICE_SID: undefined as any };
+    const anotherContext3 = { ...baseContext, SYNC_SERVICE_SID: undefined as any };
 
     await issueSyncToken(baseContext, event1, callback1);
     await Promise.all(
