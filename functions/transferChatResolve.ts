@@ -1,9 +1,5 @@
 import '@twilio-labs/serverless-runtime-types';
-import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
   bindResolve,
@@ -11,8 +7,11 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+import type { FunctionValidator } from './helpers/tokenValidator';
 
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
+const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
+// eslint-disable-next-line import/no-dynamic-require, global-require
+const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -135,7 +134,7 @@ async function updateTaskToKeep(
   return keptTask;
 }
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);

@@ -1,17 +1,17 @@
 import AWS from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
-import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
+import type { FunctionValidator } from './helpers/tokenValidator';
 
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
+const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
+// eslint-disable-next-line import/no-dynamic-require, global-require
+const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
 
 export type Body = {
   fileNameAtAws: string;
   fileName: string;
+  request: { cookies: {}; headers: {} };
 };
 
 type EnvVars = {
@@ -21,7 +21,7 @@ type EnvVars = {
   AWS_REGION: string;
 };
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
