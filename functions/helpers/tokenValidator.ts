@@ -1,4 +1,5 @@
-import { validator, HandlerFn } from 'twilio-flex-token-validator';
+import { validator } from 'twilio-flex-token-validator';
+import { ServerlessFunctionSignature } from '@twilio-labs/serverless-runtime-types/types';
 
 type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
@@ -7,10 +8,19 @@ const isWorker = (tokenResult: TokenValidatorResponse) =>
 const isGuest = (tokenResult: TokenValidatorResponse) =>
   Array.isArray(tokenResult.roles) && tokenResult.roles.includes('guest');
 
+type ExpectedContext = {
+  ACCOUNT_SID?: string;
+  AUTH_TOKEN?: string;
+};
+
+type ExpectedEvent = {
+  Token?: string;
+} & { request: { cookies: {}; headers: {} } };
+
 export const functionValidator = (
-  handlerFn: HandlerFn,
+  handlerFn: ServerlessFunctionSignature<ExpectedContext, ExpectedEvent>,
   options: { allowGuestToken?: boolean } = {},
-): HandlerFn => {
+): ServerlessFunctionSignature<ExpectedContext, ExpectedEvent> => {
   return (context, event, callback) => {
     const failedResponse = (message: string) => {
       const response = new Twilio.Response();
@@ -32,6 +42,10 @@ export const functionValidator = (
       return failedResponse(
         'Unauthorized: AccountSid or AuthToken was not provided. For more information, please visit https://twilio.com/console/runtime/functions/configure',
       );
+    }
+
+    if (!token) {
+      return failedResponse('Unauthorized: token was not provided.');
     }
 
     return validator(token, accountSid, authToken)
