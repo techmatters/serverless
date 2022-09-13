@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "preinstall": "cd tech-matters-serverless-helpers-lib && npm ci && npm run build",
     "test": "jest --verbose",
     "start": "npx tsc && twilio-run --env",
     "watch": "npx tsc && twilio-run start --live",
@@ -46,7 +47,7 @@
     "node": "^12.0"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "^3.0.1",
+    "@tech-matters/serverless-helpers": "file:tech-matters-serverless-helpers-lib",
     "@twilio-labs/serverless-runtime-types": "^2.2.3",
     "@twilio/runtime-handler": "1.2.4",
     "aws-sdk": "^2.1199.0",
