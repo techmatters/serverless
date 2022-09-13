@@ -25,4 +25,7 @@ export const handler = functionValidator(
       resolve(error500(err));
     }
   },
+  {
+    allowGuestToken: true,
+  },
 );
