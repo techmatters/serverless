@@ -28,7 +28,8 @@
     "lib/**/*"
   ],
   "dependencies": {
-    "@twilio-labs/serverless-runtime-types": "^2.2.3"
+    "@twilio-labs/serverless-runtime-types": "^2.2.3",
+    "twilio-flex-token-validator": "^1.5.6"
   },
   "directories": {
     "lib": "lib"
