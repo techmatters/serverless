@@ -6,12 +6,8 @@ import {
   error500,
   responseWithCors,
   send,
+  functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import type { FunctionValidator } from './helpers/tokenValidator';
-
-const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
-// eslint-disable-next-line import/no-dynamic-require, global-require
-const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
 
 type EnvVars = {
   IWF_API_USERNAME: string;

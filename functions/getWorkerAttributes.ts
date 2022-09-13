@@ -6,12 +6,8 @@ import {
   error400,
   error500,
   success,
+  functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import type { FunctionValidator } from './helpers/tokenValidator';
-
-const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
-// eslint-disable-next-line import/no-dynamic-require, global-require
-const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;

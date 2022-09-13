@@ -1,12 +1,13 @@
 import AWS, { S3, AWSError } from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
-import type { FunctionValidator } from './helpers/tokenValidator';
-
-const functionValidatorPath = Runtime.getFunctions()['helpers/tokenValidator'].path;
-// eslint-disable-next-line import/no-dynamic-require, global-require
-const TokenValidator = require(functionValidatorPath).functionValidator as FunctionValidator;
+import {
+  responseWithCors,
+  bindResolve,
+  error500,
+  success,
+  functionValidator as TokenValidator,
+} from '@tech-matters/serverless-helpers';
 
 export type Body = {
   fileName: string;
