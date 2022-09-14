@@ -8,6 +8,8 @@ const gandalfAnger = 'You shall not pass!';
 const gandalffWisdom = 'It Is The Small Things, Everyday Deeds Of Ordinary Folk That Keeps The Darkness At Bay. Simple Acts Of Love And Kindness.';
 
 jest.mock('twilio-flex-token-validator', () => ({
+  __esModule: true,
+  ...jest.requireActual('twilio-flex-token-validator'),
   validator: async () => { throw new Error(gandalfAnger) },
 }));
 
