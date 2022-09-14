@@ -18,7 +18,7 @@ export const functionValidator = <
   handlerFn: ServerlessFunctionSignature<T, U>,
   options: { allowGuestToken?: boolean } = {},
 ): ServerlessFunctionSignature<T, U> => {
-  return (context, event, callback) => {
+  return async (context, event, callback) => {
     const failedResponse = (message: string) => {
       const response = new Twilio.Response();
       response.appendHeader('Access-Control-Allow-Origin', '*');
@@ -45,18 +45,23 @@ export const functionValidator = <
       return failedResponse('Unauthorized: token was not provided.');
     }
 
-    return validator(token, accountSid, authToken)
-      .then((tokenResult: TokenValidatorResponse) => {
-        const isGuestToken = !isWorker(tokenResult) || isGuest(tokenResult);
+    try {
+      const tokenResult: TokenValidatorResponse = await validator(token, accountSid, authToken)
+      const isGuestToken = !isWorker(tokenResult) || isGuest(tokenResult);
 
-        if (isGuestToken && !options.allowGuestToken) {
-          return failedResponse('Unauthorized: endpoint not open to guest tokens.');
-        }
+      if (isGuestToken && !options.allowGuestToken) {
+        return failedResponse('Unauthorized: endpoint not open to guest tokens.');
+      }
 
-        const updatedEvent = { ...event, TokenResult: tokenResult };
-        return handlerFn(context, updatedEvent, callback);
-      })
-      .catch(failedResponse);
+      const updatedEvent = { ...event, TokenResult: tokenResult };
+      return handlerFn(context, updatedEvent, callback);
+    } catch (err) {
+      if (err instanceof Error) {
+        return failedResponse(err.message);
+      } else {
+        return failedResponse(JSON.stringify(err));
+      }
+    }
   };
 };
 
