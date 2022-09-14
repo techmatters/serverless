@@ -1,8 +1,8 @@
 import each from 'jest-each';
 import * as tftv from 'twilio-flex-token-validator';
 
-import { functionValidator, responseWithCors, success } from '../src'
-import { setup, teardown } from './helpers'
+import { functionValidator, responseWithCors, success } from '../src';
+import { setup, teardown } from './twilioGlobals';
 
 const gandalfAnger = 'You shall not pass!';
 const gandalffWisdom = 'It Is The Small Things, Everyday Deeds Of Ordinary Folk That Keeps The Darkness At Bay. Simple Acts Of Love And Kindness.';
@@ -119,6 +119,6 @@ describe('functionValidator', () => {
       jest.spyOn(tftv, 'validator').mockImplementationOnce(validatorImplementation);
     }
 
-    await functionValidator(handlerFn, options)(context, event, callback)
+    await functionValidator(handlerFn, options)(context, event, callback);
   })
 })
