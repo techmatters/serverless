@@ -84,12 +84,6 @@ jobs:
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
-
-  deploy-test_staging: 
-    uses: techmatters/serverless/.github/workflows/test_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
   
   deploy-thailand_staging: 
     uses: techmatters/serverless/.github/workflows/thailand_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
@@ -128,7 +122,7 @@ jobs:
       changelog: ${{ inputs.changelog }}
 
   do-something-after:
-    needs: [deploy-helplines, deploy-aarambh_staging, deploy-canada_staging, deploy-cl_linealibre_staging, deploy-ecpat_philippines_staging, deploy-ethiopia_staging, deploy-flex2_staging, deploy-jamaica_staging, deploy-malawi_staging, deploy-romania_staging, deploy-safernet_staging, deploy-south_africa_staging, deploy-teguio_colombia_staging, deploy-test_staging, deploy-thailand_staging, deploy-uk_staging_III, deploy-uk_staging, deploy-ukraine_staging, deploy-zambia_staging, deploy-zimbabwe_staging]
+    needs: [deploy-aarambh_staging, deploy-canada_staging, deploy-cl_linealibre_staging, deploy-ecpat_philippines_staging, deploy-ethiopia_staging, deploy-flex2_staging, deploy-jamaica_staging, deploy-malawi_staging, deploy-romania_staging, deploy-safernet_staging, deploy-south_africa_staging, deploy-teguio_colombia_staging, deploy-thailand_staging, deploy-uk_staging_III, deploy-uk_staging, deploy-ukraine_staging, deploy-zambia_staging, deploy-zimbabwe_staging]
 
     runs-on: ubuntu-latest
 
