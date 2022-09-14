@@ -1,18 +1,13 @@
 import '@twilio-labs/serverless-runtime-types';
-import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
   bindResolve,
   error400,
   error500,
   success,
+  functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -25,11 +20,12 @@ export type Body = {
   channelSid?: string;
   taskSid?: string;
   taskLanguage?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 const createSurveyTask = async (
   context: Context<EnvVars>,
-  event: Required<Omit<Body, 'taskLanguage'>>,
+  event: Required<Pick<Body, 'channelSid' | 'taskSid'>>,
 ) => {
   const client = context.getTwilioClient();
   const { channelSid, taskSid } = event;
@@ -105,7 +101,7 @@ const getTriggerMessage = (event: Body): string => {
   return 'Before you leave, would you be willing to answer a few questions about the service you received today? Please answer Yes or No.';
 };
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     console.log('-------- postSurveyInit execution --------');
 

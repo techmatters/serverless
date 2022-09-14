@@ -3,6 +3,11 @@ import { handler as transferChatResolve, Body } from '../functions/transferChatR
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 let tasks: any[] = [];
 const channels: { [x: string]: string[] } = {};
 

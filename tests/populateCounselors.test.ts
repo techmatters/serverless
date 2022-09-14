@@ -3,6 +3,11 @@ import { handler as populateCounselors, Body } from '../functions/populateCounse
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 const workers = [
   {
     sid: 'worker1',
@@ -46,7 +51,7 @@ const workspaces: { [x: string]: any } = {
 };
 
 const baseContext = {
-  getTwilioClient: (): any => ({
+  getTwilioClient: (() => ({
     taskrouter: {
       workspaces: (workspaceSID: string) => {
         if (workspaces[workspaceSID]) return workspaces[workspaceSID];
@@ -54,7 +59,7 @@ const baseContext = {
         throw new Error('Workspace does not exists');
       },
     },
-  }),
+  })) as any,
   DOMAIN_NAME: 'serverless',
   PATH: 'PATH',
   SERVICE_SID: undefined,

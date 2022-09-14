@@ -1,12 +1,12 @@
 import '@twilio-labs/serverless-runtime-types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
-
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
+  responseWithCors,
+  bindResolve,
+  error500,
+  success,
+  functionValidator as TokenValidator,
+} from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
   ACCOUNT_SID: string;
@@ -23,7 +23,7 @@ export type AuthEvent = {
   request: { cookies: {}; headers: {} };
 };
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: AuthEvent, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
