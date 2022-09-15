@@ -20,11 +20,11 @@ jobs:
       changelog: ${{ inputs.changelog }}
 
   do-something-after:
-    needs: [deploy-aarambh_staging]
+    needs: deploy-aarambh_staging
 
     runs-on: ubuntu-latest
 
     steps:
       - name: Echo after
-        # run: echo ${{deploy-aarambh_staging.status}}
+        run: echo ${{needs.deploy-aarambh_staging}}
         shell: bash
