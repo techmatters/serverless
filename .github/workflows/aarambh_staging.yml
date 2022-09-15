@@ -135,4 +135,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - run: echo ${{needs.build.status}}
+    
+      - name: Re-run failed job
+        id: re-run
+        uses: build
+        if: ${{build.status != 'success'}}
+      # - run: echo ${{build.steps.outputs}}
