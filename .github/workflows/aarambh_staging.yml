@@ -135,4 +135,4 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - run: echo ${{needs.build}}
+      - run: echo ${{needs.build.status}}
