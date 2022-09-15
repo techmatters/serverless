@@ -95,7 +95,7 @@ runs:
           ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
           S3_BUCKET=${{ inputs.s3-bucket }}
           AWS_REGION=${{ inputs.aws-region }}
-          TWILIO_SERVERLESS_API_CONCURRENCY=2
+          TWILIO_SERVERLESS_API_CONCURRENCY=1
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
