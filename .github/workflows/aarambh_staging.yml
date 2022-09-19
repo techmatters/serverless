@@ -137,7 +137,7 @@ jobs:
     needs: build
     steps:
       - name: Echo after
-        run: echo ${{build.steps.main.conclusion}}
+        run: echo ${{needs.build.steps.main.conclusion}}
         shell: bash
 
   # re-run-main:
