@@ -131,15 +131,10 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-
-  re-run-main:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      # Re-run the failed main-action job
+      
       - name: Re-run failed job
         id: re-run
-        if: ${{needs.build.steps.main.conclusion == 'failure'}}
+        if: ${{failure() }}
         uses: ./.github/actions/main-action
         with:
           account-sid: ${{ secrets.IN_STG_ACCOUNT_SID }}
@@ -158,4 +153,32 @@ jobs:
           aselo-app-access-key: $ASELO_APP_ACCESS_KEY
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
-          s3-bucket: $S3_BUCKET
+          s3-bucket: $S3_BUCKET 
+
+  # re-run-main:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     # Re-run the failed main-action job
+  #     - name: Re-run failed job
+  #       id: re-run
+  #       if: ${{needs.build.steps.main.conclusion == 'failure'}}
+  #       uses: ./.github/actions/main-action
+  #       with:
+  #         account-sid: ${{ secrets.IN_STG_ACCOUNT_SID }}
+  #         auth-token: ${{ secrets.IN_STG_AUTH_TOKEN }}
+  #         workspace-sid: $TWILIO_WORKSPACE_SID
+  #         transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+  #         sync-service-api-key: $SYNC_SERVICE_API_KEY
+  #         sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+  #         sync-service-sid: $SYNC_SERVICE_SID
+  #         chat-service-sid: $CHAT_SERVICE_SID
+  #         operating-info-key: $OPERATING_INFO_KEY
+  #         flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
+  #         hrm-static-key: $HRM_STATIC_KEY
+  #         survey-workflow-sid: $SURVEY_WORKFLOW_SID
+  #         post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
+  #         aselo-app-access-key: $ASELO_APP_ACCESS_KEY
+  #         aselo-app-secret-key: $ASELO_APP_SECRET_KEY
+  #         aws-region: $AWS_REGION
+  #         s3-bucket: $S3_BUCKET
