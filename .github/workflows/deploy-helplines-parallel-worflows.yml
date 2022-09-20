@@ -13,7 +13,7 @@ on:
         required: true
 
 jobs:
-  deploy-aarambh_staging: 
+  deploy-aarambh_staging:
     uses: techmatters/serverless/.github/workflows/aarambh_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
