@@ -14,126 +14,108 @@ on:
 
 jobs:
   deploy-aarambh_staging:
-    if: always()
     uses: techmatters/serverless/.github/workflows/aarambh_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-canada_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/canada_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-cl_linealibre_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/cl_linealibre_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-ecpat_philippines_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/ecpat_philippines_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-ethiopia_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/ethiopia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-flex2_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/flex2_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-jamaica_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/jamaica_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-malawi_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/malawi_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-romania_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/romania_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-safernet_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/safernet_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-south_africa_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/south_africa_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-teguio_colombia_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/teguio_colombia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
   
   deploy-thailand_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/thailand_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-uk_staging_III: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/uk_staging_III.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-uk_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/uk_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
   deploy-ukraine_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/ukraine_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
-  # # deploy-zambia_staging: 
-  # # if: always()  
-  # uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
-  # #   secrets: inherit
-  # #   with:
-  # #     changelog: ${{ inputs.changelog }} deploy-zambia_staging
+  # deploy-zambia_staging: 
+  #   uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }} deploy-zambia_staging
 
   deploy-zimbabwe_staging: 
-    if: always()
     uses: techmatters/serverless/.github/workflows/zimbabwe_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
