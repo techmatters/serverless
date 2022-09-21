@@ -145,12 +145,13 @@ jobs:
           restore-keys: |
             ${{ github.run_id }}-${{ github.job }}-
 
+      - name: Run Result
       - id: run_result
         run: cat run_result 2>/dev/null || echo 'default'
 
+      - name: Get Output
       - uses: actions/checkout@v2
-        if: steps.run_result.outputs.run_result != 'success'
-        
+        if: steps.run_result.outputs.run_result != 'success'     
       - run: echo "::set-output name=run_result::success" > run_result
 
       - name: Re-run failed job
