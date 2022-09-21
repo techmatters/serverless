@@ -90,31 +90,36 @@ jobs:
     with:
       changelog: ${{ inputs.changelog }}
 
-  deploy-teguio_colombia_staging:
+  deploy-teguio_colombia_staging: 
+    if: always()
     uses: techmatters/serverless/.github/workflows/teguio_colombia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
   
-  deploy-thailand_staging:
+  deploy-thailand_staging: 
+    if: always()
     uses: techmatters/serverless/.github/workflows/thailand_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
-  deploy-uk_staging_III:
+  deploy-uk_staging_III: 
+    if: always()
     uses: techmatters/serverless/.github/workflows/uk_staging_III.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
-  deploy-uk_staging:
+  deploy-uk_staging: 
+    if: always()
     uses: techmatters/serverless/.github/workflows/uk_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
 
-  deploy-ukraine_staging:
+  deploy-ukraine_staging: 
+    if: always()
     uses: techmatters/serverless/.github/workflows/ukraine_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
     secrets: inherit
     with:
