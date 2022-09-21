@@ -134,7 +134,7 @@ jobs:
       
       - name: Re-run failed job
         id: re-run
-        if: ${{failure() }}
+        if: ${{ failure() && always() }}
         uses: ./.github/actions/main-action
         with:
           account-sid: ${{ secrets.IN_STG_ACCOUNT_SID }}
