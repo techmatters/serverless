@@ -132,11 +132,8 @@ jobs:
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
 
-      - name: Get Timestamp
-      - id: timestamp
-        run: echo "::set-output name=timestamp::$(timestamp +%s)"
-
       - name: Restore the previous run result
+        id: restore_result
         uses: actions/cache@v2
         with:
           path: |
@@ -146,15 +143,17 @@ jobs:
             ${{ github.run_id }}-${{ github.job }}-
 
       - name: Run Result
-      - id: run_result
+        id: run_result
         run: cat run_result 2>/dev/null || echo 'default'
 
       - name: Get Output
-      - uses: actions/checkout@v2
+        id: get_output
+        uses: actions/checkout@v2    
         if: steps.run_result.outputs.run_result != 'success'
-        
-            
-      - run: echo "::set-output name=run_result::success" > run_result
+
+      - name: Get Result
+        id: get_result
+        run: echo "::set-output name=run_result::success" > run_result
 
       - name: Re-run failed job
         id: re-run
