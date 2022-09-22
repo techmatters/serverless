@@ -19,15 +19,6 @@ runs:
       with:
         ssm_parameter: "STG_LINE_TH_CHANNEL_ACCESS_TOKEN"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
-    - name: Add LINE_FLEX_FLOW_SID
-      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
-      shell: bash
-    - name: Add LINE_CHANNEL_SECRET
-      run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
-      shell: bash
-    - name: Add LINE_CHANNEL_ACCESS_TOKEN
-      run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
-      shell: bash
     # Set Twitter variables
     - name: Set Aselo Twitter Consumer Key
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
@@ -70,8 +61,17 @@ runs:
       with:
         ssm_parameter: "STG_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SIDD"
         env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
-
-    # Append environment variables
+   # Append LINE environment variables
+    - name: Add LINE_FLEX_FLOW_SID
+      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_SECRET
+      run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_ACCESS_TOKEN
+      run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    # Append TWITTER environment variables
     - name: Add TWITTER_CONSUMER_KEY
       run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
       shell: bash
@@ -87,8 +87,7 @@ runs:
     - name: Add TWITTER_FLEX_FLOW_SID
       run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
       shell: bash
-
-    # Append environment variables
+    # Append INSTAGRAM environment variables
     - name: Add FACEBOOK_APP_SECRET
       run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
       shell: bash
