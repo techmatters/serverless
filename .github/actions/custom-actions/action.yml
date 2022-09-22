@@ -45,3 +45,6 @@ runs:
     - name: Zambia Production release custom action
       if: github.workflow == format('Zambia Production release')
       uses: ./.github/actions/custom-actions/zambia_production_custom
+    - name: Childline ZW Staging release custom action
+      if: github.workflow == format('Childline ZW Staging release')
+      uses: ./.github/actions/custom-actions/childline_zw_staging_custom
