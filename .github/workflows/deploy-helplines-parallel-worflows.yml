@@ -109,11 +109,11 @@ jobs:
     with:
       changelog: ${{ inputs.changelog }}
 
-  # deploy-zambia_staging: 
-  #   uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
-  #   secrets: inherit
-  #   with:
-  #     changelog: ${{ inputs.changelog }} deploy-zambia_staging
+  deploy-zambia_staging: 
+    uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
+    secrets: inherit
+    with:
+      changelog: ${{ inputs.changelog }} deploy-zambia_staging
 
   deploy-zimbabwe_staging: 
     uses: techmatters/serverless/.github/workflows/zimbabwe_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_env
