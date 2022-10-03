@@ -61,8 +61,7 @@ const isCreateContactTask = (
 ) => eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED_EVENT || eventType === TASK_WRAPUP) &&
-  taskAttributes.isSurveyTask;
+  (eventType === TASK_CANCELED_EVENT || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
   if (
