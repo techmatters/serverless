@@ -3,7 +3,7 @@
  * We'll perform different actions based on the event type on each invocation.
  * As for 2021-09-17:
  *   - On task.created: external customer id is added to the task attributes.
- *   - On task.canceled: post survey janitor is invoked.
+ *   - On task.wrapup: post survey janitor is invoked.
  *   - On task.completed: post survey janitor is invoked.
  */
 
@@ -27,6 +27,7 @@ type EnvVars = {
 const TASK_CREATED_EVENT = 'task.created';
 const TASK_CANCELED_EVENT = 'task.canceled';
 const TASK_COMPLETED_EVENT = 'task.completed';
+const TASK_WRAPUP = 'task.wrapup';
 const TASK_DELETED_EVENT = 'task.deleted';
 const TASK_SYSTEM_DELETED_EVENT = 'task.system-deleted';
 
@@ -35,6 +36,7 @@ const eventTypes = [
   TASK_CREATED_EVENT,
   TASK_CANCELED_EVENT,
   TASK_COMPLETED_EVENT,
+  TASK_WRAPUP,
   TASK_DELETED_EVENT,
   TASK_SYSTEM_DELETED_EVENT,
 ] as const;
@@ -59,7 +61,7 @@ const isCreateContactTask = (
 ) => eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) &&
+  (eventType === TASK_CANCELED_EVENT || eventType === TASK_WRAPUP) &&
   taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
