@@ -59,7 +59,7 @@ runs:
     - name: Set helpline Instagram Flex Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "STG_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SIDD"
+        ssm_parameter: "STG_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SID"
         env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
    # Append LINE environment variables
     - name: Add LINE_FLEX_FLOW_SID
