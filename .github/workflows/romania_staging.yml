@@ -114,7 +114,6 @@ jobs:
           env_variable_name: "ASELO_APP_SECRET_KEY"
       # Call main-action to compile and deploy
       - name: Executing main-action
-        if: always()
         uses: ./.github/actions/main-action       
         with:
           account-sid: ${{ secrets.RO_STG_ACCOUNT_SID }}

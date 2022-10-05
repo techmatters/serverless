@@ -111,7 +111,6 @@ jobs:
           env_variable_name: "S3_BUCKET"
       # Call main-action to compile and deploy
       - name: Executing main-action
-        if: always()
         uses: ./.github/actions/main-action        
         with:
           account-sid: ${{ secrets.CO_STG_ACCOUNT_SID }}
