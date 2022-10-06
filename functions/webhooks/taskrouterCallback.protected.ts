@@ -11,7 +11,13 @@
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
+import {
+  responseWithCors,
+  bindResolve,
+  success,
+  error400,
+  error500,
+} from '@tech-matters/serverless-helpers';
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
@@ -53,6 +59,8 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
+const isTaskCreated = (eventType: EventType) => eventType === TASK_CREATED_EVENT;
+
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
@@ -87,9 +95,51 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType: eventType } = event;
-
+    const { EventType: eventType, TaskSid } = event;
     const taskAttributes = JSON.parse(event.TaskAttributes!);
+
+    if (isTaskCreated(eventType)) {
+      console.log(' ====== taskRouter Callback isTaskCreated execution start =====');
+
+      // Using the task attributes, look for the channel tied to this task
+      const client = context.getTwilioClient();
+      const workplaceSid = context.TWILIO_WORKSPACE_SID;
+      const chatServiceSid = context.CHAT_SERVICE_SID;
+
+      if (TaskSid === undefined) {
+        resolve(error400('TaskSid'));
+        return;
+      }
+      const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
+
+      const { channelSid } = JSON.parse(task.attributes);
+
+      if (channelSid === undefined) {
+        resolve(error400('channelSid'));
+        return;
+      }
+      console.log('>channelSid based on task', channelSid, TaskSid);
+
+      // Fetch channel
+      const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
+
+      // Update channel attributes
+      // const previousAttributes = JSON.parse(channel.attributes);
+      // console.log('previousAttributes', typeof previousAttributes, previousAttributes)
+
+      // const newAttributes = {...previousAttributes, taskSid:TaskSid}
+      // console.log('newAttributes', typeof newAttributes, newAttributes)
+
+      const updatedChannel = await channel.update({
+        attributes: JSON.stringify({
+          ...JSON.parse(channel.attributes),
+          taskSid: task.sid,
+        }),
+      });
+      console.log('updatedChannel', typeof updatedChannel.attributes, updatedChannel.attributes);
+
+      console.log(' ====== taskRouter Callback isTaskCreated execution ends =====');
+    }
 
     if (isCreateContactTask(eventType, taskAttributes)) {
       // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
