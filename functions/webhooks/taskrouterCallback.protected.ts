@@ -99,9 +99,6 @@ export const handler = async (
     const taskAttributes = JSON.parse(event.TaskAttributes!);
 
     if (isTaskCreated(eventType)) {
-      console.log(' ====== taskRouter Callback isTaskCreated execution start =====');
-
-      // Using the task attributes, look for the channel tied to this task
       const client = context.getTwilioClient();
       const workplaceSid = context.TWILIO_WORKSPACE_SID;
       const chatServiceSid = context.CHAT_SERVICE_SID;
@@ -113,32 +110,20 @@ export const handler = async (
       const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
 
       const { channelSid } = JSON.parse(task.attributes);
-
       if (channelSid === undefined) {
         resolve(error400('channelSid'));
         return;
       }
-      console.log('>channelSid based on task', channelSid, TaskSid);
 
-      // Fetch channel
+      // Fetch channel to update with a taskId
       const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
 
-      // Update channel attributes
-      // const previousAttributes = JSON.parse(channel.attributes);
-      // console.log('previousAttributes', typeof previousAttributes, previousAttributes)
-
-      // const newAttributes = {...previousAttributes, taskSid:TaskSid}
-      // console.log('newAttributes', typeof newAttributes, newAttributes)
-
-      const updatedChannel = await channel.update({
+      await channel.update({
         attributes: JSON.stringify({
           ...JSON.parse(channel.attributes),
           taskSid: task.sid,
         }),
       });
-      console.log('updatedChannel', typeof updatedChannel.attributes, updatedChannel.attributes);
-
-      console.log(' ====== taskRouter Callback isTaskCreated execution ends =====');
     }
 
     if (isCreateContactTask(eventType, taskAttributes)) {

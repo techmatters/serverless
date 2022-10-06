@@ -39,27 +39,45 @@ export const handler = TokenValidator(
       }
 
       const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
-
-      // const updateChannel = client.chat
-      //   .services(chatServiceSid)
-      //   .channels(channelSid)
-      //   .update(channel);
-
-      // await Promise.resolve(updateChannel);
-
       const channelAttributes = JSON.parse(channel.attributes);
 
-      // const task = client.taskrouter
-      //   .workspaces(workplaceSid)
-      //   .tasks(channelAttributes.taskSid)
-      //   .fetch();
+      // Fetch the Task
+      const task = await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(channelAttributes.taskSid)
+        .fetch();
 
-      // await Promise.resolve(task);
+      // Error handling
+      if (['canceled', 'completed', 'wrapping'].includes(task.assignmentStatus)) {
+        throw new Error(
+          `Task SID ${channelAttributes.taskSid} is already in ${task.assignmentStatus} state.`,
+        );
+      }
+
+      const taskUpdate = {
+        assignmentStatus: task.assignmentStatus,
+      };
+
+      switch (task.assignmentStatus) {
+        case 'pending':
+          break;
+        case 'reserved':
+          taskUpdate.assignmentStatus = 'canceled';
+          break;
+        case 'assigned':
+          taskUpdate.assignmentStatus = 'wrapping';
+          break;
+        default:
+      }
+
+      await client.taskrouter
+        .workspaces(workplaceSid)
+        .tasks(channelAttributes.taskSid)
+        .update(taskUpdate);
       console.log('>> channelAttributes', channelAttributes);
       const msg = 'end chat function is up and running!';
 
       resolve(success(msg));
-      console.log(' ====== endChat execution ends =====');
     } catch (err: any) {
       resolve(error500(err));
     }
