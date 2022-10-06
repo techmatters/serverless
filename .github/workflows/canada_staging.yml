@@ -4,7 +4,7 @@ name: Kids Help Phone Staging release
 
 # Controls when the action will run.
 on:
-  workflow_dispatch
+  workflow_dispatch:
   
   workflow_call: 
     inputs:
