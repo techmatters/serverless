@@ -74,7 +74,17 @@ export const handler = TokenValidator(
         .workspaces(workplaceSid)
         .tasks(channelAttributes.taskSid)
         .update(taskUpdate);
-      console.log('>> channelAttributes', channelAttributes);
+        
+      await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .messages.create({
+          body: 'User left the chat. Thank you for reaching out. Please contact us again if you need more help.',
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+
       const msg = 'end chat function is up and running!';
 
       resolve(success(msg));
