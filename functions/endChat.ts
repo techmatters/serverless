@@ -74,7 +74,7 @@ export const handler = TokenValidator(
         .workspaces(workplaceSid)
         .tasks(channelAttributes.taskSid)
         .update(taskUpdate);
-        
+
       await context
         .getTwilioClient()
         .chat.services(context.CHAT_SERVICE_SID)
