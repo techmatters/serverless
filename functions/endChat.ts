@@ -24,24 +24,23 @@ export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
-    console.log(' ====== endChat execution starts =====');
+    console.log(' ------ endChat execution starts -----');
 
     try {
       const client = context.getTwilioClient();
       const chatServiceSid = context.CHAT_SERVICE_SID;
       const workplaceSid = context.TWILIO_WORKSPACE_SID;
 
+      // Use the channel sid to gather taskSid
       const { channelSid } = event;
-
       if (channelSid === undefined) {
         resolve(error400('ChannelSid'));
         return;
       }
-
       const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
-      // Fetch the Task
+      // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
@@ -49,15 +48,13 @@ export const handler = TokenValidator(
 
       // Error handling
       if (['canceled', 'completed', 'wrapping'].includes(task.assignmentStatus)) {
-        throw new Error(
-          `Task SID ${channelAttributes.taskSid} is already in ${task.assignmentStatus} state.`,
-        );
+        throw new Error(`Task ${channelAttributes.taskSid} is in ${task.assignmentStatus} state.`);
       }
 
+      // Determine the assignmentStatus based on the current status to update
       const taskUpdate = {
         assignmentStatus: task.assignmentStatus,
       };
-
       switch (task.assignmentStatus) {
         case 'pending':
           break;
@@ -75,12 +72,13 @@ export const handler = TokenValidator(
         .tasks(channelAttributes.taskSid)
         .update(taskUpdate);
 
+      // Send a Message
       await context
         .getTwilioClient()
         .chat.services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .messages.create({
-          body: 'User left the chat. Thank you for reaching out. Please contact us again if you need more help.',
+          body: 'User left the conversation.',
           from: 'Bot',
           xTwilioWebhookEnabled: 'true',
         });
