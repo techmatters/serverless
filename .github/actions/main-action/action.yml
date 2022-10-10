@@ -53,6 +53,9 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
+  helpline-name:
+    description: 'Helpline name'
+    required: true
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
@@ -101,6 +104,8 @@ runs:
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
+      with:
+        helpline-name: ${{ inputs.helpline-name }}
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
