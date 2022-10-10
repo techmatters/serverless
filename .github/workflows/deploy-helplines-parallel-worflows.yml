@@ -11,6 +11,9 @@ on:
       changelog:
         description: Release Changelog - Add a comment about the changes to be included in this release.
         required: true
+      helpline-name:
+        type: string
+        required: true
 
 jobs:
   deploy-aarambh_staging:
@@ -18,108 +21,129 @@ jobs:
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'IN_STG'
 
   deploy-canada_staging: 
     uses: techmatters/serverless/.github/workflows/canada_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'CA_STG'
 
   deploy-cl_linealibre_staging: 
     uses: techmatters/serverless/.github/workflows/cl_linealibre_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'CL_STG'
 
   deploy-ecpat_philippines_staging: 
     uses: techmatters/serverless/.github/workflows/ecpat_philippines_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'PH_STG'
 
   deploy-ethiopia_staging: 
     uses: techmatters/serverless/.github/workflows/ethiopia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'ET_STG'
 
   deploy-flex2_staging: 
     uses: techmatters/serverless/.github/workflows/flex2_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'F2_STG'
 
   deploy-jamaica_staging: 
     uses: techmatters/serverless/.github/workflows/jamaica_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'JM_STG'
 
   deploy-malawi_staging: 
     uses: techmatters/serverless/.github/workflows/malawi_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'MW_STG'
 
   deploy-romania_staging: 
     uses: techmatters/serverless/.github/workflows/romania_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'RO_STG'
 
   deploy-safernet_staging: 
     uses: techmatters/serverless/.github/workflows/safernet_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'BR_STG'
 
   deploy-south_africa_staging: 
     uses: techmatters/serverless/.github/workflows/south_africa_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'ZA_STG'
 
   deploy-teguio_colombia_staging: 
     uses: techmatters/serverless/.github/workflows/teguio_colombia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'CO_STG'
   
   deploy-thailand_staging: 
     uses: techmatters/serverless/.github/workflows/thailand_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'TH_STG'
+      
 
   deploy-uk_staging_III: 
     uses: techmatters/serverless/.github/workflows/uk_staging_III.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'UK_STG_III'
+      
 
   deploy-uk_staging: 
     uses: techmatters/serverless/.github/workflows/uk_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'UK_STG'
+      
 
   deploy-ukraine_staging: 
     uses: techmatters/serverless/.github/workflows/ukraine_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'UKR_STG'
 
-  deploy-zambia_staging: 
-    uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }} deploy-zambia_staging
+  # deploy-zambia_staging: 
+  #   uses: techmatters/serverless/.github/workflows/zambia_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }} deploy-zambia_staging
+  #     helpline-name: 'ZM_STG'
 
   deploy-zimbabwe_staging: 
     uses: techmatters/serverless/.github/workflows/zimbabwe_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      helpline-name: 'ZW_STG'
 
   # Send Slack notifying success
   send-slack-message:

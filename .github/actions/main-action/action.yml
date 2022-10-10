@@ -104,8 +104,12 @@ runs:
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
+    # Run custom action to perform per-helpline based actions for parallel deploy
+    - name: Execute custom action (if any)
+      if: github.workflow == format('Deploy Serverless to all Helpline Staging Environments')
+      uses: ./.github/actions/custom-actions
       with:
-        helpline-name: ${{ inputs.helpline-name }}
+        helpline-name: ${{ inputs.helpline-name }}    
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
