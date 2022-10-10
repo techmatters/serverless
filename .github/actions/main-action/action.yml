@@ -105,7 +105,7 @@ runs:
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
       with:
-        helpline-name: ${{ inputs.helpline-name }}
+        helpline-name: 'IN_STG'
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
