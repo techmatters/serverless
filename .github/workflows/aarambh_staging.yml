@@ -109,6 +109,12 @@ jobs:
         with:
           ssm_parameter: "REGION"
           env_variable_name: "AWS_REGION"
+      # Call custom action
+      - name: Custom Action
+        uses: ./.github/actions/custom-actions/aarambh_staging_custom
+        # with:
+        #   ssm_parameter: "REGION"
+        #   env_variable_name: "AWS_REGION"
       - name: Set S3 bucket name where Aselo documents are stored
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
