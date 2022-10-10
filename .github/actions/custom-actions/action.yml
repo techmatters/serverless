@@ -8,9 +8,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Echo helpline-name
+      uses: ./.github/actions/custom-actions/aarambh_staging_custom
+      run:  echo ${{ inputs.helpline-name }}
     - name: Aarambh Staging release custom action
       if: env.HELPLINE_NAME == 'IN_STG'
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
+      run:  echo ${{ inputs.helpline-name }}
     - name: Aarambh Production release custom action
       if: github.workflow == format('Aarambh Production release')
       uses: ./.github/actions/custom-actions/aarambh_production_custom
