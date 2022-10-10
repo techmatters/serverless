@@ -1,16 +1,9 @@
 name: 'Execute per-helpline custom action'
 description: Compound 'routing' action to load custom deployment actions for the helpline being deployed
-
-on:
-  workflow_call:
-    inputs:
-      changelog:
-        description: Release Changelog - Add a comment about the changes to be included in this release.
-        required: true
-        type: string
-      helpline-name:
-        type: string
-        required: true
+inputs:
+  helpline-name:
+    type: string
+    required: true
 
 runs:
   using: "composite"
