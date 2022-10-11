@@ -11,13 +11,7 @@
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import {
-  responseWithCors,
-  bindResolve,
-  success,
-  error400,
-  error500,
-} from '@tech-matters/serverless-helpers';
+import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
@@ -104,15 +98,13 @@ export const handler = async (
       const chatServiceSid = context.CHAT_SERVICE_SID;
 
       if (TaskSid === undefined) {
-        resolve(error400('TaskSid'));
-        return;
+        throw new Error('TaskSid missing in event object');
       }
       const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
 
       const { channelSid } = JSON.parse(task.attributes);
       if (channelSid === undefined) {
-        resolve(error400('channelSid'));
-        return;
+        throw new Error('channelSid is not present.');
       }
 
       // Fetch channel to update with a taskId
