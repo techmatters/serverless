@@ -111,12 +111,6 @@ jobs:
         with:
           ssm_parameter: "STG_TWILIO_BR_S3_BUCKET_DOCS"
           env_variable_name: "S3_BUCKET"
-      # Call custom action
-      - name: Set helpline-name for custom-action
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "BR_STG"
-          env_variable_name: "HELPLINE_NAME"
       # Call main-action to compile and deploy
       - name: Executing main-action
         uses: ./.github/actions/main-action        
@@ -138,6 +132,6 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-          helpline-name: $HELPLINE_NAME
+          helpline-name: 'IN_STG'
 
        
