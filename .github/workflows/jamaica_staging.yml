@@ -115,7 +115,7 @@ jobs:
       - name: Set helpline-name for custom-action
         uses: "marvinpinto/action-inject-ssm-secrets@latest"
         with:
-          ssm_parameter: "HELPLINE_NAME"
+          ssm_parameter: "JM_STG"
           env_variable_name: "HELPLINE_NAME"
       # Call main-action to compile and deploy
       - name: Executing main-action
@@ -138,6 +138,6 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
-          helpline-name: 'JM_STG'
+          helpline-name: $HELPLINE_NAME
 
        
