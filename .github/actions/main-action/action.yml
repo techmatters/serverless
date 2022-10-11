@@ -100,12 +100,13 @@ runs:
           S3_BUCKET=${{ inputs.s3-bucket }}
           AWS_REGION=${{ inputs.aws-region }}
           TWILIO_SERVERLESS_API_CONCURRENCY=1
-          HELPLINE_NAME= ${{inputs.helpline-name}}
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
+      with:
+        helpline-name: ${{inputs.helpline-name}}
     - name: Echo helpline-name
       run:  echo ${{ inputs.helpline-name }}
       shell: bash
