@@ -111,9 +111,6 @@ jobs:
         with:
           ssm_parameter: "STG_TWILIO_ZM_S3_BUCKET_DOCS"
           env_variable_name: "S3_BUCKET"
-      # # Call custom action
-      # - name: Executing custom-action
-      #   uses: ./.github/actions/custom-actions/zambia_staging_custom
         
       # Call main-action to compile and deploy
       - name: Executing main-action
