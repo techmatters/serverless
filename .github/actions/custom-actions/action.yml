@@ -2,6 +2,7 @@ name: 'Execute per-helpline custom action'
 description: Compound 'routing' action to load custom deployment actions for the helpline being deployed
 inputs:
   helpline-name:
+    description: 'The identifier in the format "<short helpline>-<short env>" used for this helpline'
     type: string
     required: true
 
@@ -9,7 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: Aarambh Staging release custom action
-      if: inputs.helpline-name == 'IN_STG'
+      if: inputs.helpline-name == format('IN_STG')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
     - name: Aarambh Production release custom action
       if: github.workflow == format('Aarambh Production release')
@@ -21,28 +22,28 @@ runs:
       if: github.workflow == format('Aselo Beta release')
       uses: ./.github/actions/custom-actions/aselo_beta_custom
     - name: SafeSpot Staging release custom action
-      if: inputs.helpline-name == 'JM_STG'
+      if: inputs.helpline-name == format('JM_STG')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
     - name: SafeSpot Production release custom action
       if: github.workflow == format('SafeSpot Production release')
       uses: ./.github/actions/custom-actions/jamaica_production_custom
     - name: Malawi Staging release custom action
-      if: inputs.helpline-name == 'MW_STG'
+      if: inputs.helpline-name == format('MW_STG')
       uses: ./.github/actions/custom-actions/malawi_staging_custom
     - name: Malawi Production release custom action
       if: github.workflow == format('Malawi Production release')
       uses: ./.github/actions/custom-actions/malawi_production_custom
     - name: Safernet Staging release custom action
-      if: inputs.helpline-name == 'BR_STG'
+      if: inputs.helpline-name == format('BR_STG')
       uses: ./.github/actions/custom-actions/safernet_staging_custom
     - name: Safernet Production release custom action
       if: github.workflow == format('SaferNet Production release')
       uses: ./.github/actions/custom-actions/safernet_production_custom
     - name: TeGuio Colombia Staging release custom action
-      if: inputs.helpline-name == 'CO_STG'
+      if: inputs.helpline-name == format('CO_STG')
       uses: ./.github/actions/custom-actions/teguio_staging_custom
     - name: Zambia Staging release custom action
-      if: inputs.helpline-name == 'ZM_STG'
+      if: inputs.helpline-name == format('ZM_STG')
       uses: ./.github/actions/custom-actions/zambia_staging_custom
     - name: Zambia Production release custom action
       if: github.workflow == format('Zambia Production release')
