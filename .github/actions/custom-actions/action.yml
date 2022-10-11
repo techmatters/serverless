@@ -1,5 +1,10 @@
 name: 'Execute per-helpline custom action'
 description: Compound 'routing' action to load custom deployment actions for the helpline being deployed
+inputs:
+  helpline-identifier:
+    description: 'The identifier in the format "<short helpline>-<short env>"" used for this helpline (e.g. "AS_DEV")'
+    required: true
+    type: string
 runs:
   using: "composite"
   steps:
@@ -13,7 +18,7 @@ runs:
       if: github.workflow == format('Aarambh Production release')
       uses: ./.github/actions/custom-actions/aarambh_production_custom
     - name: Aselo Development release custom action
-      if: github.workflow == format('Aselo Development release')
+      if: inputs.helpline-identifier == format('AS_DEV')
       uses: ./.github/actions/custom-actions/aselo_development_custom
     - name: Aselo Beta release custom action
       if: github.workflow == format('Aselo Beta release')
