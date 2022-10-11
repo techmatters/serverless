@@ -15,7 +15,6 @@ type EnvVars = {
 };
 
 export type Body = {
-  taskSid?: string;
   channelSid?: string;
   request: { cookies: {}; headers: {} };
 };
@@ -28,8 +27,6 @@ export const handler = TokenValidator(
 
     try {
       const client = context.getTwilioClient();
-      const chatServiceSid = context.CHAT_SERVICE_SID;
-      const workplaceSid = context.TWILIO_WORKSPACE_SID;
 
       // Use the channel sid to gather taskSid
       const { channelSid } = event;
@@ -37,7 +34,10 @@ export const handler = TokenValidator(
         resolve(error400('ChannelSid'));
         return;
       }
-      const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
+      const channel = await client.chat
+        .services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
       // Fetch the Task to close
@@ -46,17 +46,13 @@ export const handler = TokenValidator(
         .tasks(channelAttributes.taskSid)
         .fetch();
 
-      // Error handling
-      if (['canceled', 'completed', 'wrapping'].includes(task.assignmentStatus)) {
-        throw new Error(`Task ${channelAttributes.taskSid} is in ${task.assignmentStatus} state.`);
-      }
-
       // Determine the assignmentStatus based on the current status to update
       const taskUpdate = {
         assignmentStatus: task.assignmentStatus,
       };
       switch (task.assignmentStatus) {
         case 'pending':
+          taskUpdate.assignmentStatus = 'canceled';
           break;
         case 'reserved':
           taskUpdate.assignmentStatus = 'canceled';
@@ -68,7 +64,7 @@ export const handler = TokenValidator(
       }
 
       await client.taskrouter
-        .workspaces(workplaceSid)
+        .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
         .update(taskUpdate);
 
