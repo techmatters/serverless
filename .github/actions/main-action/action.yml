@@ -53,6 +53,10 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
+  helpline-name:
+    description: 'The identifier in the format "<short helpline>-<short env>" used for this helpline'
+    required: true
+    type: string
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
@@ -95,11 +99,17 @@ runs:
           ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
           S3_BUCKET=${{ inputs.s3-bucket }}
           AWS_REGION=${{ inputs.aws-region }}
+          TWILIO_SERVERLESS_API_CONCURRENCY=1
           EOT
       shell: bash
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
+      with:
+        helpline-name: ${{ inputs.helpline-name }}
+    - name: Echo helpline-name
+      run:  echo ${{ inputs.helpline-name }}
+      shell: bash
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci

@@ -57,7 +57,7 @@ jobs:
       # Upload artifacts
       # TODO: this is not working and cant tell why :(
       - uses: actions/upload-artifact@v2
-        if: ${{ always() }}
+        
         with:
           name: test-artifacts
           path: flex-plugins/e2e-tests/test-results
