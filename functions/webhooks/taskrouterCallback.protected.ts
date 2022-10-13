@@ -12,39 +12,28 @@
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
+import {
+  TaskrouterListener,
+  EventType,
+  EventFields,
+  TASK_CREATED,
+  TASK_CANCELED,
+  TASK_WRAPUP,
+  TASK_DELETED,
+  TASK_SYSTEM_DELETED,
+} from '@tech-matters/serverless-helpers/taskrouter';
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
+const LISTENERS_FOLDER = 'taskrouterListeners/';
+
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
-};
-
-const TASK_CREATED_EVENT = 'task.created';
-const TASK_CANCELED_EVENT = 'task.canceled';
-const TASK_COMPLETED_EVENT = 'task.completed';
-const TASK_DELETED_EVENT = 'task.deleted';
-const TASK_SYSTEM_DELETED_EVENT = 'task.system-deleted';
-
-// Note: there are more of this, we just list the ones we care about. https://www.twilio.com/docs/taskrouter/api/event/reference
-const eventTypes = [
-  TASK_CREATED_EVENT,
-  TASK_CANCELED_EVENT,
-  TASK_COMPLETED_EVENT,
-  TASK_DELETED_EVENT,
-  TASK_SYSTEM_DELETED_EVENT,
-] as const;
-
-type EventType = typeof eventTypes[number];
-
-export type Body = {
-  EventType: EventType;
-  TaskSid?: string;
-  TaskAttributes?: string;
 };
 
 const wait = (ms: number): Promise<void> => {
@@ -56,18 +45,17 @@ const wait = (ms: number): Promise<void> => {
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
-) => eventType === TASK_CREATED_EVENT && !taskAttributes.isContactlessTask;
+) => eventType === TASK_CREATED && !taskAttributes.isContactlessTask;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED_EVENT || eventType === TASK_COMPLETED_EVENT) &&
-  taskAttributes.isSurveyTask;
+  (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
   if (
     !(
-      eventType === TASK_DELETED_EVENT ||
-      eventType === TASK_SYSTEM_DELETED_EVENT ||
-      eventType === TASK_CANCELED_EVENT
+      eventType === TASK_DELETED ||
+      eventType === TASK_SYSTEM_DELETED ||
+      eventType === TASK_CANCELED
     )
   )
     return false;
@@ -78,17 +66,42 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelT
   return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
 };
 
+/**
+ * Fetch all taskrouter listeners from the listeners folder
+ */
+const getListeners = () => {
+  const functionsMap = Runtime.getFunctions();
+  const keys = Object.keys(functionsMap).filter((name) => name.includes(LISTENERS_FOLDER));
+  const paths = keys.map((key) => functionsMap[key].path);
+  return paths.map((path) => require(path) as TaskrouterListener);
+};
+
+const runTaskrouterListeners = async (
+  context: Context<EnvVars>,
+  event: EventFields,
+  callback: ServerlessCallback,
+) => {
+  const listeners = getListeners();
+
+  await Promise.all(
+    listeners
+      .filter((listener) => listener.shouldHandle(event))
+      .map((listener) => listener.handleEvent(context, event, callback)),
+  );
+};
+
 export const handler = async (
   context: Context<EnvVars>,
-  event: Body,
+  event: EventFields,
   callback: ServerlessCallback,
 ) => {
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType: eventType } = event;
+    await runTaskrouterListeners(context, event, callback);
 
+    const { EventType: eventType } = event;
     const taskAttributes = JSON.parse(event.TaskAttributes!);
 
     if (isCreateContactTask(eventType, taskAttributes)) {
