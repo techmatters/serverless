@@ -53,6 +53,8 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
+const isTaskCreated = (eventType: EventType) => eventType === TASK_CREATED_EVENT;
+
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
@@ -87,7 +89,8 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType: eventType } = event;
+    const { EventType: eventType, TaskSid } = event;
+    const taskAttributes = JSON.parse(event.TaskAttributes!);
 
     if (isTaskCreated(eventType)) {
       const client = context.getTwilioClient();
@@ -95,15 +98,13 @@ export const handler = async (
       const chatServiceSid = context.CHAT_SERVICE_SID;
 
       if (TaskSid === undefined) {
-        resolve(error400('TaskSid'));
-        return;
+        throw new Error('TaskSid is undefined')
       }
       const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
 
       const { channelSid } = JSON.parse(task.attributes);
       if (channelSid === undefined) {
-        resolve(error400('channelSid'));
-        return;
+        throw new Error('channelSid is undefined')
       }
 
       // Fetch channel to update with a taskId
