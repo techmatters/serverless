@@ -11,13 +11,7 @@
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import {
-  responseWithCors,
-  bindResolve,
-  success,
-  error400,
-  error500,
-} from '@tech-matters/serverless-helpers';
+import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
@@ -59,8 +53,6 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
-const isTaskCreated = (eventType: EventType) => eventType === TASK_CREATED_EVENT;
-
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
@@ -95,8 +87,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType: eventType, TaskSid } = event;
-    const taskAttributes = JSON.parse(event.TaskAttributes!);
+    const { EventType: eventType } = event;
 
     if (isTaskCreated(eventType)) {
       const client = context.getTwilioClient();
@@ -104,28 +95,26 @@ export const handler = async (
       const chatServiceSid = context.CHAT_SERVICE_SID;
 
       if (TaskSid === undefined) {
-        throw new Error('TaskSid is undefined')
+        resolve(error400('TaskSid'));
+        return;
       }
       const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
 
-      console.log('>task trc', task)
       const { channelSid } = JSON.parse(task.attributes);
       if (channelSid === undefined) {
-        throw new Error('channelSid is undefined')
+        resolve(error400('channelSid'));
+        return;
       }
 
       // Fetch channel to update with a taskId
       const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
 
-      const newChannel = await channel.update({
+      await channel.update({
         attributes: JSON.stringify({
           ...JSON.parse(channel.attributes),
           taskSid: task.sid,
         }),
       });
-
-      console.log('>newChannel trc', newChannel)
-
     }
 
     if (isCreateContactTask(eventType, taskAttributes)) {
