@@ -39,34 +39,38 @@ export const handler = TokenValidator(
         .channels(channelSid)
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
+      console.log('>channel', channelAttributes)
 
       // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
         .fetch();
+        console.log('>task', task)
 
       // Determine the assignmentStatus based on the current status to update
       const taskUpdate = {
         assignmentStatus: task.assignmentStatus,
       };
       switch (task.assignmentStatus) {
-        case 'pending':
-          taskUpdate.assignmentStatus = 'canceled';
-          break;
         case 'reserved':
           taskUpdate.assignmentStatus = 'canceled';
           break;
         case 'assigned':
           taskUpdate.assignmentStatus = 'wrapping';
           break;
+        case 'pending':
+          taskUpdate.assignmentStatus = 'canceled';
+          break;
         default:
       }
 
-      await client.taskrouter
+      const updatedTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
         .update(taskUpdate);
+      
+      console.log('updatedTask', updatedTask)
 
       // Send a Message
       await context
@@ -78,6 +82,9 @@ export const handler = TokenValidator(
           from: 'Bot',
           xTwilioWebhookEnabled: 'true',
         });
+
+        console.log('message sent')
+      
 
       const msg = 'end chat function is up and running!';
 

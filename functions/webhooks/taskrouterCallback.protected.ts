@@ -104,26 +104,28 @@ export const handler = async (
       const chatServiceSid = context.CHAT_SERVICE_SID;
 
       if (TaskSid === undefined) {
-        resolve(error400('TaskSid'));
-        return;
+        throw new Error('TaskSid is undefined')
       }
       const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
 
+      console.log('>task trc', task)
       const { channelSid } = JSON.parse(task.attributes);
       if (channelSid === undefined) {
-        resolve(error400('channelSid'));
-        return;
+        throw new Error('channelSid is undefined')
       }
 
       // Fetch channel to update with a taskId
       const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
 
-      await channel.update({
+      const newChannel = await channel.update({
         attributes: JSON.stringify({
           ...JSON.parse(channel.attributes),
           taskSid: task.sid,
         }),
       });
+
+      console.log('>newChannel trc', newChannel)
+
     }
 
     if (isCreateContactTask(eventType, taskAttributes)) {
