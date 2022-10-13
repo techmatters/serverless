@@ -113,8 +113,8 @@ jobs:
      
       
 
-  deploy-ukraine_staging: 
-    uses: techmatters/serverless/.github/workflows/ukraine_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
+  deploy-hungary_staging:
+    uses: techmatters/serverless/.github/workflows/hungary_staging.yml@CHI-1259_workflow_to_deploy_serverless_helpline_stg_norerun
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
