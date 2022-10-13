@@ -199,7 +199,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event2: Body = {
@@ -207,7 +206,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: undefined,
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event3: Body = {
@@ -215,7 +213,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: undefined,
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event4: Body = {
@@ -223,7 +220,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: undefined,
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event5: Body = {
@@ -231,7 +227,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: undefined,
       request: { cookies: {}, headers: {} },
     };
 
@@ -254,7 +249,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WK offline worker',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -263,7 +257,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -291,7 +284,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -300,7 +292,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -330,7 +321,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'WARM',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const before = Array.from(tasks);
@@ -366,7 +356,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
@@ -409,7 +398,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WK offline worker',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -418,7 +406,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -453,7 +440,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
