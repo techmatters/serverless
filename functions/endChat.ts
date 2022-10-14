@@ -78,7 +78,8 @@ export const handler = TokenValidator(
           from: 'Bot',
           xTwilioWebhookEnabled: 'true',
         });
-      return resolve(success(JSON.stringify({ message: 'End Chat OK!' })))
+      resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
+      return;
     } catch (err: any) {
       resolve(error500(err));
     }
