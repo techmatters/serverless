@@ -15,6 +15,7 @@ import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
+import type { AddTaskSidToChannelAttributes } from '../helpers/addTaskSidToChannelAttributes.private';
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
@@ -53,8 +54,6 @@ const wait = (ms: number): Promise<void> => {
   });
 };
 
-const isTaskCreated = (eventType: EventType) => eventType === TASK_CREATED_EVENT;
-
 const isCreateContactTask = (
   eventType: EventType,
   taskAttributes: { isContactlessTask?: boolean },
@@ -89,34 +88,8 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { EventType: eventType, TaskSid } = event;
+    const { EventType: eventType } = event;
     const taskAttributes = JSON.parse(event.TaskAttributes!);
-
-    if (isTaskCreated(eventType)) {
-      const client = context.getTwilioClient();
-      const workplaceSid = context.TWILIO_WORKSPACE_SID;
-      const chatServiceSid = context.CHAT_SERVICE_SID;
-
-      if (TaskSid === undefined) {
-        throw new Error('TaskSid is undefined')
-      }
-      const task = await client.taskrouter.workspaces(workplaceSid).tasks(TaskSid).fetch();
-
-      const { channelSid } = JSON.parse(task.attributes);
-      if (channelSid === undefined) {
-        throw new Error('channelSid is undefined')
-      }
-
-      // Fetch channel to update with a taskId
-      const channel = await client.chat.services(chatServiceSid).channels(channelSid).fetch();
-
-      await channel.update({
-        attributes: JSON.stringify({
-          ...JSON.parse(channel.attributes),
-          taskSid: task.sid,
-        }),
-      });
-    }
 
     if (isCreateContactTask(eventType, taskAttributes)) {
       // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
@@ -134,6 +107,14 @@ export const handler = async (
           }),
         ),
       );
+
+      // This helper attaches the taskSid to channel attributes. This is used by endChat serverless function used by webchat
+      const addTaskHandlerPath =
+        Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
+      const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
+        .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
+      await addTaskSidToChannelAttributes(context, event);
+
       return;
     }
 
