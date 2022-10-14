@@ -23,7 +23,6 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(TaskSid)
     .fetch();
-  console.log('>task in trc', task);
 
   const { channelSid } = JSON.parse(task.attributes);
 
@@ -36,7 +35,6 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
       taskSid: task.sid,
     }),
   });
-  console.log('>updatedTask in trc', updatedChannel);
 
   return { message: 'Channel is updated', updatedChannel };
 };

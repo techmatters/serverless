@@ -87,9 +87,6 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
-  console.log('> trc event.TaskSid', event.TaskSid);
-  Object.entries(event).forEach(([k, v]) => console.log(k, v));
-
   try {
     const { EventType: eventType } = event;
     const taskAttributes = JSON.parse(event.TaskAttributes!);

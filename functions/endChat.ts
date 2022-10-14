@@ -8,6 +8,7 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -19,8 +20,6 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
-type TaskStatus = 'pending' | 'reserved' | 'assigned' | 'canceled' | 'completed' | 'wrapping';
-
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
@@ -30,7 +29,7 @@ export const handler = TokenValidator(
     try {
       const client = context.getTwilioClient();
 
-      // Use the channel sid to gather taskSid
+      // Use the channelSid to fetch taskSid
       const { channelSid } = event;
       if (channelSid === undefined) {
         resolve(error400('ChannelSid'));
@@ -42,8 +41,6 @@ export const handler = TokenValidator(
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
-      console.log('>endCHat channelAttributes', channelAttributes);
-
       // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -51,7 +48,7 @@ export const handler = TokenValidator(
         .fetch();
 
       // Update the task assignmentStatus
-      const updateAssignmentStatus = (assignmentStatus: TaskStatus) =>
+      const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
         client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(channelAttributes.taskSid)
