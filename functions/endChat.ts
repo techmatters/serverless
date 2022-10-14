@@ -19,6 +19,8 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+type TaskStatus = 'pending' | 'reserved' | 'assigned' | 'canceled' | 'completed' | 'wrapping';
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
@@ -40,33 +42,36 @@ export const handler = TokenValidator(
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
+      console.log('>endCHat channelAttributes', channelAttributes);
+
       // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
         .fetch();
 
-      // Determine the assignmentStatus based on the current status to update
-      const taskUpdate = {
-        assignmentStatus: task.assignmentStatus,
-      };
+      // Update the task assignmentStatus
+      const updateAssignmentStatus = (assignmentStatus: TaskStatus) =>
+        client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(channelAttributes.taskSid)
+          .update({ assignmentStatus });
+
       switch (task.assignmentStatus) {
-        case 'reserved':
-          taskUpdate.assignmentStatus = 'canceled';
+        case 'reserved': {
+          await updateAssignmentStatus('canceled');
           break;
-        case 'assigned':
-          taskUpdate.assignmentStatus = 'wrapping';
+        }
+        case 'pending': {
+          await updateAssignmentStatus('canceled');
           break;
-        case 'pending':
-          taskUpdate.assignmentStatus = 'canceled';
+        }
+        case 'assigned': {
+          await updateAssignmentStatus('wrapping');
           break;
+        }
         default:
       }
-
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(channelAttributes.taskSid)
-        .update(taskUpdate);
 
       // Send a Message
       await context

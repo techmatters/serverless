@@ -10,17 +10,11 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-const TASK_CREATED_EVENT = 'task.created';
-
 export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, event: Body) => {
+  console.log(' ----- addTaskSidToChannelAttributes execution starts ----- ');
   const client = context.getTwilioClient();
-  const { EventType, TaskSid } = event;
+  const { TaskSid } = event;
 
-  const isNewTask = EventType === TASK_CREATED_EVENT;
-
-  if (!isNewTask) {
-    return { message: `Event is not ${TASK_CREATED_EVENT}` };
-  }
   if (TaskSid === undefined || !TaskSid) {
     throw new Error('TaskSid missing in event object');
   }
@@ -29,20 +23,22 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(TaskSid)
     .fetch();
+  console.log('>task in trc', task);
 
   const { channelSid } = JSON.parse(task.attributes);
 
   // Fetch channel to update with a taskId
   const channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
 
-  const updatedTask = await channel.update({
+  const updatedChannel = await channel.update({
     attributes: JSON.stringify({
       ...JSON.parse(channel.attributes),
       taskSid: task.sid,
     }),
   });
+  console.log('>updatedTask in trc', updatedChannel);
 
-  return { message: 'Task updated', updatedTask };
+  return { message: 'Channel is updated', updatedChannel };
 };
 
 export type AddTaskSidToChannelAttributes = typeof addTaskSidToChannelAttributes;

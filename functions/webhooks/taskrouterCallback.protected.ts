@@ -87,6 +87,9 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
+  console.log('> trc event.TaskSid', event.TaskSid);
+  Object.entries(event).forEach(([k, v]) => console.log(k, v));
+
   try {
     const { EventType: eventType } = event;
     const taskAttributes = JSON.parse(event.TaskAttributes!);
@@ -100,6 +103,16 @@ export const handler = async (
 
       const message = `Event ${eventType} handled by /helpers/addCustomerExternalId`;
       console.log(message);
+
+      if (taskAttributes.channelType !== 'voice' && taskAttributes.channelType !== 'default') {
+        // Add taskSid to channel attr so we can end the chat from webchat client (see endChat function)
+        const addTaskHandlerPath =
+          Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
+        const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
+          .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
+        await addTaskSidToChannelAttributes(context, event);
+      }
+
       resolve(
         success(
           JSON.stringify({
@@ -107,15 +120,6 @@ export const handler = async (
           }),
         ),
       );
-
-      // This helper attaches the taskSid to channel attributes. This is used by endChat serverless function used by webchat
-      const addTaskHandlerPath =
-        Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
-      const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
-        .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
-      await addTaskSidToChannelAttributes(context, event);
-
-      return;
     }
 
     if (isCleanupPostSurvey(eventType, taskAttributes)) {
