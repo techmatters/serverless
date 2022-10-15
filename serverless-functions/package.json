@@ -10,7 +10,7 @@
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "npx tsc && twilio-run deploy --force",
-    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npx tsc & npm pack"
+    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npx tsc && npm pack"
   },
   "repository": {
     "type": "git",
