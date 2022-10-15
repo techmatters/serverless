@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios from 'axios';
 import {

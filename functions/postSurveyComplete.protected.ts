@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
+/* eslint-disable @typescript-eslint/naming-convention */
 import {
   Context,
   ServerlessCallback,
