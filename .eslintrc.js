@@ -4,6 +4,7 @@ module.exports = {
     'airbnb-typescript/base',
     'plugin:prettier/recommended',
   ],
+  plugins: ['import'],
   parserOptions: {
     project: './tsconfig.eslint.json',
     ecmaVersion: 2018,  // Allows for the parsing of modern ECMAScript features
