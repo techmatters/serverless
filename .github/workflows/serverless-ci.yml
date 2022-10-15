@@ -20,7 +20,7 @@ jobs:
     - name: Build Library (workaround while preinstall hook is broken)
       run: npm ci && npx tsc && npm pack
       working-directory: ./tech-matters-serverless-helpers-lib
-    - name: Build Library (workaround while preinstall hook is broken)
+    - name: Install Library (workaround while preinstall hook is broken)
       run: npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-3.0.3.tgz
       working-directory: ./serverless-functions
     - name: Install Packages
