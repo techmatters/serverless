@@ -28,7 +28,7 @@
   "files": [
     "lib/**/*"
   ],
-  "dependencies": {
+  "peerDependencies": {
     "@twilio-labs/serverless-runtime-types": "^2.2.3",
     "twilio-flex-token-validator": "^1.5.6"
   },
