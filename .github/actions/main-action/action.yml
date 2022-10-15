@@ -114,10 +114,12 @@ runs:
     - name: Install dependencies for the twilio functions
       run: npm ci
       shell: bash
+      working-directory: ./serverless-functions
     # Compile typescript to javascript
     - name: Transpile typescript to javascript
       run: npx tsc
       shell: bash
+      working-directory: ./serverless-functions
     # Install Twilio CLI and run deploy command
     - name: Install Twilio CLI and run deploy command
       run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=dev --force
@@ -125,11 +127,13 @@ runs:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
+      working-directory: ./serverless-functions
     - run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
+      working-directory: ./serverless-functions
     # Run the health check
     - run: node ${{ github.action_path }}/dist/index.js
       env:
