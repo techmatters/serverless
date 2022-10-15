@@ -19,7 +19,10 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install Packages
       run: npm ci
+      working-directory: ./serverless-functions
     - name: Run Lint
       run: npm run lint --if-present
+      working-directory: ./serverless-functions
     - name: Run Tests
       run: npm run test
+      working-directory: ./serverless-functions
