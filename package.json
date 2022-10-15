@@ -9,7 +9,8 @@
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
-    "tr:deploy": "npx tsc && twilio-run deploy --force"
+    "tr:deploy": "npx tsc && twilio-run deploy --force",
+    "preinstall": "cd ./tech-matters-serverless-helpers-lib && npm ci && npx tsc"
   },
   "repository": {
     "type": "git",
@@ -46,7 +47,7 @@
     "node": "^12.0"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "^3.0.3",
+    "@tech-matters/serverless-helpers": "file:./tech-matters-serverless-helpers-lib",
     "@twilio-labs/serverless-runtime-types": "^2.2.3",
     "@twilio/runtime-handler": "1.2.4",
     "aws-sdk": "^2.1199.0",
