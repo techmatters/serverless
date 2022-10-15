@@ -1,6 +1,7 @@
-import { addCustomerExternalId, Body } from '../../functions/helpers/addCustomerExternalId.private';
+import { addCustomerExternalId, Body, EnvVars } from '../../functions/helpers/addCustomerExternalId.private';
 
 import helpers from '../helpers';
+import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
 let tasks: any[] = [
   {
@@ -38,7 +39,7 @@ const workspaces: { [x: string]: any } = {
   },
 };
 
-const baseContext = {
+const baseContext: Context<EnvVars> = {
   getTwilioClient: (): any => ({
     taskrouter: {
       workspaces: (workspaceSID: string) => {
@@ -57,7 +58,6 @@ const baseContext = {
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
 
-const logSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 beforeAll(() => {
   helpers.setup({});
@@ -65,9 +65,6 @@ beforeAll(() => {
 });
 afterAll(() => {
   helpers.teardown();
-});
-afterEach(() => {
-  logSpy.mockClear();
 });
 
 test("Should log and return error (can't fetch task)", async () => {
@@ -81,7 +78,6 @@ test("Should log and return error (can't fetch task)", async () => {
 
   const result = await addCustomerExternalId(baseContext, event);
   expect(result.message).toBe(expectedError);
-  expect(logSpy).toHaveBeenCalledWith(expectedError, new Error("can't fetch this one!"));
 });
 
 test("Should log and return error (can't update task)", async () => {
@@ -95,7 +91,6 @@ test("Should log and return error (can't update task)", async () => {
 
   const result = await addCustomerExternalId(baseContext, event);
   expect(result.message).toBe(expectedError);
-  expect(logSpy).toHaveBeenCalledWith(expectedError, new Error("can't update this one!"));
 });
 
 test('Should return OK (modify live contact)', async () => {

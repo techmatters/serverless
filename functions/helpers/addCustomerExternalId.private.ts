@@ -7,7 +7,7 @@ export type Body = {
   TaskSid?: string;
 };
 
-type EnvVars = {
+export type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
 };
 
