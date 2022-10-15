@@ -1,4 +1,8 @@
-import { addCustomerExternalId, Body, EnvVars } from '../../functions/helpers/addCustomerExternalId.private';
+import {
+  addCustomerExternalId,
+  Body,
+  EnvVars,
+} from '../../functions/helpers/addCustomerExternalId.private';
 
 import helpers from '../helpers';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
@@ -57,7 +61,6 @@ const baseContext: Context<EnvVars> = {
 };
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
-
 
 beforeAll(() => {
   helpers.setup({});
