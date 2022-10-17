@@ -3,6 +3,11 @@ import { handler as adjustChatCapacity, Body } from '../functions/adjustChatCapa
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 const runTestSuite = (maxMessageCapacity: number | string) => {
   let workerChannel = {
     taskChannelUniqueName: 'chat',
@@ -63,6 +68,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     PATH: 'PATH',
     SERVICE_SID: undefined,
     ENVIRONMENT_SID: undefined,
+    TWILIO_WORKSPACE_SID: 'TWILIO_WORKSPACE_SID',
   };
 
   describe('adjustChatCapacity', () => {

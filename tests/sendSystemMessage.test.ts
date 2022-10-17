@@ -3,6 +3,11 @@ import { handler as sendSystemMessage, Body } from '../functions/sendSystemMessa
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 const tasks: any[] = [
   {
     sid: 'task-123',
@@ -60,6 +65,8 @@ const baseContext = {
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
+  ACCOUNT_SID: 'ACCOUNT_SID, AUTH_TOKEN',
+  AUTH_TOKEN: 'ACCOUNT_SID, AUTH_TOKEN',
 };
 
 describe('sendSystemMessage', () => {

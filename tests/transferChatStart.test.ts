@@ -3,6 +3,11 @@ import { handler as transferChatStart, Body } from '../functions/transferChatSta
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 let tasks: any[] = [
   {
     sid: 'task1',

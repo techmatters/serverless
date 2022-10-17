@@ -1,11 +1,7 @@
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
 import '@twilio-labs/serverless-runtime-types';
-import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
   bindResolve,
@@ -13,11 +9,9 @@ import {
   send,
   error500,
   success,
+  functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-// eslint-disable-next-line prettier/prettier
 import type { AdjustChatCapacityType } from './adjustChatCapacity';
-
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -176,7 +170,7 @@ async function increaseChatCapacity(
   }
 }
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const client = context.getTwilioClient();
 

@@ -3,8 +3,13 @@ import { handler as getMessages, Body } from '../functions/getMessages';
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 const baseContext = {
-  getTwilioClient: jest.fn(),
+  getTwilioClient: jest.fn() as any,
   DOMAIN_NAME: 'serverless',
   PATH: 'PATH',
   SERVICE_SID: undefined,

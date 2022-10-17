@@ -1,16 +1,17 @@
 import AWS, { S3, AWSError } from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
-  Context,
-  ServerlessCallback,
-  ServerlessFunctionSignature,
-} from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
-
-const TokenValidator = require('twilio-flex-token-validator').functionValidator;
+  responseWithCors,
+  bindResolve,
+  error500,
+  success,
+  functionValidator as TokenValidator,
+} from '@tech-matters/serverless-helpers';
 
 export type Body = {
   fileName: string;
+  request: { cookies: {}; headers: {} };
 };
 
 type EnvVars = {
@@ -32,7 +33,7 @@ const deleteObject = async (s3Client: S3, deleteParams: any) => {
   });
 };
 
-export const handler: ServerlessFunctionSignature = TokenValidator(
+export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);

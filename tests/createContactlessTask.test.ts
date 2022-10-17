@@ -3,6 +3,11 @@ import { handler as createContactlessTask, Body } from '../functions/createConta
 
 import helpers, { MockedResponse } from './helpers';
 
+jest.mock('@tech-matters/serverless-helpers', () => ({
+  ...jest.requireActual('@tech-matters/serverless-helpers'),
+  functionValidator: (handlerFn: any) => handlerFn,
+}));
+
 let tasks: any[] = [];
 
 const workspaces: { [x: string]: any } = {

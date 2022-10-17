@@ -3,6 +3,7 @@ import { ServerlessCallback, TwilioResponse } from '@twilio-labs/serverless-runt
 export { default as send } from './send';
 export { default as responseWithCors } from './responseWithCors';
 export * from './resolutions';
+export * from './tokenValidator';
 
 export type ResolveFunction = (cb: ServerlessCallback) => (res: TwilioResponse) => void;
 
