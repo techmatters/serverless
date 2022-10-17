@@ -67,51 +67,41 @@ jobs:
     with:
       changelog: ${{ inputs.changelog }}
       
-
   deploy-safernet_staging: 
     uses: techmatters/serverless/.github/workflows/safernet_staging.yml@master
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
      
-
   deploy-south_africa_staging: 
     uses: techmatters/serverless/.github/workflows/south_africa_staging.yml@master
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
       
-
   deploy-teguio_colombia_staging: 
     uses: techmatters/serverless/.github/workflows/teguio_colombia_staging.yml@master
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
-      
-  
+       
   deploy-thailand_staging: 
     uses: techmatters/serverless/.github/workflows/thailand_staging.yml@master
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
       
-      
-
   deploy-uk_staging_III: 
     uses: techmatters/serverless/.github/workflows/uk_staging_III.yml@master
     secrets: inherit
     with:
-      changelog: ${{ inputs.changelog }}
-      
-      
+      changelog: ${{ inputs.changelog }}    
 
   deploy-uk_staging: 
     uses: techmatters/serverless/.github/workflows/uk_staging.yml@master
     secrets: inherit
     with:
-      changelog: ${{ inputs.changelog }}
-     
-      
+      changelog: ${{ inputs.changelog }}          
 
   deploy-hungary_staging:
     uses: techmatters/serverless/.github/workflows/hungary_staging.yml@master
@@ -119,14 +109,12 @@ jobs:
     with:
       changelog: ${{ inputs.changelog }}
      
-
   deploy-zambia_staging: 
     uses: techmatters/serverless/.github/workflows/zambia_staging.yml@master
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }} deploy-zambia_staging
  
-
   deploy-zimbabwe_staging: 
     uses: techmatters/serverless/.github/workflows/zimbabwe_staging.yml@master
     secrets: inherit
@@ -138,7 +126,7 @@ jobs:
   send-slack-message:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    needs: [deploy-aarambh_staging, deploy-canada_staging, deploy-cl_linealibre_staging, deploy-ecpat_philippines_staging, deploy-ethiopia_staging, deploy-flex2_staging, deploy-jamaica_staging, deploy-malawi_staging, deploy-romania_staging, deploy-safernet_staging, deploy-south_africa_staging, deploy-teguio_colombia_staging, deploy-thailand_staging, deploy-uk_staging_III, deploy-uk_staging, deploy-ukraine_staging, deploy-zimbabwe_staging]
+    needs: [deploy-aarambh_staging, deploy-canada_staging, deploy-cl_linealibre_staging, deploy-ecpat_philippines_staging, deploy-ethiopia_staging, deploy-flex2_staging, deploy-jamaica_staging, deploy-malawi_staging, deploy-romania_staging, deploy-safernet_staging, deploy-south_africa_staging, deploy-teguio_colombia_staging, deploy-thailand_staging, deploy-uk_staging_III, deploy-uk_staging, deploy-hungary_staging, deploy-zambia_staging, deploy-zimbabwe_staging]
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Setup credentials to access AWS for parameters
