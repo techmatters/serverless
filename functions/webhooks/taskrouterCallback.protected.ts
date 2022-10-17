@@ -15,6 +15,7 @@ import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/
 
 // eslint-disable-next-line prettier/prettier
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
+import type { AddTaskSidToChannelAttributes } from '../helpers/addTaskSidToChannelAttributes.private';
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
@@ -88,7 +89,6 @@ export const handler = async (
 
   try {
     const { EventType: eventType } = event;
-
     const taskAttributes = JSON.parse(event.TaskAttributes!);
 
     if (isCreateContactTask(eventType, taskAttributes)) {
@@ -100,6 +100,16 @@ export const handler = async (
 
       const message = `Event ${eventType} handled by /helpers/addCustomerExternalId`;
       console.log(message);
+
+      if (taskAttributes.channelType !== 'voice' && taskAttributes.channelType !== 'default') {
+        // Add taskSid to channel attr so we can end the chat from webchat client (see endChat function)
+        const addTaskHandlerPath =
+          Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
+        const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
+          .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
+        await addTaskSidToChannelAttributes(context, event);
+      }
+
       resolve(
         success(
           JSON.stringify({
@@ -107,7 +117,6 @@ export const handler = async (
           }),
         ),
       );
-      return;
     }
 
     if (isCleanupPostSurvey(eventType, taskAttributes)) {
