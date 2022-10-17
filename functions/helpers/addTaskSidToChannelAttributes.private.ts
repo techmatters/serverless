@@ -15,7 +15,7 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
   const client = context.getTwilioClient();
   const { TaskSid } = event;
 
-  if (TaskSid === undefined || !TaskSid) {
+  if (TaskSid === undefined) {
     throw new Error('TaskSid missing in event object');
   }
 

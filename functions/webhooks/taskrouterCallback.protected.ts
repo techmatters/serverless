@@ -101,7 +101,7 @@ export const handler = async (
       const message = `Event ${eventType} handled by /helpers/addCustomerExternalId`;
       console.log(message);
 
-      if (taskAttributes.channelType !== 'voice' && taskAttributes.channelType !== 'default') {
+      if (taskAttributes.channelType === 'web') {
         // Add taskSid to channel attr so we can end the chat from webchat client (see endChat function)
         const addTaskHandlerPath =
           Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
