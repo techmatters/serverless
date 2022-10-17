@@ -47,6 +47,17 @@ export const handler = TokenValidator(
         .tasks(channelAttributes.taskSid)
         .fetch();
 
+      // Send a Message
+      await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .messages.create({
+          body: 'User left the conversation.',
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+
       // Update the task assignmentStatus
       const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
         client.taskrouter
@@ -70,16 +81,6 @@ export const handler = TokenValidator(
         default:
       }
 
-      // Send a Message
-      await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .messages.create({
-          body: 'User left the conversation.',
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
       resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
       return;
     } catch (err: any) {
