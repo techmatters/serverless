@@ -1,12 +1,13 @@
 {
   "name": "@tech-matters/serverless-helpers",
-  "version": "3.0.3",
+  "version": "0.0.0",
+  "private": true,
   "description": "Helpers and utilities used by Tech Matters for our serverless functions, hosted in Twilio Serverless Toolkit",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "test": "jest --config jestconfig.json",
-    "build": "tsc"
+    "build": "tsc && npm pack"
   },
   "devDependencies": {
     "@types/jest": "^28.1.7",

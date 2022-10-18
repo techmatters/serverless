@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "test": "jest --verbose",
-    "start": "npx tsc && twilio-run --env",
-    "watch": "npx tsc && twilio-run start --live",
+    "build": "npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz && npx tsc",
+    "start": "npm run build && twilio-run --env",
+    "watch": "npm run build && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
-    "tr:deploy": "npx tsc && twilio-run deploy --force",
-    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npx tsc && npm pack"
+    "tr:deploy": "npm run build && twilio-run deploy --force",
+    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npm run build"
   },
   "repository": {
     "type": "git",
@@ -44,7 +45,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "file:../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-3.0.3.tgz",
+    "@tech-matters/serverless-helpers": "file:../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz",
     "@twilio-labs/serverless-runtime-types": "2.2.3",
     "@twilio/runtime-handler": "1.2.4",
     "@types/inquirer": "^8.2.4",

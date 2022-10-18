@@ -111,7 +111,7 @@ runs:
       run:  echo ${{ inputs.helpline-name }}
       shell: bash
     - name: Build Library (workaround while preinstall hook is broken)
-      run: npm ci && npx tsc && npm pack
+      run: npm ci && npm run build
       working-directory: ./tech-matters-serverless-helpers-lib
       shell: bash
     - name: Install Library (workaround while preinstall hook is broken)
@@ -125,7 +125,7 @@ runs:
       working-directory: ./serverless-functions
     # Compile typescript to javascript
     - name: Transpile typescript to javascript
-      run: npx tsc
+      run: npm run build
       shell: bash
       working-directory: ./serverless-functions
     # Install Twilio CLI and run deploy command
