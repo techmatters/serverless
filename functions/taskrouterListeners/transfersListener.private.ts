@@ -54,6 +54,16 @@ const isChatTransferRejected = (
   (eventType === RESERVATION_REJECTED || eventType === RESERVATION_TIMEOUT) &&
   isChatTransfer(taskChannelUniqueName, taskAttributes);
 
+const isWarmVoiceTransferRejected = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: { transferMeta?: TransferMeta },
+) =>
+  eventType === RESERVATION_REJECTED &&
+  taskChannelUniqueName === 'voice' &&
+  taskAttributes.transferMeta &&
+  taskAttributes.transferMeta.mode === 'WARM';
+
 const isVoiceTransferWrapup = (
   eventType: EventType,
   taskChannelUniqueName: string,
@@ -148,6 +158,32 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       });
 
       console.log('Finished handling chat transfer rejected.');
+    }
+
+    /**
+     * If a warm voice transfer gets rejected, it should:
+     * 1) Adjust original task attributes:
+     *    - transferMeta.transferStatus: 'rejected'
+     *    - transferMeta.sidWithTaskControl: to original reservation
+     */
+    if (isWarmVoiceTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+      const client = context.getTwilioClient();
+
+      const updatedAttributes = {
+        ...taskAttributes,
+        transferMeta: {
+          ...taskAttributes.transferMeta,
+          sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
+          transferStatus: 'rejected',
+        },
+      };
+
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(taskSid)
+        .update({
+          attributes: JSON.stringify(updatedAttributes),
+        });
     }
 
     /**
