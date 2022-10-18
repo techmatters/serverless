@@ -4,14 +4,14 @@
   "private": true,
   "scripts": {
     "test": "jest --verbose",
-    "build": "npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz && npx tsc",
+    "build": "npx tsc",
     "start": "npm run build && twilio-run --env",
     "watch": "npm run build && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "npm run build && twilio-run deploy --force",
-    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npm run build"
+    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npm run build && cd ../serverless-functions && npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz"
   },
   "repository": {
     "type": "git",

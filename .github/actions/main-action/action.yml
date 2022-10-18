@@ -115,7 +115,7 @@ runs:
       working-directory: ./tech-matters-serverless-helpers-lib
       shell: bash
     - name: Install Library (workaround while preinstall hook is broken)
-      run: npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-3.0.3.tgz
+      run: npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz
       working-directory: ./serverless-functions
       shell: bash
     # Install dependencies for the twilio functions
