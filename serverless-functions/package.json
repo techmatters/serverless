@@ -11,7 +11,7 @@
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "npm run build && twilio-run deploy --force",
-    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npm run build && cd ../serverless-functions && npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz"
+    "preinstall": "cd ../tech-matters-serverless-helpers-lib && npm ci && npm run build && cd ../serverless-functions && npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-1.0.5.tgz"
   },
   "repository": {
     "type": "git",
@@ -45,7 +45,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@tech-matters/serverless-helpers": "file:../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz",
+    "@tech-matters/serverless-helpers": "file:../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-1.0.5.tgz",
     "@twilio-labs/serverless-runtime-types": "2.2.3",
     "@twilio/runtime-handler": "1.2.4",
     "@types/inquirer": "^8.2.4",

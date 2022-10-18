@@ -21,7 +21,7 @@ jobs:
       run: npm ci && npm run build
       working-directory: ./tech-matters-serverless-helpers-lib
     - name: Install Library (workaround while preinstall hook is broken)
-      run: npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-0.0.0.tgz
+      run: npm install ../tech-matters-serverless-helpers-lib/tech-matters-serverless-helpers-1.0.5.tgz
       working-directory: ./serverless-functions
     - name: Install Packages
       run: npm ci
