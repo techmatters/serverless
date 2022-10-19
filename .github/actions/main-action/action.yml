@@ -124,6 +124,7 @@ runs:
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
+        TWILIO_SERVERLESS_API_CONCURRENCY: 1
       shell: bash
     - run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
       env:
