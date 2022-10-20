@@ -39,19 +39,21 @@ export const handler = TokenValidator(
         .services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .fetch();
+
       const channelAttributes = JSON.parse(channel.attributes);
       const { taskSid } = channelAttributes;
+
       // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(channelAttributes.taskSid)
+        .tasks(taskSid)
         .fetch();
 
-      // Update the task assignmentStatus
+      // Update the task assignmentStatus based on current assignment status
       const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
         client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(channelAttributes.taskSid)
+          .tasks(taskSid)
           .update({ assignmentStatus });
 
       switch (task.assignmentStatus) {
@@ -70,7 +72,9 @@ export const handler = TokenValidator(
         default:
       }
 
+      // isTaskStageAssigned helps in webchat to trigger certain actions, to trigger post surve and send an automated message
       let isTaskStageAssigned = false;
+
       if (task.assignmentStatus === 'assigned') {
         isTaskStageAssigned = true;
 
@@ -86,7 +90,7 @@ export const handler = TokenValidator(
           });
       }
 
-      resolve(success({ taskSid, message: 'End Chat Ok', isTaskStageAssigned }));
+      resolve(success({ taskSid, isTaskStageAssigned, message: 'End Chat Ok' }));
       return;
     } catch (err: any) {
       resolve(error500(err));
