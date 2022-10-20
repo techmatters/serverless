@@ -124,4 +124,5 @@ export const handler = TokenValidator(
       return resolve(error500(err));
     }
   },
+  { allowGuestToken: true },
 );
