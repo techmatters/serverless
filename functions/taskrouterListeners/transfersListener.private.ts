@@ -22,8 +22,6 @@ export const eventTypes: EventType[] = [
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-  CHAT_SERVICE_SID: string;
-  FLEX_PROXY_SERVICE_SID: string;
 };
 
 type TransferMeta = {
@@ -87,11 +85,12 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       EventType: eventType,
       TaskChannelUniqueName: taskChannelUniqueName,
       TaskSid: taskSid,
+      TaskAttributes: taskAttributesString,
     } = event;
 
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
-    const taskAttributes = JSON.parse(event.TaskAttributes!);
+    const taskAttributes = JSON.parse(taskAttributesString);
 
     /**
      * If a chat transfer gets accepted, it should:
@@ -112,6 +111,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         });
 
       console.log('Finished handling chat transfer accepted.');
+      return;
     }
 
     /**
@@ -145,19 +145,21 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         },
       };
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
-        .update({
-          attributes: JSON.stringify(attributesWithChannelSid),
-        });
-
-      await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-        assignmentStatus: 'canceled',
-        reason: 'task transferred rejected',
-      });
+      await Promise.all([
+        client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(originalTaskSid)
+          .update({
+            attributes: JSON.stringify(attributesWithChannelSid),
+          }),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
+          assignmentStatus: 'canceled',
+          reason: 'task transferred rejected',
+        }),
+      ]);
 
       console.log('Finished handling chat transfer rejected.');
+      return;
     }
 
     /**
@@ -167,6 +169,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      *    - transferMeta.sidWithTaskControl: to original reservation
      */
     if (isWarmVoiceTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling warm voice transfer rejected...');
+
       const client = context.getTwilioClient();
 
       const updatedAttributes = {
@@ -184,6 +188,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .update({
           attributes: JSON.stringify(updatedAttributes),
         });
+
+      console.log('Finished handling warm voice transfer rejected.');
+      return;
     }
 
     /**
@@ -203,6 +210,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .update({ reservationStatus: 'completed' });
 
       console.log('Finished handling voice transfer wrapup.');
+      return;
     }
 
     console.log('===== TransfersListener finished successfully =====');
