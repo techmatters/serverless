@@ -40,29 +40,34 @@ export const handler = TokenValidator(
         .channels(channelSid)
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
+      const { taskSid } = channelAttributes;
 
       // Fetch the Task to close
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(channelAttributes.taskSid)
+        .tasks(taskSid)
         .fetch();
 
-      // Send a Message
-      await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .messages.create({
-          body: 'User left the conversation.',
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
+      const isTaskStageAssigned = task.assignmentStatus === 'assigned';
 
-      // Update the task assignmentStatus
+      // Send a Message
+      if (isTaskStageAssigned) {
+        await context
+          .getTwilioClient()
+          .chat.services(context.CHAT_SERVICE_SID)
+          .channels(channelSid)
+          .messages.create({
+            body: 'User left the conversation.',
+            from: 'Bot',
+            xTwilioWebhookEnabled: 'true',
+          });
+      }
+
+      // Update the task assignmentStatus based on current assignment status
       const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
         client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(channelAttributes.taskSid)
+          .tasks(taskSid)
           .update({ assignmentStatus });
 
       switch (task.assignmentStatus) {
@@ -81,7 +86,7 @@ export const handler = TokenValidator(
         default:
       }
 
-      resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
+      resolve(success({ isTaskStageAssigned, message: 'End Chat Ok' }));
       return;
     } catch (err: any) {
       resolve(error500(err));
