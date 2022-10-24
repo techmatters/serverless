@@ -120,15 +120,17 @@ runs:
       shell: bash
     # Install Twilio CLI and run deploy command
     - name: Install Twilio CLI and run deploy command
-      run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless && twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=dev --force
+      run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
-    - run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
+    - name: Run deploy
+      run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
+        TWILIO_SERVERLESS_API_CONCURRENCY: '1'
       shell: bash
     # Run the health check
     - run: node ${{ github.action_path }}/dist/index.js
