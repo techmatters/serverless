@@ -11,6 +11,11 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
 };
 
+type Response = {
+  message: string;
+  updatedTask?: TaskInstance;
+};
+
 const TASK_CREATED_EVENT = 'task.created';
 
 const logAndReturnError = (
@@ -24,7 +29,10 @@ const logAndReturnError = (
   return { message: errorMessage };
 };
 
-export const addCustomerExternalId = async (context: Context<EnvVars>, event: Body) => {
+export const addCustomerExternalId = async (
+  context: Context<EnvVars>,
+  event: Body,
+): Promise<Response> => {
   console.log('-------- addCustomerExternalId execution --------');
 
   const { EventType, TaskSid } = event;
