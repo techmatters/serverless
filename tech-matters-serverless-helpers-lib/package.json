@@ -1,6 +1,6 @@
 {
   "name": "@tech-matters/serverless-helpers",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Helpers and utilities used by Tech Matters for our serverless functions, hosted in Twilio Serverless Toolkit",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -34,5 +34,9 @@
   },
   "directories": {
     "lib": "lib"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./taskrouter": "./lib/taskrouter/index.js"
   }
 }
