@@ -86,7 +86,18 @@ export const handler = TokenValidator(
         default:
       }
 
-      resolve(success({ isTaskStageAssigned, message: 'End Chat Ok' }));
+      // Change the channel status to 'inactive'
+      channelAttributes.status = 'INACTIVE';
+      const channelUpdate = {
+        attributes: JSON.stringify(channelAttributes),
+      };
+
+      await client.chat
+        .services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .update(channelUpdate);
+
+      resolve(success({ message: 'End Chat Ok' }));
       return;
     } catch (err: any) {
       resolve(error500(err));
