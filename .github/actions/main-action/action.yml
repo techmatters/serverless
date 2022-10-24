@@ -112,7 +112,7 @@ runs:
       shell: bash
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
-      run: npm i
+      run: npm ci
       shell: bash
     # Compile typescript to javascript
     - name: Transpile typescript to javascript
