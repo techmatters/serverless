@@ -19,7 +19,7 @@ export const RESERVATION_FAILED = 'reservation.failed';
 export const RESERVATION_WRAPUP = 'reservation.wrapup';
 
 // Task
-export const TASK_CREATED = 'created';
+export const TASK_CREATED = 'task.created';
 export const TASK_UPDATED = 'task.updated';
 export const TASK_CANCELED = 'task.canceled';
 export const TASK_WRAPUP = 'task.wrapup';
@@ -38,7 +38,7 @@ export const TASK_CHANNEL_UPDATED = 'task-channel.updated';
 export const TASK_CHANNEL_DELETED = 'task-channel.deleted';
 
 // Task Queue
-export const TASK_QUEUE_CREATED = 'created';
+export const TASK_QUEUE_CREATED = 'task-queue.created';
 export const TASK_QUEUE_DELETED = 'task-queue.deleted';
 export const TASK_QUEUE_ENTERED = 'task-queue.entered';
 export const TASK_QUEUE_TIMEOUT = 'task-queue.timeout';
@@ -46,7 +46,7 @@ export const TASK_QUEUE_MOVED = 'task-queue.moved';
 export const TASK_QUEUE_EXPRESSION_UPDATED = 'task-queue.expression.updated';
 
 // Worker
-export const WORKER_CREATED = 'created';
+export const WORKER_CREATED = 'worker.created';
 export const WORKER_ACTIVITY_UPDATE = 'worker.activity.update';
 export const WORKER_ATTRIBUTES_UPDATE = 'worker.attributes.update';
 export const WORKER_CAPACITY_UPDATE = 'worker.capacity.update';
