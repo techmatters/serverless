@@ -52,7 +52,7 @@ export const handler = TokenValidator(
         .fetch();
 
       if (task.assignmentStatus === 'assigned') {
-        // Send a Message
+        // Send a Message  TODO:implement localization
         await context
           .getTwilioClient()
           .chat.services(context.CHAT_SERVICE_SID)
