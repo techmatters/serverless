@@ -1,3 +1,5 @@
+/* eslint-disable global-require */
+/* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
@@ -9,10 +11,12 @@ import {
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
+import { ChatChannelJanitor } from './helpers/chatChannelJanitor.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
+  FLEX_PROXY_SERVICE_SID: string;
 };
 
 export type Body = {
@@ -47,16 +51,18 @@ export const handler = TokenValidator(
         .tasks(channelAttributes.taskSid)
         .fetch();
 
-      // Send a Message
-      await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .messages.create({
-          body: 'User left the conversation.',
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
+      if (task.assignmentStatus === 'assigned') {
+        // Send a Message  TODO:implement localization
+        await context
+          .getTwilioClient()
+          .chat.services(context.CHAT_SERVICE_SID)
+          .channels(channelSid)
+          .messages.create({
+            body: 'User left the conversation.',
+            from: 'Bot',
+            xTwilioWebhookEnabled: 'true',
+          });
+      }
 
       // Update the task assignmentStatus
       const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
@@ -80,6 +86,12 @@ export const handler = TokenValidator(
         }
         default:
       }
+
+      /* TODO: Once logic for triggering post survey on task wrap is moved to taskRouterCallback, the following clean up can be removed */
+      // Deactivate channel and proxy
+      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
+      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
+      await chatChannelJanitor(context, { channelSid });
 
       resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
       return;
