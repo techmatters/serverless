@@ -24,13 +24,16 @@ export type Body = {
   targetSid?: string;
   ignoreAgent?: string;
   mode?: string;
-  memberToKick?: string;
   request: { cookies: {}; headers: {} };
 };
 
-async function closeTask(context: Context<EnvVars>, sid: string, taskToCloseAttributes: any) {
+async function setDummyChannelToTask(
+  context: Context<EnvVars>,
+  sid: string,
+  taskToCloseAttributes: any,
+) {
   // set the channelSid and ProxySessionSID to a dummy value. This keeps the session alive
-  const newTaskToCloseAttributes = {
+  const attributesWithDummyChannel = {
     ...taskToCloseAttributes,
     channelSid: 'CH00000000000000000000000000000000',
     proxySessionSID: 'KC00000000000000000000000000000000',
@@ -38,44 +41,17 @@ async function closeTask(context: Context<EnvVars>, sid: string, taskToCloseAttr
 
   const client = context.getTwilioClient();
 
-  await client.taskrouter
+  const updatedTask = await client.taskrouter
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(sid)
-    .update({ attributes: JSON.stringify(newTaskToCloseAttributes) });
+    .update({ attributes: JSON.stringify(attributesWithDummyChannel) });
 
-  // close the Task and set the proper status
-  const closedTask = await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks(sid)
-    .update({
-      assignmentStatus: 'wrapping',
-      reason: 'task transferred',
-      attributes: JSON.stringify(newTaskToCloseAttributes),
-    });
-
-  return closedTask;
+  return updatedTask;
 }
 
-async function kickMember(context: Context<EnvVars>, memberToKick: string, chatChannel: string) {
-  const client = context.getTwilioClient();
-
-  // kick out the counselor that is not required anymore
-  if (memberToKick) {
-    const memberKicked = await client.chat
-      .services(context.CHAT_SERVICE_SID)
-      .channels(chatChannel)
-      .members(memberToKick)
-      .remove();
-
-    return memberKicked;
-  }
-
-  return false;
-}
-
-async function closeTaskAndKick(
+async function setDummyChannel(
   context: Context<EnvVars>,
-  body: Required<Pick<Body, 'taskSid' | 'targetSid' | 'ignoreAgent' | 'memberToKick' | 'mode'>>,
+  body: Required<Pick<Body, 'taskSid' | 'targetSid' | 'ignoreAgent' | 'mode'>>,
 ) {
   if (body.mode !== 'COLD') return null;
 
@@ -86,15 +62,15 @@ async function closeTaskAndKick(
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(body.taskSid)
     .fetch();
+
   const taskToCloseAttributes = JSON.parse(taskToClose.attributes);
-  const { channelSid } = taskToCloseAttributes;
 
-  const [closedTask] = await Promise.all([
-    closeTask(context, body.taskSid, taskToCloseAttributes),
-    kickMember(context, body.memberToKick, channelSid),
-  ]);
-
-  return closedTask;
+  const taskWithDummyChannel = await setDummyChannelToTask(
+    context,
+    body.taskSid,
+    taskToCloseAttributes,
+  );
+  return taskWithDummyChannel;
 }
 
 // if transfer targets a worker, validates that it can be effectively transferred, and if the worker's chat capacity needs to increase
@@ -177,7 +153,7 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, targetSid, ignoreAgent, mode, memberToKick } = event;
+    const { taskSid, targetSid, ignoreAgent, mode } = event;
 
     try {
       if (taskSid === undefined) {
@@ -194,10 +170,6 @@ export const handler = TokenValidator(
       }
       if (mode === undefined) {
         resolve(error400('mode'));
-        return;
-      }
-      if (memberToKick === undefined) {
-        resolve(error400('memberToKick'));
         return;
       }
 
@@ -248,7 +220,7 @@ export const handler = TokenValidator(
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
         increaseChatCapacity(context, validationResult),
-        closeTaskAndKick(context, { mode, ignoreAgent, memberToKick, targetSid, taskSid }),
+        setDummyChannel(context, { mode, ignoreAgent, targetSid, taskSid }),
       ]);
 
       resolve(success({ taskSid: newTask.sid }));

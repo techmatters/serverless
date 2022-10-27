@@ -199,7 +199,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event2: Body = {
@@ -207,7 +206,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: undefined,
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event3: Body = {
@@ -215,7 +213,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: undefined,
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const event4: Body = {
@@ -223,15 +220,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: undefined,
-      memberToKick: 'worker1',
-      request: { cookies: {}, headers: {} },
-    };
-    const event5: Body = {
-      taskSid: 'task1',
-      targetSid: 'WKxxx',
-      ignoreAgent: 'worker1',
-      mode: 'COLD',
-      memberToKick: undefined,
       request: { cookies: {}, headers: {} },
     };
 
@@ -242,7 +230,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
     };
 
     await Promise.all(
-      [event0, event1, event2, event3, event4, event5].map((event) =>
+      [event0, event1, event2, event3, event4].map((event) =>
         transferChatStart(baseContext, event, callback),
       ),
     );
@@ -254,7 +242,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WK offline worker',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -263,7 +250,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -291,7 +277,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -300,7 +285,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -330,7 +314,6 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'WARM',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const before = Array.from(tasks);
@@ -361,12 +344,17 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
   });
 
   test('Should return status 200 (COLD)', async () => {
+    // Make task initially assigned
+    await tasks[0].update({
+      assignmentStatus: 'assigned',
+      reason: undefined,
+    });
+
     const event: Body = {
       taskSid: 'task1',
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
@@ -385,14 +373,14 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask.attributes).toBe(expectedOldAttr);
-      expect(originalTask.reason).toBe('task transferred');
-      expect(originalTask.assignmentStatus).toBe('wrapping');
+      expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
+      expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
       expect(tasks).toHaveLength(3);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
-      expect(channels.channel).not.toContain('worker1');
+      expect(channels.channel).toContain('worker1'); // Counselor is not being kicked anymore
       expect(channels.channel).toContain('worker2');
     };
 
@@ -409,7 +397,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WK offline worker',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -418,7 +405,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
 
@@ -444,7 +430,7 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
     // reset task attributes
     await tasks[0].update({
       attributes: '{"channelSid":"channel"}',
-      assignmentStatus: undefined,
+      assignmentStatus: 'assigned',
       reason: undefined,
     });
 
@@ -453,7 +439,6 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       targetSid: 'WKxxx',
       ignoreAgent: 'worker1',
       mode: 'COLD',
-      memberToKick: 'worker1',
       request: { cookies: {}, headers: {} },
     };
     const expectedOldAttr =
@@ -472,14 +457,14 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask.attributes).toBe(expectedOldAttr);
-      expect(originalTask.reason).toBe('task transferred');
-      expect(originalTask.assignmentStatus).toBe('wrapping');
+      expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
+      expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
       expect(tasks).toHaveLength(3);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
-      expect(channels.channel).not.toContain('worker1');
+      expect(channels.channel).toContain('worker1'); // Counselor is not being kicked anymore
       expect(channels.channel).toContain('worker2');
     };
 
