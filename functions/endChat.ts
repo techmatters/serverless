@@ -30,7 +30,7 @@ type Messages = {
 };
 
 const getEndChatMessage = (event: Body): string => {
-  // Try to retrieve the triggerMessage for the approapriate language (if any)
+  // Retrieve the EndChatMsg for appropriate language
   const { language } = event;
 
   if (language) {
@@ -41,7 +41,7 @@ const getEndChatMessage = (event: Body): string => {
       const { EndChatMsg } = translation;
       if (EndChatMsg) return EndChatMsg;
     } catch {
-      console.error(`Couldn't retrieve EndChatMsg translation for ${language}`);
+      console.error(`Couldn't retrieve EndChatMsg message translation for ${language}`);
     }
   }
   return 'User left the conversation';
