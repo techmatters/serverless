@@ -21,7 +21,30 @@ type EnvVars = {
 
 export type Body = {
   channelSid?: string;
+  language?: string;
   request: { cookies: {}; headers: {} };
+};
+
+type Messages = {
+  EndChatMsg: string;
+};
+
+const getEndChatMessage = (event: Body): string => {
+  // Try to retrieve the triggerMessage for the approapriate language (if any)
+  const { language } = event;
+
+  if (language) {
+    try {
+      const translation: Messages = JSON.parse(
+        Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
+      );
+      const { EndChatMsg } = translation;
+      if (EndChatMsg) return EndChatMsg;
+    } catch {
+      console.error(`Couldn't retrieve EndChatMsg translation for ${language}`);
+    }
+  }
+  return 'User left the conversation';
 };
 
 export const handler = TokenValidator(
@@ -33,32 +56,39 @@ export const handler = TokenValidator(
     try {
       const client = context.getTwilioClient();
 
-      // Use the channelSid to fetch taskSid
-      const { channelSid } = event;
+      const { channelSid, language } = event;
+
       if (channelSid === undefined) {
-        resolve(error400('ChannelSid'));
+        resolve(error400('ChannelSid parameter is missing'));
         return;
       }
+      if (language === undefined) {
+        resolve(error400('language parameter is missing'));
+        return;
+      }
+
+      // Use the channelSid to fetch task that needs to be closed
       const channel = await client.chat
         .services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
-      // Fetch the Task to close
+      // Fetch the Task to 'cancel' or 'wrapup'
       const task = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(channelAttributes.taskSid)
         .fetch();
 
+      // Send a Message indicating user left the conversation
       if (task.assignmentStatus === 'assigned') {
-        // Send a Message  TODO:implement localization
+        const endChatMessage = getEndChatMessage(event);
         await context
           .getTwilioClient()
           .chat.services(context.CHAT_SERVICE_SID)
           .channels(channelSid)
           .messages.create({
-            body: 'User left the conversation.',
+            body: endChatMessage,
             from: 'Bot',
             xTwilioWebhookEnabled: 'true',
           });
