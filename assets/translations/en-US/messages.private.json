@@ -1,3 +1,4 @@
 {
-  "GoodbyeMsg": "The counselor has left the chat. Thank you for reaching out. Please contact us again if you need more help."
+  "GoodbyeMsg": "The counselor has left the chat. Thank you for reaching out. Please contact us again if you need more help.",
+  "EndChatMsg": "You ended the chat. Thank you for reaching out. Please contact us again if you need more help."
 }
