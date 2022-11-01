@@ -5,6 +5,7 @@
   "scripts": {
     "test": "jest --verbose",
     "start": "npx tsc && twilio-run --env",
+    "start:local": "npx tsc && twilio-run --env --port 3030",
     "watch": "npx tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
