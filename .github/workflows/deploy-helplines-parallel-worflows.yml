@@ -25,101 +25,101 @@ jobs:
     with:
       changelog: ${{ inputs.changelog }}     
 
-  deploy-cl_linealibre_staging: 
-    uses: ./.github/workflows/cl_linealibre_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}     
+  # deploy-cl_linealibre_staging: 
+  #   uses: ./.github/workflows/cl_linealibre_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}     
 
-  deploy-ecpat_philippines_staging: 
-    uses: ./.github/workflows/ecpat_philippines_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-ecpat_philippines_staging: 
+  #   uses: ./.github/workflows/ecpat_philippines_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
 
-  deploy-ethiopia_staging: 
-    uses: ./.github/workflows/ethiopia_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-ethiopia_staging: 
+  #   uses: ./.github/workflows/ethiopia_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
       
-  deploy-flex2_staging: 
-    uses: ./.github/workflows/flex2_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-flex2_staging: 
+  #   uses: ./.github/workflows/flex2_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
 
-  deploy-jamaica_staging: 
-    uses: ./.github/workflows/jamaica_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-jamaica_staging: 
+  #   uses: ./.github/workflows/jamaica_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
 
-  deploy-malawi_staging: 
-    uses: ./.github/workflows/malawi_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-malawi_staging: 
+  #   uses: ./.github/workflows/malawi_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
 
-  deploy-romania_staging: 
-    uses: ./.github/workflows/romania_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-romania_staging: 
+  #   uses: ./.github/workflows/romania_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
       
-  deploy-safernet_staging: 
-    uses: ./.github/workflows/safernet_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-safernet_staging: 
+  #   uses: ./.github/workflows/safernet_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
      
-  deploy-south_africa_staging: 
-    uses: ./.github/workflows/south_africa_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-south_africa_staging: 
+  #   uses: ./.github/workflows/south_africa_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
       
-  deploy-teguio_colombia_staging: 
-    uses: ./.github/workflows/teguio_colombia_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-teguio_colombia_staging: 
+  #   uses: ./.github/workflows/teguio_colombia_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
        
-  deploy-thailand_staging: 
-    uses: ./.github/workflows/thailand_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-thailand_staging: 
+  #   uses: ./.github/workflows/thailand_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
       
-  deploy-uk_staging_III: 
-    uses: ./.github/workflows/uk_staging_III.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}    
+  # deploy-uk_staging_III: 
+  #   uses: ./.github/workflows/uk_staging_III.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}    
 
-  deploy-uk_staging: 
-    uses: ./.github/workflows/uk_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}          
+  # deploy-uk_staging: 
+  #   uses: ./.github/workflows/uk_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}          
 
-  deploy-hungary_staging:
-    uses: ./.github/workflows/hungary_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-hungary_staging:
+  #   uses: ./.github/workflows/hungary_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
      
-  deploy-zambia_staging: 
-    uses: ./.github/workflows/zambia_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-zambia_staging: 
+  #   uses: ./.github/workflows/zambia_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
  
-  deploy-zimbabwe_staging: 
-    uses: ./.github/workflows/zimbabwe_staging.yml
-    secrets: inherit
-    with:
-      changelog: ${{ inputs.changelog }}
+  # deploy-zimbabwe_staging: 
+  #   uses: ./.github/workflows/zimbabwe_staging.yml
+  #   secrets: inherit
+  #   with:
+  #     changelog: ${{ inputs.changelog }}
 
 
   # Send Slack notifying success
