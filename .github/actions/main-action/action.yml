@@ -138,7 +138,7 @@ runs:
 
     # Send Slack notifying success for parallel serverless deployment
     - name: Slack Aselo channel
-      id: slack
+      id: slack-parallel
       uses: slackapi/slack-github-action@v1.14.0
       if: ${{ inputs.send-slack-message != 'false' }} && github.workflow == format('Deploy Serverless to all Helpline Staging Environments')
       with:
@@ -149,7 +149,7 @@ runs:
     
     # Send Slack notifying success for other deployment
     - name: Slack Aselo channel
-      id: slack
+      id: slack-other
       uses: slackapi/slack-github-action@v1.14.0
       if: ${{ inputs.send-slack-message != 'false' }} && github.workflow != format('Deploy Serverless to all Helpline Staging Environments')
       with:
