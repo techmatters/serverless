@@ -45,6 +45,9 @@ runs:
     - name: TeGuio Colombia Staging release custom action
       if: inputs.helpline-name == format('CO_STG')
       uses: ./.github/actions/custom-actions/teguio_staging_custom
+    - name: TeGuio Colombia Production release custom action
+      if: inputs.helpline-name == format('Te Guío CO Production release')
+      uses: ./.github/actions/custom-actions/teguio_production_custom
     - name: Zambia Staging release custom action
       if: inputs.helpline-name == format('ZM_STG')
       uses: ./.github/actions/custom-actions/zambia_staging_custom
