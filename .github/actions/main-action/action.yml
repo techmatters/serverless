@@ -151,7 +151,7 @@ runs:
     - name: Slack Aselo channel
       id: slack-other
       uses: slackapi/slack-github-action@v1.14.0
-      if: ${{ inputs.send-slack-message != 'false' }} && github.workflow != format('Deploy Serverless to all Helpline Staging Environments')
+      if: ${{ inputs.send-slack-message != 'false' }} && runs.steps.slack-parallel == 'true'
       with:
         channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
         slack-message: "`[Serverless]` Action ${{ github.workflow }} of ref ${{ github.ref_name }} completed with SHA ${{ github.sha }} :rocket:."
