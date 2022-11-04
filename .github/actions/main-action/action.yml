@@ -143,6 +143,6 @@ runs:
       if: ${{ inputs.send-slack-message != 'false' }}
       with:
         channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
-        slack-message: "`[Serverless]` Deployment to ${{ inputs.helpline-name }} of ref ${{ github.ref_name }} from ${{ github.workflow}} completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
+        slack-message: "`[Serverless]` Deployment to ${{ inputs.helpline-name }} of ref ${{ github.ref_name }} completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
