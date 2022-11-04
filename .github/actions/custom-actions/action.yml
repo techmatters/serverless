@@ -10,47 +10,47 @@ runs:
   using: "composite"
   steps:
     - name: Childline Thailand Staging release custom action
-      if: github.workflow == format('Thailand Staging release')
+      if: inputs.helpline-name == format('TH_STG')
       uses: ./.github/actions/custom-actions/thailand_staging_custom
     - name: Aarambh Staging release custom action
       if: inputs.helpline-name == format('IN_STG')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
     - name: Aarambh Production release custom action
-      if: github.workflow == format('Aarambh Production release')
+      if: inputs.helpline-name == format('IN_PROD')
       uses: ./.github/actions/custom-actions/aarambh_production_custom
     - name: Aselo Development release custom action
-      if: github.workflow == format('Aselo Development release')
+      if: inputs.helpline-name == format('AS_DEV')
       uses: ./.github/actions/custom-actions/aselo_development_custom
     - name: Aselo Beta release custom action
-      if: github.workflow == format('Aselo Beta release')
+      if: inputs.helpline-name == format('AS_STG')
       uses: ./.github/actions/custom-actions/aselo_beta_custom
     - name: SafeSpot Staging release custom action
       if: inputs.helpline-name == format('JM_STG')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
     - name: SafeSpot Production release custom action
-      if: github.workflow == format('SafeSpot Production release')
+      if: inputs.helpline-name == format('JM_PROD')
       uses: ./.github/actions/custom-actions/jamaica_production_custom
     - name: Malawi Staging release custom action
       if: inputs.helpline-name == format('MW_STG')
       uses: ./.github/actions/custom-actions/malawi_staging_custom
     - name: Malawi Production release custom action
-      if: github.workflow == format('Malawi Production release')
+      if: inputs.helpline-name == format('MW_PROD')
       uses: ./.github/actions/custom-actions/malawi_production_custom
     - name: Safernet Staging release custom action
       if: inputs.helpline-name == format('BR_STG')
       uses: ./.github/actions/custom-actions/safernet_staging_custom
     - name: Safernet Production release custom action
-      if: github.workflow == format('SaferNet Production release')
+      if: inputs.helpline-name == format('BR_PROD)
       uses: ./.github/actions/custom-actions/safernet_production_custom
     - name: TeGuio Colombia Staging release custom action
       if: inputs.helpline-name == format('CO_STG')
       uses: ./.github/actions/custom-actions/teguio_staging_custom
     - name: TeGuio Colombia Production release custom action
-      if: inputs.helpline-name == format('Te Guío CO Production release')
+      if: inputs.helpline-name == format('CO_PROD')
       uses: ./.github/actions/custom-actions/teguio_production_custom
     - name: Zambia Staging release custom action
       if: inputs.helpline-name == format('ZM_STG')
       uses: ./.github/actions/custom-actions/zambia_staging_custom
     - name: Zambia Production release custom action
-      if: github.workflow == format('Zambia Production release')
+      if: inputs.helpline-name == format('ZM_PROD')
       uses: ./.github/actions/custom-actions/zambia_production_custom
