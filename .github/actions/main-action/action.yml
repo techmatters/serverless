@@ -107,9 +107,6 @@ runs:
       uses: ./.github/actions/custom-actions
       with:
         helpline-name: ${{ inputs.helpline-name }}
-    - name: Echo helpline-name
-      run:  echo ${{ inputs.helpline-name }}
-      shell: bash
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
@@ -141,11 +138,11 @@ runs:
 
     # Send Slack notifying success
     - name: Slack Aselo channel
-      id: slack
+      id: slack-parallel
       uses: slackapi/slack-github-action@v1.14.0
       if: ${{ inputs.send-slack-message != 'false' }}
       with:
         channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
-        slack-message: "`[Serverless]` Action ${{ github.workflow }} completed with SHA ${{ github.sha }} :rocket:."
+        slack-message: "`[Serverless]` Deployment to ${{ inputs.helpline-name }} of ref ${{ github.ref_name }} completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
