@@ -148,9 +148,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           ) as OneToManyConfigSpec[];
 
           const surveyTaskAttributes = JSON.parse(surveyTask.attributes);
-
+Object.entries(([k, v]) => console.log(k, JSON.stringify(v)))
           // Set the taskLanguage carried over from the original task, if any
-          taskLanguage = surveyTaskAttributes.taskLanguage;
+          taskLanguage = surveyTaskAttributes.language;
 
           // parallel execution to save survey collected data in insights and hrm
           await Promise.all([

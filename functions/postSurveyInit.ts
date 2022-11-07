@@ -35,7 +35,7 @@ const createSurveyTask = async (
     channelSid,
     contactTaskId: taskSid,
     conversations: { conversation_id: taskSid },
-    taskLanguage, // if there's a taskLanguage, attach it to the post survey task
+    language: taskLanguage, // if there's a task language, attach it to the post survey task
   };
 
   const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
@@ -105,6 +105,7 @@ const getTriggerMessage = (event: Body): string => {
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     console.log('-------- postSurveyInit execution --------');
+    console.log('event', event);
 
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
