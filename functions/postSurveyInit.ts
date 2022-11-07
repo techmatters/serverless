@@ -25,16 +25,17 @@ export type Body = {
 
 const createSurveyTask = async (
   context: Context<EnvVars>,
-  event: Required<Pick<Body, 'channelSid' | 'taskSid'>>,
+  event: Required<Pick<Body, 'channelSid' | 'taskSid'>> & Pick<Body, 'taskLanguage'>,
 ) => {
   const client = context.getTwilioClient();
-  const { channelSid, taskSid } = event;
+  const { channelSid, taskSid, taskLanguage } = event;
 
   const taskAttributes = {
     isSurveyTask: true,
     channelSid,
     contactTaskId: taskSid,
     conversations: { conversation_id: taskSid },
+    taskLanguage, // if there's a taskLanguage, attach it to the post survey task
   };
 
   const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
@@ -108,7 +109,7 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { channelSid, taskSid } = event;
+    const { channelSid, taskSid, taskLanguage } = event;
 
     try {
       if (channelSid === undefined) return resolve(error400('channelSid'));
@@ -116,7 +117,7 @@ export const handler = TokenValidator(
 
       const triggerMessage = getTriggerMessage(event);
 
-      await createSurveyTask(context, { channelSid, taskSid });
+      await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
       await triggerPostSurveyFlow(context, channelSid, triggerMessage);
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
