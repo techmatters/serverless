@@ -1,0 +1,75 @@
+name: 'Te Guio Production release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the beta environment'
+runs:
+  using: "composite"
+  steps:
+    # Set Twitter variables
+    - name: Set Aselo Twitter Consumer Key
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_CONSUMER_KEY"
+        env_variable_name: "TWITTER_CONSUMER_KEY"
+    - name: Set Aselo Twitter Consumer Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_CONSUMER_SECRET"
+        env_variable_name: "TWITTER_CONSUMER_SECRET"
+    - name: Set helpline Twitter Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_ACCESS_TOKEN_1532353002387931139_TeGuio_Viguias"
+        env_variable_name: "TWITTER_ACCESS_TOKEN"
+    - name: Set helpline Twitter Access Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "TWITTER_ACCESS_TOKEN_SECRET_1532353002387931139_TeGuio_Viguias"
+        env_variable_name: "TWITTER_ACCESS_TOKEN_SECRET"
+    - name: Set helpline Twitter Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_CO_TWITTER_FLEX_FLOW_SID"
+        env_variable_name: "TWITTER_FLEX_FLOW_SID"
+    # Set Instagram variables
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_103538615719253_Te-Gu-o---L-nea-de-ayuda"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_CO_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+
+    # Append environment variables
+    - name: Add TWITTER_CONSUMER_KEY
+      run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
+      shell: bash
+    - name: Add TWITTER_CONSUMER_SECRET
+      run: echo "TWITTER_CONSUMER_SECRET=${{ env.TWITTER_CONSUMER_SECRET }}" >> .env
+      shell: bash
+    - name: Add TWITTER_ACCESS_TOKEN
+      run: echo "TWITTER_ACCESS_TOKEN=${{ env.TWITTER_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add TWITTER_ACCESS_TOKEN_SECRET
+      run: echo "TWITTER_ACCESS_TOKEN_SECRET=${{ env.TWITTER_ACCESS_TOKEN_SECRET }}" >> .env
+      shell: bash
+    - name: Add TWITTER_FLEX_FLOW_SID
+      run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+
+    # Append environment variables
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash
