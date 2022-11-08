@@ -113,7 +113,6 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   callback: ServerlessCallback,
 ) => {
   console.log('-------- postSurveyComplete execution --------');
-  Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
 
   try {
     const memory = JSON.parse(event.Memory);
@@ -148,9 +147,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
           ) as OneToManyConfigSpec[];
 
           const surveyTaskAttributes = JSON.parse(surveyTask.attributes);
-          Object.entries(surveyTaskAttributes).forEach(([k, v]) =>
-            console.log(k, JSON.stringify(v)),
-          );
+
           // Set the taskLanguage carried over from the original task, if any
           taskLanguage = surveyTaskAttributes.language;
 

@@ -105,7 +105,6 @@ const getTriggerMessage = (event: Body): string => {
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     console.log('-------- postSurveyInit execution --------');
-    console.log('event', event);
 
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
