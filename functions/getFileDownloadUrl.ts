@@ -19,6 +19,7 @@ type EnvVars = {
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   S3_BUCKET: string;
+  S3_ENDPOINT: string;
   AWS_REGION: string;
 };
 
@@ -29,7 +30,8 @@ export const handler = TokenValidator(
 
     try {
       const { fileNameAtAws, fileName } = event;
-      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, AWS_REGION } = context;
+      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, S3_ENDPOINT, AWS_REGION } =
+        context;
 
       const secondsToExpire = 30;
       const getUrlParams = {
@@ -47,7 +49,13 @@ export const handler = TokenValidator(
         region: AWS_REGION,
       });
 
-      const s3Client = new AWS.S3();
+      console.log('S3_ENDPOINT', S3_ENDPOINT);
+      const s3Client = new AWS.S3(
+        S3_ENDPOINT
+          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
+          : {},
+      );
+
       const downloadUrl = await s3Client.getSignedUrl('getObject', getUrlParams);
 
       resolve(success({ downloadUrl }));
