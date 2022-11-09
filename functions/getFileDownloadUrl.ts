@@ -49,7 +49,6 @@ export const handler = TokenValidator(
         region: AWS_REGION,
       });
 
-      console.log('S3_ENDPOINT', S3_ENDPOINT);
       const s3Client = new AWS.S3(
         S3_ENDPOINT
           ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
