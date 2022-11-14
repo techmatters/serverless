@@ -5,6 +5,7 @@
   "scripts": {
     "test": "jest --verbose",
     "start": "npx tsc && twilio-run --env",
+    "start:local": "npx tsc && twilio-run --env --port 3030",
     "watch": "npx tsc && twilio-run start --live",
     "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
@@ -48,17 +49,17 @@
   },
   "dependencies": {
     "@tech-matters/serverless-helpers": "3.0.5",
-    "@twilio-labs/serverless-runtime-types": "^2.2.3",
+    "@twilio-labs/serverless-runtime-types": "2.2.3",
     "@twilio/runtime-handler": "1.2.4",
-    "aws-sdk": "^2.1199.0",
-    "axios": "^0.27.2",
-    "lodash": "^4.17.21",
-    "moment-timezone": "^0.5.37",
-    "swagger-ui-express": "^4.5.0",
-    "twilio": "^3.80.1",
-    "twilio-flex-token-validator": "^1.5.6",
-    "twit": "^2.2.11",
-    "type-fest": "^2.18.1",
-    "uuid": "^8.3.2"
+    "aws-sdk": "2.1202.0",
+    "axios": "0.26.1",
+    "lodash": "4.17.21",
+    "moment-timezone": "0.5.37",
+    "swagger-ui-express": "4.5.0",
+    "twilio": "3.81.0",
+    "twilio-flex-token-validator": "1.5.6",
+    "twit": "2.2.11",
+    "type-fest": "2.19.0",
+    "uuid": "8.3.2"
   }
 }
