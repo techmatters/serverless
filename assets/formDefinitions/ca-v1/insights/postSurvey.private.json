@@ -11,12 +11,12 @@
   },
   {
     "insightsObject": "conversations",
-    "attributeName": "conversation_measure_4",
+    "attributeName": "followed_by",
     "questions": ["supportNeeds"]
   },
   {
     "insightsObject": "conversations",
-    "attributeName": "conversation_measure_5",
+    "attributeName": "preceded_by",
     "questions": ["shareResponse"]
   }
 ]
