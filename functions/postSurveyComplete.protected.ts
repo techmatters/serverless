@@ -56,7 +56,6 @@ const saveSurveyInInsights = async (
     surveyTaskAttributes,
     memory,
   );
-  console.log('finalAttributes: ', JSON.stringify(finalAttributes));
 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
 };
@@ -91,17 +90,19 @@ const saveSurveyInHRM = async (
   });
 };
 
-const getPostSurvetCompleteMessage = (taskLanguage: string | undefined): string => {
-  if (taskLanguage) {
-    try {
-      const translation = JSON.parse(
-        Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
-      );
+const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string => {
+  try {
+    const language = taskLanguage || 'en-US';
 
-      if (translation.postSurvetCompleteMessage) return translation.postSurvetCompleteMessage;
-    } catch {
-      console.error(`Couldn't retrieve postSurvetCompleteMessage translation for ${taskLanguage}`);
-    }
+    const translation = JSON.parse(
+      Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
+    );
+
+    if (translation.postSurvetCompleteMessage) return translation.postSurvetCompleteMessage;
+  } catch {
+    console.error(
+      `Couldn't retrieve postSurvetCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
+    );
   }
 
   return 'Thank you for reaching out. Please contact us again if you need more help.';
@@ -179,7 +180,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       }
     }
 
-    const say = getPostSurvetCompleteMessage(taskLanguage);
+    const say = getPostSurveyCompleteMessage(taskLanguage);
 
     // This is the tasks that are sent back to the bot. For now, it just sends a thanks message before finishing bot's execution.
     const actions = [
