@@ -45,14 +45,17 @@ const saveSurveyInInsights = async (
   postSurveyConfigJson: OneToManyConfigSpec[],
   memory: BotMemory,
   surveyTask: TaskInstance,
+  surveyTaskAttributes: any,
 ) => {
   const handlerPath = Runtime.getFunctions()['helpers/insightsService'].path;
   const buildSurveyInsightsData = require(handlerPath)
     .buildSurveyInsightsData as BuildSurveyInsightsData;
 
-  const taskAttributes = JSON.parse(surveyTask.attributes);
-  const finalAttributes = buildSurveyInsightsData(postSurveyConfigJson, taskAttributes, memory);
-  console.log('finalAttributes: ', JSON.stringify(finalAttributes));
+  const finalAttributes = buildSurveyInsightsData(
+    postSurveyConfigJson,
+    surveyTaskAttributes,
+    memory,
+  );
 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
 };
@@ -61,18 +64,17 @@ const saveSurveyInHRM = async (
   postSurveyConfigJson: OneToManyConfigSpec[],
   memory: BotMemory,
   surveyTask: TaskInstance,
+  surveyTaskAttributes: any,
   hrmBaseUrl: string,
   hrmStaticKey: string,
 ) => {
   const handlerPath = Runtime.getFunctions()['helpers/hrmDataManipulation'].path;
   const buildDataObject = require(handlerPath).buildDataObject as BuildDataObject;
 
-  const taskAttributes = JSON.parse(surveyTask.attributes);
-
   const data = buildDataObject(postSurveyConfigJson, memory);
 
   const body: PostSurveyBody = {
-    contactTaskId: taskAttributes.contactTaskId,
+    contactTaskId: surveyTaskAttributes.contactTaskId,
     taskId: surveyTask.sid,
     data,
   };
@@ -88,19 +90,38 @@ const saveSurveyInHRM = async (
   });
 };
 
+const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string => {
+  try {
+    const language = taskLanguage || 'en-US';
+
+    const translation = JSON.parse(
+      Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
+    );
+
+    if (translation.postSurvetCompleteMessage) return translation.postSurvetCompleteMessage;
+  } catch {
+    console.error(
+      `Couldn't retrieve postSurvetCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
+    );
+  }
+
+  return 'Thank you for reaching out. Please contact us again if you need more help.';
+};
+
 export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   context: Context<EnvVars>,
   event: Event,
   callback: ServerlessCallback,
 ) => {
   console.log('-------- postSurveyComplete execution --------');
-  Object.entries(event).forEach(([k, v]) => console.log(k, JSON.stringify(v)));
 
   try {
     const memory = JSON.parse(event.Memory);
     const { ServiceSid, ChannelSid } = memory.twilio.chat;
 
     const client = context.getTwilioClient();
+
+    let taskLanguage: string | undefined;
 
     if (event.Channel === 'chat' && event.CurrentTask === 'complete_post_survey') {
       const channel = await client.chat.services(ServiceSid).channels(ChannelSid).fetch();
@@ -126,13 +147,19 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
             postSurveyConfigJson.open(),
           ) as OneToManyConfigSpec[];
 
+          const surveyTaskAttributes = JSON.parse(surveyTask.attributes);
+
+          // Set the taskLanguage carried over from the original task, if any
+          taskLanguage = surveyTaskAttributes.language;
+
           // parallel execution to save survey collected data in insights and hrm
           await Promise.all([
-            saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask),
+            saveSurveyInInsights(postSurveyConfigSpecs, memory, surveyTask, surveyTaskAttributes),
             saveSurveyInHRM(
               postSurveyConfigSpecs,
               memory,
               surveyTask,
+              surveyTaskAttributes,
               hrmBaseUrl,
               context.HRM_STATIC_KEY,
             ),
@@ -153,8 +180,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       }
     }
 
-    // Message to send back to the user. This will be a localized string later on.
-    const say = 'Thank you for reaching out. Please contact us again if you need more help.';
+    const say = getPostSurveyCompleteMessage(taskLanguage);
 
     // This is the tasks that are sent back to the bot. For now, it just sends a thanks message before finishing bot's execution.
     const actions = [
