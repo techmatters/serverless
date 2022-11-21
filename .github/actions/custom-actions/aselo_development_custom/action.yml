@@ -29,7 +29,7 @@ runs:
       #   with:
       #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
       #     env_variable_name: "IWF_API_COUNTRY_CODE"
-      
+
     - name: Set IWF_SECRET_KEY
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -112,6 +112,7 @@ runs:
     - name: Add IWF_API_URL
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
       shell: bash
+      
     - name: Add IWF_SECRET_KEY
       run: echo "IWF_SECRET_KEY=${{ env.IWF_SECRET_KEY }}" >> .env
       shell: bash
