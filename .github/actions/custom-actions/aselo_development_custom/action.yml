@@ -95,12 +95,15 @@ runs:
     - name: Add IWF_API_URL
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
       shell: bash
-    # - name: Add IWF_API_ENVIRONMENT
-    #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
-    #   shell: bash
-    # - name: Add IWF_API_COUNTRY_CODE
-    #   run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
-    #   shell: bash
+    - name: Add IWF_SECRET_KEY
+      run: echo "IWF_SECRET_KEY=${{ env.IWF_SECRET_KEY }}" >> .env
+      shell: bash
+    - name: Add IWF_API_CASE_URL
+      run: echo "IWF_API_CASE_URL=${{ env.IWF_API_CASE_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_REPORT_URL
+      run: echo "IWF_REPORT_URL=${{ env.IWF_REPORT_URL }}" >> .env
+      shell: bash
 
     - name: Add TWITTER_CONSUMER_KEY
       run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
