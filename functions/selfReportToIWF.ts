@@ -23,7 +23,7 @@ export type IWFSelfReportPayload = {
 };
 
 export type Body = {
-  user_age_range: '<13' | '13-15' | '16-17';
+  user_age_range?: '<13' | '13-15' | '16-17';
   request: { cookies: {}; headers: {} };
 };
 
