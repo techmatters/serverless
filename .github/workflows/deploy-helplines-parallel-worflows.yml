@@ -120,6 +120,12 @@ jobs:
     secrets: inherit
     with:
       changelog: ${{ inputs.changelog }}
+      
+  deploy-kellimni_staging:
+    uses: techmatters/serverless/.github/workflows/Kellimni_staging.yml
+    secrets: inherit
+    with:
+      changelog: ${{ inputs.changelog }} 
 
 
   # Send Slack notifying success
