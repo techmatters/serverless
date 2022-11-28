@@ -1,7 +1,7 @@
 [
   {
     "insightsObject": "conversations",
-    "attributeName": "conversation_attribute_9",
+    "attributeName": "conversation_measure_4",
     "questions": ["didUserFeelSupported"]
   },
   {
@@ -11,7 +11,7 @@
   },
   {
     "insightsObject": "conversations",
-    "attributeName": "conversation_measure_4",
+    "attributeName": "conversation_attribute_9",
     "questions": ["wouldRepeat"]
   },
   {
