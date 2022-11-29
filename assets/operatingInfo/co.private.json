@@ -48,7 +48,7 @@
     "12/25/2024":"Día de Navidad"
   },
   "operatingHours": {
-    "web": {
+    "webchat": {
       "1": [{ "open": 800, "close": 1700 }],
       "2": [{ "open": 800, "close": 1700 }],
       "3": [{ "open": 800, "close": 1700 }],
