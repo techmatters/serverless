@@ -1,5 +1,6 @@
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import FormData from 'form-data';
 import { v4 } from 'uuid';
 import {
   bindResolve,
@@ -11,9 +12,9 @@ import {
 } from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
-  IWF_API_CASE_URL: string;
-  IWF_REPORT_URL: string;
-  IWF_SECRET_KEY: string;
+  AS_DEV_IWF_API_CASE_URL: string;
+  AS_DEV_IWF_REPORT_URL: string;
+  AS_DEV_IWF_SECRET_KEY: string;
 };
 
 export type IWFSelfReportPayload = {
@@ -27,6 +28,8 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+export const formData = new FormData();
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
@@ -37,25 +40,37 @@ export const handler = TokenValidator(
       if (!user_age_range) return resolve(error400('user_age_range'));
 
       const body: IWFSelfReportPayload = {
-        secret_key: context.IWF_SECRET_KEY,
+        secret_key: context.AS_DEV_IWF_SECRET_KEY,
         case_number: v4(),
         user_age_range,
       };
 
-      const report = await axios({
-        url: context.IWF_API_CASE_URL,
+      formData.append('secret_key', body.secret_key);
+      formData.append('case_number', body.case_number);
+      formData.append('user_age_range', body.user_age_range);
+
+      const config: AxiosRequestConfig<any> = {
         method: 'POST',
-        data: JSON.stringify(body),
+        url: context.AS_DEV_IWF_API_CASE_URL,
         headers: {
-          'Content-Type': 'application/json',
+          ...formData.getHeaders(),
         },
+        data: formData,
         validateStatus: () => true,
-      });
+      };
+
+      const report = await axios(config);
 
       if (report.data?.result !== 'OK') return resolve(error400(report.data?.message));
 
-      const reportUrl = `${context.IWF_REPORT_URL}/t?=${report.data?.message?.access_token}`;
-      return resolve(send(report.data?.result)(reportUrl));
+      const reportUrl = `${context.AS_DEV_IWF_REPORT_URL}/t?=${report.data?.message?.access_token}`;
+
+      const data = {
+        reportUrl,
+        status: report.data?.result,
+      };
+
+      return resolve(send(200)(data));
     } catch (error) {
       return resolve(error500(error as any));
     }

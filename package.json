@@ -7,7 +7,7 @@
     "start": "npx tsc && twilio-run --env",
     "start:local": "npx tsc && twilio-run --env --port 3030",
     "watch": "npx tsc && twilio-run start --live",
-    "swagger": "redoc-cli bundle -o assets/swagger.html swagger.yaml",
+    "swagger": "redoc-cli build -o assets/swagger.html swagger.yaml",
     "lint": "eslint --ext ts .",
     "tr": "twilio-run",
     "tr:deploy": "npx tsc && twilio-run deploy --force"
@@ -53,6 +53,7 @@
     "@twilio/runtime-handler": "1.2.4",
     "aws-sdk": "2.1202.0",
     "axios": "0.26.1",
+    "form-data": "^4.0.0",
     "lodash": "4.17.21",
     "moment-timezone": "0.5.37",
     "swagger-ui-express": "4.5.0",
