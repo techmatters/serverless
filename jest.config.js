@@ -3,6 +3,9 @@ module.exports = {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
     },
+    Runtime: {
+      getFunctions: () => null,
+    },
   },
   moduleFileExtensions: ['ts', 'js'],
   transform: {
