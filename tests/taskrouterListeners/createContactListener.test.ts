@@ -7,7 +7,7 @@ import {
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
 
-import * as contactListener from '../../functions/taskrouterListeners/contactListener.private';
+import * as contactListener from '../../functions/taskrouterListeners/createContactListener.private';
 
 const functions = {
   'helpers/addCustomerExternalId': {

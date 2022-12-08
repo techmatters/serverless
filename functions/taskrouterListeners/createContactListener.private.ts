@@ -37,7 +37,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
 
-    console.log(`===== Executing ContactListener for event: ${eventType} =====`);
+    console.log(`===== Executing CreateContactListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
@@ -63,9 +63,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    console.log('===== ContactListener finished successfully =====');
+    console.log('===== CreateContactListener finished successfully =====');
   } catch (err) {
-    console.log('===== ContactListener has failed =====');
+    console.log('===== CreateContactListener has failed =====');
     console.log(String(err));
     throw err;
   }
