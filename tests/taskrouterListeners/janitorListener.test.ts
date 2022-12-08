@@ -12,6 +12,16 @@ import { mock } from 'jest-mock-extended';
 
 import * as janitorListener from '../../functions/taskrouterListeners/janitorListener.private';
 
+const functions = {
+  'helpers/chatChannelJanitor': {
+    path: 'helpers/chatChannelJanitor',
+  },
+  'helpers/customChannels/customChannelToFlex': {
+    path: 'helpers/customChannels/customChannelToFlex',
+  },
+};
+global.Runtime.getFunctions = () => functions;
+
 const postSurveyTaskAttributes = {
   isSurveyTask: true,
   channelSid: 'channelSid',
@@ -46,16 +56,6 @@ const context = {
 const channelJanitorMock = jest.fn();
 
 beforeEach(() => {
-  const functions = {
-    'helpers/chatChannelJanitor': {
-      path: 'helpers/chatChannelJanitor',
-    },
-    'helpers/customChannels/customChannelToFlex': {
-      path: 'helpers/customChannels/customChannelToFlex',
-    },
-  };
-  jest.spyOn(Runtime, 'getFunctions').mockReturnValue(functions);
-
   const channelJanitorModule = {
     chatChannelJanitor: channelJanitorMock,
   };
@@ -86,8 +86,6 @@ describe('Post-survey cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_WRAPUP as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'postSurveyTask',
       TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -100,8 +98,6 @@ describe('Post-survey cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_CANCELED as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'postSurveyTask',
       TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -114,8 +110,6 @@ describe('Post-survey cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_CREATED as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'postSurveyTask',
       TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -127,8 +121,6 @@ describe('Post-survey cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_WRAPUP as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'nonPostSurveyTask',
       TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -142,8 +134,6 @@ describe('Custom channel cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_DELETED as EventType,
-      TaskChannelUniqueName: 'custom',
-      TaskSid: 'customChannelTask',
       TaskAttributes: JSON.stringify(customChannelTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -156,8 +146,6 @@ describe('Custom channel cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_SYSTEM_DELETED as EventType,
-      TaskChannelUniqueName: 'custom',
-      TaskSid: 'customChannelTask',
       TaskAttributes: JSON.stringify(customChannelTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -170,8 +158,6 @@ describe('Custom channel cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_CANCELED as EventType,
-      TaskChannelUniqueName: 'custom',
-      TaskSid: 'customChannelTask',
       TaskAttributes: JSON.stringify(customChannelTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
@@ -184,8 +170,6 @@ describe('Custom channel cleanup', () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_DELETED as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'nonCustomChannelTask',
       TaskAttributes: JSON.stringify(nonCustomChannelTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);

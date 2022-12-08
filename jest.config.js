@@ -4,7 +4,7 @@ module.exports = {
       tsconfig: 'tsconfig.json',
     },
     Runtime: {
-      getFunctions: () => null,
+      getFunctions: () => null, // This is needed to mock Runtime.getFunctions()
     },
   },
   moduleFileExtensions: ['ts', 'js'],
