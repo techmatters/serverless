@@ -1,7 +1,6 @@
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios, { AxiosRequestConfig } from 'axios';
 import FormData from 'form-data';
-import { v4 } from 'uuid';
 import {
   bindResolve,
   error400,
@@ -25,6 +24,7 @@ export type IWFSelfReportPayload = {
 
 export type Body = {
   user_age_range?: '<13' | '13-15' | '16-17';
+  case_number?: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -36,12 +36,13 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { user_age_range } = event;
+      const { user_age_range, case_number } = event;
       if (!user_age_range) return resolve(error400('user_age_range'));
+      if (!case_number) return resolve(error400('case_number'));
 
       const body: IWFSelfReportPayload = {
         secret_key: context.AS_DEV_IWF_SECRET_KEY,
-        case_number: v4(),
+        case_number,
         user_age_range,
       };
 

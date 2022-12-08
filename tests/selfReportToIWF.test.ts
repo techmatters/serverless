@@ -52,10 +52,12 @@ describe('selfReportToIWF', () => {
   test('Should return status 400 if value is undefined', async () => {
     const event: Body = {
       user_age_range: undefined,
+      case_number: 'case_number',
       request: { cookies: {}, headers: {} },
     };
 
     const emptyEvent = {
+      case_number: undefined,
       request: { cookies: {}, headers: {} },
     };
 
@@ -71,6 +73,7 @@ describe('selfReportToIWF', () => {
   test('Should return status 500 if data is undefined', async () => {
     const event: Body = {
       user_age_range: '13-15',
+      case_number: 'case_number',
       request: { cookies: {}, headers: {} },
     };
 
@@ -87,6 +90,7 @@ describe('selfReportToIWF', () => {
   test('Should POST a payload to AS_DEV_IWF_API_CASE_URL and return 200', async () => {
     const event: Body = {
       user_age_range: '13-15',
+      case_number: 'case_number',
       request: { cookies: {}, headers: {} },
     };
 
@@ -121,6 +125,7 @@ describe('selfReportToIWF', () => {
   test('Environment variables should override default values in POST', async () => {
     const event: Body = {
       user_age_range: '13-15',
+      case_number: 'case_number',
       request: { cookies: {}, headers: {} },
     };
 
