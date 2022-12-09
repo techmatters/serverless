@@ -96,6 +96,7 @@ export const handler = async (
   event: EventFields,
   callback: ServerlessCallback,
 ) => {
+  console.log(`Task Router Event ${event?.EventType} fired`, event);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
