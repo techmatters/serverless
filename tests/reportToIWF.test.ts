@@ -108,6 +108,7 @@ describe('reportToIWF', () => {
     // @ts-ignore
     axios.mockImplementationOnce((request) => {
       postedPayload = JSON.parse(request.data);
+      console.log('request here', request);
       return Promise.resolve({
         status: 200,
         data: 'Returned ok',

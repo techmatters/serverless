@@ -29,6 +29,23 @@ runs:
       #   with:
       #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
       #     env_variable_name: "IWF_API_COUNTRY_CODE"
+
+    - name: Set AS_DEV_IWF_SECRET_KEY
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "AS_DEV_IWF_SECRET_KEY"
+        env_variable_name: "AS_DEV_IWF_SECRET_KEY"
+    - name: Set AS_DEV_IWF_API_CASE_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "AS_DEV_IWF_API_CASE_URL"
+        env_variable_name: "AS_DEV_IWF_API_CASE_URL"
+    - name: Set AS_DEV_IWF_REPORT_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "AS_DEV_IWF_REPORT_URL"
+        env_variable_name: "AS_DEV_IWF_REPORT_URL"
+
     - name: Set Aselo Twitter Consumer Key
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -95,12 +112,16 @@ runs:
     - name: Add IWF_API_URL
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
       shell: bash
-    # - name: Add IWF_API_ENVIRONMENT
-    #   run: echo "IWF_API_ENVIRONMENT=${{ env.IWF_API_ENVIRONMENT }}" >> .env
-    #   shell: bash
-    # - name: Add IWF_API_COUNTRY_CODE
-    #   run: echo "IWF_API_COUNTRY_CODE=${{ env.IWF_API_COUNTRY_CODE }}" >> .env
-    #   shell: bash
+
+    - name: Add AS_DEV_IWF_SECRET_KEY
+      run: echo "AS_DEV_IWF_SECRET_KEY=${{ env.AS_DEV_IWF_SECRET_KEY }}" >> .env
+      shell: bash
+    - name: Add AS_DEV_IWF_API_CASE_URL
+      run: echo "AS_DEV_IWF_API_CASE_URL=${{ env.AS_DEV_IWF_API_CASE_URL }}" >> .env
+      shell: bash
+    - name: Add AS_DEV_IWF_REPORT_URL
+      run: echo "AS_DEV_IWF_REPORT_URL=${{ env.AS_DEV_IWF_REPORT_URL }}" >> .env
+      shell: bash
 
     - name: Add TWITTER_CONSUMER_KEY
       run: echo "TWITTER_CONSUMER_KEY=${{ env.TWITTER_CONSUMER_KEY }}" >> .env
