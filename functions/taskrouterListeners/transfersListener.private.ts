@@ -45,7 +45,7 @@ const isChatTransfer = (
   taskAttributes.transferMeta.mode === 'COLD' &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
 
-const isChatTransferAccepted = (
+const isChatTransferToWorkerAccepted = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
@@ -54,7 +54,7 @@ const isChatTransferAccepted = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'worker';
 
-const isChatTransferRejected = (
+const isChatTransferToWorkerRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
@@ -66,7 +66,7 @@ const isChatTransferRejected = (
 const isChatTransferToQueueComplete = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta; transferTargetType: 'worker' | 'queue' },
+  taskAttributes: ChatTransferTaskAttributes,
 ) =>
   eventType === TASK_QUEUE_ENTERED &&
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
@@ -114,7 +114,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * If a chat transfer gets accepted, it should:
      * 1) Complete the original task
      */
-    if (isChatTransferAccepted(eventType, taskChannelUniqueName, taskAttributes)) {
+    if (isChatTransferToWorkerAccepted(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer accepted...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
@@ -162,7 +162,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      *    - transferMeta.sidWithTaskControl: to original reservation
      * 2) Cancel rejected task
      */
-    if (isChatTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+    if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer rejected...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
