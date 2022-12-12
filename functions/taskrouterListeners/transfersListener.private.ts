@@ -11,6 +11,7 @@ import {
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
 export const eventTypes: EventType[] = [
@@ -18,6 +19,7 @@ export const eventTypes: EventType[] = [
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_QUEUE_ENTERED,
 ];
 
 type EnvVars = {
@@ -27,6 +29,11 @@ type EnvVars = {
 type TransferMeta = {
   mode: 'COLD' | 'WARM';
   transferStatus: 'transferring' | 'accepted' | 'rejected';
+};
+
+type ChatTransferTaskAttributes = {
+  transferMeta?: TransferMeta;
+  transferTargetType: 'worker' | 'queue';
 };
 
 const isChatTransfer = (
@@ -41,16 +48,29 @@ const isChatTransfer = (
 const isChatTransferAccepted = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta },
-) => eventType === RESERVATION_ACCEPTED && isChatTransfer(taskChannelUniqueName, taskAttributes);
+  taskAttributes: ChatTransferTaskAttributes,
+) =>
+  eventType === RESERVATION_ACCEPTED &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
 
 const isChatTransferRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta },
+  taskAttributes: ChatTransferTaskAttributes,
 ) =>
   (eventType === RESERVATION_REJECTED || eventType === RESERVATION_TIMEOUT) &&
-  isChatTransfer(taskChannelUniqueName, taskAttributes);
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
+
+const isChatTransferToQueueComplete = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: { transferMeta?: TransferMeta; transferTargetType: 'worker' | 'queue' },
+) =>
+  eventType === TASK_QUEUE_ENTERED &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'queue';
 
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
@@ -111,6 +131,29 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         });
 
       console.log('Finished handling chat transfer accepted.');
+      return;
+    }
+
+    /**
+     * If a chat transfer enters another queue, it should:
+     * 1) Complete the original task
+     */
+
+    if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling chat transfer to queue entering target queue...');
+
+      const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+      const client = context.getTwilioClient();
+
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .update({
+          assignmentStatus: 'completed',
+          reason: 'task transferred into queue',
+        });
+
+      console.log('Finished handling chat queue transfer.');
       return;
     }
 
