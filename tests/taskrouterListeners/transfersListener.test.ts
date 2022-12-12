@@ -4,6 +4,7 @@ import {
   RESERVATION_ACCEPTED,
   RESERVATION_REJECTED,
   RESERVATION_WRAPUP,
+  TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
@@ -137,13 +138,13 @@ afterEach(() => {
 });
 
 describe('Chat transfers', () => {
-  test('accepted transfer', async () => {
+  test('accepted reservation for worker transfer - marks original task copmleted', async () => {
     const event = {
       ...mock<EventFields>(),
       EventType: RESERVATION_ACCEPTED as EventType,
       TaskChannelUniqueName: 'chat',
       TaskSid: 'second-task',
-      TaskAttributes: tasks['second-task'].attributes,
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
     };
 
     await transfersListener.handleEvent(context, event);
@@ -156,13 +157,76 @@ describe('Chat transfers', () => {
     expect(tasks['original-task'].update).toHaveBeenCalledWith(payload);
   });
 
-  test('rejected transfer', async () => {
+  test('accept reservation for queue transfer - does nothing', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_ACCEPTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'queue' }),
+    };
+
+    await transfersListener.handleEvent(context, event);
+
+    expect(tasks['original-task'].update).not.toHaveBeenCalled();
+    expect(tasks['second-task'].update).not.toHaveBeenCalled();
+  });
+
+  test('task queue entered for queue transfer - marks original task complete ', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_QUEUE_ENTERED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'queue' }),
+    };
+
+    await transfersListener.handleEvent(context, event);
+
+    const payload = {
+      assignmentStatus: 'completed',
+      reason: 'task transferred into queue',
+    };
+
+    expect(tasks['original-task'].update).toHaveBeenCalledWith(payload);
+  });
+
+  test('task queue entered for worker transfer - does nothing', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_QUEUE_ENTERED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
+    };
+
+    await transfersListener.handleEvent(context, event);
+
+    expect(tasks['original-task'].update).not.toHaveBeenCalledWith();
+  });
+
+  test('accept queue transfer - does nothing', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_ACCEPTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'queue' }),
+    };
+
+    await transfersListener.handleEvent(context, event);
+
+    expect(tasks['original-task'].update).not.toHaveBeenCalled();
+    expect(tasks['second-task'].update).not.toHaveBeenCalled();
+  });
+
+  test('rejected reservation for worker transfer - cancels transfer task & updates the original with transfer task changes', async () => {
     const event = {
       ...mock<EventFields>(),
       EventType: RESERVATION_REJECTED as EventType,
       TaskChannelUniqueName: 'chat',
       TaskSid: 'second-task',
-      TaskAttributes: tasks['second-task'].attributes,
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
     };
 
     await transfersListener.handleEvent(context, event);
@@ -190,6 +254,21 @@ describe('Chat transfers', () => {
     console.log((tasks['original-task'].update as jest.Mock).mock.calls);
     expect(tasks['original-task'].update).toHaveBeenCalledWith(attributesPayload);
     expect(tasks['second-task'].update).toHaveBeenCalledWith(canceledPayload);
+  });
+
+  test('rejected reservation for queue transfer - does nothing', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_REJECTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'queue' }),
+    };
+
+    await transfersListener.handleEvent(context, event);
+
+    expect(tasks['original-task'].update).not.toHaveBeenCalled();
+    expect(tasks['second-task'].update).not.toHaveBeenCalled();
   });
 });
 
