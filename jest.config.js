@@ -3,6 +3,9 @@ module.exports = {
     'ts-jest': {
       tsconfig: 'tsconfig.json',
     },
+    Runtime: {
+      getFunctions: () => null, // This is needed to mock Runtime.getFunctions()
+    },
   },
   moduleFileExtensions: ['ts', 'js'],
   transform: {

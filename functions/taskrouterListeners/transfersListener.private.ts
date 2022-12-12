@@ -99,8 +99,6 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
-    if (!shouldHandle(event)) return;
-
     const {
       EventType: eventType,
       TaskChannelUniqueName: taskChannelUniqueName,
