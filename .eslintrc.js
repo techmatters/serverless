@@ -21,6 +21,6 @@ module.exports = {
     "@typescript-eslint/camelcase": "off",
     "@typescript-eslint/indent": "off",
     "no-console": "off",
-    "no-shadow": "off"
+    "no-shadow": "off",
   },
 };

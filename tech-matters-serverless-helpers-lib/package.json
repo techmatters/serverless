@@ -38,5 +38,14 @@
   "exports": {
     ".": "./lib/index.js",
     "./taskrouter": "./lib/taskrouter/index.js"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "endOfLine": "auto"
   }
+
 }

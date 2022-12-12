@@ -11,6 +11,7 @@ import {
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
 export const eventTypes: EventType[] = [
@@ -18,6 +19,7 @@ export const eventTypes: EventType[] = [
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_QUEUE_ENTERED,
 ];
 
 type EnvVars = {
@@ -29,6 +31,11 @@ type TransferMeta = {
   transferStatus: 'transferring' | 'accepted' | 'rejected';
 };
 
+type ChatTransferTaskAttributes = {
+  transferMeta?: TransferMeta;
+  transferTargetType: 'worker' | 'queue';
+};
+
 const isChatTransfer = (
   taskChannelUniqueName: string,
   taskAttributes: { transferMeta?: TransferMeta },
@@ -38,19 +45,32 @@ const isChatTransfer = (
   taskAttributes.transferMeta.mode === 'COLD' &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
 
-const isChatTransferAccepted = (
+const isChatTransferToWorkerAccepted = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta },
-) => eventType === RESERVATION_ACCEPTED && isChatTransfer(taskChannelUniqueName, taskAttributes);
+  taskAttributes: ChatTransferTaskAttributes,
+) =>
+  eventType === RESERVATION_ACCEPTED &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
 
-const isChatTransferRejected = (
+const isChatTransferToWorkerRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta },
+  taskAttributes: ChatTransferTaskAttributes,
 ) =>
   (eventType === RESERVATION_REJECTED || eventType === RESERVATION_TIMEOUT) &&
-  isChatTransfer(taskChannelUniqueName, taskAttributes);
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
+
+const isChatTransferToQueueComplete = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: ChatTransferTaskAttributes,
+) =>
+  eventType === TASK_QUEUE_ENTERED &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'queue';
 
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
@@ -94,7 +114,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * If a chat transfer gets accepted, it should:
      * 1) Complete the original task
      */
-    if (isChatTransferAccepted(eventType, taskChannelUniqueName, taskAttributes)) {
+    if (isChatTransferToWorkerAccepted(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer accepted...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
@@ -113,13 +133,36 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     }
 
     /**
+     * If a chat transfer enters another queue, it should:
+     * 1) Complete the original task
+     */
+
+    if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling chat transfer to queue entering target queue...');
+
+      const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+      const client = context.getTwilioClient();
+
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .update({
+          assignmentStatus: 'completed',
+          reason: 'task transferred into queue',
+        });
+
+      console.log('Finished handling chat queue transfer.');
+      return;
+    }
+
+    /**
      * If a chat transfer gets rejected, it should:
      * 1) Adjust original task attributes:
      *    - channelSid: from 'CH00000000000000000000000000000000' to original channelSid
      *    - transferMeta.sidWithTaskControl: to original reservation
      * 2) Cancel rejected task
      */
-    if (isChatTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+    if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer rejected...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
