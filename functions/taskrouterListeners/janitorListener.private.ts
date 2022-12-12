@@ -61,8 +61,6 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
-    if (!shouldHandle(event)) return;
-
     const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);

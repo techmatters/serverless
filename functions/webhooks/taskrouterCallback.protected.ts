@@ -50,6 +50,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
+    console.log(`===== Executing TaskrouterCallback for event: ${event.EventType} =====`);
     await runTaskrouterListeners(context, event, callback);
 
     const { EventType: eventType } = event;
