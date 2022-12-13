@@ -84,7 +84,7 @@ const triggerPostSurveyFlow = async (
     });
 };
 
-const getTriggerMessage = (event: Body): string => {
+const getTriggerMessage = (event: Pick<Body, 'taskLanguage'>): string => {
   // Try to retrieve the triggerMessage for the approapriate language (if any)
   const { taskLanguage } = event;
   if (taskLanguage) {
@@ -102,6 +102,20 @@ const getTriggerMessage = (event: Body): string => {
   return 'Before you leave, would you be willing to answer a few questions about the service you received today? Please answer Yes or No.';
 };
 
+export const postSurveyInitHandler = async (
+  context: Context<EnvVars>,
+  event: Required<Pick<Body, 'channelSid' | 'taskSid'>> & Pick<Body, 'taskLanguage'>,
+) => {
+  const { channelSid, taskSid, taskLanguage } = event;
+
+  const triggerMessage = getTriggerMessage(event);
+
+  await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
+  await triggerPostSurveyFlow(context, channelSid, triggerMessage);
+};
+
+export type PostSurveyInitHandler = typeof postSurveyInitHandler;
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     console.log('-------- postSurveyInit execution --------');
@@ -109,16 +123,13 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { channelSid, taskSid, taskLanguage } = event;
-
     try {
+      const { channelSid, taskSid, taskLanguage } = event;
+
       if (channelSid === undefined) return resolve(error400('channelSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
 
-      const triggerMessage = getTriggerMessage(event);
-
-      await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
-      await triggerPostSurveyFlow(context, channelSid, triggerMessage);
+      await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
     } catch (err: any) {
