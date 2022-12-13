@@ -26,9 +26,10 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
 };
 
-type TransferMeta = {
+export type TransferMeta = {
   mode: 'COLD' | 'WARM';
   transferStatus: 'transferring' | 'accepted' | 'rejected';
+  sidWithTaskControl: string;
 };
 
 type ChatTransferTaskAttributes = {
