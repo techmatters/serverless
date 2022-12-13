@@ -91,7 +91,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
         const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-        const handlerPath = Runtime.getFunctions()['postSurveyInit.ts'].path;
+        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
         const postSurveyInitHandler = require(handlerPath)
           .postSurveyInitHandler as PostSurveyInitHandler;
 
