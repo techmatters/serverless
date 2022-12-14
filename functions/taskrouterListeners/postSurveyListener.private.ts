@@ -86,6 +86,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
+      /** ==================== */
+      // TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the check on post_survey_serverless_handled can be removed
       if (featureFlags.enable_post_survey && featureFlags.post_survey_serverless_handled) {
         const { channelSid } = taskAttributes;
 
