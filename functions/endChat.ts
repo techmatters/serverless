@@ -11,7 +11,6 @@ import {
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
-import { ChatChannelJanitor } from './helpers/chatChannelJanitor.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -116,12 +115,6 @@ export const handler = TokenValidator(
         }
         default:
       }
-
-      /* TODO: Once logic for triggering post survey on task wrap is moved to taskRouterCallback, the following clean up can be removed */
-      // Deactivate channel and proxy
-      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
-      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
-      await chatChannelJanitor(context, { channelSid });
 
       resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
       return;
