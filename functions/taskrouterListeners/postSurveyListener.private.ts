@@ -15,7 +15,7 @@ import type { PostSurveyInitHandler } from '../postSurveyInit';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
-type EnvVars = {
+export type EnvVars = {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
