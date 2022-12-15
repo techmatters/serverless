@@ -199,7 +199,7 @@ describe('InstagramToFlex', () => {
       conditionDescription: 'the event contains no entry',
       event: { ...validEventBody(), entry: [] },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read properties',
+      expectedMessage: 'Cannot read property',
     },
     {
       conditionDescription: 'the event has an entry with empty messaging',
@@ -219,7 +219,7 @@ describe('InstagramToFlex', () => {
         ],
       },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read properties',
+      expectedMessage: 'Cannot read property',
     },
     {
       conditionDescription: 'the event has no message',
@@ -233,7 +233,7 @@ describe('InstagramToFlex', () => {
         ],
       },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read properties',
+      expectedMessage: 'Cannot read property',
     },
     {
       conditionDescription:
