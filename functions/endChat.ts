@@ -67,6 +67,8 @@ export const handler = TokenValidator(
         return;
       }
 
+      let channelCleanupRequired = false;
+
       // Use the channelSid to fetch task that needs to be closed
       const channel = await client.chat
         .services(context.CHAT_SERVICE_SID)
@@ -74,54 +76,54 @@ export const handler = TokenValidator(
         .fetch();
       const channelAttributes = JSON.parse(channel.attributes);
 
-      // Fetch the Task to 'cancel' or 'wrapup'
-      const task = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(channelAttributes.taskSid)
-        .fetch();
-
-      // Send a Message indicating user left the conversation
-      if (task.assignmentStatus === 'assigned') {
-        const endChatMessage = getEndChatMessage(event);
-        await context
-          .getTwilioClient()
-          .chat.services(context.CHAT_SERVICE_SID)
-          .channels(channelSid)
-          .messages.create({
-            body: endChatMessage,
-            from: 'Bot',
-            xTwilioWebhookEnabled: 'true',
-          });
-      }
-
-      // Update the task assignmentStatus
-      const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
-        client.taskrouter
+      if (channelAttributes.taskSid) {
+        // Fetch the Task to 'cancel' or 'wrapup'
+        const task = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(channelAttributes.taskSid)
-          .update({ assignmentStatus });
+          .fetch();
 
-      switch (task.assignmentStatus) {
-        case 'reserved': {
-          await updateAssignmentStatus('canceled');
-          break;
+        // Send a Message indicating user left the conversation
+        if (task.assignmentStatus === 'assigned') {
+          const endChatMessage = getEndChatMessage(event);
+          await context
+            .getTwilioClient()
+            .chat.services(context.CHAT_SERVICE_SID)
+            .channels(channelSid)
+            .messages.create({
+              body: endChatMessage,
+              from: 'Bot',
+              xTwilioWebhookEnabled: 'true',
+            });
         }
-        case 'pending': {
-          await updateAssignmentStatus('canceled');
-          break;
+
+        // Update the task assignmentStatus
+        const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
+          client.taskrouter
+            .workspaces(context.TWILIO_WORKSPACE_SID)
+            .tasks(channelAttributes.taskSid)
+            .update({ assignmentStatus });
+
+        switch (task.assignmentStatus) {
+          case 'reserved':
+          case 'pending': {
+            await updateAssignmentStatus('canceled');
+            channelCleanupRequired = true;
+            break;
+          }
+          case 'assigned': {
+            await updateAssignmentStatus('wrapping');
+            break;
+          }
+          default:
         }
-        case 'assigned': {
-          await updateAssignmentStatus('wrapping');
-          break;
-        }
-        default:
       }
 
       /** ==================== */
       /* TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the following clean up can be removed */
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags } = serviceConfig.attributes;
-      if (!featureFlags.post_survey_serverless_handled) {
+      if (channelCleanupRequired || !featureFlags.post_survey_serverless_handled) {
         // Deactivate channel and proxy
         const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
         const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
