@@ -71,11 +71,6 @@ const assignToAvailableWorker = async (
   if (accepted.reservationStatus !== 'accepted')
     return cleanUpTask(newTask, 'Error: reservation for task not accepted.');
 
-  const completed = await reservation.update({ reservationStatus: 'completed' });
-
-  if (completed.reservationStatus !== 'completed')
-    return cleanUpTask(newTask, 'Error: reservation for task not completed.');
-
   // eslint-disable-next-line no-console
   if (retry) console.warn(`Needed ${retry} retries to get reservation`);
 

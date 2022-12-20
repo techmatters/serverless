@@ -1,0 +1,105 @@
+import '@twilio-labs/serverless-runtime-types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  responseWithCors,
+  bindResolve,
+  error400,
+  error500,
+  success,
+  send,
+  functionValidator as TokenValidator,
+} from '@tech-matters/serverless-helpers';
+import { merge } from 'lodash';
+
+type EnvVars = {
+  TWILIO_WORKSPACE_SID: string;
+  TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
+};
+
+export type Body = {
+  taskSid?: string;
+  targetSid?: string;
+  finalTaskAttributes: string;
+  request: { cookies: {}; headers: {} };
+};
+
+type TaskInstance = Awaited<
+  ReturnType<
+    ReturnType<
+      ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['tasks']
+    >['fetch']
+  >
+>;
+type AssignmentResult =
+  | {
+      type: 'error';
+      payload: { message: string; attributes?: string };
+    }
+  | { type: 'success'; completedTask: TaskInstance };
+
+const updateAndCompleteTask = async (
+  context: Context<EnvVars>,
+  event: Required<Pick<Body, 'taskSid' | 'targetSid' | 'finalTaskAttributes'>>,
+): Promise<AssignmentResult> => {
+  const client = context.getTwilioClient();
+
+  try {
+    const task = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(event.taskSid)
+      .fetch();
+
+    const taskAttributes = JSON.parse(task.attributes);
+
+    await task.update({ attributes: merge(taskAttributes, event.finalTaskAttributes) });
+
+    const completedTask = await task.update({ assignmentStatus: 'completed' });
+
+    return { type: 'success', completedTask } as const;
+  } catch (err) {
+    return {
+      type: 'error',
+      payload: { message: String(err), attributes: event.finalTaskAttributes },
+    };
+  }
+};
+
+export const handler = TokenValidator(
+  async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+    const response = responseWithCors();
+    const resolve = bindResolve(callback)(response);
+
+    try {
+      const { taskSid, targetSid, finalTaskAttributes } = event;
+
+      if (taskSid === undefined) {
+        resolve(error400('taskSid'));
+        return;
+      }
+      if (targetSid === undefined) {
+        resolve(error400('targetSid'));
+        return;
+      }
+      if (finalTaskAttributes === undefined) {
+        resolve(error400('finalTaskAttributes'));
+        return;
+      }
+
+      const result = await updateAndCompleteTask(context, {
+        taskSid,
+        targetSid,
+        finalTaskAttributes,
+      });
+
+      if (result.type === 'error') {
+        const { payload } = result;
+        resolve(send(500)(payload));
+        return;
+      }
+
+      resolve(success(result.completedTask));
+    } catch (err: any) {
+      resolve(error500(err));
+    }
+  },
+);
