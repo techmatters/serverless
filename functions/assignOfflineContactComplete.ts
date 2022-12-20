@@ -9,7 +9,6 @@ import {
   send,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import { merge } from 'lodash';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -49,9 +48,7 @@ const updateAndCompleteTask = async (
       .tasks(event.taskSid)
       .fetch();
 
-    const taskAttributes = JSON.parse(task.attributes);
-
-    await task.update({ attributes: merge(taskAttributes, event.finalTaskAttributes) });
+    await task.update({ attributes: event.finalTaskAttributes });
 
     const completedTask = await task.update({ assignmentStatus: 'completed' });
 

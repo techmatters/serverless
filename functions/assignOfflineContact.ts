@@ -188,10 +188,10 @@ const assignOfflineContact = async (
   const updatedTask = await newTask.update({ attributes: JSON.stringify(mergedAttributes) });
 
   if (targetWorker.available) {
-    // assign the task, accept and complete it
+    // assign the task and accept it
     return assignToAvailableWorker(body, updatedTask);
   }
-  // Set the worker available, assign the task, accept, complete it and set worker to previous state
+  // Set the worker available, assign the task, accept it and set worker to previous state
   return assignToOfflineWorker(context, body, targetWorker, updatedTask);
 };
 
