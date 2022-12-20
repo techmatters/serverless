@@ -17,7 +17,7 @@ type EnvVars = {
 
 export type Body = {
   targetSid?: string;
-  finalTaskAttributes: string;
+  taskAttributes: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -119,7 +119,7 @@ const assignOfflineContact = async (
   body: Required<Body>,
 ): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
-  const { targetSid, finalTaskAttributes } = body;
+  const { targetSid, taskAttributes } = body;
 
   const targetWorker = await client.taskrouter
     .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -165,7 +165,7 @@ const assignOfflineContact = async (
   });
 
   const newTaskAttributes = JSON.parse(newTask.attributes);
-  const parsedFinalAttributes = JSON.parse(finalTaskAttributes);
+  const parsedFinalAttributes = JSON.parse(taskAttributes);
   const routingAttributes = {
     targetSid,
     transferTargetType: 'worker',
@@ -201,20 +201,20 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { targetSid, finalTaskAttributes } = event;
+      const { targetSid, taskAttributes } = event;
 
       if (targetSid === undefined) {
         resolve(error400('targetSid'));
         return;
       }
-      if (finalTaskAttributes === undefined) {
-        resolve(error400('finalTaskAttributes'));
+      if (taskAttributes === undefined) {
+        resolve(error400('taskAttributes'));
         return;
       }
 
       const assignmentResult = await assignOfflineContact(context, {
         targetSid,
-        finalTaskAttributes,
+        taskAttributes,
         request: { cookies: {}, headers: {} },
       });
 
