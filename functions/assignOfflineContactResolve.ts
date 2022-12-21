@@ -52,7 +52,7 @@ type AssignmentResult =
 
 const updateAndCompleteTask = async (
   context: Context<EnvVars>,
-  event: Required<Pick<OfflineContactComplete, 'taskSid' | 'targetSid' | 'finalTaskAttributes'>>,
+  event: Required<Pick<OfflineContactComplete, 'taskSid' | 'finalTaskAttributes'>>,
 ): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
 
@@ -95,12 +95,8 @@ export const handler = TokenValidator(
 
       // If action is "complete", we want to update the task attributes to it's final form and complete it
       if (action === 'complete') {
-        const { taskSid, targetSid, finalTaskAttributes } = event;
+        const { taskSid, finalTaskAttributes } = event;
 
-        if (targetSid === undefined) {
-          resolve(error400('targetSid'));
-          return;
-        }
         if (finalTaskAttributes === undefined) {
           resolve(error400('finalTaskAttributes'));
           return;
@@ -108,7 +104,6 @@ export const handler = TokenValidator(
 
         const result = await updateAndCompleteTask(context, {
           taskSid,
-          targetSid,
           finalTaskAttributes,
         });
 
