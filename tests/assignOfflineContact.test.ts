@@ -252,13 +252,13 @@ describe('assignOfflineContact', () => {
   test('Should return status 400', async () => {
     const bad1: Body = {
       targetSid: undefined,
-      finalTaskAttributes: JSON.stringify({}),
+      taskAttributes: JSON.stringify({}),
       request: { cookies: {}, headers: {} },
     };
     const bad2: Body = {
       targetSid: 'WKxxx',
       // @ts-ignore
-      finalTaskAttributes: undefined,
+      taskAttributes: undefined,
     };
 
     const callback: ServerlessCallback = (err, result) => {
@@ -328,17 +328,6 @@ describe('assignOfflineContact', () => {
       expectedMessage: 'Error: reservation for task not accepted.',
       expectedUpdatedWorkerMockCalls: 2,
     },
-    {
-      condition: 'worker is available and accepted',
-      targetSid: 'available-worker-with-accepted',
-      expectedMessage: 'Error: reservation for task not completed.',
-    },
-    {
-      condition: 'worker is not available and accepted',
-      targetSid: 'not-available-worker-with-accepted',
-      expectedMessage: 'Error: reservation for task not completed.',
-      expectedUpdatedWorkerMockCalls: 2,
-    },
   ]).test(
     "Should return status 500 '$expectedMessage' when $condition",
     async ({
@@ -353,7 +342,7 @@ describe('assignOfflineContact', () => {
 
       const event: Body = {
         targetSid,
-        finalTaskAttributes: JSON.stringify({}),
+        taskAttributes: JSON.stringify({}),
         request: { cookies: {}, headers: {} },
       };
       let response: MockedResponse | undefined;
@@ -377,7 +366,7 @@ describe('assignOfflineContact', () => {
   test('Should return status 200 (available worker)', async () => {
     const event: Body = {
       targetSid: 'available-worker-with-completed',
-      finalTaskAttributes: JSON.stringify({}),
+      taskAttributes: JSON.stringify({}),
       request: { cookies: {}, headers: {} },
     };
 
@@ -394,7 +383,7 @@ describe('assignOfflineContact', () => {
   test('Should return status 200 (not available worker)', async () => {
     const event: Body = {
       targetSid: 'not-available-worker-with-completed',
-      finalTaskAttributes: JSON.stringify({}),
+      taskAttributes: JSON.stringify({}),
       request: { cookies: {}, headers: {} },
     };
 
