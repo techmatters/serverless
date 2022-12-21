@@ -162,6 +162,7 @@ const assignOfflineContact = async (
     taskChannel: 'default',
     attributes: JSON.stringify(queueRequiredTaskAttributes),
     priority: 100,
+    timeout: 120, // 2 minutes should be more than enough.
   });
 
   const newTaskAttributes = JSON.parse(newTask.attributes);

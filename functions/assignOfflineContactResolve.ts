@@ -15,12 +15,26 @@ type EnvVars = {
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
 };
 
-export type Body = {
-  taskSid?: string;
-  targetSid?: string;
-  finalTaskAttributes: string;
-  request: { cookies: {}; headers: {} };
+// ================ //
+// TODO: share this code with Flex
+type OfflineContactComplete = {
+  action: 'complete';
+  taskSid: string;
+  targetSid: string;
+  finalTaskAttributes: TaskInstance['attributes'];
 };
+
+type OfflineContactRemove = {
+  action: 'remove';
+  taskSid: string;
+};
+// ================ //
+
+type OfflineContactResolvePayload = OfflineContactComplete | OfflineContactRemove;
+
+export type Body = {
+  request: { cookies: {}; headers: {} };
+} & OfflineContactResolvePayload;
 
 type TaskInstance = Awaited<
   ReturnType<
@@ -38,7 +52,7 @@ type AssignmentResult =
 
 const updateAndCompleteTask = async (
   context: Context<EnvVars>,
-  event: Required<Pick<Body, 'taskSid' | 'targetSid' | 'finalTaskAttributes'>>,
+  event: Required<Pick<OfflineContactComplete, 'taskSid' | 'targetSid' | 'finalTaskAttributes'>>,
 ): Promise<AssignmentResult> => {
   const client = context.getTwilioClient();
 
@@ -67,34 +81,60 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { taskSid, targetSid, finalTaskAttributes } = event;
+      const { action, taskSid } = event;
+
+      if (action === undefined || (action !== 'complete' && action !== 'remove')) {
+        resolve(error400('action'));
+        return;
+      }
 
       if (taskSid === undefined) {
         resolve(error400('taskSid'));
         return;
       }
-      if (targetSid === undefined) {
-        resolve(error400('targetSid'));
-        return;
-      }
-      if (finalTaskAttributes === undefined) {
-        resolve(error400('finalTaskAttributes'));
+
+      // If action is "complete", we want to update the task attributes to it's final form and complete it
+      if (action === 'complete') {
+        const { taskSid, targetSid, finalTaskAttributes } = event;
+
+        if (targetSid === undefined) {
+          resolve(error400('targetSid'));
+          return;
+        }
+        if (finalTaskAttributes === undefined) {
+          resolve(error400('finalTaskAttributes'));
+          return;
+        }
+
+        const result = await updateAndCompleteTask(context, {
+          taskSid,
+          targetSid,
+          finalTaskAttributes,
+        });
+
+        if (result.type === 'error') {
+          const { payload } = result;
+          resolve(send(500)(payload));
+          return;
+        }
+
+        resolve(success(result.completedTask));
         return;
       }
 
-      const result = await updateAndCompleteTask(context, {
-        taskSid,
-        targetSid,
-        finalTaskAttributes,
-      });
+      // If action is "remove", we want to cleanup the stuck task
+      if (action === 'remove') {
+        const removed = await context
+          .getTwilioClient()
+          .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(event.taskSid)
+          .remove();
 
-      if (result.type === 'error') {
-        const { payload } = result;
-        resolve(send(500)(payload));
+        resolve(success({ removed, taskSid }));
         return;
       }
 
-      resolve(success(result.completedTask));
+      resolve(error400('Invalid operation'));
     } catch (err: any) {
       resolve(error500(err));
     }
