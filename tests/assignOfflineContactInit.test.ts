@@ -1,6 +1,6 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import each from 'jest-each';
-import { handler as assignOfflineContact, Body } from '../functions/assignOfflineContact';
+import { handler as assignOfflineContactInit, Body } from '../functions/assignOfflineContactInit';
 
 import helpers, { MockedResponse } from './helpers';
 
@@ -248,7 +248,7 @@ afterEach(() => {
   updateWorkerMock.mockClear();
 });
 
-describe('assignOfflineContact', () => {
+describe('assignOfflineContactInit', () => {
   test('Should return status 400', async () => {
     const bad1: Body = {
       targetSid: undefined,
@@ -268,7 +268,7 @@ describe('assignOfflineContact', () => {
     };
 
     await Promise.all(
-      [bad1, bad2].map((event) => assignOfflineContact(baseContext, event, callback)),
+      [bad1, bad2].map((event) => assignOfflineContactInit(baseContext, event, callback)),
     );
   });
 
@@ -352,7 +352,7 @@ describe('assignOfflineContact', () => {
       };
 
       updateWorkerMock.mockClear();
-      await assignOfflineContact(context, event, callback);
+      await assignOfflineContactInit(context, event, callback);
 
       expect(response).toBeDefined();
       if (response) {
@@ -377,7 +377,7 @@ describe('assignOfflineContact', () => {
       expect(updateWorkerMock).not.toBeCalled();
     };
 
-    await assignOfflineContact(baseContext, event, callback);
+    await assignOfflineContactInit(baseContext, event, callback);
   });
 
   test('Should return status 200 (not available worker)', async () => {
@@ -394,6 +394,6 @@ describe('assignOfflineContact', () => {
       expect(updateWorkerMock).toBeCalledTimes(2);
     };
 
-    await assignOfflineContact(baseContext, event, callback);
+    await assignOfflineContactInit(baseContext, event, callback);
   });
 });
