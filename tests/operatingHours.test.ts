@@ -71,76 +71,177 @@ describe('operatingHours', () => {
     await operatingHours(baseContext, event2, callback2);
   });
 
-  test('Should return status 200 (open)', async () => {
-    const event: Body = { channel: 'webchat' };
+  describe('Should return status 200 (without office)', () => {
+    test('open', async () => {
+      const event: Body = { channel: 'webchat' };
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('open');
-    };
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('open');
+      };
 
-    await operatingHours(baseContext, event, callback);
+      await operatingHours(baseContext, event, callback);
+    });
+
+    test('closed with shifts', async () => {
+      const event: Body = { channel: 'facebook' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+      };
+
+      await operatingHours(baseContext, event, callback);
+    });
+
+    test('closed without shifts', async () => {
+      const event: Body = { channel: 'another' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+      };
+
+      await operatingHours(baseContext, event, callback);
+    });
+
+    test('holiday', async () => {
+      MockDate.set(holiday);
+
+      const event: Body = { channel: 'webchat' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('holiday');
+      };
+
+      await operatingHours(baseContext, event, callback);
+
+      MockDate.set(testday);
+    });
+
+    test('sunday-closed', async () => {
+      MockDate.set(sunday);
+
+      const event: Body = { channel: 'facebook' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+      };
+
+      await operatingHours(baseContext, event, callback);
+
+      MockDate.set(testday);
+    });
   });
 
-  test('Should return status 200 (closed with shifts)', async () => {
-    const event: Body = { channel: 'facebook' };
+  describe('Should return status 200 (with office)', () => {
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('closed');
-    };
+    test('open', async () => {
+      const event: Body = { channel: 'webchat', office: 'office1' };
 
-    await operatingHours(baseContext, event, callback);
-  });
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('open');
+      };
 
-  test('Should return status 200 (closed without shifts)', async () => {
-    const event: Body = { channel: 'another' };
+      await operatingHours(baseContext, event, callback);
+    });
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('closed');
-    };
+    test('closed with shifts', async () => {
+      const event: Body = { channel: 'facebook', office: 'office1' };
 
-    await operatingHours(baseContext, event, callback);
-  });
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+      };
 
-  test('Should return status 200 (holiday)', async () => {
-    MockDate.set(holiday);
+      await operatingHours(baseContext, event, callback);
+    });
 
-    const event: Body = { channel: 'webchat' };
+    test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
+      const event: Body = { channel: 'another', office: 'office1' };
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('holiday');
-    };
+      const spyError = jest.spyOn(console, 'error');
 
-    await operatingHours(baseContext, event, callback);
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+        expect(spyError).toBeCalledTimes(1);
+      };
 
-    MockDate.set(testday);
-  });
+      await operatingHours(baseContext, event, callback);
+    });
 
-  test('Should return status 200 (sunday-closed)', async () => {
-    MockDate.set(sunday);
+    test('holiday', async () => {
+      MockDate.set(holiday);
 
-    const event: Body = { channel: 'facebook' };
+      const event: Body = { channel: 'webchat', office: 'office1' };
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toContain('closed');
-    };
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('holiday');
+      };
 
-    await operatingHours(baseContext, event, callback);
+      await operatingHours(baseContext, event, callback);
 
-    MockDate.set(testday);
+      MockDate.set(testday);
+    });
+
+    test('sunday-closed', async () => {
+      MockDate.set(sunday);
+
+      const event: Body = { channel: 'facebook', office: 'office1' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('closed');
+      };
+
+      await operatingHours(baseContext, event, callback);
+
+      MockDate.set(testday);
+    });
+
+    test('missing office entry, defaults to root (open)', async () => {
+      const event: Body = { channel: 'webchat', office: 'non-existing' };
+
+      const spyError = jest.spyOn(console, 'error');
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        console.log('>>>>>>', response.getBody());
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('open');
+        expect(spyError).toBeCalledTimes(1);
+      };
+
+      await operatingHours(baseContext, event, callback);
+    });
   });
 });

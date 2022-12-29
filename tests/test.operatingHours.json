@@ -14,5 +14,22 @@
     "another": {
       "4": []
     }
+  },
+  "offices": {
+    "office1": {
+        "timezone": "Africa/Johannesburg",
+        "holidays": { 
+          "04/09/2021": "Some holiday"
+        },
+        "operatingHours": {
+          "webchat": {
+            "4": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 2200 }]
+          },
+          "facebook": {
+            "4": [{ "open": 900, "close": 1100 }, { "open": 1300, "close": 1800 }],
+            "7": []
+          }
+      }
+    }
   }
 }
