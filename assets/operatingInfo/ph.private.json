@@ -3,18 +3,18 @@
   "holidays": {
     "01/01/2023":"New Years Day",
     "01/22/2023":"Lunar New Year",
-    "04/06/2022":"Maundy Thursday",
-    "04/07/2022":"Good Friday",
+    "04/06/2023":"Maundy Thursday",
+    "04/07/2023":"Good Friday",
     "04/09/2023":"Day of Valor",
     "04/21/2023":"Eid al-Fitr",
     "05/01/2023":"Labour Day",
     "06/12/2023":"Philippines Independence Day",
     "06/28/2023":"Eid al-Adha",
     "08/28/2023":"National Heroes Day",
-    "11/30/2022":"Bonifacio Day",
-    "12/08/2022":"Feast of the Immaculate Conception",
-    "12/25/2022":"Christmas",
-    "12/30/2022":"Rizal Day"
+    "11/30/2023":"Bonifacio Day",
+    "12/08/2023":"Feast of the Immaculate Conception",
+    "12/25/2023":"Christmas",
+    "12/30/2023":"Rizal Day"
   },
   "operatingHours": {
     "facebook": {
