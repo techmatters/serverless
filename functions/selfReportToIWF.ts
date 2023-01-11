@@ -10,10 +10,12 @@ import {
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
 
+const https = require('https');
+
 type EnvVars = {
-  AS_DEV_IWF_API_CASE_URL: string;
-  AS_DEV_IWF_REPORT_URL: string;
-  AS_DEV_IWF_SECRET_KEY: string;
+  IWF_API_CASE_URL: string;
+  IWF_REPORT_URL: string;
+  IWF_SECRET_KEY: string;
 };
 
 export type IWFSelfReportPayload = {
@@ -41,7 +43,7 @@ export const handler = TokenValidator(
       if (!case_number) return resolve(error400('case_number'));
 
       const body: IWFSelfReportPayload = {
-        secret_key: context.AS_DEV_IWF_SECRET_KEY,
+        secret_key: context.IWF_SECRET_KEY,
         case_number,
         user_age_range,
       };
@@ -50,9 +52,14 @@ export const handler = TokenValidator(
       formData.append('case_number', body.case_number);
       formData.append('user_age_range', body.user_age_range);
 
-      const config: AxiosRequestConfig<any> = {
+      const config: AxiosRequestConfig = {
+        httpsAgent: new https.Agent({
+          // This is a TEMPORARY workaround to allow testing whilst the IWF test server users a self signed TLS cert
+          // Do not deploy to production
+          rejectUnauthorized: false,
+        }),
         method: 'POST',
-        url: context.AS_DEV_IWF_API_CASE_URL,
+        url: context.IWF_API_CASE_URL,
         headers: {
           ...formData.getHeaders(),
         },
@@ -64,7 +71,7 @@ export const handler = TokenValidator(
 
       if (report.data?.result !== 'OK') return resolve(error400(report.data?.message));
 
-      const reportUrl = `${context.AS_DEV_IWF_REPORT_URL}/t?=${report.data?.message?.access_token}`;
+      const reportUrl = `${context.IWF_REPORT_URL}/t?=${report.data?.message?.access_token}`;
 
       const data = {
         reportUrl,
