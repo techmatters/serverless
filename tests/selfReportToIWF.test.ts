@@ -21,9 +21,9 @@ jest.mock('axios');
 const baseContext = {
   getTwilioClient: (): any => ({}),
   DOMAIN_NAME: 'serverless',
-  AS_DEV_IWF_API_CASE_URL: 'AS_DEV_IWF_API_CASE_URL',
-  AS_DEV_IWF_REPORT_URL: 'AS_DEV_IWF_REPORT_URL',
-  AS_DEV_IWF_SECRET_KEY: 'AS_DEV_IWF_SECRET_KEY',
+  IWF_API_CASE_URL: 'TEST_IWF_API_CASE_URL',
+  IWF_REPORT_URL: 'TEST_IWF_REPORT_URL',
+  IWF_SECRET_KEY: 'TEST_IWF_SECRET_KEY',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
@@ -87,7 +87,7 @@ describe('selfReportToIWF', () => {
     await selfReportToIWF(baseContext, event, callback);
   });
 
-  test('Should POST a payload to AS_DEV_IWF_API_CASE_URL and return 200', async () => {
+  test('Should POST a payload to TEST_IWF_API_CASE_URL and return 200', async () => {
     const event: Body = {
       user_age_range: '13-15',
       case_number: 'case_number',
@@ -108,7 +108,7 @@ describe('selfReportToIWF', () => {
 
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: baseContext.AS_DEV_IWF_API_CASE_URL,
+        url: baseContext.IWF_API_CASE_URL,
         method: 'POST',
         data: formData,
       }),
@@ -142,9 +142,9 @@ describe('selfReportToIWF', () => {
     await selfReportToIWF(
       {
         ...baseContext,
-        AS_DEV_IWF_API_CASE_URL: 'AS_DEV_IWF_API_CASE_URL',
-        AS_DEV_IWF_REPORT_URL: 'AS_DEV_IWF_REPORT_URL',
-        AS_DEV_IWF_SECRET_KEY: 'AS_DEV_IWF_SECRET_KEY',
+        IWF_API_CASE_URL: 'TEST_IWF_API_CASE_URL',
+        IWF_REPORT_URL: 'TEST_IWF_REPORT_URL',
+        IWF_SECRET_KEY: 'TEST_IWF_SECRET_KEY',
       },
       event,
       () => {},
@@ -152,7 +152,7 @@ describe('selfReportToIWF', () => {
 
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: baseContext.AS_DEV_IWF_API_CASE_URL,
+        url: baseContext.IWF_API_CASE_URL,
         method: 'POST',
         data: formData,
       }),

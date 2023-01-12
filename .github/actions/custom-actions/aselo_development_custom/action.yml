@@ -34,17 +34,17 @@ runs:
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "AS_DEV_IWF_SECRET_KEY"
-        env_variable_name: "AS_DEV_IWF_SECRET_KEY"
+        env_variable_name: "IWF_SECRET_KEY"
     - name: Set AS_DEV_IWF_API_CASE_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "AS_DEV_IWF_API_CASE_URL"
-        env_variable_name: "AS_DEV_IWF_API_CASE_URL"
+        env_variable_name: "IWF_API_CASE_URL"
     - name: Set AS_DEV_IWF_REPORT_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "AS_DEV_IWF_REPORT_URL"
-        env_variable_name: "AS_DEV_IWF_REPORT_URL"
+        env_variable_name: "IWF_REPORT_URL"
 
     - name: Set Aselo Twitter Consumer Key
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
