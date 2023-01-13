@@ -21,16 +21,16 @@ enum DaysOfTheWeek {
   Sunday = 7,
 }
 
-type OperatingInfoEntry = {
+type OfficeOperatingInfo = {
   timezone: string; // the timezone the helpline uses
   holidays: { [date: string]: string }; // a date (in MM/DD/YYYY format) - holiday name object to specify which days are holidays for the helpline
   operatingHours: { [channel: string]: { [day in DaysOfTheWeek]: OperatingShift[] } }; // object that pairs numbers representing weekdays to open and close shifts
 };
 
-// The root contains OperatingInfoEntry info (default, support legacy) plus an "offices" entry, which maps OperatingInfoEntry to a particular office
-type OperatingInfo = OperatingInfoEntry & {
+// The root contains OfficeOperatingInfo info (default, support legacy) plus an "offices" entry, which maps OfficeOperatingInfo to a particular office
+type OperatingInfo = OfficeOperatingInfo & {
   offices: {
-    [office: string]: OperatingInfoEntry;
+    [office: string]: OfficeOperatingInfo;
   };
 };
 
@@ -48,15 +48,14 @@ const isOpen =
   (shift: OperatingShift): boolean =>
     timeOfDay >= shift.open && timeOfDay < shift.close;
 
-const getStatusFromEntry = (operatingInfoEntry: OperatingInfoEntry, channel: string) => {
-  // TODO: message
-  if (!operatingInfoEntry || !operatingInfoEntry.operatingHours[channel]) {
+const getStatusFromEntry = (officeOperatingInfo: OfficeOperatingInfo, channel: string) => {
+  if (!officeOperatingInfo || !officeOperatingInfo.operatingHours[channel]) {
     throw new Error(
       `Operating Info not found for channel ${channel}. Check OPERATING_INFO_KEY env vars and a matching OperatingInfo json file for it.`,
     );
   }
 
-  const { timezone, holidays, operatingHours } = operatingInfoEntry;
+  const { timezone, holidays, operatingHours } = officeOperatingInfo;
 
   const timeOfDay = parseInt(
     moment().tz(timezone).format('Hmm'), // e.g 123 for 1hs 23m, 1345 for 13hs 45m
@@ -82,12 +81,10 @@ const getStatusFromEntry = (operatingInfoEntry: OperatingInfoEntry, channel: str
 const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, office?: string) => {
   const { offices, ...operatingInfoRoot } = operatingInfo;
 
-  // TODO: should we loudly error if office is provided but there's no operatingInfo.offices entry?
   if (office) {
     try {
       const officeEntry = offices[office];
 
-      // TODO: should we loudly error if there's no operatingInfo.offices[office] entry?
       const status = getStatusFromEntry(officeEntry, channel);
       return status;
     } catch (err) {
