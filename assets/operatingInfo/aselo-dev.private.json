@@ -22,5 +22,22 @@
       "6": [],
       "7": []
     }
+  },
+  "offices": {
+    "Fake Office": {
+      "timezone": "America/New_York",
+      "holidays": {},
+      "operatingHours": {
+        "facebook": {
+          "1": [{ "open": 0, "close": 2400 }],
+          "2": [{ "open": 0, "close": 2400 }],
+          "3": [{ "open": 0, "close": 2400 }],
+          "4": [{ "open": 0, "close": 2400 }],
+          "5": [{ "open": 0, "close": 2400 }],
+          "6": [{ "open": 0, "close": 2400 }],
+          "7": [{ "open": 0, "close": 2400 }]
+        }
+      }
+    }
   }
 }
