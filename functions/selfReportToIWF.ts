@@ -16,6 +16,7 @@ type EnvVars = {
   IWF_API_CASE_URL: string;
   IWF_REPORT_URL: string;
   IWF_SECRET_KEY: string;
+  IWF_REPORT_SELF_SIGNED: string;
 };
 
 export type IWFSelfReportPayload = {
@@ -33,12 +34,15 @@ export type Body = {
 export const formData = new FormData();
 
 export const handler = TokenValidator(
-  async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+  async (
+    context: Context<EnvVars>,
+    { user_age_range, case_number }: Body,
+    callback: ServerlessCallback,
+  ) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { user_age_range, case_number } = event;
       if (!user_age_range) return resolve(error400('user_age_range'));
       if (!case_number) return resolve(error400('case_number'));
 
@@ -53,11 +57,6 @@ export const handler = TokenValidator(
       formData.append('user_age_range', body.user_age_range);
 
       const config: AxiosRequestConfig = {
-        httpsAgent: new https.Agent({
-          // This is a TEMPORARY workaround to allow testing whilst the IWF test server users a self signed TLS cert
-          // Do not deploy to production
-          rejectUnauthorized: false,
-        }),
         method: 'POST',
         url: context.IWF_API_CASE_URL,
         headers: {
@@ -66,6 +65,17 @@ export const handler = TokenValidator(
         data: formData,
         validateStatus: () => true,
       };
+
+      if (
+        context.IWF_REPORT_SELF_SIGNED &&
+        context.IWF_REPORT_SELF_SIGNED.toLowerCase() === 'true'
+      ) {
+        config.httpsAgent = new https.Agent({
+          // This is a TEMPORARY workaround to allow testing whilst the IWF test server users a self signed TLS cert
+          // Do not deploy to production
+          rejectUnauthorized: false,
+        });
+      }
 
       const report = await axios(config);
 
