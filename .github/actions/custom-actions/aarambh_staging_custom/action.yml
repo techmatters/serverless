@@ -26,17 +26,17 @@ runs:
     - name: Set IWF_SECRET_KEY
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_secret_key
+        ssm_parameter: /staging/iwf/${{inputs.account-sid}}/secret_key
         env_variable_name: "IWF_SECRET_KEY"
     - name: Set IWF_API_CASE_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_api_case_url
+        ssm_parameter: /staging/iwf/${{inputs.account-sid}}/api_case_url
         env_variable_name: "IWF_API_CASE_URL"
     - name: Set IWF_REPORT_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_report_url
+        ssm_parameter: /staging/iwf/${{inputs.account-sid}}/report_url
         env_variable_name: "IWF_REPORT_URL"
     # Append environment variables
     - name: Add IWF_API_USERNAME
