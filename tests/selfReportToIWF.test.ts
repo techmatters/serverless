@@ -122,6 +122,10 @@ describe('selfReportToIWF', () => {
       secret_key: 'secret_key',
       user_age_range: '<13',
     });
+
+    // Can be removed once we deprecate the temporary 'allow self signed option'
+    const iwfPayload = (axios as unknown as jest.Mock).mock.calls[0][0] as AxiosRequestConfig;
+    expect(iwfPayload.httpsAgent).not.toBeDefined();
   });
 
   test('Should set https axios property if self signed set to true', async () => {
