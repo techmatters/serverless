@@ -1,5 +1,9 @@
 name: 'Aarambh Staging release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in the Aarambh Staging environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -19,6 +23,21 @@ runs:
       with:
         ssm_parameter: "IWF_API_URL"
         env_variable_name: "IWF_API_URL"
+    - name: Set IWF_SECRET_KEY
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_secret_key
+        env_variable_name: "IWF_SECRET_KEY"
+    - name: Set IWF_API_CASE_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_api_case_url
+        env_variable_name: "IWF_API_CASE_URL"
+    - name: Set IWF_REPORT_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /staging/serverless/${{inputs.account-sid}}/iwf_report_url
+        env_variable_name: "IWF_REPORT_URL"
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -28,4 +47,16 @@ runs:
       shell: bash
     - name: Add IWF_API_URL
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_SECRET_KEY
+      run: echo "IWF_SECRET_KEY=${{ env.IWF_SECRET_KEY }}" >> .env
+      shell: bash
+    - name: Add IWF_API_CASE_URL
+      run: echo "IWF_API_CASE_URL=${{ env.IWF_API_CASE_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_REPORT_URL
+      run: echo "IWF_REPORT_URL=${{ env.IWF_REPORT_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_REPORT_SELF_SIGNED
+      run: echo "IWF_REPORT_SELF_SIGNED=true" >> .env
       shell: bash

@@ -16,6 +16,7 @@ type EnvVars = {
   IWF_API_CASE_URL: string;
   IWF_REPORT_URL: string;
   IWF_SECRET_KEY: string;
+  IWF_REPORT_SELF_SIGNED: string;
 };
 
 export type IWFSelfReportPayload = {
@@ -53,11 +54,6 @@ export const handler = TokenValidator(
       formData.append('user_age_range', body.user_age_range);
 
       const config: AxiosRequestConfig = {
-        httpsAgent: new https.Agent({
-          // This is a TEMPORARY workaround to allow testing whilst the IWF test server users a self signed TLS cert
-          // Do not deploy to production
-          rejectUnauthorized: false,
-        }),
         method: 'POST',
         url: context.IWF_API_CASE_URL,
         headers: {
@@ -66,6 +62,17 @@ export const handler = TokenValidator(
         data: formData,
         validateStatus: () => true,
       };
+
+      if (
+        context.IWF_REPORT_SELF_SIGNED &&
+        context.IWF_REPORT_SELF_SIGNED.toLowerCase() === 'true'
+      ) {
+        config.httpsAgent = new https.Agent({
+          // This is a TEMPORARY workaround to allow testing whilst the IWF test server users a self signed TLS cert
+          // Do not deploy to production
+          rejectUnauthorized: false,
+        });
+      }
 
       const report = await axios(config);
 

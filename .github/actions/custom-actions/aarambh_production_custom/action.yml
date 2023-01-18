@@ -34,6 +34,21 @@ runs:
       with:
         ssm_parameter: "PROD_IN_IWF_API_CHANNEL_ID"
         env_variable_name: "IWF_API_CHANNEL_ID"
+    - name: Set IWF_SECRET_KEY
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /production/serverless/${{inputs.account-sid}}/iwf_secret_key
+        env_variable_name: "IWF_SECRET_KEY"
+    - name: Set IWF_API_CASE_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /production/serverless/${{inputs.account-sid}}/iwf_api_case_url
+        env_variable_name: "IWF_API_CASE_URL"
+    - name: Set IWF_REPORT_URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: /production/serverless/${{inputs.account-sid}}/iwf_report_url
+        env_variable_name: "IWF_REPORT_URL"
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -52,4 +67,13 @@ runs:
       shell: bash
     - name: Add IWF_API_CHANNEL_ID
       run: echo "IWF_API_CHANNEL_ID=${{ env.IWF_API_CHANNEL_ID }}" >> .env
+      shell: bash
+    - name: Add IWF_SECRET_KEY
+      run: echo "IWF_SECRET_KEY=${{ env.IWF_SECRET_KEY }}" >> .env
+      shell: bash
+    - name: Add IWF_API_CASE_URL
+      run: echo "IWF_API_CASE_URL=${{ env.IWF_API_CASE_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_REPORT_URL
+      run: echo "IWF_REPORT_URL=${{ env.IWF_REPORT_URL }}" >> .env
       shell: bash

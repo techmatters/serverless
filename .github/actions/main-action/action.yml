@@ -56,12 +56,10 @@ inputs:
   helpline-name:
     description: 'The identifier in the format "<short helpline>-<short env>" used for this helpline'
     required: true
-    type: string
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
     default: 'true'
-    type: string
 runs:
   using: "composite"
   steps:
@@ -107,6 +105,7 @@ runs:
       uses: ./.github/actions/custom-actions
       with:
         helpline-name: ${{ inputs.helpline-name }}
+        account-sid: ${{ inputs.account-sid }}
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
       run: npm ci
