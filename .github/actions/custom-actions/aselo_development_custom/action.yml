@@ -1,5 +1,9 @@
 name: 'Aselo Development release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in the development environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -7,12 +11,12 @@ runs:
     - name: Set IWF_API_USERNAME
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "IWF_API_USERNAME"
+        ssm_parameter: IWF_API_USERNAME
         env_variable_name: "IWF_API_USERNAME"
     - name: Set IWF_API_PASSWORD
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "IWF_API_PASSWORD"
+        ssm_parameter: IWF_API_PASSWORD
         env_variable_name: "IWF_API_PASSWORD"
     - name: Set IWF_API_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
@@ -30,20 +34,20 @@ runs:
       #     ssm_parameter: "DEV_AS_IWF_API_COUNTRY_CODE"
       #     env_variable_name: "IWF_API_COUNTRY_CODE"
 
-    - name: Set AS_DEV_IWF_SECRET_KEY
+    - name: Set IWF_SECRET_KEY
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "AS_DEV_IWF_SECRET_KEY"
+        ssm_parameter: /development/iwf/${{inputs.account-sid}}/secret_key
         env_variable_name: "IWF_SECRET_KEY"
-    - name: Set AS_DEV_IWF_API_CASE_URL
+    - name: Set IWF_API_CASE_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "AS_DEV_IWF_API_CASE_URL"
+        ssm_parameter: /development/iwf/${{inputs.account-sid}}/api_case_url
         env_variable_name: "IWF_API_CASE_URL"
-    - name: Set AS_DEV_IWF_REPORT_URL
+    - name: Set IWF_REPORT_URL
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "AS_DEV_IWF_REPORT_URL"
+        ssm_parameter: /development/iwf/${{inputs.account-sid}}/report_url
         env_variable_name: "IWF_REPORT_URL"
 
     - name: Set Aselo Twitter Consumer Key
@@ -113,14 +117,17 @@ runs:
       run: echo "IWF_API_URL=${{ env.IWF_API_URL }}" >> .env
       shell: bash
 
-    - name: Add AS_DEV_IWF_SECRET_KEY
-      run: echo "AS_DEV_IWF_SECRET_KEY=${{ env.AS_DEV_IWF_SECRET_KEY }}" >> .env
+    - name: Add IWF_SECRET_KEY
+      run: echo "IWF_SECRET_KEY=${{ env.IWF_SECRET_KEY }}" >> .env
       shell: bash
-    - name: Add AS_DEV_IWF_API_CASE_URL
-      run: echo "AS_DEV_IWF_API_CASE_URL=${{ env.AS_DEV_IWF_API_CASE_URL }}" >> .env
+    - name: Add IWF_API_CASE_URL
+      run: echo "IWF_API_CASE_URL=${{ env.IWF_API_CASE_URL }}" >> .env
       shell: bash
-    - name: Add AS_DEV_IWF_REPORT_URL
-      run: echo "AS_DEV_IWF_REPORT_URL=${{ env.AS_DEV_IWF_REPORT_URL }}" >> .env
+    - name: Add IWF_REPORT_URL
+      run: echo "IWF_REPORT_URL=${{ env.IWF_REPORT_URL }}" >> .env
+      shell: bash
+    - name: Add IWF_REPORT_SELF_SIGNED
+      run: echo "IWF_REPORT_SELF_SIGNED=true" >> .env
       shell: bash
 
     - name: Add TWITTER_CONSUMER_KEY
