@@ -11,6 +11,8 @@ import {
 
 import helpers, { MockedResponse } from './helpers';
 
+const https = require('https');
+
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
@@ -24,6 +26,7 @@ const baseContext = {
   IWF_API_CASE_URL: 'TEST_IWF_API_CASE_URL',
   IWF_REPORT_URL: 'TEST_IWF_REPORT_URL',
   IWF_SECRET_KEY: 'TEST_IWF_SECRET_KEY',
+  IWF_REPORT_SELF_SIGNED: '',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
@@ -109,6 +112,42 @@ describe('selfReportToIWF', () => {
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
         url: baseContext.IWF_API_CASE_URL,
+        method: 'POST',
+        data: formData,
+      }),
+    );
+
+    expect(defaultPayload).toMatchObject({
+      ...omit(event, 'request'),
+      case_number: 'case_number',
+      secret_key: 'secret_key',
+      user_age_range: '<13',
+    });
+  });
+
+  test('Should set https axios property if self signed set to true', async () => {
+    const event: Body = {
+      user_age_range: '13-15',
+      case_number: 'case_number',
+      request: { cookies: {}, headers: {} },
+    };
+
+    const body: IWFSelfReportPayload = {
+      case_number: 'case_number',
+      secret_key: 'secret_key',
+      user_age_range: '<13',
+    };
+
+    formData.append('secret_key', body.secret_key);
+    formData.append('case_number', body.case_number);
+    formData.append('user_age_range', body.user_age_range);
+
+    await selfReportToIWF({ ...baseContext, IWF_REPORT_SELF_SIGNED: 'true' }, event, () => {});
+
+    expect(axios).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: baseContext.IWF_API_CASE_URL,
+        httpsAgent: expect.any(https.Agent),
         method: 'POST',
         data: formData,
       }),
