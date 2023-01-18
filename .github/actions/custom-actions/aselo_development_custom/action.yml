@@ -11,7 +11,7 @@ runs:
     - name: Set IWF_API_USERNAME
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: IWF_API_PASSWORD
+        ssm_parameter: IWF_API_USERNAME
         env_variable_name: "IWF_API_USERNAME"
     - name: Set IWF_API_PASSWORD
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
