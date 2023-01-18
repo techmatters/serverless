@@ -34,12 +34,15 @@ export type Body = {
 export const formData = new FormData();
 
 export const handler = TokenValidator(
-  async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+  async (
+    context: Context<EnvVars>,
+    { user_age_range, case_number }: Body,
+    callback: ServerlessCallback,
+  ) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { user_age_range, case_number } = event;
       if (!user_age_range) return resolve(error400('user_age_range'));
       if (!case_number) return resolve(error400('case_number'));
 

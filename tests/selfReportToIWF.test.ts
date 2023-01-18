@@ -1,7 +1,8 @@
 /* eslint-disable no-var */
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { omit } from 'lodash';
+import * as https from 'https';
 import {
   handler as selfReportToIWF,
   Body,
@@ -10,8 +11,6 @@ import {
 } from '../functions/selfReportToIWF';
 
 import helpers, { MockedResponse } from './helpers';
-
-const https = require('https');
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
@@ -132,33 +131,15 @@ describe('selfReportToIWF', () => {
       request: { cookies: {}, headers: {} },
     };
 
-    const body: IWFSelfReportPayload = {
-      case_number: 'case_number',
-      secret_key: 'secret_key',
-      user_age_range: '<13',
-    };
-
-    formData.append('secret_key', body.secret_key);
-    formData.append('case_number', body.case_number);
-    formData.append('user_age_range', body.user_age_range);
-
     await selfReportToIWF({ ...baseContext, IWF_REPORT_SELF_SIGNED: 'true' }, event, () => {});
 
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
-        url: baseContext.IWF_API_CASE_URL,
         httpsAgent: expect.any(https.Agent),
-        method: 'POST',
-        data: formData,
       }),
     );
-
-    expect(defaultPayload).toMatchObject({
-      ...omit(event, 'request'),
-      case_number: 'case_number',
-      secret_key: 'secret_key',
-      user_age_range: '<13',
-    });
+    const iwfPayload = (axios as unknown as jest.Mock).mock.calls[0][0] as AxiosRequestConfig;
+    expect((iwfPayload.httpsAgent as https.Agent).options.rejectUnauthorized).toBe(false);
   });
 
   test('Environment variables should override default values in POST', async () => {
