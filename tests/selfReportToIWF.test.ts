@@ -1,13 +1,11 @@
 /* eslint-disable no-var */
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios, { AxiosRequestConfig } from 'axios';
-import { omit } from 'lodash';
 import * as https from 'https';
 import {
-  handler as selfReportToIWF,
   Body,
+  handler as selfReportToIWF,
   IWFSelfReportPayload,
-  formData,
 } from '../functions/selfReportToIWF';
 
 import helpers, { MockedResponse } from './helpers';
@@ -18,6 +16,17 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
 }));
 
 jest.mock('axios');
+jest.mock('form-data', () => {
+  return jest.fn().mockImplementation(() => {
+    const data: Record<string, any> = {
+      getHeaders: () => ({ 'Content-Type': 'multi-part/form' }),
+    };
+    data.append = (key: string, value: string) => {
+      data[key] = value;
+    };
+    return data;
+  });
+});
 
 const baseContext = {
   getTwilioClient: (): any => ({}),
@@ -29,12 +38,6 @@ const baseContext = {
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
-};
-
-const defaultPayload = {
-  secret_key: 'secret_key',
-  case_number: 'case_number',
-  user_age_range: '<13',
 };
 
 describe('selfReportToIWF', () => {
@@ -91,20 +94,16 @@ describe('selfReportToIWF', () => {
 
   test('Should POST a payload to TEST_IWF_API_CASE_URL and return 200', async () => {
     const event: Body = {
-      user_age_range: '13-15',
+      user_age_range: '<13',
       case_number: 'case_number',
       request: { cookies: {}, headers: {} },
     };
 
-    const body: IWFSelfReportPayload = {
+    const expectedFormData: IWFSelfReportPayload = {
       case_number: 'case_number',
-      secret_key: 'secret_key',
+      secret_key: 'TEST_IWF_SECRET_KEY',
       user_age_range: '<13',
     };
-
-    formData.append('secret_key', body.secret_key);
-    formData.append('case_number', body.case_number);
-    formData.append('user_age_range', body.user_age_range);
 
     await selfReportToIWF({ ...baseContext }, event, () => {});
 
@@ -112,19 +111,12 @@ describe('selfReportToIWF', () => {
       expect.objectContaining({
         url: baseContext.IWF_API_CASE_URL,
         method: 'POST',
-        data: formData,
+        data: expect.objectContaining(expectedFormData),
       }),
     );
 
-    expect(defaultPayload).toMatchObject({
-      ...omit(event, 'request'),
-      case_number: 'case_number',
-      secret_key: 'secret_key',
-      user_age_range: '<13',
-    });
-
-    // Can be removed once we deprecate the temporary 'allow self signed option'
     const iwfPayload = (axios as unknown as jest.Mock).mock.calls[0][0] as AxiosRequestConfig;
+    // Can be removed once we deprecate the temporary 'allow self signed option'
     expect(iwfPayload.httpsAgent).not.toBeDefined();
   });
 
@@ -153,15 +145,11 @@ describe('selfReportToIWF', () => {
       request: { cookies: {}, headers: {} },
     };
 
-    const body: IWFSelfReportPayload = {
+    const expectedFormData: IWFSelfReportPayload = {
       case_number: 'case_number',
-      secret_key: 'secret_key',
-      user_age_range: '<13',
+      secret_key: 'TEST_IWF_SECRET_KEY',
+      user_age_range: '13-15',
     };
-
-    formData.append('secret_key', body.secret_key);
-    formData.append('case_number', body.case_number);
-    formData.append('user_age_range', body.user_age_range);
 
     await selfReportToIWF(
       {
@@ -178,7 +166,7 @@ describe('selfReportToIWF', () => {
       expect.objectContaining({
         url: baseContext.IWF_API_CASE_URL,
         method: 'POST',
-        data: formData,
+        data: expect.objectContaining(expectedFormData),
       }),
     );
   });
