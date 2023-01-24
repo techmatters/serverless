@@ -2,137 +2,16 @@
 
 name: Zambia Staging release
 
-# Controls when the action will run.
 on:
-  workflow_dispatch:
-  
-  workflow_call:
-    inputs:
-      changelog:
-        description: Release Changelog - Add a comment about the changes to be included in this release.
-        required: true
-        type: string
-  
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+  workflow_dispatch
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: '14.x'
-      # Setup credentials to access AWS for parameters
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      # Get AWS parameters to setup environment variables for Serveless function
-      - name: Set Twilio Sync API key
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_API_KEY"
-          env_variable_name: "SYNC_SERVICE_API_KEY"
-      - name: Set Twilio Chat service ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_CHAT_SERVICE_SID"
-          env_variable_name: "CHAT_SERVICE_SID"
-      - name: Set Twilio Chat transfer workflow ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_CHAT_WORKFLOW_SID"
-          env_variable_name: "TWILIO_CHAT_TRANSFER_WORKFLOW_SID"
-      - name: Set Twilio Sync API secret
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_SECRET"
-          env_variable_name: "SYNC_SERVICE_API_SECRET"
-      - name: Set Twilio Sync service ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_SYNC_SID"
-          env_variable_name: "SYNC_SERVICE_SID"
-      - name: Set Twilio Workspace ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_WORKSPACE_SID"
-          env_variable_name: "TWILIO_WORKSPACE_SID"
-      - name: Set operating information file key
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_OPERATING_INFO_KEY"
-          env_variable_name: "OPERATING_INFO_KEY"
-      - name: Set Twilio Flex Proxy service ID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_FLEX_PROXY_SERVICE_SID"
-          env_variable_name: "FLEX_PROXY_SERVICE_SID"
-      - name: Set HRM static key to make HRM calls
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_HRM_STATIC_KEY"
-          env_variable_name: "HRM_STATIC_KEY"
-      - name: Set Survey Workflow SID
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_SURVEY_WORKFLOW_SID"
-          env_variable_name: "SURVEY_WORKFLOW_SID"
-      - name: Set Post Survey Bot Programmable Chat URL
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_POST_SURVEY_BOT_CHAT_URL"
-          env_variable_name: "POST_SURVEY_BOT_CHAT_URL"
-      - name: Set AWS credentials for Aselo user
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "ASELO_APP_ACCESS_KEY"
-          env_variable_name: "ASELO_APP_ACCESS_KEY"
-      - name: Set AWS credentials for Aselo user
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "ASELO_APP_SECRET_KEY"
-          env_variable_name: "ASELO_APP_SECRET_KEY"
-      - name: AWS region where Aselo documents bucket is hosted
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "REGION"
-          env_variable_name: "AWS_REGION"
-      - name: Set S3 bucket name where Aselo documents are stored
-        uses: "marvinpinto/action-inject-ssm-secrets@latest"
-        with:
-          ssm_parameter: "STG_TWILIO_ZM_S3_BUCKET_DOCS"
-          env_variable_name: "S3_BUCKET"
-        
-      # Call main-action to compile and deploy
-      - name: Executing main-action
-        uses: ./.github/actions/main-action
-        with:
-          account-sid: ${{ secrets.ZM_STG_ACCOUNT_SID }}
-          auth-token: ${{ secrets.ZM_STG_AUTH_TOKEN }}
-          workspace-sid: $TWILIO_WORKSPACE_SID
-          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          sync-service-api-key: $SYNC_SERVICE_API_KEY
-          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
-          sync-service-sid: $SYNC_SERVICE_SID
-          chat-service-sid: $CHAT_SERVICE_SID
-          operating-info-key: $OPERATING_INFO_KEY
-          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
-          hrm-static-key: $HRM_STATIC_KEY
-          survey-workflow-sid: $SURVEY_WORKFLOW_SID
-          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
-          aselo-app-access-key: $ASELO_APP_ACCESS_KEY
-          aselo-app-secret-key: $ASELO_APP_SECRET_KEY
-          aws-region: $AWS_REGION
-          s3-bucket: $S3_BUCKET
-          helpline-name: 'ZM_STG'
-
-       
+      uses: ./.github/workflows/custom_helpline.yml
+      secrets: inherit
+      with:
+        helpline_code: "ZM"
+        environment_code: "STG"
+        changelog: "Deploying individual account"
