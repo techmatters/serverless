@@ -36,6 +36,7 @@ type OperatingInfo = OfficeOperatingInfo & {
 
 type EnvVars = {
   OPERATING_INFO_KEY: string;
+  DISABLE_OPERATING_HOURS_CHECK: string;
 };
 
 export type Body = {
@@ -106,7 +107,11 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { OPERATING_INFO_KEY } = context;
+    const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;
+
+    if (DISABLE_OPERATING_HOURS_CHECK?.toLowerCase() === 'true') {
+      resolve(success('open'));
+    }
 
     if (!OPERATING_INFO_KEY) throw new Error('OPERATING_INFO_KEY env var not provided.');
 

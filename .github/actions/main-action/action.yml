@@ -100,6 +100,15 @@ runs:
           TWILIO_SERVERLESS_API_CONCURRENCY=1
           EOT
       shell: bash
+      # Can be overridden in custom action
+    - name: Disable Operating Hours for staging
+      run: |
+          cat <<EOT >> .env
+          DISABLE_OPERATING_HOURS_CHECK=true
+          EOT
+      shell: bash
+      if: inputs.disable_operating_hours == 'true'
+
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions

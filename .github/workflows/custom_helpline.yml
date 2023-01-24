@@ -15,6 +15,8 @@ on:
       environment_code:
         description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
         required: true
+      force_enable_operating_hours:
+        description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
   workflow_call:
     inputs:
       helpline_code:
@@ -146,3 +148,4 @@ jobs:
           aws-region: $AWS_REGION
           s3-bucket: $S3_BUCKET
           helpline-name: ${{inputs.helpline_code}}_${{inputs.environment_code}}
+          disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == 'PROD') && 'false' || 'true' }}
