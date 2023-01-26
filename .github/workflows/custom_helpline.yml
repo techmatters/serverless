@@ -30,7 +30,11 @@ on:
         description: Release Changelog - Add a comment about the changes to be included in this release.
         required: true
         type: string
-
+      send-slack-message:
+        description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
+        required: false
+        default: 'true'
+        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -151,3 +155,4 @@ jobs:
           helpline-name: ${{inputs.helpline_code}}_${{inputs.environment_code}}
           # Set 'false' if the target environment is production OR the 'force_enable_operating_hours' override option is checked - otherwise 'true'
           disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == 'PROD') && 'false' || 'true' }}
+          send-slack-message: ${{ inputs.send-slack-message }}
