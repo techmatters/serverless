@@ -16,6 +16,7 @@ on:
         description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
         required: true
       force_enable_operating_hours:
+        type: boolean
         description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
   workflow_call:
     inputs:
