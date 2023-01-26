@@ -6,15 +6,12 @@ name: Línea Libre Helpline (CL) Staging deploy
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: ./.github/workflows/custom_helpline.yml
-        secrets: inherit
-        with:
-          helpline_code: "CL"
-          environment_code: "STG"
-          changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "CL"
+      environment_code: "STG"
+      changelog: "Deploying individual account"
       
        

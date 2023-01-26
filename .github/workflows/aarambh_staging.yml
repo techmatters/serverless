@@ -6,14 +6,11 @@ name: Aarambh Staging release
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: ./.github/workflows/custom_helpline.yml
-        secrets: inherit
-        with:
-          helpline_code: "IN"
-          environment_code: "STG"
-          changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "IN"
+      environment_code: "STG"
+      changelog: "Deploying individual account"
        

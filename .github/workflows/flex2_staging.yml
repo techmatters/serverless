@@ -5,13 +5,10 @@ name: Flex 2.0 Staging deplioy
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: ./.github/workflows/custom_helpline.yml
-        secrets: inherit
-        with:
-          helpline_code: "F2"
-          environment_code: "STG"
-          changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "F2"
+      environment_code: "STG"
+      changelog: "Deploying individual account"
