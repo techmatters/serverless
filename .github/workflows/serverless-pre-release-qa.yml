@@ -16,12 +16,7 @@ on:
 jobs:
   build-and-deploy:
     uses: ./.github/workflows/custom_helpline.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-      E2E_DEV_ACCOUNT_SID: ${{ secrets.E2E_DEV_ACCOUNT_SID }}
-      E2E_DEV_AUTH_TOKEN: ${{ secrets.E2E_DEV_AUTH_TOKEN }}
+    secrets: inherit
     with: 
       helpline_code: E2E
       environment_code: DEV
