@@ -60,6 +60,10 @@ inputs:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
     default: 'true'
+  disable-operating-hours:
+    description: 'Specifies if we should disable enforcement of operating hours (uuseful for non production accounts). Defaults to false'
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
