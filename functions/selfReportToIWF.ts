@@ -31,8 +31,6 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
-export const formData = new FormData();
-
 export const handler = TokenValidator(
   async (
     context: Context<EnvVars>,
@@ -51,7 +49,7 @@ export const handler = TokenValidator(
         case_number,
         user_age_range,
       };
-
+      const formData = new FormData();
       formData.append('secret_key', body.secret_key);
       formData.append('case_number', body.case_number);
       formData.append('user_age_range', body.user_age_range);
