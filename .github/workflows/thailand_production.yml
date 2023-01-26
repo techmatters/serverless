@@ -1,17 +1,14 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: Thailand Production release
+name: Thailand Production deploy
 
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "TH_PROD"
-        environment_code: "DEV"
-        changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "TH_PROD"
+      environment_code: "DEV"
+      changelog: "Deploying individual account"

@@ -60,6 +60,10 @@ inputs:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
     default: 'true'
+  disable-operating-hours:
+    description: 'Specifies if we should disable enforcement of operating hours (uuseful for non production accounts). Defaults to false'
+    required: false
+    default: 'false'
 runs:
   using: "composite"
   steps:
@@ -100,6 +104,15 @@ runs:
           TWILIO_SERVERLESS_API_CONCURRENCY=1
           EOT
       shell: bash
+      # Can be overridden in custom action
+    - name: Disable Operating Hours for staging
+      run: |
+          cat <<EOT >> .env
+          DISABLE_OPERATING_HOURS_CHECK=true
+          EOT
+      shell: bash
+      if: ${{ inputs.disable-operating-hours == 'true' }}
+
     # Run custom action to perform per-helpline based actions
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions

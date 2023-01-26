@@ -1,18 +1,15 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: ECPAT Phillippines Production release
+name: ECPAT Phillippines Production deploy
 
 
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "PH"
-        environment_code: "PROD"
-        changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "PH"
+      environment_code: "PROD"
+      changelog: "Deploying individual account"

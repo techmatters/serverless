@@ -13,6 +13,7 @@ const baseContext = {
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
+  DISABLE_OPERATING_HOURS_CHECK: '',
 };
 
 const testday = 1617911935784; // timeOfDay: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'
@@ -242,6 +243,24 @@ describe('operatingHours', () => {
       };
 
       await operatingHours(baseContext, event, callback);
+    });
+
+    test('DISABLE_OPERATING_HOURS_CHECK, return open', async () => {
+      const event: Body = { channel: 'webchat', office: 'office1' };
+
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        console.log('>>>>>>', response.getBody());
+        expect(response.getStatus()).toBe(200);
+        expect(response.getBody()).toContain('open');
+      };
+
+      await operatingHours(
+        { ...baseContext, DISABLE_OPERATING_HOURS_CHECK: 'true' },
+        event,
+        callback,
+      );
     });
   });
 });

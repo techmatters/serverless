@@ -1,17 +1,14 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: South Africa Staging release
+name: South Africa Staging deploy
 
 on:
   workflow_dispatch
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "ZA"
-        environment_code: "STG"
-        changelog: "Deploying individual account"
+  deploy:
+    uses: ./.github/workflows/custom_helpline.yml
+    secrets: inherit
+    with:
+      helpline_code: "ZA"
+      environment_code: "STG"
+      changelog: "Deploying individual account"

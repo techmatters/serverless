@@ -63,7 +63,6 @@ runs:
       run: echo "TWITTER_FLEX_FLOW_SID=${{ env.TWITTER_FLEX_FLOW_SID }}" >> .env
       shell: bash
 
-    # Append environment variables
     - name: Add FACEBOOK_APP_SECRET
       run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
       shell: bash
