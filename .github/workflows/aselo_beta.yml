@@ -1,6 +1,4 @@
-# This is a basic workflow to publish a Twilio function with Github Actions
-
-name: Aselo Beta release
+name: Aselo Beta deploy
 
 on:
   workflow_dispatch
@@ -9,9 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "AS"
-        environment_code: "STG"
-        changelog: "Deploying individual account"
+      - uses: ./.github/workflows/custom_helpline.yml
+        secrets: inherit
+        with:
+          helpline_code: "AS"
+          environment_code: "STG"
+          changelog: "Deploying individual account"

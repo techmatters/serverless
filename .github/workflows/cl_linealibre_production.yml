@@ -1,6 +1,6 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: Línea Libre Helpline (CL) Production release
+name: Línea Libre Helpline (CL) Production deploy
 
 
 on:
@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "CL"
-        environment_code: "PROD"
-        changelog: "Deploying individual account"
+      - uses: ./.github/workflows/custom_helpline.yml
+        secrets: inherit
+        with:
+          helpline_code: "CL"
+          environment_code: "PROD"
+          changelog: "Deploying individual account"

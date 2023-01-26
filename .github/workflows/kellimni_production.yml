@@ -1,6 +1,6 @@
 # This is a basic workflow to publish a Twilio function with Github Actions
 
-name: Kellimni Production release
+name: Kellimni Production deploy
 
 on:
   workflow_dispatch
@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      uses: ./.github/workflows/custom_helpline.yml
-      secrets: inherit
-      with:
-        helpline_code: "MT"
-        environment_code: "PROD"
-        changelog: "Deploying individual account"
+      - uses: ./.github/workflows/custom_helpline.yml
+        secrets: inherit
+        with:
+          helpline_code: "MT"
+          environment_code: "PROD"
+          changelog: "Deploying individual account"
