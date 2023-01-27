@@ -14,6 +14,9 @@ runs:
     - name: Childline Thailand Staging release custom action
       if: inputs.helpline-name == format('TH_STG')
       uses: ./.github/actions/custom-actions/thailand_staging_custom
+    - name: Childline Thailand Production release custom action
+      if: inputs.helpline-name == format('TH_PROD')
+      uses: ./.github/actions/custom-actions/thailand_production_custom
     - name: Aarambh Staging release custom action
       if: inputs.helpline-name == format('IN_STG')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
