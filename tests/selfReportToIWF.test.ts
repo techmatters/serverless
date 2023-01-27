@@ -1,5 +1,6 @@
 /* eslint-disable no-var */
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import axios from 'axios';
 import {
   Body,
   handler as selfReportToIWF,
