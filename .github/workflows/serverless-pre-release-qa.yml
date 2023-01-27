@@ -15,7 +15,7 @@ on:
 
 jobs:
   build-and-deploy:
-    uses: techmatters/serverless/.github/workflows/deploy_development_e2e_end_to_end.yml@master
+    uses: techmatters/serverless/.github/workflows/deploy_development_e2e_end_to_end.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
