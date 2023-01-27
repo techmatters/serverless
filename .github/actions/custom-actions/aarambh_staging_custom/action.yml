@@ -57,6 +57,3 @@ runs:
     - name: Add IWF_REPORT_URL
       run: echo "IWF_REPORT_URL=${{ env.IWF_REPORT_URL }}" >> .env
       shell: bash
-    - name: Add IWF_REPORT_SELF_SIGNED
-      run: echo "IWF_REPORT_SELF_SIGNED=true" >> .env
-      shell: bash
