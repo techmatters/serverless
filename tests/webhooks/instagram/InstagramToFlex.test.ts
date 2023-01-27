@@ -305,6 +305,51 @@ describe('InstagramToFlex', () => {
       expectedToCreateChannel: undefined,
     },
     {
+      conditionDescription: 'story reply',
+      event: {
+        ...validEventBody(),
+        entry: [
+          {
+            ...validEventBody().entry[0],
+            messaging: [
+              {
+                ...validEventBody().entry[0].messaging[0],
+                message: {
+                  ...validEventBody().entry[0].messaging[0].message,
+                  reply_to: { story: { url: '', id: '' } },
+                },
+              },
+            ],
+          },
+        ],
+      },
+      expectedStatus: 200,
+      expectedMessage: 'Ignored story reply.',
+    },
+    {
+      conditionDescription: 'inline reply',
+      event: {
+        ...validEventBody(),
+        entry: [
+          {
+            ...validEventBody().entry[0],
+            messaging: [
+              {
+                ...validEventBody().entry[0].messaging[0],
+                message: {
+                  ...validEventBody().entry[0].messaging[0].message,
+                  reply_to: { mid: '' },
+                },
+              },
+            ],
+          },
+        ],
+      },
+      expectedStatus: 200,
+      expectedMessage: `Message sent in channel ${MOCK_SENDER_CHANNEL_SID}.`,
+      expectedToBeSentOnChannel: MOCK_SENDER_CHANNEL_SID,
+    },
+    {
       conditionDescription: 'story tagging from an inactive conversation',
       event: validEventBody({
         senderId: 'sender_id',
