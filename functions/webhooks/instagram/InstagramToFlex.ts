@@ -36,6 +36,12 @@ type InstagramMessageObject = {
   };
 };
 
+type InstagramStoryReply = InstagramMessageObject['message'] & {
+  reply_to: {
+    story: { url: string; id: string };
+  };
+};
+
 type InstagramMessageEntry = {
   time: number; // event timestamp
   id: string; // IGSID of the subscribed Instagram account
@@ -61,6 +67,11 @@ const isMessageDeleted = (message: InstagramMessageObject['message']) => message
 const isStoryMention = (message: InstagramMessageObject['message']) =>
   message.attachments && message.attachments[0].type === 'story_mention';
 
+const isInstagramStoryReply = (
+  message: InstagramMessageObject['message'],
+): message is InstagramStoryReply =>
+  typeof (message as InstagramStoryReply).reply_to?.story === 'object';
+
 const getStoryMentionText = (message: InstagramMessageObject['message']) =>
   message.attachments
     ? `Story mention: ${message.attachments[0].payload.url}`
@@ -81,9 +92,7 @@ const unsendMessage = async (
     (m) => JSON.parse(m.attributes).messageExternalId === messageExternalId,
   );
 
-  const unsent = await messageToUnsend?.update({ body: 'The user has unsent this message' });
-
-  return unsent;
+  return messageToUnsend?.update({ body: 'The user has unsent this message' });
 };
 
 /**
@@ -124,7 +133,6 @@ export const handler = async (
   try {
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
-
     const { message, sender } = event.entry[0].messaging[0];
 
     let messageText = '';
@@ -141,6 +149,10 @@ export const handler = async (
     const chatServiceSid = context.CHAT_SERVICE_SID;
     const syncServiceSid = context.SYNC_SERVICE_SID;
 
+    if (isInstagramStoryReply(message)) {
+      resolve(success('Ignored story reply.'));
+      return;
+    }
     // Handle message deletion for active conversations
     if (isMessageDeleted(message)) {
       const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
