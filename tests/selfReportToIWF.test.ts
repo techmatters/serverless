@@ -1,7 +1,6 @@
 /* eslint-disable no-var */
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import axios, { AxiosRequestConfig } from 'axios';
-import * as https from 'https';
+import axios from 'axios';
 import {
   Body,
   handler as selfReportToIWF,
@@ -34,7 +33,6 @@ const baseContext = {
   IWF_API_CASE_URL: 'TEST_IWF_API_CASE_URL',
   IWF_REPORT_URL: 'TEST_IWF_REPORT_URL',
   IWF_SECRET_KEY: 'TEST_IWF_SECRET_KEY',
-  IWF_REPORT_SELF_SIGNED: '',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
@@ -114,28 +112,6 @@ describe('selfReportToIWF', () => {
         data: expect.objectContaining(expectedFormData),
       }),
     );
-
-    const iwfPayload = (axios as unknown as jest.Mock).mock.calls[0][0] as AxiosRequestConfig;
-    // Can be removed once we deprecate the temporary 'allow self signed option'
-    expect(iwfPayload.httpsAgent).not.toBeDefined();
-  });
-
-  test('Should set https axios property if self signed set to true', async () => {
-    const event: Body = {
-      user_age_range: '13-15',
-      case_number: 'case_number',
-      request: { cookies: {}, headers: {} },
-    };
-
-    await selfReportToIWF({ ...baseContext, IWF_REPORT_SELF_SIGNED: 'true' }, event, () => {});
-
-    expect(axios).toHaveBeenCalledWith(
-      expect.objectContaining({
-        httpsAgent: expect.any(https.Agent),
-      }),
-    );
-    const iwfPayload = (axios as unknown as jest.Mock).mock.calls[0][0] as AxiosRequestConfig;
-    expect((iwfPayload.httpsAgent as https.Agent).options.rejectUnauthorized).toBe(false);
   });
 
   test('Environment variables should override default values in POST', async () => {
