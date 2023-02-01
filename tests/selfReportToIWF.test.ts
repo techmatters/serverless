@@ -103,7 +103,28 @@ describe('selfReportToIWF', () => {
       user_age_range: '<13',
     };
 
-    await selfReportToIWF({ ...baseContext }, event, () => {});
+    // @ts-ignore
+    axios.mockImplementationOnce(async () => ({
+      data: {
+        result: 'OK',
+        message: {
+          access_token: 'SECRET TOKEN',
+        },
+      },
+    }));
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toMatchObject(
+        expect.objectContaining({
+          reportUrl: `${baseContext.IWF_REPORT_URL}/?t=SECRET TOKEN`,
+        }),
+      );
+    };
+
+    await selfReportToIWF(baseContext, event, callback);
 
     expect(axios).toHaveBeenCalledWith(
       expect.objectContaining({
