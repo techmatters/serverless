@@ -137,13 +137,23 @@ export const handler = async (
   try {
     const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;
 
+    const { channel, office, language, useV2 } = event;
+
     if (DISABLE_OPERATING_HOURS_CHECK?.toLowerCase() === 'true') {
-      resolve(success('open'));
+      if (!useV2) {
+        resolve(success('open'));
+        return;
+      }
+
+      const response = {
+        status: 'open',
+        messasge: undefined,
+      };
+
+      resolve(success(response));
     }
 
     if (!OPERATING_INFO_KEY) throw new Error('OPERATING_INFO_KEY env var not provided.');
-
-    const { channel, office, language, useV2 } = event;
 
     if (channel === undefined) {
       resolve(error400('channel'));
