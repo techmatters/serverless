@@ -42,6 +42,8 @@ type EnvVars = {
 export type Body = {
   channel?: string;
   office?: string;
+  useV2?: boolean;
+  language?: string;
 };
 
 const isOpen =
@@ -98,6 +100,32 @@ const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, offic
   return status;
 };
 
+type Messages = {
+  ClosedOutOfShift?: string;
+  ClosedHolidays?: string;
+};
+const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-US'): string => {
+  const messageKey = status === 'closed' ? 'ClosedOutOfShift' : 'ClosedHolidays';
+
+  // Try to get the translated message
+  try {
+    const translation: Messages = JSON.parse(
+      Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
+    );
+
+    const message = translation[messageKey];
+    if (message) return message;
+  } catch {
+    console.error(`Couldn't retrieve EndChatMsg message translation for ${language}`);
+  }
+
+  // Return default strings if can't retrieve the translation
+  return {
+    ClosedOutOfShift: 'The helpline is out of shift, please reach us later.',
+    ClosedHolidays: 'The helpline is closed due to a holiday.',
+  }[messageKey];
+};
+
 export const handler = async (
   context: Context<EnvVars>,
   event: Body,
@@ -115,7 +143,7 @@ export const handler = async (
 
     if (!OPERATING_INFO_KEY) throw new Error('OPERATING_INFO_KEY env var not provided.');
 
-    const { channel, office } = event;
+    const { channel, office, language, useV2 } = event;
 
     if (channel === undefined) {
       resolve(error400('channel'));
@@ -128,7 +156,20 @@ export const handler = async (
 
     const status = getOperatingStatus(operatingInfo, channel, office);
 
-    resolve(success(status));
+    // Support legacy function to avoid braking changes
+    // TODO: remove once every account has been migrated
+    if (!useV2) {
+      resolve(success(status));
+      return;
+    }
+
+    // Return a the status and, if closed, the appropriate message
+    const response = {
+      status,
+      messasge: status === 'open' ? undefined : getClosedMessage(status, language),
+    };
+
+    resolve(success(response));
   } catch (err: any) {
     resolve(error500(err));
   }
