@@ -42,7 +42,7 @@ type EnvVars = {
 export type Body = {
   channel?: string;
   office?: string;
-  useV2?: boolean;
+  useV2?: string;
   language?: string;
 };
 
@@ -91,7 +91,7 @@ const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, offic
       const status = getStatusFromEntry(officeEntry, channel);
       return status;
     } catch (err) {
-      console.error(`Error trying to access entry for office ${office}`, err);
+      console.warn(`Error trying to access entry for office ${office}`, err);
     }
   }
 
@@ -116,7 +116,7 @@ const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-U
     const message = translation[messageKey];
     if (message) return message;
   } catch {
-    console.error(`Couldn't retrieve EndChatMsg message translation for ${language}`);
+    console.warn(`Couldn't retrieve EndChatMsg message translation for ${language}`);
   }
 
   // Return default strings if can't retrieve the translation
