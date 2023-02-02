@@ -87,6 +87,16 @@ describe('sendSystemMessage', () => {
       message: undefined,
       request: { cookies: {}, headers: {} },
     };
+    const event3: Body = {
+      channelSid: 'channel-123',
+      message: undefined,
+      request: { cookies: {}, headers: {} },
+    };
+    const event4: Body = {
+      taskSid: 'task-123',
+      channelSid: 'channel-123',
+      request: { cookies: {}, headers: {} },
+    };
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
@@ -97,6 +107,8 @@ describe('sendSystemMessage', () => {
     await sendSystemMessage(baseContext, event, callback);
     await sendSystemMessage(baseContext, event1, callback);
     await sendSystemMessage(baseContext, event2, callback);
+    await sendSystemMessage(baseContext, event3, callback);
+    await sendSystemMessage(baseContext, event4, callback);
   });
 
   test('Should return status 500', async () => {
@@ -144,9 +156,25 @@ describe('sendSystemMessage', () => {
     await sendSystemMessage(baseContext, event3, callback3);
   });
 
-  test('Should return status 200', async () => {
+  test('Should return status 200 (taskSid provided)', async () => {
     const event: Body = {
       taskSid: 'task-123',
+      message: 'Something to say',
+      request: { cookies: {}, headers: {} },
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+    };
+
+    await sendSystemMessage(baseContext, event, callback);
+  });
+
+  test('Should return status 200 (channelSid provided)', async () => {
+    const event: Body = {
+      channelSid: 'channel-123',
       message: 'Something to say',
       request: { cookies: {}, headers: {} },
     };
