@@ -182,7 +182,7 @@ describe('operatingHours', () => {
       test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
         const event: Body = { channel: 'another', office: 'office1' };
 
-        const spyError = jest.spyOn(console, 'error');
+        const spyError = jest.spyOn(console, 'warn');
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -232,7 +232,7 @@ describe('operatingHours', () => {
       test('missing office entry, defaults to root (open)', async () => {
         const event: Body = { channel: 'webchat', office: 'non-existing' };
 
-        const spyError = jest.spyOn(console, 'error');
+        const spyError = jest.spyOn(console, 'warn');
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -448,7 +448,7 @@ describe('operatingHours', () => {
       test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
         const event: Body = { channel: 'another', office: 'office1', useV2: 'true' };
 
-        const spyError = jest.spyOn(console, 'error');
+        const spyError = jest.spyOn(console, 'warn');
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -507,7 +507,7 @@ describe('operatingHours', () => {
       test('missing office entry, defaults to root (open)', async () => {
         const event: Body = { channel: 'webchat', office: 'non-existing', useV2: 'true' };
 
-        const spyError = jest.spyOn(console, 'error');
+        const spyError = jest.spyOn(console, 'warn');
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
