@@ -181,7 +181,6 @@ export const handler = async (
 
     resolve(success(response));
   } catch (err: any) {
-    console.error(err)
     resolve(error500(err));
   }
 };
