@@ -329,7 +329,7 @@ describe('operatingHours', () => {
           expect(result).toBeDefined();
           const response = result as MockedResponse;
           expect(response.getStatus()).toBe(200);
-          expect(response.getBody()).toMatchObject({ status: 'open', messasge: undefined });
+          expect(response.getBody()).toMatchObject({ status: 'open', message: undefined });
         };
 
         await operatingHours(baseContext, event, callback);
@@ -344,7 +344,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
         };
 
@@ -360,7 +360,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
         };
 
@@ -378,7 +378,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'holiday',
-            messasge: 'The helpline is closed due to a holiday.',
+            message: 'The helpline is closed due to a holiday.',
           });
         };
 
@@ -398,7 +398,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
         };
 
@@ -422,7 +422,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'open',
-            messasge: undefined,
+            message: undefined,
           });
         };
 
@@ -438,7 +438,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
         };
 
@@ -456,7 +456,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
           expect(spyError).toBeCalledTimes(1);
         };
@@ -475,7 +475,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'holiday',
-            messasge: 'The helpline is closed due to a holiday.',
+            message: 'The helpline is closed due to a holiday.',
           });
         };
 
@@ -495,7 +495,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'closed',
-            messasge: 'The helpline is out of shift, please reach us later.',
+            message: 'The helpline is out of shift, please reach us later.',
           });
         };
 
@@ -515,7 +515,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'open',
-            messasge: undefined,
+            message: undefined,
           });
           expect(spyError).toBeCalledTimes(1);
         };
@@ -532,7 +532,7 @@ describe('operatingHours', () => {
           expect(response.getStatus()).toBe(200);
           expect(response.getBody()).toMatchObject({
             status: 'open',
-            messasge: undefined,
+            message: undefined,
           });
         };
 

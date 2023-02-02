@@ -147,7 +147,7 @@ export const handler = async (
 
       const response = {
         status: 'open',
-        messasge: undefined,
+        message: undefined,
       };
 
       resolve(success(response));
@@ -176,11 +176,12 @@ export const handler = async (
     // Return a the status and, if closed, the appropriate message
     const response = {
       status,
-      messasge: status === 'open' ? undefined : getClosedMessage(status, language),
+      message: status === 'open' ? undefined : getClosedMessage(status, language),
     };
 
     resolve(success(response));
   } catch (err: any) {
+    console.error(err)
     resolve(error500(err));
   }
 };
