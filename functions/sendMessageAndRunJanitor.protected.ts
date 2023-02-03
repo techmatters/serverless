@@ -16,8 +16,6 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
-  console.log(' -------------------- sendSystemMessagePrivate.protected --------------------');
-
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
