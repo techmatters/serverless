@@ -13,7 +13,7 @@ export interface Event {
   channelSid: string;
 }
 
-type EnvVars = {
+export type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
 };
