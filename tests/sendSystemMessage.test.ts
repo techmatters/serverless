@@ -1,7 +1,7 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import each from 'jest-each';
 
-import { handler as sendSystemMessage, Body } from '../functions/sendSystemMessage';
+import { handler as sendSystemMessage } from '../functions/sendSystemMessage';
 import helpers, { MockedResponse } from './helpers';
 
 jest.mock('@tech-matters/serverless-helpers', () => ({

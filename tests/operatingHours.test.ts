@@ -414,7 +414,11 @@ describe('operatingHours', () => {
       });
 
       test('open', async () => {
-        const event: Body = { channel: 'webchat', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'webchat',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -430,7 +434,11 @@ describe('operatingHours', () => {
       });
 
       test('closed with shifts', async () => {
-        const event: Body = { channel: 'facebook', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'facebook',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -446,7 +454,11 @@ describe('operatingHours', () => {
       });
 
       test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
-        const event: Body = { channel: 'another', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'another',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const spyError = jest.spyOn(console, 'warn');
 
@@ -467,7 +479,11 @@ describe('operatingHours', () => {
       test('holiday', async () => {
         MockDate.set(holiday);
 
-        const event: Body = { channel: 'webchat', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'webchat',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -487,7 +503,11 @@ describe('operatingHours', () => {
       test('sunday-closed', async () => {
         MockDate.set(sunday);
 
-        const event: Body = { channel: 'facebook', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'facebook',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
@@ -505,7 +525,11 @@ describe('operatingHours', () => {
       });
 
       test('missing office entry, defaults to root (open)', async () => {
-        const event: Body = { channel: 'webchat', office: 'non-existing', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'webchat',
+          office: 'non-existing',
+          includeMessageTextInResponse: 'true',
+        };
 
         const spyError = jest.spyOn(console, 'warn');
 
@@ -524,7 +548,11 @@ describe('operatingHours', () => {
       });
 
       test('DISABLE_OPERATING_HOURS_CHECK, return open', async () => {
-        const event: Body = { channel: 'webchat', office: 'office1', includeMessageTextInResponse: 'true' };
+        const event: Body = {
+          channel: 'webchat',
+          office: 'office1',
+          includeMessageTextInResponse: 'true',
+        };
 
         const callback: ServerlessCallback = (err, result) => {
           expect(result).toBeDefined();
