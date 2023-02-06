@@ -42,7 +42,7 @@ type EnvVars = {
 export type Body = {
   channel?: string;
   office?: string;
-  useV2?: string;
+  includeMessageTextInResponse?: string;
   language?: string;
 };
 
@@ -126,6 +126,8 @@ const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-U
   }[messageKey];
 };
 
+const flagIsTrue = (s?: string) => s?.toLowerCase() === 'true';
+
 export const handler = async (
   context: Context<EnvVars>,
   event: Body,
@@ -137,10 +139,10 @@ export const handler = async (
   try {
     const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;
 
-    const { channel, office, language, useV2 } = event;
+    const { channel, office, language, includeMessageTextInResponse } = event;
 
-    if (DISABLE_OPERATING_HOURS_CHECK?.toLowerCase() === 'true') {
-      if (!useV2) {
+    if (flagIsTrue(DISABLE_OPERATING_HOURS_CHECK)) {
+      if (!flagIsTrue(includeMessageTextInResponse)) {
         resolve(success('open'));
         return;
       }
@@ -168,7 +170,7 @@ export const handler = async (
 
     // Support legacy function to avoid braking changes
     // TODO: remove once every account has been migrated
-    if (!useV2) {
+    if (!flagIsTrue(includeMessageTextInResponse)) {
       resolve(success(status));
       return;
     }

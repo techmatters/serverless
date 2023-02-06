@@ -15,9 +15,16 @@ export type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = {
-  taskSid?: string;
-  channelSid?: string;
+export type Body = (
+  | {
+      channelSid: string;
+      taskSid?: string;
+    }
+  | {
+      channelSid?: string;
+      taskSid: string;
+    }
+) & {
   message?: string;
   from?: string;
   request: { cookies: {}; headers: {} };
@@ -28,11 +35,7 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
 
   console.log('------ sendSystemMessage excecution ------');
 
-  if (taskSid && channelSid) {
-    return { status: 400, message: 'taskSid and channelSid both provided, exactly one expected.' };
-  }
-
-  if (taskSid === undefined && channelSid === undefined) {
+  if (!channelSid && !taskSid) {
     return {
       status: 400,
       message: 'none of taskSid and channelSid provided, exactly one expected.',
@@ -47,9 +50,9 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
 
   let channelSidToMessage = null;
 
-  if (channelSid !== undefined) {
+  if (channelSid) {
     channelSidToMessage = channelSid;
-  } else if (taskSid !== undefined) {
+  } else if (taskSid) {
     const task = await client.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(taskSid)

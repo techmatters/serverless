@@ -1,6 +1,7 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { handler as sendSystemMessage, Body } from '../functions/sendSystemMessage';
+import each from 'jest-each';
 
+import { handler as sendSystemMessage, Body } from '../functions/sendSystemMessage';
 import helpers, { MockedResponse } from './helpers';
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
@@ -20,8 +21,10 @@ const tasks: any[] = [
     fetch: async () => tasks.find((t) => t.sid === 'broken-task'),
   },
 ];
+
+const createMessageMock = jest.fn();
 const channels: { [x: string]: any } = {
-  'channel-123': { messages: { create: jest.fn() } },
+  'channel-123': { messages: { create: createMessageMock } },
 };
 
 const workspaces: { [x: string]: any } = {
@@ -78,26 +81,32 @@ describe('sendSystemMessage', () => {
   afterAll(() => {
     helpers.teardown();
   });
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-  test('Should return status 400', async () => {
-    const event = { request: { cookies: {}, headers: {} } };
-    const event1: Body = { taskSid: undefined, request: { cookies: {}, headers: {} } };
-    const event2: Body = {
-      taskSid: 'task-123',
-      message: undefined,
-      request: { cookies: {}, headers: {} },
-    };
-    const event3: Body = {
-      channelSid: 'channel-123',
-      message: undefined,
-      request: { cookies: {}, headers: {} },
-    };
-    const event4: Body = {
-      taskSid: 'task-123',
-      channelSid: 'channel-123',
-      request: { cookies: {}, headers: {} },
-    };
-
+  each([
+    {
+      event: { request: { cookies: {}, headers: {} } },
+      reason: 'none of channelSid or taskSid provided',
+    },
+    {
+      event: {
+        taskSid: 'task-123',
+        message: undefined,
+        request: { cookies: {}, headers: {} },
+      },
+      reason: 'taskSid provided but missing message',
+    },
+    {
+      event: {
+        channelSid: 'channel-123',
+        message: undefined,
+        request: { cookies: {}, headers: {} },
+      },
+      reason: 'channelSid provided but missing message',
+    },
+  ]).test('Should return status 400: $reason', async ({ event }) => {
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
@@ -105,86 +114,90 @@ describe('sendSystemMessage', () => {
     };
 
     await sendSystemMessage(baseContext, event, callback);
-    await sendSystemMessage(baseContext, event1, callback);
-    await sendSystemMessage(baseContext, event2, callback);
-    await sendSystemMessage(baseContext, event3, callback);
-    await sendSystemMessage(baseContext, event4, callback);
   });
 
-  test('Should return status 500', async () => {
-    const event1: Body = {
-      taskSid: 'task-123',
-      message: 'Something to say',
-      request: { cookies: {}, headers: {} },
-    };
-    const event2: Body = {
-      taskSid: 'non-existing',
-      message: 'Something to say',
-      request: { cookies: {}, headers: {} },
-    };
-    const event3: Body = {
-      taskSid: 'broken-task',
-      message: 'Something to say',
-      request: { cookies: {}, headers: {} },
-    };
+  each([
+    {
+      event: {
+        taskSid: 'task-123',
+        message: 'Something to say',
+        request: { cookies: {}, headers: {} },
+      },
+      expectedMessage: 'Workspace does not exists',
+      context: {
+        ...baseContext,
+        TWILIO_WORKSPACE_SID: null,
+      },
+    },
+    {
+      event: {
+        taskSid: 'non-existing',
+        message: 'Something to say',
+        request: { cookies: {}, headers: {} },
+      },
+      expectedMessage: 'Task does not exists',
+    },
+    {
+      event: {
+        taskSid: 'broken-task',
+        message: 'Something to say',
+        request: { cookies: {}, headers: {} },
+      },
+      expectedMessage: 'Error retrieving chat channel',
+    },
+  ]).test(
+    'Should return status 500: $expectedMessage',
+    async ({ event, expectedMessage, context }) => {
+      const callback: ServerlessCallback = (err, result) => {
+        expect(result).toBeDefined();
+        const response = result as MockedResponse;
+        expect(response.getStatus()).toBe(500);
+        expect(response.getBody().message).toContain(expectedMessage);
+      };
 
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Workspace does not exists');
-    };
+      await sendSystemMessage(context ?? baseContext, event, callback);
+    },
+  );
 
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Task does not exists');
-    };
+  each([
+    {
+      event: {
+        taskSid: 'task-123',
+        message: 'Something to say',
+        from: 'someone',
+        request: { cookies: {}, headers: {} },
+      },
+      condition: 'taskSid provided',
+    },
+    {
+      event: {
+        channelSid: 'channel-123',
+        message: 'Something to say',
+        from: 'someother',
+        request: { cookies: {}, headers: {} },
+      },
+      condition: 'channelSid provided',
+    },
+  ]).test('Should return status 200: $condition', async ({ event }) => {
+    const callback = jest.fn();
 
-    const callback3: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Error retrieving chat channel');
-    };
-
-    const { getTwilioClient, DOMAIN_NAME } = baseContext;
-    const payload: any = { getTwilioClient, DOMAIN_NAME };
-    await sendSystemMessage(payload, event1, callback1);
-    await sendSystemMessage(baseContext, event2, callback2);
-    await sendSystemMessage(baseContext, event3, callback3);
-  });
-
-  test('Should return status 200 (taskSid provided)', async () => {
-    const event: Body = {
-      taskSid: 'task-123',
-      message: 'Something to say',
-      request: { cookies: {}, headers: {} },
-    };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-    };
-
+    expect(createMessageMock).not.toHaveBeenCalled();
     await sendSystemMessage(baseContext, event, callback);
-  });
 
-  test('Should return status 200 (channelSid provided)', async () => {
-    const event: Body = {
-      channelSid: 'channel-123',
-      message: 'Something to say',
-      request: { cookies: {}, headers: {} },
-    };
+    expect(callback.mock.results).toHaveLength(1);
+    expect(callback.mock.results[0].type).toBe('return');
 
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-    };
-
-    await sendSystemMessage(baseContext, event, callback);
+    const result = callback.mock.lastCall[1];
+    console.log(result);
+    expect(result).toBeDefined();
+    const response = result as MockedResponse;
+    expect(response.getStatus()).toBe(200);
+    expect(createMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: event.message,
+        from: event.from,
+        xTwilioWebhookEnabled: 'true',
+      }),
+    );
   });
 });
