@@ -81,7 +81,7 @@ export const handler = TokenValidator(
 
       if (report.data?.result !== 'OK') return resolve(error400(report.data?.message));
 
-      const reportUrl = `${context.IWF_REPORT_URL}/t?=${report.data?.message?.access_token}`;
+      const reportUrl = `${context.IWF_REPORT_URL}/?t=${report.data?.message?.access_token}`;
 
       const data = {
         reportUrl,
