@@ -35,6 +35,21 @@ export const handler = async (
     const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
       .chatChannelJanitor as ChatChannelJanitor;
 
+    const channelWebhooks = await context
+      .getTwilioClient()
+      .chat.services(context.CHAT_SERVICE_SID)
+      .channels(channelSid)
+      .webhooks.list();
+
+    // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+    await Promise.all(
+      channelWebhooks.map(async (w) => {
+        if (w.type === 'studio') {
+          await w.remove();
+        }
+      }),
+    );
+
     // Send message
     const result = await sendSystemMessage(context, event);
 
