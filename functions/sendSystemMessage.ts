@@ -19,25 +19,84 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   responseWithCors,
   bindResolve,
-  error400,
   error500,
-  success,
   functionValidator as TokenValidator,
+  send,
 } from '@tech-matters/serverless-helpers';
 
-type EnvVars = {
+export type EnvVars = {
   ACCOUNT_SID: string;
   AUTH_TOKEN: string;
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = {
-  taskSid?: string;
+export type Body = (
+  | {
+      channelSid: string;
+      taskSid?: string;
+    }
+  | {
+      channelSid?: string;
+      taskSid: string;
+    }
+) & {
   message?: string;
   from?: string;
-  newStatus?: string;
   request: { cookies: {}; headers: {} };
+};
+
+export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) => {
+  const { taskSid, channelSid, message, from } = event;
+
+  console.log('------ sendSystemMessage excecution ------');
+
+  if (!channelSid && !taskSid) {
+    return {
+      status: 400,
+      message: 'none of taskSid and channelSid provided, exactly one expected.',
+    };
+  }
+
+  if (message === undefined) {
+    return { status: 400, message: 'missing message.' };
+  }
+
+  const client = context.getTwilioClient();
+
+  let channelSidToMessage = null;
+
+  if (channelSid) {
+    channelSidToMessage = channelSid;
+  } else if (taskSid) {
+    const task = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskSid)
+      .fetch();
+
+    const taskAttributes = JSON.parse(task.attributes);
+    const { channelSid: taskChannelSid } = taskAttributes;
+
+    channelSidToMessage = taskChannelSid;
+  }
+
+  console.log(`Sending message "${message} to channel ${channelSidToMessage}"`);
+
+  const messageResult = await context
+    .getTwilioClient()
+    .chat.services(context.CHAT_SERVICE_SID)
+    .channels(channelSidToMessage)
+    .messages.create({
+      body: message,
+      from,
+      xTwilioWebhookEnabled: 'true',
+    });
+
+  return { status: 200, message: messageResult };
+};
+
+export type SendSystemMessageModule = {
+  sendSystemMessage: typeof sendSystemMessage;
 };
 
 export const handler = TokenValidator(
@@ -45,43 +104,10 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { taskSid, message, from } = event;
-
     try {
-      console.log('------ sendSystemMessage excecution ------');
+      const result = await sendSystemMessage(context, event);
 
-      if (taskSid === undefined) {
-        resolve(error400('taskSid'));
-        return;
-      }
-
-      if (message === undefined) {
-        resolve(error400('message'));
-        return;
-      }
-
-      const client = context.getTwilioClient();
-
-      const task = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(taskSid)
-        .fetch();
-      const taskToCloseAttributes = JSON.parse(task.attributes);
-      const { channelSid } = taskToCloseAttributes;
-
-      console.log(`Sending message "${message} to channel ${channelSid}"`);
-
-      const messageResult = await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .messages.create({
-          body: message,
-          from,
-          xTwilioWebhookEnabled: 'true',
-        });
-
-      resolve(success(messageResult));
+      resolve(send(result.status)(result.message));
     } catch (err: any) {
       resolve(error500(err));
     }

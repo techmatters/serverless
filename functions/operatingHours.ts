@@ -58,6 +58,8 @@ type EnvVars = {
 export type Body = {
   channel?: string;
   office?: string;
+  includeMessageTextInResponse?: string;
+  language?: string;
 };
 
 const isOpen =
@@ -105,7 +107,7 @@ const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, offic
       const status = getStatusFromEntry(officeEntry, channel);
       return status;
     } catch (err) {
-      console.error(`Error trying to access entry for office ${office}`, err);
+      console.warn(`Error trying to access entry for office ${office}`, err);
     }
   }
 
@@ -113,6 +115,34 @@ const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, offic
   const status = getStatusFromEntry(operatingInfoRoot, channel);
   return status;
 };
+
+type Messages = {
+  ClosedOutOfShift?: string;
+  ClosedHolidays?: string;
+};
+const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-US'): string => {
+  const messageKey = status === 'closed' ? 'ClosedOutOfShift' : 'ClosedHolidays';
+
+  // Try to get the translated message
+  try {
+    const translation: Messages = JSON.parse(
+      Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
+    );
+
+    const message = translation[messageKey];
+    if (message) return message;
+  } catch {
+    console.warn(`Couldn't retrieve EndChatMsg message translation for ${language}`);
+  }
+
+  // Return default strings if can't retrieve the translation
+  return {
+    ClosedOutOfShift: 'The helpline is out of shift, please reach us later.',
+    ClosedHolidays: 'The helpline is closed due to a holiday.',
+  }[messageKey];
+};
+
+const flagIsTrue = (s?: string) => s?.toLowerCase() === 'true';
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -125,13 +155,23 @@ export const handler = async (
   try {
     const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;
 
-    if (DISABLE_OPERATING_HOURS_CHECK?.toLowerCase() === 'true') {
-      resolve(success('open'));
+    const { channel, office, language, includeMessageTextInResponse } = event;
+
+    if (flagIsTrue(DISABLE_OPERATING_HOURS_CHECK)) {
+      if (!flagIsTrue(includeMessageTextInResponse)) {
+        resolve(success('open'));
+        return;
+      }
+
+      const response = {
+        status: 'open',
+        message: undefined,
+      };
+
+      resolve(success(response));
     }
 
     if (!OPERATING_INFO_KEY) throw new Error('OPERATING_INFO_KEY env var not provided.');
-
-    const { channel, office } = event;
 
     if (channel === undefined) {
       resolve(error400('channel'));
@@ -144,7 +184,20 @@ export const handler = async (
 
     const status = getOperatingStatus(operatingInfo, channel, office);
 
-    resolve(success(status));
+    // Support legacy function to avoid braking changes
+    // TODO: remove once every account has been migrated
+    if (!flagIsTrue(includeMessageTextInResponse)) {
+      resolve(success(status));
+      return;
+    }
+
+    // Return a the status and, if closed, the appropriate message
+    const response = {
+      status,
+      message: status === 'open' ? undefined : getClosedMessage(status, language),
+    };
+
+    resolve(success(response));
   } catch (err: any) {
     resolve(error500(err));
   }
