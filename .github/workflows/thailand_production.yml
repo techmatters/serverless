@@ -23,6 +23,6 @@ jobs:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "TH_PROD"
-      environment_code: "DEV"
+      helpline_code: "TH"
+      environment_code: "PROD"
       changelog: "Deploying individual account"
