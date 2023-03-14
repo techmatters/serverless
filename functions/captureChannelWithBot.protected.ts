@@ -95,7 +95,7 @@ export const handler = async (
       }),
     });
 
-    const updatedChannelAttributes = JSON.parse(updated.accountSid);
+    const updatedChannelAttributes = JSON.parse(updated.attributes);
 
     await channel.webhooks().create({
       type: 'webhook',
