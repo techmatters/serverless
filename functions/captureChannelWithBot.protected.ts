@@ -84,7 +84,7 @@ export const handler = async (
       }),
     );
 
-    await channel.update({
+    const updated = await channel.update({
       attributes: JSON.stringify({
         ...channelAttributes,
         channelCapturedByBot: {
@@ -94,6 +94,8 @@ export const handler = async (
         },
       }),
     });
+
+    const updatedChannelAttributes = JSON.parse(updated.accountSid);
 
     await channel.webhooks().create({
       type: 'webhook',
@@ -119,9 +121,9 @@ export const handler = async (
     const Lex = new AWS.LexRuntimeV2();
 
     const lexResponse = await Lex.recognizeText({
-      botId: channelAttributes.channelCapturedByBot.botId,
-      botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-      localeId: channelAttributes.channelCapturedByBot.localeId,
+      botId: updatedChannelAttributes.channelCapturedByBot.botId,
+      botAliasId: updatedChannelAttributes.channelCapturedByBot.botAliasId,
+      localeId: updatedChannelAttributes.channelCapturedByBot.localeId,
       text: message,
       sessionId: channel.sid, // We could use some channel/bot info to better scope this
     }).promise();
