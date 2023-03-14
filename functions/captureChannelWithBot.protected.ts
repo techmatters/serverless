@@ -25,13 +25,19 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+import AWS from 'aws-sdk';
+import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
+  ASELO_APP_ACCESS_KEY: string;
+  ASELO_APP_SECRET_KEY: string;
+  AWS_REGION: string;
 };
 
 type Body = {
   channelSid: string;
+  message: string;
 };
 
 export const handler = async (
@@ -43,7 +49,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid } = event;
+    const { channelSid, message } = event;
 
     if (channelSid === undefined) {
       resolve(error400('channelSid'));
@@ -88,6 +94,55 @@ export const handler = async (
         },
       }),
     });
+
+    await channel.webhooks().create({
+      type: 'webhook',
+      configuration: {
+        filters: ['onMessageSent'],
+        method: 'POST',
+        url: `https://${context.DOMAIN_NAME}/webhooks/chatbotCallback`,
+      },
+    });
+
+    // ==============
+    /**
+     * TODO: Factor out shared chunk of code
+     */
+    AWS.config.update({
+      credentials: {
+        accessKeyId: context.ASELO_APP_ACCESS_KEY,
+        secretAccessKey: context.ASELO_APP_SECRET_KEY,
+      },
+      region: context.AWS_REGION,
+    });
+
+    const Lex = new AWS.LexRuntimeV2();
+
+    const lexResponse = await Lex.recognizeText({
+      botId: channelAttributes.channelCapturedByBot.botId,
+      botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
+      localeId: channelAttributes.channelCapturedByBot.localeId,
+      text: message,
+      sessionId: channel.sid, // We could use some channel/bot info to better scope this
+    }).promise();
+
+    // Secuentially wait for the messages to be sent in the correct order
+    // TODO: probably we want to handle the case where messages is null
+    /* const messagesSent = */ await lexResponse.messages?.reduce<Promise<MessageInstance[]>>(
+      async (accumPromise, message) => {
+        // TODO: this is unlikely to fail, but maybe we should handle differently?
+        const resolved = await accumPromise; // wait for previous promise to resolve
+        const sent = await channel.messages().create({
+          body: message.content,
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+
+        return [...resolved, sent];
+      },
+      Promise.resolve([]),
+    );
+    // ==============
 
     resolve(success('Channel caputer by bot =)'));
   } catch (err) {

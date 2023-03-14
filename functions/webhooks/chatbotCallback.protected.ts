@@ -78,6 +78,10 @@ export const handler = async (
 
     // Send message to bot only if it's from child
     if (EventType === 'onMessageSent' && channelAttributes.from === From) {
+      // ==============
+      /**
+       * TODO: Factor out shared chunk of code
+       */
       AWS.config.update({
         credentials: {
           accessKeyId: context.ASELO_APP_ACCESS_KEY,
@@ -93,7 +97,7 @@ export const handler = async (
         botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
         localeId: channelAttributes.channelCapturedByBot.localeId,
         text: Body,
-        sessionId: From, // We could use some channel/bot info to better scope this
+        sessionId: channel.sid, // We could use some channel/bot info to better scope this
       }).promise();
 
       // Secuentially wait for the messages to be sent in the correct order
@@ -112,6 +116,7 @@ export const handler = async (
         },
         Promise.resolve([]),
       );
+      // ==============
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
       // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
@@ -123,7 +128,7 @@ export const handler = async (
             botId: channelAttributes.channelCapturedByBot.botId,
             botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
             localeId: channelAttributes.channelCapturedByBot.localeId,
-            sessionId: From,
+            sessionId: channel.sid,
           }).promise(),
           channel.update({
             attributes: JSON.stringify(omit(channelAttributes, 'channelCapturedByBot')),
