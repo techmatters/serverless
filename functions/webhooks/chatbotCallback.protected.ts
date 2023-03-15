@@ -75,7 +75,7 @@ export const handler = async (
     const channelAttributes = JSON.parse(channel.attributes);
 
     // Send message to bot only if it's from child
-    if (EventType === 'onMessageSent' && channelAttributes.from === From) {
+    if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
       // ==============
       /**
        * TODO: Factor out shared chunk of code
