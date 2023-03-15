@@ -135,16 +135,18 @@ export const handler = async (
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
           // Trigger a new API type Studio Flow execution once the channel is released
-          client.studio.v2.flows('').executions.create({
-            from: From,
-            to: ChannelSid,
-            parameters: {
-              ChannelAttributes: {
-                ...releasedChannelAttributes,
-                memory: lexResponse.interpretations,
+          client.studio.v2
+            .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
+            .executions.create({
+              from: From,
+              to: ChannelSid,
+              parameters: {
+                ChannelAttributes: {
+                  ...releasedChannelAttributes,
+                  memory: lexResponse.interpretations,
+                },
               },
-            },
-          }),
+            }),
         ]);
 
         console.log('Channel unblocked and bot session deleted');
