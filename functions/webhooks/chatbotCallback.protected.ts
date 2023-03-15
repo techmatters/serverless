@@ -138,7 +138,7 @@ export const handler = async (
           client.studio.v2
             .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
             .executions.create({
-              from: From,
+              from: ChannelSid,
               to: ChannelSid,
               parameters: {
                 ChannelAttributes: {
