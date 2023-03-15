@@ -37,9 +37,7 @@ type EnvVars = {
   AWS_REGION: string;
 };
 
-export type Body = Partial<WebhookEvent> & {
-  // recipientId?: string;
-};
+export type Body = Partial<WebhookEvent> & {};
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -122,16 +120,30 @@ export const handler = async (
       // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
       //       finishes the convo. Unfortunately, AWS only allows Lambdas there, so it may require some more work
       if (lexResponse.sessionState?.dialogAction?.type === 'Close') {
+        const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
+
         await Promise.all([
-          // This is not really needed as the session will expire, but that depends on the config of Lex.
+          // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
           Lex.deleteSession({
             botId: channelAttributes.channelCapturedByBot.botId,
             botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
             localeId: channelAttributes.channelCapturedByBot.localeId,
             sessionId: channel.sid,
           }).promise(),
+          // Remove channelCapturedByBot from channel attributes
           channel.update({
-            attributes: JSON.stringify(omit(channelAttributes, 'channelCapturedByBot')),
+            attributes: JSON.stringify(releasedChannelAttributes),
+          }),
+          // Trigger a new API type Studio Flow execution once the channel is released
+          client.studio.v2.flows('').executions.create({
+            from: From,
+            to: ChannelSid,
+            parameters: {
+              ChannelAttributes: {
+                ...releasedChannelAttributes,
+                memory: lexResponse.interpretations,
+              },
+            },
           }),
         ]);
 

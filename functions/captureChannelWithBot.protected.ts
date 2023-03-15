@@ -36,8 +36,9 @@ type EnvVars = {
 };
 
 type Body = {
-  channelSid: string;
-  message: string;
+  channelSid: string; // (in Studio Flow, flow.channel.address) The channel to capture
+  message: string; // (in Studio Flow, trigger.message.Body) The triggering message
+  studioFlowSid: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
 };
 
 export const handler = async (
@@ -49,10 +50,18 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message } = event;
+    const { channelSid, message, studioFlowSid } = event;
 
     if (channelSid === undefined) {
       resolve(error400('channelSid'));
+      return;
+    }
+    if (message === undefined) {
+      resolve(error400('message'));
+      return;
+    }
+    if (studioFlowSid === undefined) {
+      resolve(error400('studioFlowSid'));
       return;
     }
 
@@ -91,6 +100,7 @@ export const handler = async (
           botId: 'C6HUSTIFBR', // This should be passed as parameter
           botAliasId: 'TSTALIASID', // This should be passed as parameter
           localeId: 'en_US', // This should be passed as parameter
+          studioFlowSid,
         },
       }),
     });
@@ -125,7 +135,7 @@ export const handler = async (
       botAliasId: updatedChannelAttributes.channelCapturedByBot.botAliasId,
       localeId: updatedChannelAttributes.channelCapturedByBot.localeId,
       text: message,
-      sessionId: channel.sid, // We could use some channel/bot info to better scope this
+      sessionId: channel.sid,
     }).promise();
 
     // Secuentially wait for the messages to be sent in the correct order
@@ -146,7 +156,7 @@ export const handler = async (
     );
     // ==============
 
-    resolve(success('Channel caputer by bot =)'));
+    resolve(success('Channel captured by bot =)'));
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
