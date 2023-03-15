@@ -98,22 +98,7 @@ export const handler = async (
       }),
     );
 
-    const updated = await channel.update({
-      attributes: JSON.stringify({
-        ...channelAttributes,
-        fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
-        channelCapturedByBot: {
-          botId: 'C6HUSTIFBR', // This should be passed as parameter
-          botAliasId: 'TSTALIASID', // This should be passed as parameter
-          localeId: 'en_US', // This should be passed as parameter
-          studioFlowSid,
-        },
-      }),
-    });
-
-    const updatedChannelAttributes = JSON.parse(updated.attributes);
-
-    await channel.webhooks().create({
+    const chatbotCallbackWebhook = await channel.webhooks().create({
       type: 'webhook',
       configuration: {
         filters: ['onMessageSent'],
@@ -121,6 +106,23 @@ export const handler = async (
         url: `https://${context.DOMAIN_NAME}/webhooks/chatbotCallback`,
       },
     });
+
+    const updated = await channel.update({
+      attributes: JSON.stringify({
+        ...channelAttributes,
+        fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
+        // All of this can be passed as url params to the webhook instead
+        channelCapturedByBot: {
+          botId: 'C6HUSTIFBR', // This should be passed as parameter
+          botAliasId: 'TSTALIASID', // This should be passed as parameter
+          localeId: 'en_US', // This should be passed as parameter
+          studioFlowSid,
+          chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
+        },
+      }),
+    });
+
+    const updatedChannelAttributes = JSON.parse(updated.attributes);
 
     // ==============
     /**

@@ -120,7 +120,11 @@ export const handler = async (
       // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
       //       finishes the convo. Unfortunately, AWS only allows Lambdas there, so it may require some more work
       if (lexResponse.sessionState?.dialogAction?.type === 'Close') {
-        const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
+        const releasedChannelAttributes = {
+          ...omit(channelAttributes, 'channelCapturedByBot'),
+          memory: lexResponse.interpretations,
+        };
+        // const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
 
         await Promise.all([
           // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
@@ -134,6 +138,11 @@ export const handler = async (
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
+          // Remove this webhook from the channel
+          channel
+            .webhooks()
+            .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
+            .remove(),
           // Trigger a new API type Studio Flow execution once the channel is released
           client.studio.v2
             .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
@@ -141,10 +150,7 @@ export const handler = async (
               from: ChannelSid,
               to: ChannelSid,
               parameters: {
-                ChannelAttributes: {
-                  ...releasedChannelAttributes,
-                  memory: lexResponse.interpretations,
-                },
+                ChannelAttributes: releasedChannelAttributes,
               },
             }),
         ]);
