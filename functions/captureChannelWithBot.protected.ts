@@ -38,7 +38,7 @@ type EnvVars = {
 type Body = {
   channelSid: string; // (in Studio Flow, flow.channel.address) The channel to capture
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
-  serviceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
+  fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
   studioFlowSid: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
 };
 
@@ -51,7 +51,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message, serviceUser, studioFlowSid } = event;
+    const { channelSid, message, fromServiceUser, studioFlowSid } = event;
 
     if (channelSid === undefined) {
       resolve(error400('channelSid'));
@@ -61,8 +61,8 @@ export const handler = async (
       resolve(error400('message'));
       return;
     }
-    if (serviceUser === undefined) {
-      resolve(error400('serviceUser'));
+    if (fromServiceUser === undefined) {
+      resolve(error400('fromServiceUser'));
       return;
     }
     if (studioFlowSid === undefined) {
@@ -101,11 +101,11 @@ export const handler = async (
     const updated = await channel.update({
       attributes: JSON.stringify({
         ...channelAttributes,
+        fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         channelCapturedByBot: {
           botId: 'C6HUSTIFBR', // This should be passed as parameter
           botAliasId: 'TSTALIASID', // This should be passed as parameter
           localeId: 'en_US', // This should be passed as parameter
-          serviceUser,
           studioFlowSid,
         },
       }),
