@@ -26,7 +26,6 @@ import {
   success,
 } from '@tech-matters/serverless-helpers';
 import dialogflow from '@google-cloud/dialogflow';
-import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
