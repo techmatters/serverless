@@ -54,6 +54,7 @@
     "node": "^14.0"
   },
   "dependencies": {
+    "@google-cloud/dialogflow": "^5.7.0",
     "@tech-matters/serverless-helpers": "3.0.5",
     "@twilio-labs/serverless-runtime-types": "2.2.3",
     "@twilio/runtime-handler": "1.2.4",

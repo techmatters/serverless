@@ -25,16 +25,12 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import AWS from 'aws-sdk';
-import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
+import dialogflow from '@google-cloud/dialogflow';
 import { omit } from 'lodash';
 import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
-  ASELO_APP_ACCESS_KEY: string;
-  ASELO_APP_SECRET_KEY: string;
-  AWS_REGION: string;
 };
 
 export type Body = Partial<WebhookEvent> & {};
@@ -80,60 +76,54 @@ export const handler = async (
       /**
        * TODO: Factor out shared chunk of code
        */
-      AWS.config.update({
-        credentials: {
-          accessKeyId: context.ASELO_APP_ACCESS_KEY,
-          secretAccessKey: context.ASELO_APP_SECRET_KEY,
+      // google requires an environment variable called GOOGLE_APPLICATION_CREDENTIALS that points to a file path with the service account key file (json) to authenticate into their API
+      // to solve for this, we save the key file as a private asset, then use a helper function to find and return the path of the private asset.
+      // lastly we set the environment variable dynamically at runtime so that it's in place when the sessions client is initialized
+      process.env.GOOGLE_APPLICATION_CREDENTIALS =
+        Runtime.getAssets()['/service-account-key.json'].path;
+
+      // Create a new session
+      const sessionClient = new dialogflow.SessionsClient();
+
+      const request = {
+        session: sessionClient.projectAgentSessionPath(
+          channelAttributes.channelCapturedByBot.projectId, // projectId
+          channel.sid, // sessionId
+        ),
+        queryInput: {
+          text: {
+            // The query to send to the dialogflow agent
+            text: Body,
+            // The language used by the client (en-US)
+            languageCode: channelAttributes.channelCapturedByBot.languageCode,
+          },
         },
-        region: context.AWS_REGION,
-      });
+      };
 
-      const Lex = new AWS.LexRuntimeV2();
+      // Only the first element of the touple seemed relevant so far
+      const [dialogflowResponse] = await sessionClient.detectIntent(request);
 
-      const lexResponse = await Lex.recognizeText({
-        botId: channelAttributes.channelCapturedByBot.botId,
-        botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-        localeId: channelAttributes.channelCapturedByBot.localeId,
-        text: Body,
-        sessionId: channel.sid, // We could use some channel/bot info to better scope this
-      }).promise();
-
-      // Secuentially wait for the messages to be sent in the correct order
       // TODO: probably we want to handle the case where messages is null
-      /* const messagesSent = */ await lexResponse.messages?.reduce<Promise<MessageInstance[]>>(
-        async (accumPromise, message) => {
-          // TODO: this is unlikely to fail, but maybe we should handle differently?
-          const resolved = await accumPromise; // wait for previous promise to resolve
-          const sent = await channel.messages().create({
-            body: message.content,
-            from: 'Bot',
-            xTwilioWebhookEnabled: 'true',
-          });
-
-          return [...resolved, sent];
-        },
-        Promise.resolve([]),
-      );
+      if (dialogflowResponse.queryResult?.fulfillmentText) {
+        await channel.messages().create({
+          body: dialogflowResponse.queryResult?.fulfillmentText,
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+      }
       // ==============
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
       // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
       //       finishes the convo. Unfortunately, AWS only allows Lambdas there, so it may require some more work
-      if (lexResponse.sessionState?.dialogAction?.type === 'Close') {
+      if (dialogflowResponse.queryResult?.diagnosticInfo?.fields?.end_conversation.boolValue) {
         const releasedChannelAttributes = {
           ...omit(channelAttributes, 'channelCapturedByBot'),
-          memory: lexResponse.interpretations,
+          memory: dialogflowResponse.queryResult.parameters?.fields,
         };
-        // const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
 
+        // No need to delete the session here, as it's removed once end_conversation state is reached
         await Promise.all([
-          // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
-          Lex.deleteSession({
-            botId: channelAttributes.channelCapturedByBot.botId,
-            botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-            localeId: channelAttributes.channelCapturedByBot.localeId,
-            sessionId: channel.sid,
-          }).promise(),
           // Remove channelCapturedByBot from channel attributes
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
