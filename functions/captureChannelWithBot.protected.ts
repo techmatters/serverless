@@ -25,14 +25,10 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import AWS from 'aws-sdk';
-import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
+import dialogflow from '@google-cloud/dialogflow';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
-  ASELO_APP_ACCESS_KEY: string;
-  ASELO_APP_SECRET_KEY: string;
-  AWS_REGION: string;
 };
 
 type Body = {
@@ -113,9 +109,8 @@ export const handler = async (
         fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         // All of this can be passed as url params to the webhook instead
         channelCapturedByBot: {
-          botId: 'C6HUSTIFBR', // This should be passed as parameter
-          botAliasId: 'TSTALIASID', // This should be passed as parameter
-          localeId: 'en_US', // This should be passed as parameter
+          projectId: 'presurveybot-test-pmcl', // This should be passed as parameter
+          languageCode: 'en-US', // This should be passed as parameter
           studioFlowSid,
           chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
         },
@@ -128,40 +123,41 @@ export const handler = async (
     /**
      * TODO: Factor out shared chunk of code
      */
-    AWS.config.update({
-      credentials: {
-        accessKeyId: context.ASELO_APP_ACCESS_KEY,
-        secretAccessKey: context.ASELO_APP_SECRET_KEY,
+    // google requires an environment variable called GOOGLE_APPLICATION_CREDENTIALS that points to a file path with the service account key file (json) to authenticate into their API
+    // to solve for this, we save the key file as a private asset, then use a helper function to find and return the path of the private asset.
+    // lastly we set the environment variable dynamically at runtime so that it's in place when the sessions client is initialized
+    process.env.GOOGLE_APPLICATION_CREDENTIALS =
+      Runtime.getAssets()['/service-account-key.json'].path;
+
+    // Create a new session
+    const sessionClient = new dialogflow.SessionsClient();
+
+    const request = {
+      session: sessionClient.projectAgentSessionPath(
+        updatedChannelAttributes.channelCapturedByBot.projectId, // projectId
+        channel.sid, // sessionId
+      ),
+      queryInput: {
+        text: {
+          // The query to send to the dialogflow agent
+          text: message,
+          // The language used by the client (en-US)
+          languageCode: updatedChannelAttributes.channelCapturedByBot.languageCode,
+        },
       },
-      region: context.AWS_REGION,
-    });
+    };
 
-    const Lex = new AWS.LexRuntimeV2();
+    // Only the first element of the touple seemed relevant so far
+    const [dialogflowResponse] = await sessionClient.detectIntent(request);
 
-    const lexResponse = await Lex.recognizeText({
-      botId: updatedChannelAttributes.channelCapturedByBot.botId,
-      botAliasId: updatedChannelAttributes.channelCapturedByBot.botAliasId,
-      localeId: updatedChannelAttributes.channelCapturedByBot.localeId,
-      text: message,
-      sessionId: channel.sid,
-    }).promise();
-
-    // Secuentially wait for the messages to be sent in the correct order
     // TODO: probably we want to handle the case where messages is null
-    /* const messagesSent = */ await lexResponse.messages?.reduce<Promise<MessageInstance[]>>(
-      async (accumPromise, message) => {
-        // TODO: this is unlikely to fail, but maybe we should handle differently?
-        const resolved = await accumPromise; // wait for previous promise to resolve
-        const sent = await channel.messages().create({
-          body: message.content,
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
-
-        return [...resolved, sent];
-      },
-      Promise.resolve([]),
-    );
+    if (dialogflowResponse.queryResult?.fulfillmentText) {
+      await channel.messages().create({
+        body: dialogflowResponse.queryResult?.fulfillmentText,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
+    }
     // ==============
 
     resolve(success('Channel captured by bot =)'));
