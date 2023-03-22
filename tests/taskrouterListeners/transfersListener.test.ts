@@ -24,6 +24,7 @@ import {
 } from '@tech-matters/serverless-helpers/taskrouter';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
+import each from 'jest-each';
 
 import * as transfersListener from '../../functions/taskrouterListeners/transfersListener.private';
 
@@ -79,12 +80,12 @@ const defaultColdVoiceAttributes = {
   transferMeta: {
     ...defaultAttributes.transferMeta,
     originalTask: 'original-task-cold-voice',
-    transferStatus: 'transferring',
+    transferStatus: 'accepted',
     mode: 'COLD',
   },
 };
 
-const originalTaskColdVoiceReservation = {
+const originalTaskVoiceReservation = {
   reservationStatus: 'assigned',
   update: jest.fn(),
 };
@@ -109,14 +110,14 @@ const tasks: Map<Task> = {
     attributes: JSON.stringify(defaultWarmVoiceAttributes),
     fetch: () => Promise.resolve(tasks['original-task-warm-voice']),
     update: jest.fn(),
-    reservations: jest.fn(),
+    reservations: () => originalTaskVoiceReservation,
   },
   'original-task-cold-voice': {
     sid: 'original-task-cold-voice',
     attributes: JSON.stringify(defaultColdVoiceAttributes),
     fetch: () => Promise.resolve(tasks['original-task-cold-voice']),
     update: jest.fn(),
-    reservations: () => originalTaskColdVoiceReservation,
+    reservations: () => originalTaskVoiceReservation,
   },
 };
 
@@ -332,19 +333,42 @@ describe('Voice transfers', () => {
     expect(tasks['original-task-cold-voice'].update).not.toHaveBeenCalled();
   });
 
-  test('cold transfer wrapup', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: RESERVATION_WRAPUP as EventType,
-      TaskChannelUniqueName: 'voice',
-      TaskSid: 'original-task-cold-voice',
-      TaskAttributes: tasks['original-task-cold-voice'].attributes,
-    };
+  each([
+    { task: tasks['original-task-cold-voice'], transferStatus: 'accepted', expectComplete: true },
+    { task: tasks['original-task-warm-voice'], transferStatus: 'accepted', expectComplete: true },
+    { task: tasks['original-task-warm-voice'], transferStatus: 'rejected', expectComplete: false },
+    {
+      task: tasks['original-task-warm-voice'],
+      transferStatus: 'transferring',
+      expectComplete: false,
+    },
+  ]).test(
+    'task $task.sid to wrapup with transferStatus $transferStatus should complete task $expectComplete',
+    async ({ task, transferStatus, expectComplete }) => {
+      const taskAttributes = JSON.parse(task.attributes);
+      const event = {
+        ...mock<EventFields>(),
+        EventType: RESERVATION_WRAPUP as EventType,
+        TaskChannelUniqueName: 'voice',
+        TaskSid: task.sid,
+        TaskAttributes: JSON.stringify({
+          ...taskAttributes,
+          transferMeta: {
+            ...taskAttributes.transferMeta,
+            transferStatus,
+          },
+        }),
+      };
 
-    await transfersListener.handleEvent(context, event);
+      await transfersListener.handleEvent(context, event);
 
-    expect(originalTaskColdVoiceReservation.update).toHaveBeenCalledWith({
-      reservationStatus: 'completed',
-    });
-  });
+      if (expectComplete) {
+        expect(originalTaskVoiceReservation.update).toHaveBeenCalledWith({
+          reservationStatus: 'completed',
+        });
+      } else {
+        expect(originalTaskVoiceReservation.update).not.toHaveBeenCalled();
+      }
+    },
+  );
 });
