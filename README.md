@@ -19,7 +19,7 @@ In order to prevent sensitive credentials to be leaked, please follow this instr
 `git clone https://github.com/tech-matters/serverless && cd serverless`
 2- Install dependencies:
 `npm ci`
-3- create a .env file with all the .env variables ([below is the whole list](#environment-variables))
+3- create a .env file with all the .env variables ([below is the whole list](#environment-variables)) or run `npm run ssm:local` to fetch them from AWS SSM.
 4- run typescript compiler (as Twilio ST serves the .js files) and start local server on port 3030:
 `npm run start:local`
 
@@ -28,16 +28,20 @@ For help on twilio-run commands run:
 
 ## Environment variables
 
-| Variable Name                       | Expected Value                                                                                                          |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `ACCOUNT_SID`                       | sid of the Twilio account (under /project/settings)                                                                     |
-| `AUTH_TOKEN`                        | auth token of the above account (under /project/settings)                                                               |
-| `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter (under /taskrouter/workspaces, named Flex Task Assignment)                             |
-| `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | workflow sid within above workspace (under /taskrouter/workspaces/< above-workspace >/workflows, named Master Workflow) |
-| `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage (under /sync/services, named Shared State Service)                        |
-| `SYNC_SERVICE_API_KEY`              | api resource to use above sync client (under /sync/tools, named Shared State Service)                                   |
-| `SYNC_SERVICE_API_SECRET`           | api secret of the above resource (no way to acces in Twilio console, ask this to the repo owner)                        |
-| `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks (under /chat/services, named Flex Chat Service)                               |
+| Variable Name                       | Expected Value                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `ACCOUNT_SID`                       | sid of the Twilio account (under /project/settings)                                                            |
+| `AUTH_TOKEN`                        | auth token of the above account (under /project/settings)                                                      |
+| `TWILIO_WORKSPACE_SID`              | workspace sid for the taskrouter (under /taskrouter/workspaces, named Flex Task Assignment)                    |
+| `TWILIO_CHAT_TRANSFER_WORKFLOW_SID` | sid within above workspace (under /taskrouter/workspaces/< above-workspace >/workflows, named Master Workflow) |
+| `SYNC_SERVICE_SID`                  | sync service sid for use as temporary storage (under /sync/services, named Shared State Service)               |
+| `SYNC_SERVICE_API_KEY`              | api resource to use above sync client (under /sync/tools, named Shared State Service)                          |
+| `SYNC_SERVICE_API_SECRET`           | api secret of the above resource (no way to acces in Twilio console, ask this to the repo owner)               |
+| `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks (under /chat/services, named Flex Chat Service)                      |
+| `S3_BUCKET`                         | s3 bucket for ACCOUNT_SID ('contact-docs-bucket' in localstack)                                                |
+| `S3_ENDPOINT`                       | _local transcripts only_ http://localhost:4566                                                                 |
+| `ASELO_APP_ACCESS_KEY`              | AWS_ACCESS_KEY_ID with access to s3 bucket (can be any string for localstack)                                  |
+| `ASELO_APP_SECRET_KEY`              | AWS_SECRET_ACCESS_KEY for ASELO_APP_ACCESS_KEY (can be any string for localstack                               |
 
 ## Deployment
 
