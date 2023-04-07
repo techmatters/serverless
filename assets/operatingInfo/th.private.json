@@ -1,27 +1,6 @@
 {
   "timezone": "Asia/Bangkok",
-  "holidays": {
-    "01/01/2024":"New Year's Day",
-    "01/02/2024":"New Year's Eve",
-    "03/06/2023":"Māgha Pūjā",
-    "04/06/2023":"Chakri Memorial Day",
-    "04/13/2023":"Songkran",
-    "04/14/2023":"Songkran",
-    "04/15/2023":"Songkran",
-    "05/01/2023":"Labour Day",
-    "05/04/2023":"Coronation of King Maha Vajiralongkorn",
-    "05/05/2023":"Coronation Day",
-    "05/11/2023":"Royal Ploughing Ceremony",
-    "06/05/2023":"H.M Queen Suthida Bajrasudhabimalalakshana's Birthday",
-    "07/28/2023":"H.M. King Maha Vajiralongkorn Phra Vajiraklaochaoyuhua’s Birthday",
-    "08/01/2023":"Asalha Puja",
-    "08/02/2023":"Beginning of Vassa",
-    "08/14/2023":"H.M. Queen Sirikit The Queen Mother’s Birthday",
-    "10/13/2023":"H.M. King Bhumibol Adulyadej The Great Memorial Day",
-    "10/23/2023":"Chulalongkorn Memorial Day",
-    "12/05/2023":"Father's Day",
-    "12/11/2023":"Constitution Day"
-  },
+  "holidays": {},
   "operatingHours": {
     "facebook": {
       "1": [{ "open": 600, "close": 2359 }],
