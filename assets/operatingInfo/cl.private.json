@@ -1,7 +1,6 @@
 {
   "timezone": "America/Santiago",
   "holidays": {
-    {
   "1/5/2023": "Día del trabajo",
   "7/5/2023": "Consejeros Institucionales",
   "21/5/2023": "Glorias Navales",
@@ -14,7 +13,6 @@
   "1/11/2023": "Día de todos los santos",
   "8/12/2023": "Inmaculada Concepción",
   "17/12/2023": "Plebiscito Nacional"
-  }
   },
   "operatingHours": {
     "webchat": {
