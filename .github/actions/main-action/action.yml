@@ -149,7 +149,7 @@ runs:
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
       shell: bash
     - name: Run deploy
-      run: twilio serverless:deploy --runtime=node14 --service-name=serverless --environment=production --force
+      run: twilio serverless:deploy --runtime=node16 --service-name=serverless --environment=production --force
       env:
         TWILIO_ACCOUNT_SID: ${{ inputs.account-sid }}
         TWILIO_AUTH_TOKEN: ${{ inputs.auth-token }}
