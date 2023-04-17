@@ -65,7 +65,7 @@ const baseContext = {
     },
     chat: {
       services: (serviceSid: string) => {
-        if (serviceSid === baseContext.CHAT_SERVICE_SID)
+        if (serviceSid === baseContext.CHAT_SERVICE_SID) {
           return {
             channels: (channelSid: string) => {
               if (channels[channelSid]) return channels[channelSid];
@@ -73,6 +73,7 @@ const baseContext = {
               throw new Error('Error retrieving chat channel');
             },
           };
+        }
 
         throw new Error('Error retrieving chat service');
       },

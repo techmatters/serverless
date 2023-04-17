@@ -80,46 +80,45 @@ const createReservation = (taskSid: string, workerSid: string) => {
   });
 };
 
-const createTask = (sid: string, options: any) => {
-  return {
-    sid,
-    ...options,
-    reservations: () => ({
-      list: async () => [],
-    }),
-    update: async ({ attributes }: { attributes: any }) => {
-      tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
+const createTask = (sid: string, options: any) => ({
+  sid,
+  ...options,
+  reservations: () => ({
+    list: async () => [],
+  }),
+  update: async ({ attributes }: { attributes: any }) => {
+    tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
 
-      const hasReservation =
-        (
-          await tasks
-            .find((t) => t.sid === sid)
-            .reservations()
-            .list()
-        ).length > 0;
+    const hasReservation =
+      (
+        await tasks
+          .find((t) => t.sid === sid)
+          .reservations()
+          .list()
+      ).length > 0;
 
-      const { targetSid } = JSON.parse(attributes);
-      if (
-        [
-          'available-worker-with-reservation',
-          'not-available-worker-with-reservation',
-          'available-worker-with-accepted',
-          'not-available-worker-with-accepted',
-          'available-worker-with-completed',
-          'not-available-worker-with-completed',
-        ].includes(targetSid) &&
-        !hasReservation
-      )
-        createReservation(sid, targetSid);
+    const { targetSid } = JSON.parse(attributes);
+    if (
+      [
+        'available-worker-with-reservation',
+        'not-available-worker-with-reservation',
+        'available-worker-with-accepted',
+        'not-available-worker-with-accepted',
+        'available-worker-with-completed',
+        'not-available-worker-with-completed',
+      ].includes(targetSid) &&
+      !hasReservation
+    ) {
+      createReservation(sid, targetSid);
+    }
 
-      const task = tasks.find((t) => t.sid === sid);
-      return task;
-    },
-    remove: async () => {
-      tasks = tasks.filter((t) => t.sid === sid);
-    },
-  };
-};
+    const task = tasks.find((t) => t.sid === sid);
+    return task;
+  },
+  remove: async () => {
+    tasks = tasks.filter((t) => t.sid === sid);
+  },
+});
 
 const updateWorkerMock = jest.fn();
 
@@ -171,28 +170,31 @@ beforeEach(() => {
       },
       workers: (workerSid: string) => ({
         fetch: () => {
-          if (workerSid === 'noHelpline-worker')
+          if (workerSid === 'noHelpline-worker') {
             return {
               attributes: JSON.stringify({}),
               sid: 'waitingOfflineContact-worker',
               available: true,
             };
+          }
 
-          if (workerSid === 'waitingOfflineContact-worker')
+          if (workerSid === 'waitingOfflineContact-worker') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: true, helpline: 'helpline' }),
               sid: 'waitingOfflineContact-worker',
               available: true,
             };
+          }
 
-          if (workerSid === 'available-worker-no-reservation')
+          if (workerSid === 'available-worker-no-reservation') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               sid: 'available-worker-no-reservation',
               available: true,
             };
+          }
 
-          if (workerSid === 'not-available-worker-no-reservation')
+          if (workerSid === 'not-available-worker-no-reservation') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               activitySid: 'activitySid',
@@ -200,16 +202,18 @@ beforeEach(() => {
               available: false,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'available-worker-with-reservation')
+          if (workerSid === 'available-worker-with-reservation') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               sid: 'available-worker-with-reservation',
               available: true,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'not-available-worker-with-reservation')
+          if (workerSid === 'not-available-worker-with-reservation') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               activitySid: 'activitySid',
@@ -217,16 +221,18 @@ beforeEach(() => {
               available: false,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'available-worker-with-accepted')
+          if (workerSid === 'available-worker-with-accepted') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               sid: 'available-worker-with-accepted',
               available: true,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'not-available-worker-with-accepted')
+          if (workerSid === 'not-available-worker-with-accepted') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               activitySid: 'activitySid',
@@ -234,16 +240,18 @@ beforeEach(() => {
               available: false,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'available-worker-with-completed')
+          if (workerSid === 'available-worker-with-completed') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               sid: 'available-worker-with-completed',
               available: true,
               update: updateWorkerMock,
             };
+          }
 
-          if (workerSid === 'not-available-worker-with-completed')
+          if (workerSid === 'not-available-worker-with-completed') {
             return {
               attributes: JSON.stringify({ waitingOfflineContact: false, helpline: 'helpline' }),
               activitySid: 'activitySid',
@@ -251,6 +259,7 @@ beforeEach(() => {
               available: false,
               update: updateWorkerMock,
             };
+          }
 
           throw new Error('Non existing worker');
         },

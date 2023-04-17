@@ -77,8 +77,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
 
   if (!SAFERNET_ENDPOINT) throw new Error('SAFERNET_ENDPOINT env var not provided.');
   if (!SAFERNET_TOKEN) throw new Error('SAFERNET_TOKEN env var not provided.');
-  if (!SAVE_PENDING_CONTACTS_STATIC_KEY)
+  if (!SAVE_PENDING_CONTACTS_STATIC_KEY) {
     throw new Error('SAVE_PENDING_CONTACTS_STATIC_KEY env var not provided.');
+  }
 
   const isValid = await isValidRequest(context, event);
 

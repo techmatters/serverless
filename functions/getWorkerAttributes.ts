@@ -55,10 +55,11 @@ export const handler = TokenValidator(
 
       const workerAttributes = JSON.parse(worker.attributes);
 
-      if (workerAttributes.helpline === undefined)
+      if (workerAttributes.helpline === undefined) {
         throw new Error(
           'Error: the target worker does not have helpline attribute set, check the worker configuration.',
         );
+      }
 
       const whiteListedAttributes = {
         helpline: workerAttributes.helpline,

@@ -34,12 +34,13 @@ const baseContext = {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       services: (serviceSid: string) => ({
         channels: (channelSid: string) => {
-          if (channelSid === 'web')
+          if (channelSid === 'web') {
             return {
               fetch: async () => ({
                 attributes: '{"channel_type": "web"}',
               }),
             };
+          }
 
           if (channelSid === 'failure') throw new Error('Something crashed');
 

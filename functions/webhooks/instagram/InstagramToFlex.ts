@@ -88,6 +88,7 @@ const isInstagramStoryReply = (
 ): message is InstagramStoryReply =>
   typeof (message as InstagramStoryReply).reply_to?.story === 'object';
 
+// eslint-disable-next-line no-confusing-arrow
 const getStoryMentionText = (message: InstagramMessageObject['message']) =>
   message.attachments
     ? `Story mention: ${message.attachments[0].payload.url}`

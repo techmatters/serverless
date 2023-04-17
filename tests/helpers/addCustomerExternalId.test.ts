@@ -35,18 +35,16 @@ let tasks: any[] = [
   },
 ];
 
-const createTask = (sid: string, options: any) => {
-  return {
-    sid,
-    ...options,
-    fetch: async () => tasks.find((t) => t.sid === sid),
-    update: async ({ attributes }: { attributes: any }) => {
-      tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
-      const task = tasks.find((t) => t.sid === sid);
-      return task;
-    },
-  };
-};
+const createTask = (sid: string, options: any) => ({
+  sid,
+  ...options,
+  fetch: async () => tasks.find((t) => t.sid === sid),
+  update: async ({ attributes }: { attributes: any }) => {
+    tasks = tasks.map((t) => (t.sid === sid ? { ...t, attributes } : t));
+    const task = tasks.find((t) => t.sid === sid);
+    return task;
+  },
+});
 
 const workspaces: { [x: string]: any } = {
   WSxxx: {

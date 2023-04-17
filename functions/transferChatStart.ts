@@ -110,11 +110,12 @@ async function validateChannelIfWorker(
       .fetch(),
   ]);
 
-  if (!worker.available)
+  if (!worker.available) {
     return {
       type: 'error',
       payload: { status: 403, message: "Error: can't transfer to an offline counselor" },
     } as const;
+  }
 
   const workerAttr = JSON.parse(worker.attributes);
 
@@ -126,11 +127,12 @@ async function validateChannelIfWorker(
       workerChannel.configuredCapacity >= workerAttr.maxMessageCapacity
     : channelType !== 'voice' && !workerChannel.availableCapacityPercentage;
 
-  if (unavailableVoice || unavailableChat)
+  if (unavailableVoice || unavailableChat) {
     return {
       type: 'error',
       payload: { status: 403, message: 'Error: counselor has no available capacity' },
     } as const;
+  }
 
   const shouldIncrease =
     workerAttr.maxMessageCapacity &&
@@ -236,7 +238,12 @@ export const handler = TokenValidator(
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
         increaseChatCapacity(context, validationResult),
-        setDummyChannel(context, { mode, ignoreAgent, targetSid, taskSid }),
+        setDummyChannel(context, {
+          mode,
+          ignoreAgent,
+          targetSid,
+          taskSid,
+        }),
       ]);
 
       resolve(success({ taskSid: newTask.sid }));
