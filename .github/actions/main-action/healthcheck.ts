@@ -23,6 +23,7 @@
 
 import { setOutput, setFailed } from '@actions/core';
 import fetch from 'node-fetch';
+import * as Twilio from 'twilio';
 
 async function healthCheck () {
     // `who-to-greet` input defined in action metadata file
@@ -31,7 +32,7 @@ async function healthCheck () {
   
     if(!twilioAccountSid || !twilioAuthToken) throw new Error('Account sid or auth token not provided.')
   
-    const client = require('twilio')(twilioAccountSid, twilioAuthToken);
+    const client = Twilio(twilioAccountSid, twilioAuthToken);
     const service = await client.serverless.services('serverless').fetch();
     const productionEnv = (await service.environments().list()).find(e => e.domainSuffix === 'production');
   
