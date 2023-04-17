@@ -17,8 +17,9 @@
 module.exports = {
   parser: '@typescript-eslint/parser',  // Specifies the ESLint parser
   extends: [
-    'airbnb-typescript/base',
     'plugin:prettier/recommended',
+    'airbnb-base',
+    'airbnb-typescript/base',
   ],
   parserOptions: {
     project: './tsconfig.eslint.json',
@@ -38,5 +39,10 @@ module.exports = {
     "@typescript-eslint/indent": "off",
     "no-console": "off",
     "no-shadow": "off",
+    "operator-linebreak": "off",
+    "max-len": "off",
+    "implicit-arrow-linebreak": "off",
+    "object-curly-newline": "off",
+    "function-paren-newline": "off",
   },
 };
