@@ -158,8 +158,10 @@ const endContactOrPostSurvey = async (
     updateTaskPromises.push(updatePostSurveyTask);
   }
 
-  const resolvedPromises = await Promise.all(updateTaskPromises);
-  return resolvedPromises.some((channelCleanupRequired: boolean) => channelCleanupRequired);
+  const resolvedPromises = await Promise.allSettled(updateTaskPromises);
+  const isChannelCleanupRequired = (result: PromiseSettledResult<boolean>) =>
+    result.status === 'fulfilled' && result.value;
+  return resolvedPromises.some(isChannelCleanupRequired);
 };
 
 export const handler = TokenValidator(
