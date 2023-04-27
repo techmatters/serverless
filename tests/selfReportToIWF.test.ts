@@ -31,8 +31,8 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
 }));
 
 jest.mock('axios');
-jest.mock('form-data', () => {
-  return jest.fn().mockImplementation(() => {
+jest.mock('form-data', () =>
+  jest.fn().mockImplementation(() => {
     const data: Record<string, any> = {
       getHeaders: () => ({ 'Content-Type': 'multi-part/form' }),
     };
@@ -40,8 +40,8 @@ jest.mock('form-data', () => {
       data[key] = value;
     };
     return data;
-  });
-});
+  }),
+);
 
 const baseContext = {
   getTwilioClient: (): any => ({}),

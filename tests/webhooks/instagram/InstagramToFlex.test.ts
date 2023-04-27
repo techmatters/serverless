@@ -27,20 +27,18 @@ const MOCK_CHANNEL_TYPE = 'instagram';
 const MOCK_SENDER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:sender_id`;
 const MOCK_OTHER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:other_id`;
 
-const newChannel = (sid: string, messages: any[] = []) => {
-  return {
-    attributes: '{}',
-    sid,
-    messages: {
-      create: jest.fn().mockResolvedValue(`Message sent in channel ${sid}.`),
-      list: async () => messages,
-    },
-    webhooks: {
-      create: async () => {},
-    },
-    update: async () => {},
-  };
-};
+const newChannel = (sid: string, messages: any[] = []) => ({
+  attributes: '{}',
+  sid,
+  messages: {
+    create: jest.fn().mockResolvedValue(`Message sent in channel ${sid}.`),
+    list: async () => messages,
+  },
+  webhooks: {
+    create: async () => {},
+  },
+  update: async () => {},
+});
 
 const mockOneMessage = {
   sid: 'message_1',
@@ -215,7 +213,7 @@ describe('InstagramToFlex', () => {
       conditionDescription: 'the event contains no entry',
       event: { ...validEventBody(), entry: [] },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read property',
+      expectedMessage: 'Cannot read properties of undefined',
     },
     {
       conditionDescription: 'the event has an entry with empty messaging',
@@ -235,7 +233,7 @@ describe('InstagramToFlex', () => {
         ],
       },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read property',
+      expectedMessage: 'Cannot read properties of undefined',
     },
     {
       conditionDescription: 'the event has no message',
@@ -249,7 +247,7 @@ describe('InstagramToFlex', () => {
         ],
       },
       expectedStatus: 500,
-      expectedMessage: 'Cannot read property',
+      expectedMessage: 'Cannot read properties of undefined',
     },
     {
       conditionDescription:

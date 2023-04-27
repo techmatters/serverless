@@ -129,7 +129,12 @@ const validEventBody = ({ senderId = 'sender_id', recipientId = 'recipient_id' }
         target: 'target',
         message_data: {
           text: 'text',
-          entities: { hashtags: [], symbols: [], urls: [], user_mentions: [] },
+          entities: {
+            hashtags: [],
+            symbols: [],
+            urls: [],
+            user_mentions: [],
+          },
         },
       },
     },

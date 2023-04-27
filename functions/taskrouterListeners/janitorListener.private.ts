@@ -54,8 +54,9 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelT
       eventType === TASK_SYSTEM_DELETED ||
       eventType === TASK_CANCELED
     )
-  )
+  ) {
     return false;
+  }
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
@@ -63,11 +64,10 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelT
   return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
 };
 
-const wait = (ms: number): Promise<void> => {
-  return new Promise((resolve) => {
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-};
 
 /**
  * Checks the event type to determine if the listener should handle the event or not.

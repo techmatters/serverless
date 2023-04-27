@@ -41,22 +41,21 @@ const delimiter = ';';
 const mergeAttributes = (
   previousAttributes: TaskAttributes,
   newAttributes: InsightsAttributes,
-): TaskAttributes => {
-  return {
-    ...previousAttributes,
-    conversations: {
-      ...previousAttributes.conversations,
-      ...newAttributes.conversations,
-    },
-    customers: {
-      ...previousAttributes.customers,
-      ...newAttributes.customers,
-    },
-  };
-};
+): TaskAttributes => ({
+  ...previousAttributes,
+  conversations: {
+    ...previousAttributes.conversations,
+    ...newAttributes.conversations,
+  },
+  customers: {
+    ...previousAttributes.customers,
+    ...newAttributes.customers,
+  },
+});
 
-const applyCustomUpdate = (customUpdate: OneToManyConfigSpec): SurveyInsightsUpdateFunction => {
-  return (memory) => {
+const applyCustomUpdate =
+  (customUpdate: OneToManyConfigSpec): SurveyInsightsUpdateFunction =>
+  (memory) => {
     const updatePaths = customUpdate.questions.map(
       (question) => `twilio.collected_data.collect_survey.answers.${question}.answer`, // Path where the answer for each question should be in bot memory
     );
@@ -69,7 +68,6 @@ const applyCustomUpdate = (customUpdate: OneToManyConfigSpec): SurveyInsightsUpd
       },
     };
   };
-};
 
 const bindApplyCustomUpdates = (
   oneToManyConfigSpecs: OneToManyConfigSpec[],

@@ -49,11 +49,10 @@ type AssignmentResult =
     }
   | { type: 'success'; newTask: TaskInstance };
 
-const wait = (ms: number): Promise<void> => {
-  return new Promise((resolve) => {
+const wait = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-};
 
 const cleanUpTask = async (task: TaskInstance, message: string) => {
   const { attributes } = task;
@@ -61,7 +60,12 @@ const cleanUpTask = async (task: TaskInstance, message: string) => {
 
   return {
     type: 'error',
-    payload: { status: 500, message, taskRemoved, attributes },
+    payload: {
+      status: 500,
+      message,
+      taskRemoved,
+      attributes,
+    },
   } as const;
 };
 
@@ -84,13 +88,15 @@ const assignToAvailableWorker = async (
 
   const accepted = await reservation.update({ reservationStatus: 'accepted' });
 
-  if (accepted.reservationStatus !== 'accepted')
+  if (accepted.reservationStatus !== 'accepted') {
     return cleanUpTask(newTask, 'Error: reservation for task not accepted.');
+  }
 
   const completed = await reservation.update({ reservationStatus: 'completed' });
 
-  if (completed.reservationStatus !== 'completed')
+  if (completed.reservationStatus !== 'completed') {
     return cleanUpTask(newTask, 'Error: reservation for task not completed.');
+  }
 
   // eslint-disable-next-line no-console
   if (retry) console.warn(`Needed ${retry} retries to get reservation`);
@@ -149,7 +155,7 @@ const assignOfflineContact = async (
 
   const targetWorkerAttributes = JSON.parse(targetWorker.attributes);
 
-  if (targetWorkerAttributes.helpline === undefined)
+  if (targetWorkerAttributes.helpline === undefined) {
     return {
       type: 'error',
       payload: {
@@ -159,8 +165,9 @@ const assignOfflineContact = async (
         taskRemoved: false,
       },
     };
+  }
 
-  if (targetWorkerAttributes.waitingOfflineContact)
+  if (targetWorkerAttributes.waitingOfflineContact) {
     return {
       type: 'error',
       payload: {
@@ -169,6 +176,7 @@ const assignOfflineContact = async (
         taskRemoved: false,
       },
     };
+  }
 
   const queueRequiredTaskAttributes = {
     helpline: targetWorkerAttributes.helpline,
