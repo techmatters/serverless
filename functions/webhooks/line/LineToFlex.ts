@@ -72,18 +72,25 @@ export type Body = {
  */
 const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => {
   const xLineSignature = event.request.headers['x-line-signature'];
-
+  console.log(
+    'Line headers',
+    event.request.headers['x-line-signature'],
+    JSON.stringify(event.request.headers),
+  );
   if (!xLineSignature) return false;
 
   // Twilio Serverless adds a 'request' property the payload
   const { request, ...originalPayload } = event;
   const originalPayloadAsString = JSON.stringify(originalPayload);
+  console.log('originalPayloadAsString', originalPayloadAsString);
 
   const expectedSignature = crypto
     .createHmac('sha256', lineChannelSecret)
     .update(originalPayloadAsString)
     .digest('base64');
 
+  console.log('Expected signature', expectedSignature);
+  console.log('Line signature', xLineSignature);
   const isValidRequest = crypto.timingSafeEqual(
     Buffer.from(xLineSignature),
     Buffer.from(expectedSignature),
@@ -101,11 +108,11 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   if (!isValidLinePayload(event, context.LINE_CHANNEL_SECRET)) {
-    console.log('Invalid Line payload', JSON.stringify(event));
+    console.log('Invalid Line payload', JSON.stringify(event), JSON.stringify(event.events));
     resolve(error403('Forbidden'));
     return;
   }
-  console.log('Valid Line payload', JSON.stringify(event));
+  console.log('Valid Line payload', JSON.stringify(event), JSON.stringify(event.events));
 
   try {
     const { destination, events } = event;
