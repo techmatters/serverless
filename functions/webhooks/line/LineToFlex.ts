@@ -101,9 +101,11 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   if (!isValidLinePayload(event, context.LINE_CHANNEL_SECRET)) {
+    console.log('Invalid Line payload', JSON.stringify(event));
     resolve(error403('Forbidden'));
     return;
   }
+  console.log('Valid Line payload', JSON.stringify(event));
 
   try {
     const { destination, events } = event;

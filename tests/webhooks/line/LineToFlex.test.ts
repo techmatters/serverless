@@ -205,6 +205,24 @@ describe('LineToFlex', () => {
       expectedMessage:
         'Message sent in channel line:sender_id.,Message sent in channel line:sender_id.',
     },
+    {
+      conditionDescription: 'sending emoji',
+      event: {
+        ...validEvent(),
+        events: [
+          {
+            ...validEvent().events[0],
+            message: {
+              type: 'text',
+              id: 'message_id',
+              text: 'หนูอยากโตไวๆหนูไม่อยากอยู่กับเขาแล้ว😭',
+            },
+          },
+        ],
+      },
+      expectedStatus: 200,
+      expectedMessage: 'Message sent in channel line:sender_id.',
+    },
   ]).test(
     "Should return error expectedStatus '$expectedMessage' when $conditionDescription",
     async ({
