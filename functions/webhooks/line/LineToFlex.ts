@@ -84,19 +84,24 @@ const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => 
   const originalPayloadAsString = JSON.stringify(originalPayload);
   console.log('originalPayloadAsString', originalPayloadAsString);
 
+  // https://gist.github.com/jirawatee/366d6bef98b137131ab53dfa079bd0a4
+  // We get signature mismatches when emojis are present in the payload if we don't replace 'lower case' hex values with 'upper case' hex values
+  const originalPayloadWithFixedEmojis = originalPayloadAsString.replace(
+    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+    (e) =>
+      `\\u${e.charCodeAt(0).toString(16).toUpperCase()}\\u${e
+        .charCodeAt(1)
+        .toString(16)
+        .toUpperCase()}`,
+  );
   const expectedSignature = crypto
     .createHmac('sha256', lineChannelSecret)
-    .update(originalPayloadAsString)
+    .update(originalPayloadWithFixedEmojis)
     .digest('base64');
 
   console.log('Expected signature', expectedSignature);
   console.log('Line signature', xLineSignature);
-  const isValidRequest = crypto.timingSafeEqual(
-    Buffer.from(xLineSignature),
-    Buffer.from(expectedSignature),
-  );
-
-  return isValidRequest;
+  return crypto.timingSafeEqual(Buffer.from(xLineSignature), Buffer.from(expectedSignature));
 };
 
 export const handler = async (
