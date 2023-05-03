@@ -110,13 +110,11 @@ const baseContext = {
 type UnsignedBody = Omit<Body, 'request'>;
 
 const fixUnicodeForLine = (text: string): string =>
-  text.replace(
-    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-    (emojiChars) =>
-      emojiChars
-        .split('')
-        .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
-        .join(''),
+  text.replace(/\p{Emoji_Presentation}/gu, (emojiChars) =>
+    emojiChars
+      .split('')
+      .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
+      .join(''),
   );
 
 const signEvent = (event: UnsignedBody, secret: string): Body => ({
