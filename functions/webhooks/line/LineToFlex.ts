@@ -82,11 +82,6 @@ const fixUnicodeForLine = (text: string): string =>
  */
 const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => {
   const xLineSignature = event.request.headers['x-line-signature'];
-  console.log(
-    'Line headers',
-    event.request.headers['x-line-signature'],
-    JSON.stringify(event.request.headers),
-  );
   if (!xLineSignature) return false;
 
   // Twilio Serverless adds a 'request' property the payload
