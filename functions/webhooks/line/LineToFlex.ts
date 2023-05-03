@@ -70,13 +70,11 @@ export type Body = {
 // https://gist.github.com/jirawatee/366d6bef98b137131ab53dfa079bd0a4 - but fixed :facepalm:
 // We get signature mismatches when emojis are present in the payload because the signature on the line side seems to have been generated using escaped versions of emoji unicode characters
 const fixUnicodeForLine = (text: string): string =>
-  text.replace(
-    /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-    (emojiChars) =>
-      emojiChars
-        .split('')
-        .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
-        .join(''),
+  text.replace(/\p{Emoji_Presentation}/gu, (emojiChars) =>
+    emojiChars
+      .split('')
+      .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
+      .join(''),
   );
 
 /**
