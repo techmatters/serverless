@@ -16,14 +16,10 @@
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import each from 'jest-each';
+import crypto from 'crypto';
 import { handler as LineToFlex, Body } from '../../../functions/webhooks/line/LineToFlex';
 
 import helpers, { MockedResponse } from '../../helpers';
-
-jest.mock('crypto', () => ({
-  timingSafeEqual: () => true,
-  createHmac: () => ({ update: () => ({ digest: () => '' }) }),
-}));
 
 const channels: { [x: string]: any } = {
   'line:sender_id': {
@@ -106,15 +102,37 @@ const baseContext = {
   SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
   LINE_FLEX_FLOW_SID: 'LINE_FLEX_FLOW_SID',
-  LINE_CHANNEL_SECRET: 'LINE_CHANNEL_SECRET',
+  PATH: '',
+  SERVICE_SID: undefined,
+  ENVIRONMENT_SID: undefined,
 };
 
-const validEvent = ({ senderId = 'sender_id', recipientId = 'recipient_id' } = {}): Body => ({
+type UnsignedBody = Omit<Body, 'request'>;
+
+const fixUnicodeForLine = (text: string): string =>
+  text.replace(/\p{Emoji_Presentation}/gu, (emojiChars) =>
+    emojiChars
+      .split('')
+      .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
+      .join(''),
+  );
+
+const signEvent = (event: UnsignedBody, secret: string): Body => ({
+  ...event,
   request: {
     headers: {
-      'x-line-signature': 'line_signature',
+      'x-line-signature': crypto
+        .createHmac('sha256', secret)
+        .update(fixUnicodeForLine(JSON.stringify(event)))
+        .digest('base64'),
     },
   },
+});
+
+const validEvent = ({
+  senderId = 'sender_id',
+  recipientId = 'recipient_id',
+} = {}): UnsignedBody => ({
   destination: recipientId,
   events: [
     {
@@ -134,7 +152,7 @@ const validEvent = ({ senderId = 'sender_id', recipientId = 'recipient_id' } = {
   ],
 });
 
-const aggregateEvents = (event1: Body, event2: Body): Body => ({
+const aggregateEvents = (event1: UnsignedBody, event2: UnsignedBody): UnsignedBody => ({
   ...event1,
   events: [...event1.events, ...event2.events],
 });
@@ -151,6 +169,38 @@ describe('LineToFlex', () => {
   });
   afterAll(() => {
     helpers.teardown();
+  });
+
+  test('should return 403 for an unsigned event', async () => {
+    const event = validEvent();
+    const context = baseContext;
+    const callback = jest.fn();
+
+    await LineToFlex(
+      { ...context, LINE_CHANNEL_SECRET: 'mock-correct-secret' },
+      { ...event, request: { headers: {} } },
+      callback,
+    );
+    const response: MockedResponse = callback.mock.calls[0][1];
+
+    expect(response!.getStatus()).toBe(403);
+    expect(response!.getBody().message).toContain('Forbidden');
+  });
+
+  test('should return 403 for an incorrectly signed event', async () => {
+    const event = validEvent();
+    const context = baseContext;
+    const callback = jest.fn();
+
+    await LineToFlex(
+      { ...context, LINE_CHANNEL_SECRET: 'mock-correct-secret' },
+      signEvent(event, 'mock-wrong-secret'),
+      callback,
+    );
+    const response: MockedResponse = callback.mock.calls[0][1];
+
+    expect(response!.getStatus()).toBe(403);
+    expect(response!.getBody().message).toContain('Forbidden');
   });
 
   each([
@@ -205,6 +255,24 @@ describe('LineToFlex', () => {
       expectedMessage:
         'Message sent in channel line:sender_id.,Message sent in channel line:sender_id.',
     },
+    {
+      conditionDescription: 'sending emoji',
+      event: {
+        ...validEvent(),
+        events: [
+          {
+            ...validEvent().events[0],
+            message: {
+              type: 'text',
+              id: 'message_id',
+              text: 'Oh noes! 😭',
+            },
+          },
+        ],
+      },
+      expectedStatus: 200,
+      expectedMessage: 'Message sent in channel line:sender_id.',
+    },
   ]).test(
     "Should return error expectedStatus '$expectedMessage' when $conditionDescription",
     async ({
@@ -222,13 +290,11 @@ describe('LineToFlex', () => {
       await LineToFlex(
         {
           ...baseContext,
+          LINE_CHANNEL_SECRET: 'mock-correct-secret',
           LINE_FLEX_FLOW_SID: flexFlowSid,
           CHAT_SERVICE_SID: chatServiceSid,
-          PATH: '',
-          SERVICE_SID: undefined,
-          ENVIRONMENT_SID: undefined,
         },
-        event,
+        signEvent(event, 'mock-correct-secret'),
         callback,
       );
 
