@@ -41,19 +41,23 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     const { callSid, taskSid } = event;
+    console.log(`Trying to remove ${callSid} from task ${taskSid}`);
 
     try {
       if (callSid === undefined) return resolve(error400('callSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
 
-      const participant = await context
+      const participantRemoved = await context
         .getTwilioClient()
         .conferences(taskSid)
         .participants(callSid)
         .remove();
 
-      return resolve(success({ message: 'New participant succesfully added', participant }));
+      console.log(`Removed: ${participantRemoved}`);
+
+      return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
     } catch (err: any) {
+      console.error(JSON.stringify(err.message || err));
       return resolve(error500(err));
     }
   },
