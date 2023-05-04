@@ -31,7 +31,7 @@ type EnvVars = {
 
 export type Body = {
   callSid: string;
-  taskSid: string;
+  conferenceSid: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -40,16 +40,16 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, taskSid } = event;
-    console.log(`Trying to remove ${callSid} from task ${taskSid}`);
+    const { callSid, conferenceSid } = event;
+    console.log(`Trying to remove ${callSid} from task ${conferenceSid}`);
 
     try {
       if (callSid === undefined) return resolve(error400('callSid'));
-      if (taskSid === undefined) return resolve(error400('taskSid'));
+      if (conferenceSid === undefined) return resolve(error400('conferenceSid'));
 
       const participantRemoved = await context
         .getTwilioClient()
-        .conferences(taskSid)
+        .conferences(conferenceSid)
         .participants(callSid)
         .remove();
 
