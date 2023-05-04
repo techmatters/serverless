@@ -30,7 +30,7 @@ type EnvVars = {
 };
 
 export type Body = {
-  participantSid: string;
+  callSid: string;
   taskSid: string;
   request: { cookies: {}; headers: {} };
 };
@@ -40,16 +40,16 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { participantSid, taskSid } = event;
+    const { callSid, taskSid } = event;
 
     try {
-      if (participantSid === undefined) return resolve(error400('participantSid'));
+      if (callSid === undefined) return resolve(error400('callSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
 
       const participant = await context
         .getTwilioClient()
         .conferences(taskSid)
-        .participants(participantSid)
+        .participants(callSid)
         .remove();
 
       return resolve(success({ message: 'New participant succesfully added', participant }));
