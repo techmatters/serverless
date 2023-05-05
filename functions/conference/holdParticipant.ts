@@ -30,10 +30,8 @@ type EnvVars = {
 };
 
 export type Body = {
+  callSid: string;
   conferenceSid: string;
-  from: string;
-  to: string;
-  label: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -42,26 +40,26 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { conferenceSid, from, to, label } = event;
+    const { callSid, conferenceSid } = event;
+    console.log(`Trying to put in hold ${callSid} from task ${conferenceSid}`);
 
     try {
+      if (callSid === undefined) return resolve(error400('callSid'));
       if (conferenceSid === undefined) return resolve(error400('conferenceSid'));
-      if (from === undefined) return resolve(error400('from'));
-      if (to === undefined) return resolve(error400('to'));
 
       const participant = await context
         .getTwilioClient()
         .conferences(conferenceSid)
-        .participants.create({
-          from,
-          to,
-          earlyMedia: true,
-          endConferenceOnExit: false,
-          label: label || 'external party', // Probably want to pass this from the caller
-        });
+        .participants(callSid)
+        .fetch();
 
-      return resolve(success({ message: 'New participant succesfully added', participant }));
+      const participantInHold = await participant.update({ hold: true });
+
+      console.log(`Participant in hold: ${participantInHold}`);
+
+      return resolve(success({ message: `Participant in hold: ${participantInHold}` }));
     } catch (err: any) {
+      console.error(JSON.stringify(err.message || err));
       return resolve(error500(err));
     }
   },
