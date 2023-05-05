@@ -32,6 +32,7 @@ type EnvVars = {
 export type Body = {
   callSid: string;
   conferenceSid: string;
+  hold: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -40,12 +41,13 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid } = event;
+    const { callSid, conferenceSid, hold } = event;
     console.log(`Trying to put in hold ${callSid} from task ${conferenceSid}`);
 
     try {
       if (callSid === undefined) return resolve(error400('callSid'));
       if (conferenceSid === undefined) return resolve(error400('conferenceSid'));
+      if (hold === undefined) return resolve(error400('hold'));
 
       const participant = await context
         .getTwilioClient()
@@ -53,7 +55,8 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      const participantInHold = await participant.update({ hold: true });
+      const updatedHold = Boolean(hold === 'true');
+      const participantInHold = await participant.update({ hold: updatedHold });
 
       console.log(`Participant in hold: ${participantInHold}`);
 
