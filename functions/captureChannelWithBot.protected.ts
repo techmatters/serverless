@@ -1,3 +1,4 @@
+/* eslint-disable import/no-dynamic-require */
 /**
  * Copyright (C) 2021-2023 Technology Matters
  * This program is free software: you can redistribute it and/or modify
@@ -33,6 +34,8 @@ type EnvVars = {
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   AWS_REGION: string;
+  TWILIO_WORKSPACE_SID: string;
+  SURVEY_WORKFLOW_SID: string;
 };
 
 type Body = {
@@ -123,6 +126,19 @@ export const handler = async (
     });
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
+
+    // Cleanup task for captured channel by the bot
+    const task = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        attributes: JSON.stringify({ isChatbotCaptureControl: true }),
+        taskChannel: 'survey',
+        timeout: 3600,
+      });
+
+    console.log('>>>', task);
 
     // ==============
     /**

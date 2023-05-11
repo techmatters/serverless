@@ -44,8 +44,13 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
-const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
+// This applies to both pre-survey(due to external use of AWS) and post-survey
+const isCleanupSurvey = (
+  eventType: EventType,
+  taskAttributes: { isSurveyTask?: boolean; isChatbotCaptureControl?: boolean },
+) =>
+  (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) &&
+  (taskAttributes.isSurveyTask || taskAttributes.isChatbotCaptureControl);
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
   if (
@@ -83,15 +88,22 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
-    if (isCleanupPostSurvey(eventType, taskAttributes)) {
-      console.log('Handling clean up post-survey...');
+    if (isCleanupSurvey(eventType, taskAttributes)) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      taskAttributes.isChatbotCaptureControl === true
+        ? console.log('Handling clean up pre-survey...')
+        : console.log('Handling clean up post-survey...');
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
       const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
       const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
 
-      console.log('Finished handling clean up post-survey.');
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      taskAttributes.isChatbotCaptureControl === true
+        ? console.log('Finished handling clean up pre-survey.')
+        : console.log('Finished handling clean up post-survey.');
+
       return;
     }
 
