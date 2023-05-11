@@ -135,7 +135,7 @@ export const handler = async (
         workflowSid: context.SURVEY_WORKFLOW_SID,
         attributes: JSON.stringify({ isChatbotCaptureControl: true }),
         taskChannel: 'survey',
-        timeout: 3600,
+        timeout: 45600, // 720 minutes or 12 hours
       });
 
     console.log('>>>', task);
