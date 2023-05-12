@@ -44,6 +44,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('===== chatbotCallback handler =====');
+
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -126,34 +128,56 @@ export const handler = async (
         };
         // const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
 
-        await Promise.all([
-          // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
-          Lex.deleteSession({
-            botId: channelAttributes.channelCapturedByBot.botId,
-            botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-            localeId: channelAttributes.channelCapturedByBot.localeId,
-            sessionId: channel.sid,
-          }).promise(),
-          // Remove channelCapturedByBot from channel attributes
-          channel.update({
-            attributes: JSON.stringify(releasedChannelAttributes),
-          }),
-          // Remove this webhook from the channel
-          channel
-            .webhooks()
-            .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
-            .remove(),
-          // Trigger a new API type Studio Flow execution once the channel is released
-          client.studio.v2
-            .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
-            .executions.create({
-              from: ChannelSid,
-              to: ChannelSid,
-              parameters: {
-                ChannelAttributes: releasedChannelAttributes,
-              },
-            }),
-        ]);
+        await Promise.all(
+          [
+            // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
+            () => {
+              console.log('>>> Lex.deleteSession');
+              Lex.deleteSession({
+                botId: channelAttributes.channelCapturedByBot.botId,
+                botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
+                localeId: channelAttributes.channelCapturedByBot.localeId,
+                sessionId: channel.sid,
+              }).promise();
+            },
+            // Remove channelCapturedByBot from channel attributes
+            () => {
+              console.log('>>> Remove channelCapturedByBot from channel attributes');
+              channel.update({
+                attributes: JSON.stringify(releasedChannelAttributes),
+              });
+            },
+            // Move control task to complete state
+            () => {
+              console.log('>>> Move control task to complete state');
+              client.taskrouter.v1
+                .workspaces('WORKFLOW_SID')
+                .tasks(channelAttributes.controlTaskSid)
+                .update({ assignmentStatus: 'completed' });
+            },
+            // Remove this webhook from the channel
+            () => {
+              console.log('>>> Remove this webhook from the channel');
+              channel
+                .webhooks()
+                .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
+                .remove();
+            },
+            // Trigger a new API type Studio Flow execution once the channel is released
+            () => {
+              console.log('>>> Studio Flow execution once the channel is released');
+              client.studio.v2
+                .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
+                .executions.create({
+                  from: ChannelSid,
+                  to: ChannelSid,
+                  parameters: {
+                    ChannelAttributes: releasedChannelAttributes,
+                  },
+                });
+            },
+          ].map((func) => func()),
+        );
 
         console.log('Channel unblocked and bot session deleted');
       }

@@ -50,6 +50,7 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('===== captureChannelWithBot handler =====');
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -135,7 +136,8 @@ export const handler = async (
         workflowSid: context.SURVEY_WORKFLOW_SID,
         attributes: JSON.stringify({ isChatbotCaptureControl: true }),
         taskChannel: 'survey',
-        timeout: 45600, // 720 minutes or 12 hours
+        timeout: 10, // 720 minutes or 12 hours
+        // timeout: 45600, // 720 minutes or 12 hours
       });
 
     console.log('>>>', task);

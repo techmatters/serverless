@@ -44,13 +44,19 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
-// This applies to both pre-survey(due to external use of AWS) and post-survey
-const isCleanupSurvey = (
+// This applies to both pre-survey(isChatbotCaptureControl) and post-survey
+const isCleanupBotCapture = (
   eventType: EventType,
   taskAttributes: { isSurveyTask?: boolean; isChatbotCaptureControl?: boolean },
-) =>
-  (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) &&
-  (taskAttributes.isSurveyTask || taskAttributes.isChatbotCaptureControl);
+) => {
+  if (taskAttributes.isSurveyTask) {
+    return eventType === TASK_CANCELED || eventType === TASK_WRAPUP;
+  }
+  if (taskAttributes.isChatbotCaptureControl) {
+    return eventType === TASK_CANCELED;
+  }
+  return false;
+};
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
   if (
@@ -88,11 +94,11 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
-    if (isCleanupSurvey(eventType, taskAttributes)) {
+    if (isCleanupBotCapture(eventType, taskAttributes)) {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      taskAttributes.isChatbotCaptureControl === true
-        ? console.log('Handling clean up pre-survey...')
-        : console.log('Handling clean up post-survey...');
+      const cleanupType = taskAttributes.isChatbotCaptureControl ? 'pre-survey' : 'post-survey';
+      console.log(`Handling clean up ${cleanupType}...`);
+
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
       const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
@@ -100,9 +106,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      taskAttributes.isChatbotCaptureControl === true
-        ? console.log('Finished handling clean up pre-survey.')
-        : console.log('Finished handling clean up post-survey.');
+      console.log(`Finished handling clean up ${cleanupType}.`);
 
       return;
     }
