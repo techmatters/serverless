@@ -16,14 +16,13 @@
 
 name: Kids Help Phone Production deploy
 
-
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   deploy:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "CA"
-      environment_code: "PROD"
-      changelog: "Deploying individual account"
+      helpline_code: 'CA'
+      environment_code: 'PROD'
+      environment: 'production'
+      changelog: 'Deploying individual account'
