@@ -68,7 +68,7 @@ export const handler = TokenValidator(
       const s3Client = new AWS.S3(
         S3_ENDPOINT
           ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
-          : {},
+          : { signatureVersion: 'v4' },
       );
 
       const downloadUrl = await s3Client.getSignedUrl('getObject', getUrlParams);
