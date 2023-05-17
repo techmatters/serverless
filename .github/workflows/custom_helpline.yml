@@ -29,6 +29,21 @@ on:
       environment_code:
         description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
         required: true
+        type: choice
+        default: STG
+        options:
+          - DEV
+          - STG
+          - PROD
+      environment:
+        description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)
+        required: true
+        type: choice
+        default: staging
+        options:
+          - development
+          - staging
+          - production
       force_enable_operating_hours:
         type: boolean
         description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
@@ -38,6 +53,9 @@ on:
         required: true
         type: string
       environment_code:
+        required: true
+        type: string
+      environment:
         required: true
         type: string
       changelog:
