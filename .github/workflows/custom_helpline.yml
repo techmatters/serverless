@@ -161,6 +161,7 @@ jobs:
 
       - name: AWS region where Aselo documents bucket is hosted
         uses: marvinpinto/action-inject-ssm-secrets@latest
+        continue-on-error: true
         with:
           ssm_parameter: /${{ inputs.environment }}/aws/${{ env.TWILIO_ACCOUNT_SID_SECRET_NAME }}/region
           env_variable_name: HELPLINE_AWS_REGION
