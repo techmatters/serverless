@@ -173,6 +173,6 @@ jobs:
           aws-region: $HELPLINE_AWS_REGION
           s3-bucket: $S3_BUCKET
           helpline-name: ${{inputs.helpline_code}}_${{inputs.environment_code}}
-          # Set false if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise true
-          disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == PROD) && false || true }}
+          # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
+          disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == 'PROD') && 'false' || 'true' }}
           send-slack-message: ${{ inputs.send-slack-message }}
