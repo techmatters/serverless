@@ -163,7 +163,7 @@ jobs:
         uses: marvinpinto/action-inject-ssm-secrets@latest
         continue-on-error: true
         with:
-          ssm_parameter: /${{ inputs.environment }}/aws/${{ env.TWILIO_ACCOUNT_SID_SECRET_NAME }}/region
+          ssm_parameter: /${{ inputs.environment }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
           env_variable_name: HELPLINE_AWS_REGION
 
       - name: Set HELPLINE_AWS_REGION to default
