@@ -50,12 +50,12 @@ jobs:
             'MT',
             'NZ',
           ]
-        environment_code: [STG]
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
       helpline_code: ${{ matrix.short_helplines }}
-      environment_code: ${{ matrix.environment_code }}
+      environment_code: STG
+      environment: staging
       changelog: ${{ inputs.changelog }}
 
   # Send Slack notifying success
