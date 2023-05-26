@@ -30,10 +30,10 @@ type EnvVars = {
 };
 
 export type Body = {
-  conferenceSid: string;
-  from: string;
-  to: string;
-  label: string;
+  conferenceSid?: string;
+  from?: string;
+  to?: string;
+  label?: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -45,9 +45,9 @@ export const handler = TokenValidator(
     const { conferenceSid, from, to, label } = event;
 
     try {
-      if (conferenceSid === undefined) return resolve(error400('conferenceSid'));
-      if (from === undefined) return resolve(error400('from'));
-      if (to === undefined) return resolve(error400('to'));
+      if (!conferenceSid) return resolve(error400('conferenceSid'));
+      if (!from) return resolve(error400('from'));
+      if (!to) return resolve(error400('to'));
 
       const participant = await context
         .getTwilioClient()
