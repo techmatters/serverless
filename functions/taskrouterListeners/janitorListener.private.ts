@@ -44,15 +44,15 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
-// This applies to both pre-survey(isChatbotCaptureControl) and post-survey
+// This applies to both pre-survey(isChatCaptureControl) and post-survey
 const isCleanupBotCapture = (
   eventType: EventType,
-  taskAttributes: { isSurveyTask?: boolean; isChatbotCaptureControl?: boolean },
+  taskAttributes: { isSurveyTask?: boolean; isChatCaptureControl?: boolean },
 ) => {
   if (taskAttributes.isSurveyTask) {
     return eventType === TASK_CANCELED || eventType === TASK_WRAPUP;
   }
-  if (taskAttributes.isChatbotCaptureControl) {
+  if (taskAttributes.isChatCaptureControl) {
     return eventType === TASK_CANCELED;
   }
   return false;
@@ -96,7 +96,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     if (isCleanupBotCapture(eventType, taskAttributes)) {
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      const cleanupType = taskAttributes.isChatbotCaptureControl ? 'pre-survey' : 'post-survey';
+      const cleanupType = taskAttributes.isChatCaptureControl ? 'pre-survey' : 'post-survey';
       console.log(`Handling clean up ${cleanupType}...`);
 
       await wait(3000); // wait 3 seconds just in case some bot message is pending
