@@ -54,6 +54,7 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
+  console.log('>>>', event);
   try {
     const { channelSid, message, fromServiceUser, studioFlowSid } = event;
 
@@ -128,6 +129,7 @@ export const handler = async (
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
 
+    console.log('>>>  updatedChannelAttributes', updatedChannelAttributes);
     // Cleanup task for captured channel by the bot
     const task = await context
       .getTwilioClient()
