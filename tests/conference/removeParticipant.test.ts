@@ -63,7 +63,7 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('removeParticipant', () => {
+describe('conference/removeParticipant', () => {
   each([
     {
       when: 'conferenceSid is missing',

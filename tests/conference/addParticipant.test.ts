@@ -57,7 +57,7 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('addParticipant', () => {
+describe('conference/addParticipant', () => {
   each([
     {
       when: 'conferenceSid is missing',
