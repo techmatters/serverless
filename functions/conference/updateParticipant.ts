@@ -32,7 +32,8 @@ type EnvVars = {
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  hold: string;
+  updateAttribute: 'hold' | 'endConferenceOnExit';
+  updateValue: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -41,13 +42,18 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid, hold } = event;
-    console.log(`Trying to put in hold ${callSid} from task ${conferenceSid}`);
+    const { callSid, conferenceSid, updateAttribute, updateValue } = event;
 
     try {
-      if (callSid === undefined) return resolve(error400('callSid'));
-      if (conferenceSid === undefined) return resolve(error400('conferenceSid'));
-      if (hold === undefined) return resolve(error400('hold'));
+      if (!callSid) return resolve(error400('callSid'));
+      if (!conferenceSid) return resolve(error400('conferenceSid'));
+      if (
+        !updateAttribute ||
+        (updateAttribute !== 'endConferenceOnExit' && updateAttribute !== 'hold')
+      ) {
+        return resolve(error400('updateAttribute'));
+      }
+      if (!updateValue) return resolve(error400('updateValue'));
 
       const participant = await context
         .getTwilioClient()
@@ -55,14 +61,23 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      const updatedHold = Boolean(hold === 'true');
-      const participantInHold = await participant.update({ hold: updatedHold });
+      const updateAsBool = Boolean(updateValue === 'true');
 
-      console.log(`Participant in hold: ${participantInHold}`);
+      const updatedAttributes =
+        updateAttribute === 'hold'
+          ? {
+              hold: updateAsBool,
+            }
+          : {
+              endConferenceOnExit: updateAsBool,
+            };
 
-      return resolve(success({ message: `Participant in hold: ${participantInHold}` }));
+      await participant.update(updatedAttributes);
+
+      return resolve(
+        success({ message: `Participant updated: ${updateAttribute} ${updateValue}` }),
+      );
     } catch (err: any) {
-      console.error(JSON.stringify(err.message || err));
       return resolve(error500(err));
     }
   },
