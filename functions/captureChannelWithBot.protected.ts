@@ -134,6 +134,14 @@ export const handler = async (
     console.log('>>>  updated.attributes', updated.attributes);
     console.log('>>>  updatedChannelAttributes', updatedChannelAttributes);
 
+    console.log('>>>  twilio workspace', context.TWILIO_WORKSPACE_SID);
+    console.log('>>>  workflowSid', context.TWILIO_WORKSPACE_SID);
+
+    const tasks = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks;
+    console.log('>>>  tasks', tasks);
+
     // Cleanup task for captured channel by the bot
     const task = await context
       .getTwilioClient()
