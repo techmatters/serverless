@@ -150,7 +150,7 @@ export const handler = async (
       .tasks.create({
         workflowSid: context.SURVEY_WORKFLOW_SID,
         attributes: JSON.stringify({
-          isChatbotCaptureControl: true,
+          isChatCaptureControl: true,
           channelSid,
         }),
         taskChannel: 'survey',
