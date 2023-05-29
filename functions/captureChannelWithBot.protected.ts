@@ -149,8 +149,11 @@ export const handler = async (
       .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks.create({
         workflowSid: context.SURVEY_WORKFLOW_SID,
-        attributes: JSON.stringify({ isChatbotCaptureControl: true }),
-        taskChannel: 'survey',
+        attributes: JSON.stringify({
+          isChatbotCaptureControl: true,
+          channelSid,
+        }),
+        taskChannel: 'Survey',
         timeout: 10, // 720 minutes or 12 hours
         // timeout: 45600, // 720 minutes or 12 hours
       });
