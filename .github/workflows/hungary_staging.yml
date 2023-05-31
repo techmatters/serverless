@@ -16,13 +16,13 @@
 
 name: Kek Vonal Staging release
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   deploy:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "HU"
-      environment_code: "STG"
-      changelog: "Deploying individual account"
+      helpline_code: 'HU'
+      environment_code: 'STG'
+      environment: 'staging'
+      changelog: 'Deploying individual account'
