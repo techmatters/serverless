@@ -72,7 +72,12 @@ export const handler = TokenValidator(
         region: AWS_REGION,
       });
 
-      const s3Client = new AWS.S3(S3_ENDPOINT ? { endpoint: S3_ENDPOINT } : {});
+      const s3Client = new AWS.S3(
+        S3_ENDPOINT
+          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
+          : { signatureVersion: 'v4' },
+      );
+
       await deleteObject(s3Client, deleteParams);
 
       resolve(success({ deletedFile: fileName }));
