@@ -26,6 +26,27 @@ on:
       title:
         description: Release title - The title that will be given to this pre-release.
         required: true
+      helpline_code:
+        description: The short (usually 2 character) upper case code used to identify the helpline internally, e.g. ZA, IN, BR.
+        required: true
+      environment_code:
+        description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
+        required: true
+        type: choice
+        default: STG
+        options:
+          - DEV
+          - STG
+          - PROD
+      environment:
+        description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)
+        required: true
+        type: choice
+        default: staging
+        options:
+          - development
+          - staging
+          - production
 
 jobs:
   build-and-deploy:
