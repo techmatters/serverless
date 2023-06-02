@@ -95,9 +95,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     const taskAttributes = JSON.parse(taskAttributesString);
 
     if (isCleanupBotCapture(eventType, taskAttributes)) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       const cleanupType = taskAttributes.isChatCaptureControl ? 'pre-survey' : 'post-survey';
-      console.log(`Handling clean up ${cleanupType}...`);
 
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
@@ -105,8 +103,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      console.log(`Finished handling clean up ${cleanupType}.`);
+      console.log(`Finished handling clean up for ${cleanupType}.`);
 
       return;
     }

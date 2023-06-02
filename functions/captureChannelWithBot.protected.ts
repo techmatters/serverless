@@ -54,9 +54,6 @@ export const handler = async (
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
-  console.log('>>> event', event);
-  console.log('>>> response', response);
-
   try {
     const { channelSid, message, fromServiceUser, studioFlowSid } = event;
 
@@ -131,20 +128,8 @@ export const handler = async (
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
 
-    console.log('>>>  updated.attributes', updated.attributes);
-    console.log('>>>  updatedChannelAttributes', updatedChannelAttributes);
-
-    console.log('>>>  twilio workspace', context.TWILIO_WORKSPACE_SID);
-    console.log('>>>  workflowSid', context.SURVEY_WORKFLOW_SID);
-
-    const tasks = await context
-      .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-      .fetch();
-    console.log('>>>  tasks', tasks);
-
     // Cleanup task for captured channel by the bot
-    const task = await context
+    await context
       .getTwilioClient()
       .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks.create({
@@ -153,12 +138,9 @@ export const handler = async (
           isChatCaptureControl: true,
           channelSid,
         }),
-        taskChannel: 'survey',
-        timeout: 1000, // 720 minutes or 12 hours
-        // timeout: 45600, // 720 minutes or 12 hours
+        taskChannel: 'Survey',
+        timeout: 45600, // 720 minutes or 12 hours
       });
-
-    console.log('>>> task', task);
 
     // ==============
     /**
