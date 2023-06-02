@@ -44,6 +44,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('===== chatbotCallback handler =====');
+
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -138,6 +140,11 @@ export const handler = async (
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
+          // Move control task to complete state
+          client.taskrouter.v1
+            .workspaces('WORKFLOW_SID')
+            .tasks(channelAttributes.controlTaskSid)
+            .update({ assignmentStatus: 'completed' }),
           // Remove this webhook from the channel
           channel
             .webhooks()
