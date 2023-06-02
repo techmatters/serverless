@@ -138,7 +138,7 @@ export const handler = async (
           isChatCaptureControl: true,
           channelSid,
         }),
-        taskChannel: 'Survey',
+        taskChannel: 'survey',
         timeout: 45600, // 720 minutes or 12 hours
       });
 
