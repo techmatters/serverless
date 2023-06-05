@@ -27,6 +27,7 @@ import {
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
@@ -35,6 +36,7 @@ export const eventTypes: EventType[] = [
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 ];
 
@@ -75,10 +77,17 @@ const isChatTransferToWorkerRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
-) =>
-  (eventType === RESERVATION_REJECTED || eventType === RESERVATION_TIMEOUT) &&
-  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
-  taskAttributes.transferTargetType === 'worker';
+) => {
+  console.log('eventType', eventType);
+  console.log('taskAttributes', taskAttributes);
+  return (
+    (eventType === RESERVATION_REJECTED ||
+      eventType === RESERVATION_TIMEOUT ||
+      eventType === TASK_CANCELED) &&
+    isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+    taskAttributes.transferTargetType === 'worker'
+  );
+};
 
 const isChatTransferToQueueComplete = (
   eventType: EventType,

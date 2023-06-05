@@ -78,8 +78,6 @@ const updateTaskAssignmentStatus = async (
   event: Body,
 ) => {
   const client = context.getTwilioClient();
-  let channelCleanupRequired = false;
-
   // Fetch the Task to 'cancel' or 'wrapup'
   const task = await client.taskrouter
     .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -111,8 +109,7 @@ const updateTaskAssignmentStatus = async (
     case 'reserved':
     case 'pending': {
       await updateAssignmentStatus('canceled');
-      channelCleanupRequired = true;
-      break;
+      return true; // indicate that there's cleanup needed
     }
     case 'assigned': {
       await updateAssignmentStatus('wrapping');
@@ -121,7 +118,7 @@ const updateTaskAssignmentStatus = async (
     default:
   }
 
-  return channelCleanupRequired;
+  return false; // no cleanup needed
 };
 
 /**
@@ -134,18 +131,25 @@ const endContactOrPostSurvey = async (
   context: Context<EnvVars>,
   event: Body,
 ) => {
-  const { taskSid, surveyTaskSid } = channelAttributes;
+  const { tasksSids, surveyTaskSid } = channelAttributes;
+
+  console.log('====================== end chat ======================');
+  console.log('channelAttributes:', channelAttributes);
+  console.log('tasksSids:', tasksSids);
+
   const { channelSid } = event;
   const updateTaskPromises: Promise<boolean>[] = [];
 
-  if (taskSid) {
-    const updateContactTask = updateTaskAssignmentStatus(
-      taskSid,
-      channelSid as string,
-      context,
-      event,
-    );
-    updateTaskPromises.push(updateContactTask);
+  if (tasksSids) {
+    tasksSids.array.forEach((taskSid: string) => {
+      const updateContactTask = updateTaskAssignmentStatus(
+        taskSid,
+        channelSid as string,
+        context,
+        event,
+      );
+      updateTaskPromises.push(updateContactTask);
+    });
   }
 
   if (surveyTaskSid) {
