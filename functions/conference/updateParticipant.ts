@@ -29,10 +29,12 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
 };
 
+const validUpdates = ['endConferenceOnExit', 'hold', 'muted'] as const;
+
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  updateAttribute: 'hold' | 'endConferenceOnExit';
+  updateAttribute: typeof validUpdates[number];
   updateValue: string;
   request: { cookies: {}; headers: {} };
 };
@@ -47,10 +49,7 @@ export const handler = TokenValidator(
     try {
       if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (
-        !updateAttribute ||
-        (updateAttribute !== 'endConferenceOnExit' && updateAttribute !== 'hold')
-      ) {
+      if (!updateAttribute || !validUpdates.includes(updateAttribute)) {
         return resolve(error400('updateAttribute'));
       }
       if (!updateValue) return resolve(error400('updateValue'));
@@ -63,16 +62,23 @@ export const handler = TokenValidator(
 
       const updateAsBool = Boolean(updateValue === 'true');
 
-      const updatedAttributes =
-        updateAttribute === 'hold'
-          ? {
-              hold: updateAsBool,
-            }
-          : {
-              endConferenceOnExit: updateAsBool,
-            };
-
-      await participant.update(updatedAttributes);
+      switch (updateAttribute) {
+        case 'endConferenceOnExit': {
+          await participant.update({ endConferenceOnExit: updateAsBool });
+          break;
+        }
+        case 'hold': {
+          await participant.update({ hold: updateAsBool });
+          break;
+        }
+        case 'muted': {
+          await participant.update({ muted: updateAsBool });
+          break;
+        }
+        default: {
+          throw new Error(`'Unexpected case reached, updateAttribute ${updateAttribute}`);
+        }
+      }
 
       return resolve(
         success({ message: `Participant updated: ${updateAttribute} ${updateValue}` }),
