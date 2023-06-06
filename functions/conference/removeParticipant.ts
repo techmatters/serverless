@@ -47,35 +47,32 @@ export const handler = TokenValidator(
       if (!conferenceSid) return resolve(error400('conferenceSid'));
 
       if (removeAll) {
-        // Fetch all participants
         const participants = await context
           .getTwilioClient()
           .conferences(conferenceSid)
-          .participants
-          .list();
+          .participants.list();
 
-        // Iterate over participants and remove them
-        for (const participant of participants) {
-          await context
+        const removeParticipants = participants.map((participant) =>
+          context
             .getTwilioClient()
             .conferences(conferenceSid)
             .participants(participant.callSid)
-            .remove();
-        }
+            .remove(),
+        );
 
-        return resolve(success({ message: `All participants removed.` }));
-      } else {
-        if (!callSid) return resolve(error400('callSid'));
+        await Promise.all(removeParticipants);
 
-        const participantRemoved = await context
-          .getTwilioClient()
-          .conferences(conferenceSid)
-          .participants(callSid)
-          .remove();
-
-        return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
+        return resolve(success({ message: 'All participants removed.' }));
       }
+      if (!callSid) return resolve(error400('callSid'));
 
+      const participantRemoved = await context
+        .getTwilioClient()
+        .conferences(conferenceSid)
+        .participants(callSid)
+        .remove();
+
+      return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
     } catch (err: any) {
       return resolve(error500(err));
     }
