@@ -30,8 +30,9 @@ type EnvVars = {
 };
 
 export type Body = {
-  callSid: string;
+  callSid?: string;
   conferenceSid: string;
+  removeAll?: boolean;
   request: { cookies: {}; headers: {} };
 };
 
@@ -40,19 +41,41 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid } = event;
+    const { callSid, conferenceSid, removeAll } = event;
 
     try {
-      if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
 
-      const participantRemoved = await context
-        .getTwilioClient()
-        .conferences(conferenceSid)
-        .participants(callSid)
-        .remove();
+      if (removeAll) {
+        // Fetch all participants
+        const participants = await context
+          .getTwilioClient()
+          .conferences(conferenceSid)
+          .participants
+          .list();
 
-      return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
+        // Iterate over participants and remove them
+        for (const participant of participants) {
+          await context
+            .getTwilioClient()
+            .conferences(conferenceSid)
+            .participants(participant.callSid)
+            .remove();
+        }
+
+        return resolve(success({ message: `All participants removed.` }));
+      } else {
+        if (!callSid) return resolve(error400('callSid'));
+
+        const participantRemoved = await context
+          .getTwilioClient()
+          .conferences(conferenceSid)
+          .participants(callSid)
+          .remove();
+
+        return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
+      }
+
     } catch (err: any) {
       return resolve(error500(err));
     }
