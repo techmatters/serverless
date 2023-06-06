@@ -139,37 +139,17 @@ const endContactOrPostSurvey = async (
   const { tasksSids, surveyTaskSid } = channelAttributes;
 
   const { channelSid } = event;
-  const actionsOnChannel: ReturnType<typeof updateTaskAssignmentStatus>[] = [];
+  const actionsOnChannel = await Promise.allSettled(
+    [...tasksSids, surveyTaskSid]
+      .filter(Boolean)
+      .map((tSid) => updateTaskAssignmentStatus(tSid, channelSid as string, context, event)),
+  );
 
-  if (tasksSids) {
-    tasksSids.forEach((taskSid: string) => {
-      const updateContactTask = updateTaskAssignmentStatus(
-        taskSid,
-        channelSid as string,
-        context,
-        event,
-      );
-      actionsOnChannel.push(updateContactTask);
-    });
-  }
-
-  if (surveyTaskSid) {
-    const updatePostSurveyTask = updateTaskAssignmentStatus(
-      surveyTaskSid,
-      channelSid as string,
-      context,
-      event,
-    );
-    actionsOnChannel.push(updatePostSurveyTask);
-  }
-
-  const resolvedPromises = await Promise.allSettled(actionsOnChannel);
-
+  // Cleanup the channel if there's no keep-alive and at least one cleanup
   const isChannelCleanupRequired =
-    !resolvedPromises.some((p) => p.status === 'fulfilled' && p.value === 'keep-alive') &&
-    resolvedPromises.some((p) => p.status === 'fulfilled' && p.value === 'cleanup');
+    !actionsOnChannel.some((p) => p.status === 'fulfilled' && p.value === 'keep-alive') &&
+    actionsOnChannel.some((p) => p.status === 'fulfilled' && p.value === 'cleanup');
 
-  // Cleanup the channel if all the tasks
   return isChannelCleanupRequired;
 };
 

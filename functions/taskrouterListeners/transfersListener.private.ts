@@ -77,17 +77,12 @@ const isChatTransferToWorkerRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
-) => {
-  console.log('eventType', eventType);
-  console.log('taskAttributes', taskAttributes);
-  return (
-    (eventType === RESERVATION_REJECTED ||
-      eventType === RESERVATION_TIMEOUT ||
-      eventType === TASK_CANCELED) &&
-    isChatTransfer(taskChannelUniqueName, taskAttributes) &&
-    taskAttributes.transferTargetType === 'worker'
-  );
-};
+) =>
+  (eventType === RESERVATION_REJECTED ||
+    eventType === RESERVATION_TIMEOUT ||
+    eventType === TASK_CANCELED) &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
 
 const isChatTransferToQueueComplete = (
   eventType: EventType,
