@@ -150,6 +150,32 @@ describe('conference/updateParticipant', () => {
 
   each([
     {
+      when: 'valid update: set "muted" true',
+      body: {
+        conferenceSid: 'conferenceSid',
+        callSid: 'callSid',
+        updateAttribute: 'muted',
+        updateValue: 'true',
+      },
+      expectCallback: () => {
+        expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
+        expect(mockParticipantUpdate).toHaveBeenCalledWith({ muted: true });
+      },
+    },
+    {
+      when: 'valid update: set "muted" false',
+      body: {
+        conferenceSid: 'conferenceSid',
+        callSid: 'callSid',
+        updateAttribute: 'muted',
+        updateValue: 'false',
+      },
+      expectCallback: () => {
+        expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
+        expect(mockParticipantUpdate).toHaveBeenCalledWith({ muted: false });
+      },
+    },
+    {
       when: 'valid update: set "hold" true',
       body: {
         conferenceSid: 'conferenceSid',
