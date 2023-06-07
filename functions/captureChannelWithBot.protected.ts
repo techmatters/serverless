@@ -26,8 +26,7 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import AWS from 'aws-sdk';
-import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
+import { LexClient } from './helpers/lexClient.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -43,6 +42,7 @@ type Body = {
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
   fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
   studioFlowSid: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
+  botName: string;
 };
 
 export const handler = async (
@@ -55,22 +55,26 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message, fromServiceUser, studioFlowSid } = event;
+    const { channelSid, message, fromServiceUser, studioFlowSid, botName } = event;
 
-    if (channelSid === undefined) {
+    if (!channelSid) {
       resolve(error400('channelSid'));
       return;
     }
-    if (message === undefined) {
+    if (!message) {
       resolve(error400('message'));
       return;
     }
-    if (fromServiceUser === undefined) {
+    if (!fromServiceUser) {
       resolve(error400('fromServiceUser'));
       return;
     }
-    if (studioFlowSid === undefined) {
+    if (!studioFlowSid) {
       resolve(error400('studioFlowSid'));
+      return;
+    }
+    if (!botName) {
+      resolve(error400('botName'));
       return;
     }
 
@@ -82,11 +86,6 @@ export const handler = async (
 
     const channelAttributes = JSON.parse(channel.attributes);
 
-    /**
-     * Remove the 'studio' type webhook so further messages does not start a new Studio execution
-     * NOTE: is extremely important to "cleanup" (with Janitor) the channels where this is done, or they'll stay in a stuck state.
-     */
-    // This is also used in functions/sendMessageAndRunJanitor.protected.ts, maybe factor out
     const channelWebhooks = await context
       .getTwilioClient()
       .chat.services(context.CHAT_SERVICE_SID)
@@ -117,9 +116,8 @@ export const handler = async (
         fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         // All of this can be passed as url params to the webhook instead
         channelCapturedByBot: {
-          botId: 'C6HUSTIFBR', // This should be passed as parameter
-          botAliasId: 'TSTALIASID', // This should be passed as parameter
-          localeId: 'en_US', // This should be passed as parameter
+          botName,
+          botAlias: 'latest', // assume we always use the latest published version
           studioFlowSid,
           chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
         },
@@ -142,45 +140,21 @@ export const handler = async (
         timeout: 45600, // 720 minutes or 12 hours
       });
 
-    // ==============
-    /**
-     * TODO: Factor out shared chunk of code
-     */
-    AWS.config.update({
-      credentials: {
-        accessKeyId: context.ASELO_APP_ACCESS_KEY,
-        secretAccessKey: context.ASELO_APP_SECRET_KEY,
-      },
-      region: context.AWS_REGION,
+    const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
+    const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+
+    const lexResponse = await lexClient.postText(context, {
+      botName: updatedChannelAttributes.channelCapturedByBot.botName,
+      botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
+      inputText: message,
+      userId: channel.sid,
     });
 
-    const Lex = new AWS.LexRuntimeV2();
-
-    const lexResponse = await Lex.recognizeText({
-      botId: updatedChannelAttributes.channelCapturedByBot.botId,
-      botAliasId: updatedChannelAttributes.channelCapturedByBot.botAliasId,
-      localeId: updatedChannelAttributes.channelCapturedByBot.localeId,
-      text: message,
-      sessionId: channel.sid,
-    }).promise();
-
-    // Secuentially wait for the messages to be sent in the correct order
-    // TODO: probably we want to handle the case where messages is null
-    /* const messagesSent = */ await lexResponse.messages?.reduce<Promise<MessageInstance[]>>(
-      async (accumPromise, message) => {
-        // TODO: this is unlikely to fail, but maybe we should handle differently?
-        const resolved = await accumPromise; // wait for previous promise to resolve
-        const sent = await channel.messages().create({
-          body: message.content,
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
-
-        return [...resolved, sent];
-      },
-      Promise.resolve([]),
-    );
-    // ==============
+    await channel.messages().create({
+      body: lexResponse.message,
+      from: 'Bot',
+      xTwilioWebhookEnabled: 'true',
+    });
 
     resolve(success('Channel captured by bot =)'));
   } catch (err) {

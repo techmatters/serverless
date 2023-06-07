@@ -25,10 +25,9 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import AWS from 'aws-sdk';
-import type { MessageInstance } from 'twilio/lib/rest/chat/v2/service/channel/message';
 import { omit } from 'lodash';
 import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
+import { LexClient } from '../helpers/lexClient.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -51,19 +50,19 @@ export const handler = async (
 
   try {
     const { Body, From, ChannelSid, EventType } = event;
-    if (Body === undefined) {
+    if (!Body) {
       resolve(error400('Body'));
       return;
     }
-    if (From === undefined) {
+    if (!From) {
       resolve(error400('From'));
       return;
     }
-    if (ChannelSid === undefined) {
+    if (!ChannelSid) {
       resolve(error400('ChannelSid'));
       return;
     }
-    if (EventType === undefined) {
+    if (!EventType) {
       resolve(error400('EventType'));
       return;
     }
@@ -78,65 +77,39 @@ export const handler = async (
 
     // Send message to bot only if it's from child
     if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
-      // ==============
-      /**
-       * TODO: Factor out shared chunk of code
-       */
-      AWS.config.update({
-        credentials: {
-          accessKeyId: context.ASELO_APP_ACCESS_KEY,
-          secretAccessKey: context.ASELO_APP_SECRET_KEY,
-        },
-        region: context.AWS_REGION,
+      const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
+      const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+
+      const lexResponse = await lexClient.postText(context, {
+        botName: channelAttributes.channelCapturedByBot.botName,
+        botAlias: channelAttributes.channelCapturedByBot.botAlias,
+        inputText: Body,
+        userId: channel.sid,
       });
 
-      const Lex = new AWS.LexRuntimeV2();
-
-      const lexResponse = await Lex.recognizeText({
-        botId: channelAttributes.channelCapturedByBot.botId,
-        botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-        localeId: channelAttributes.channelCapturedByBot.localeId,
-        text: Body,
-        sessionId: channel.sid, // We could use some channel/bot info to better scope this
-      }).promise();
-
-      // Secuentially wait for the messages to be sent in the correct order
-      // TODO: probably we want to handle the case where messages is null
-      /* const messagesSent = */ await lexResponse.messages?.reduce<Promise<MessageInstance[]>>(
-        async (accumPromise, message) => {
-          // TODO: this is unlikely to fail, but maybe we should handle differently?
-          const resolved = await accumPromise; // wait for previous promise to resolve
-          const sent = await channel.messages().create({
-            body: message.content,
-            from: 'Bot',
-            xTwilioWebhookEnabled: 'true',
-          });
-
-          return [...resolved, sent];
-        },
-        Promise.resolve([]),
-      );
-      // ==============
+      await channel.messages().create({
+        body: lexResponse.message,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
       // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
       //       finishes the convo. Unfortunately, AWS only allows Lambdas there, so it may require some more work
-      if (lexResponse.sessionState?.dialogAction?.type === 'Close') {
+      if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
         const releasedChannelAttributes = {
           ...omit(channelAttributes, 'channelCapturedByBot'),
-          memory: lexResponse.interpretations,
+          memory: lexResponse.slots,
         };
-        // const releasedChannelAttributes = omit(channelAttributes, 'channelCapturedByBot');
 
         await Promise.all([
           // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
-          Lex.deleteSession({
-            botId: channelAttributes.channelCapturedByBot.botId,
-            botAliasId: channelAttributes.channelCapturedByBot.botAliasId,
-            localeId: channelAttributes.channelCapturedByBot.localeId,
-            sessionId: channel.sid,
-          }).promise(),
-          // Remove channelCapturedByBot from channel attributes
+          lexClient.deleteSession(context, {
+            botName: channelAttributes.channelCapturedByBot.botName,
+            botAlias: channelAttributes.channelCapturedByBot.botAlias,
+            userId: channel.sid,
+          }),
+          // Update channel attributes (remove channelCapturedByBot and add memory)
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
