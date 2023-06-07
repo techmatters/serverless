@@ -94,13 +94,22 @@ export const handler = async (
       });
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
-      // TODO: raise the discussion. This could be done from a Lambda that's called when the bot
-      //       finishes the convo. Unfortunately, AWS only allows Lambdas there, so it may require some more work
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
         const releasedChannelAttributes = {
           ...omit(channelAttributes, 'channelCapturedByBot'),
           memory: lexResponse.slots,
         };
+
+        // TODO: This is now only assuming pre-survey bot. We should have a way to specify what's the next step after the bot execution is ended
+        const nextAction = client.studio.v2
+          .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
+          .executions.create({
+            from: ChannelSid,
+            to: ChannelSid,
+            parameters: {
+              ChannelAttributes: releasedChannelAttributes,
+            },
+          });
 
         await Promise.all([
           // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
@@ -123,16 +132,8 @@ export const handler = async (
             .webhooks()
             .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
             .remove(),
-          // Trigger a new API type Studio Flow execution once the channel is released
-          client.studio.v2
-            .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
-            .executions.create({
-              from: ChannelSid,
-              to: ChannelSid,
-              parameters: {
-                ChannelAttributes: releasedChannelAttributes,
-              },
-            }),
+          // Trigger the next step once the channel is released
+          nextAction,
         ]);
 
         console.log('Channel unblocked and bot session deleted');
