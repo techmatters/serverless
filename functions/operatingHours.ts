@@ -149,8 +149,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
-  const response = responseWithCors();
-  const resolve = bindResolve(callback)(response);
+  const res = responseWithCors();
+  const resolve = bindResolve(callback)(res);
 
   try {
     const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;

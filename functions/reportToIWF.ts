@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /**
  * Copyright (C) 2021-2023 Technology Matters
  * This program is free software: you can redistribute it and/or modify
@@ -76,8 +77,9 @@ export const handler = TokenValidator(
       } = event;
 
       if (!Reported_URL) return resolve(error400('Reported_URL'));
-      if (!Reporter_Anonymous || (Reporter_Anonymous !== 'Y' && Reporter_Anonymous !== 'N'))
+      if (!Reporter_Anonymous || (Reporter_Anonymous !== 'Y' && Reporter_Anonymous !== 'N')) {
         return resolve(error400('Reporter_Anonymous'));
+      }
 
       const liveReportFlag = context.IWF_API_ENVIRONMENT === 'L' ? 'L' : 'T';
       const countryID = context.IWF_API_COUNTRY_CODE

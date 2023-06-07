@@ -106,8 +106,9 @@ export const handler = async (
     // Listen for incoming direct messages
     if (event.direct_message_events) {
       const { for_user_id: forUserId, direct_message_events: directMessageEvents, users } = event;
-      if (!forUserId || !directMessageEvents || !directMessageEvents.length || !users)
+      if (!forUserId || !directMessageEvents || !directMessageEvents.length || !users) {
         throw new Error('Bad formatted direct message event');
+      }
 
       const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
       const channelToFlex = require(handlerPath) as ChannelToFlex;

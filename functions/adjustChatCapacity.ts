@@ -51,11 +51,12 @@ export const adjustChatCapacity = async (
   const attributes = JSON.parse(worker.attributes);
   const maxMessageCapacity = parseInt(attributes.maxMessageCapacity, 10);
 
-  if (!maxMessageCapacity)
+  if (!maxMessageCapacity) {
     return {
       status: 409,
       message: `Worker ${body.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
     };
+  }
 
   const channels = await worker.workerChannels().list();
   const channel = channels.find((c) => c.taskChannelUniqueName === 'chat');
@@ -63,19 +64,22 @@ export const adjustChatCapacity = async (
   if (!channel) return { status: 404, message: 'Could not find chat channel.' };
 
   if (body.adjustment === 'increase') {
-    if (channel.availableCapacityPercentage > 0)
+    if (channel.availableCapacityPercentage > 0) {
       return { status: 412, message: 'Still have available capacity, no need to increase.' };
+    }
 
-    if (!(channel.configuredCapacity < maxMessageCapacity))
+    if (!(channel.configuredCapacity < maxMessageCapacity)) {
       return { status: 412, message: 'Reached the max capacity.' };
+    }
 
     await channel.update({ capacity: channel.configuredCapacity + 1 });
     return { status: 200, message: 'Successfully increased channel capacity' };
   }
 
   if (body.adjustment === 'decrease') {
-    if (channel.configuredCapacity - 1 >= 1)
+    if (channel.configuredCapacity - 1 >= 1) {
       await channel.update({ capacity: channel.configuredCapacity - 1 });
+    }
 
     // If configuredCapacity is already 1, send status 200 to avoid error on client side
     return { status: 200, message: 'Successfully decreased channel capacity' };

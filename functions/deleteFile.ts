@@ -38,8 +38,8 @@ type EnvVars = {
   AWS_REGION: string;
 };
 
-const deleteObject = async (s3Client: S3, deleteParams: any) => {
-  return new Promise<AWS.S3.DeleteObjectOutput>((resolve, reject) => {
+const deleteObject = async (s3Client: S3, deleteParams: any) =>
+  new Promise<AWS.S3.DeleteObjectOutput>((resolve, reject) => {
     s3Client.deleteObject(deleteParams, (err: AWSError, data: S3.Types.DeleteObjectOutput) => {
       if (err) {
         reject(err);
@@ -48,7 +48,6 @@ const deleteObject = async (s3Client: S3, deleteParams: any) => {
       resolve(data);
     });
   });
-};
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
@@ -73,7 +72,12 @@ export const handler = TokenValidator(
         region: AWS_REGION,
       });
 
-      const s3Client = new AWS.S3(S3_ENDPOINT ? { endpoint: S3_ENDPOINT } : {});
+      const s3Client = new AWS.S3(
+        S3_ENDPOINT
+          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
+          : { signatureVersion: 'v4' },
+      );
+
       await deleteObject(s3Client, deleteParams);
 
       resolve(success({ deletedFile: fileName }));

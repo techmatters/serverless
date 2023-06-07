@@ -41,13 +41,14 @@ let tasks: any[] = [
     }) => {
       const task = tasks.find((t) => t.sid === 'task1');
       tasks = tasks.map((t) => {
-        if (t.sid === task.sid)
+        if (t.sid === task.sid) {
           return {
             ...task,
             attributes: attributes || task.attributes,
             assignmentStatus: assignmentStatus || task.assignmentStatus,
             reason: reason || task.reason,
           };
+        }
         return t;
       });
 
@@ -70,13 +71,14 @@ let tasks: any[] = [
     }) => {
       const task = tasks.find((t) => t.sid === 'task2');
       tasks = tasks.map((t) => {
-        if (t.sid === task.sid)
+        if (t.sid === task.sid) {
           return {
             ...task,
             attributes: attributes || task.attributes,
             assignmentStatus: assignmentStatus || task.assignmentStatus,
             reason: reason || task.reason,
           };
+        }
         return t;
       });
 
@@ -98,13 +100,14 @@ const workspaces: { [x: string]: any } = {
       throw new Error('Task does not exists');
     },
     workers: (worker: string) => {
-      if (worker === 'WK offline worker')
+      if (worker === 'WK offline worker') {
         return {
           fetch: async () => ({ available: false }),
           workerChannels: () => ({
             fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
           }),
         };
+      }
 
       return {
         fetch: async () => ({
@@ -112,15 +115,17 @@ const workspaces: { [x: string]: any } = {
           attributes: JSON.stringify({ maxMessageCapacity: configurableCapacity }),
         }),
         workerChannels: (taskChannelUniqueName: string) => {
-          if (taskChannelUniqueName === 'channel')
+          if (taskChannelUniqueName === 'channel') {
             return {
               fetch: async () => ({ availableCapacityPercentage: 1, configuredCapacity: 2 }),
             };
+          }
 
-          if (taskChannelUniqueName === 'channel2')
+          if (taskChannelUniqueName === 'channel2') {
             return {
               fetch: async () => ({ availableCapacityPercentage: 0, configuredCapacity: 1 }),
             };
+          }
 
           throw new Error('Channel does not exists');
         },
@@ -155,13 +160,13 @@ const baseContext = {
     },
     chat: {
       services: (serviceSid: string) => {
-        if (serviceSid === baseContext.CHAT_SERVICE_SID)
+        if (serviceSid === baseContext.CHAT_SERVICE_SID) {
           return {
             channels: (channelSid: string) => {
-              if (channels[channelSid])
+              if (channels[channelSid]) {
                 return {
                   members: (memberSid: string) => {
-                    if (channels[channelSid].includes(memberSid))
+                    if (channels[channelSid].includes(memberSid)) {
                       return {
                         remove: async () => {
                           channels[channelSid] = channels[channelSid].filter(
@@ -170,14 +175,17 @@ const baseContext = {
                           return true;
                         },
                       };
+                    }
 
                     throw new Error('Member is not participant');
                   },
                 };
+              }
 
               throw new Error('Error retrieving chat channel');
             },
           };
+        }
 
         throw new Error('Error retrieving chat service');
       },

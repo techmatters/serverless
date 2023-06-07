@@ -16,13 +16,13 @@
 
 name: Aselo Development release
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   deploy:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "AS"
-      environment_code: "DEV"
-      changelog: "Deploying individual account"
+      helpline_code: 'AS'
+      environment_code: 'DEV'
+      environment: 'development'
+      changelog: 'Deploying individual account'

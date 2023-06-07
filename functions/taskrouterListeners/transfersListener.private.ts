@@ -99,14 +99,15 @@ const isWarmVoiceTransferRejected = (
   taskAttributes.transferMeta &&
   taskAttributes.transferMeta.mode === 'WARM';
 
-const isVoiceTransferWrapup = (
+const isVoiceTransferOriginalInWrapup = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: { transferMeta?: TransferMeta },
 ) =>
   eventType === RESERVATION_WRAPUP &&
   taskChannelUniqueName === 'voice' &&
-  taskAttributes.transferMeta;
+  taskAttributes.transferMeta &&
+  taskAttributes.transferMeta.transferStatus === 'accepted';
 
 /**
  * Checks the event type to determine if the listener should handle the event or not.
@@ -254,8 +255,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     /**
      * I'm not sure why Twilio is keeping the originalReservation in wrapup state
      * after a voice COLD transfer. This clause here completes this reservation.
+     * Checks that transferStatus is 'accepted' to prevent rejected WARM transfers
+     * to close the original task.
      */
-    if (isVoiceTransferWrapup(eventType, taskChannelUniqueName, taskAttributes)) {
+    if (isVoiceTransferOriginalInWrapup(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling voice transfer wrapup...');
 
       const { originalTask: originalTaskSid, originalReservation } = taskAttributes.transferMeta;

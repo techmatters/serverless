@@ -80,8 +80,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
   callback: ServerlessCallback,
 ) => {
   try {
-    if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function')
+    if (event.Channel === 'chat' && event.CurrentTask === 'redirect_function') {
       await handleChatChannel(context, event);
+    }
 
     const actions = buildActionsArray(context, event);
     const returnObj = { actions };

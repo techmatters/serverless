@@ -147,6 +147,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       if (channelAttributes.surveyTaskSid) {
         // get the postSurvey definition
         const serviceConfig = await client.flexApi.configuration.get().fetch();
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
         const postSurveyConfigJson =
           Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];

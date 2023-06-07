@@ -1,0 +1,44 @@
+{
+  "timezone": "America/Santiago",
+  "holidays": {
+  "1/5/2023": "Día del trabajo",
+  "7/5/2023": "Consejeros Institucionales",
+  "21/5/2023": "Glorias Navales",
+  "21/6/2023": "Pueblos indígenas",
+  "26/6/2023": "San Pedro y San Pablo",
+  "16/7/2023": "Día de la Virgen",
+  "15/8/2023": "Asunción de la Virgen",
+  "17/09/2023": "Fiestas patrias",
+  "18/09/2023": "Independencia",
+  "19/09/2023": "Glorias del ejercito",
+  "9/10/2023": "Encuentro de dos mundos",
+  "27/10/2023": "Iglesias evangélicas",
+  "1/11/2023": "Día de todos los santos",
+  "8/12/2023": "Inmaculada Concepción",
+  "17/12/2023": "Plebiscito Nacional",
+  "24/12/2023": "Navidad",
+  "25/12/2023": "Navidad",
+  "31/12/2023": "Año nuevo",
+  "01/01/2024": "Año nuevo"
+  },
+  "operatingHours": {
+    "webchat": {
+      "1": [{ "open": 1000, "close": 2200 }],
+      "2": [{ "open": 1000, "close": 2200 }],
+      "3": [{ "open": 1000, "close": 2200 }],
+      "4": [{ "open": 1000, "close": 2200 }],
+      "5": [{ "open": 1000, "close": 2200 }],
+      "6": [{ "open": 1000, "close": 2200 }],
+      "7": []
+    },
+    "voice": {
+      "1": [{ "open": 1000, "close": 2200 }],
+      "2": [{ "open": 1000, "close": 2200 }],
+      "3": [{ "open": 1000, "close": 2200 }],
+      "4": [{ "open": 1000, "close": 2200 }],
+      "5": [{ "open": 1000, "close": 2200 }],
+      "6": [{ "open": 1000, "close": 2200 }],
+      "7": []
+    }
+  }
+}
