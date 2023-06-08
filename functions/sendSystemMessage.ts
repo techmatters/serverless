@@ -49,7 +49,7 @@ export type Body = (
 export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) => {
   const { taskSid, channelSid, message, from } = event;
 
-  console.log('------ sendSystemMessage excecution ------');
+  console.log('------ sendSystemMessage excecution test ------');
 
   if (!channelSid && !taskSid) {
     return {
@@ -66,6 +66,8 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
 
   let channelSidToMessage = null;
 
+  let taskLanguage: string | undefined;
+
   if (channelSid) {
     channelSidToMessage = channelSid;
   } else if (taskSid) {
@@ -78,7 +80,18 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
     const { channelSid: taskChannelSid } = taskAttributes;
 
     channelSidToMessage = taskChannelSid;
+
+    const surveyTaskAttributes = JSON.parse(task.attributes);
+
+    // Set the taskLanguage carried over from the original task, if any
+    taskLanguage = surveyTaskAttributes.language;
   }
+
+  const translation = JSON.parse(
+    Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
+  );
+
+  console.log('translation', translation);
 
   console.log(`Sending message "${message} to channel ${channelSidToMessage}"`);
 

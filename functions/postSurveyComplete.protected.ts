@@ -114,10 +114,12 @@ const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string 
       Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
     );
 
-    if (translation.postSurvetCompleteMessage) return translation.postSurvetCompleteMessage;
+    console.log('translation', translation);
+
+    if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
     console.error(
-      `Couldn't retrieve postSurvetCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
+      `Couldn't retrieve postSurveyCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
     );
   }
 
