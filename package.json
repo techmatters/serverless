@@ -58,7 +58,7 @@
     "@tech-matters/serverless-helpers": "3.0.5",
     "@twilio-labs/serverless-runtime-types": "2.2.3",
     "@twilio/runtime-handler": "1.2.4",
-    "aws-sdk": "2.1202.0",
+    "aws-sdk": "2.1366.0",
     "axios": "0.26.1",
     "form-data": "^4.0.0",
     "lodash": "4.17.21",

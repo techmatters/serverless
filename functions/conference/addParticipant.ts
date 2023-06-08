@@ -14,29 +14,27 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-import AWS from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
   bindResolve,
+  error400,
   error500,
-  success,
   functionValidator as TokenValidator,
+  success,
 } from '@tech-matters/serverless-helpers';
 
-export type Body = {
-  fileName: string;
-  mimeType: string;
-  request: { cookies: {}; headers: {} };
+type EnvVars = {
+  TWILIO_WORKSPACE_SID: string;
 };
 
-type EnvVars = {
-  ASELO_APP_ACCESS_KEY: string;
-  ASELO_APP_SECRET_KEY: string;
-  S3_BUCKET: string;
-  S3_ENDPOINT: string;
-  AWS_REGION: string;
+export type Body = {
+  conferenceSid?: string;
+  from?: string;
+  to?: string;
+  label?: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler = TokenValidator(
@@ -44,38 +42,27 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
+    const { conferenceSid, from, to, label } = event;
+
     try {
-      const { fileName, mimeType } = event;
-      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, S3_ENDPOINT, AWS_REGION } =
-        context;
+      if (!conferenceSid) return resolve(error400('conferenceSid'));
+      if (!from) return resolve(error400('from'));
+      if (!to) return resolve(error400('to'));
 
-      const fileNameAtAws = `${new Date().getTime()}-${fileName}`;
-      const secondsToExpire = 30;
-      const getUrlParams = {
-        Bucket: S3_BUCKET,
-        Key: fileNameAtAws,
-        Expires: secondsToExpire,
-        ContentType: mimeType,
-      };
+      const participant = await context
+        .getTwilioClient()
+        .conferences(conferenceSid)
+        .participants.create({
+          from,
+          to,
+          earlyMedia: true,
+          endConferenceOnExit: false,
+          label: label || 'external party', // Probably want to pass this from the caller
+        });
 
-      AWS.config.update({
-        credentials: {
-          accessKeyId: ASELO_APP_ACCESS_KEY,
-          secretAccessKey: ASELO_APP_SECRET_KEY,
-        },
-        region: AWS_REGION,
-      });
-
-      const s3Client = new AWS.S3(
-        S3_ENDPOINT
-          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
-          : { signatureVersion: 'v4' },
-      );
-      const uploadUrl = await s3Client.getSignedUrl('putObject', getUrlParams);
-
-      resolve(success({ uploadUrl, fileNameAtAws }));
+      return resolve(success({ message: 'New participant succesfully added', participant }));
     } catch (err: any) {
-      resolve(error500(err));
+      return resolve(error500(err));
     }
   },
 );

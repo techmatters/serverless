@@ -16,13 +16,13 @@
 
 name: ECPAT Philippines Staging deploy
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   build:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "PH"
-      environment_code: "STG"
-      changelog: "Deploying individual account"
+      helpline_code: 'PH'
+      environment_code: 'STG'
+      environment: 'staging'
+      changelog: 'Deploying individual account'

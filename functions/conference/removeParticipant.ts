@@ -14,29 +14,25 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-import AWS from 'aws-sdk';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
   bindResolve,
+  error400,
   error500,
-  success,
   functionValidator as TokenValidator,
+  success,
 } from '@tech-matters/serverless-helpers';
 
-export type Body = {
-  fileName: string;
-  mimeType: string;
-  request: { cookies: {}; headers: {} };
+type EnvVars = {
+  TWILIO_WORKSPACE_SID: string;
 };
 
-type EnvVars = {
-  ASELO_APP_ACCESS_KEY: string;
-  ASELO_APP_SECRET_KEY: string;
-  S3_BUCKET: string;
-  S3_ENDPOINT: string;
-  AWS_REGION: string;
+export type Body = {
+  callSid: string;
+  conferenceSid: string;
+  request: { cookies: {}; headers: {} };
 };
 
 export const handler = TokenValidator(
@@ -44,38 +40,21 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
+    const { callSid, conferenceSid } = event;
+
     try {
-      const { fileName, mimeType } = event;
-      const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, S3_BUCKET, S3_ENDPOINT, AWS_REGION } =
-        context;
+      if (!callSid) return resolve(error400('callSid'));
+      if (!conferenceSid) return resolve(error400('conferenceSid'));
 
-      const fileNameAtAws = `${new Date().getTime()}-${fileName}`;
-      const secondsToExpire = 30;
-      const getUrlParams = {
-        Bucket: S3_BUCKET,
-        Key: fileNameAtAws,
-        Expires: secondsToExpire,
-        ContentType: mimeType,
-      };
+      const participantRemoved = await context
+        .getTwilioClient()
+        .conferences(conferenceSid)
+        .participants(callSid)
+        .remove();
 
-      AWS.config.update({
-        credentials: {
-          accessKeyId: ASELO_APP_ACCESS_KEY,
-          secretAccessKey: ASELO_APP_SECRET_KEY,
-        },
-        region: AWS_REGION,
-      });
-
-      const s3Client = new AWS.S3(
-        S3_ENDPOINT
-          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
-          : { signatureVersion: 'v4' },
-      );
-      const uploadUrl = await s3Client.getSignedUrl('putObject', getUrlParams);
-
-      resolve(success({ uploadUrl, fileNameAtAws }));
+      return resolve(success({ message: `Participant removed: ${participantRemoved}` }));
     } catch (err: any) {
-      resolve(error500(err));
+      return resolve(error500(err));
     }
   },
 );
