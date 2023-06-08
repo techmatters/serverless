@@ -114,8 +114,6 @@ const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string 
       Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
     );
 
-    console.log('translation', translation);
-
     if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
     console.error(
