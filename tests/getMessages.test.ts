@@ -36,10 +36,7 @@ describe('getMessages', () => {
   beforeAll(() => {
     const runtime = new helpers.MockRuntime({});
     // eslint-disable-next-line no-underscore-dangle
-    runtime._addAsset(
-      '/translations/es/messages.json',
-      '../assets/translations/es/messages.private.json',
-    );
+    runtime._addAsset('translations.json', '../assets/translations.private.json');
     helpers.setup({}, runtime);
   });
   afterAll(() => {

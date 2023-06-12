@@ -43,9 +43,10 @@ export const handler = TokenValidator(
         return;
       }
 
-      const translation = Runtime.getAssets()[`/translations/${language}/messages.json`].open();
+      const translations = JSON.parse(Runtime.getAssets()['translations.json'].open());
+      const { messages } = translations[language];
 
-      resolve(success(translation));
+      resolve(success(JSON.stringify(messages)));
     } catch (err: any) {
       resolve(error500(err));
     }

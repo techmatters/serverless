@@ -36,10 +36,7 @@ describe('getTranslation', () => {
   beforeAll(() => {
     const runtime = new helpers.MockRuntime({});
     // eslint-disable-next-line no-underscore-dangle
-    runtime._addAsset(
-      '/translations/es/flexUI.json',
-      '../assets/translations/es/flexUI.private.json',
-    );
+    runtime._addAsset('translations.json', '../assets/translations.private.json');
     helpers.setup({}, runtime);
   });
   afterAll(() => {

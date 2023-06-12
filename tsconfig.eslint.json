@@ -9,5 +9,6 @@
   "include": [
     "functions",
     "tests",
+    "scripts"
   ],
 }

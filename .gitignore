@@ -119,6 +119,8 @@ dist
 
 functions/*.js
 functions/**/*.js
+scripts/*.js
+scripts/**/*.js
 tech-matters-serverless-helpers/node_modules/
 tech-matters-serverless-helpers/lib/
 
@@ -127,3 +129,4 @@ tech-matters-serverless-helpers/lib/
 .twiliodeployinfo
 
 assets/blocklist.private.json
+assets/translations.private.json

@@ -51,10 +51,9 @@ const getEndChatMessage = (event: Body): string => {
 
   if (language) {
     try {
-      const translation: Messages = JSON.parse(
-        Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
-      );
-      const { EndChatMsg } = translation;
+      const translations = JSON.parse(Runtime.getAssets()['translations.json'].open());
+      const { messages }: { messages: Messages } = translations[language];
+      const { EndChatMsg } = messages;
       if (EndChatMsg) return EndChatMsg;
     } catch {
       console.error(`Couldn't retrieve EndChatMsg message translation for ${language}`);

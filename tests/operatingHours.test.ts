@@ -287,10 +287,7 @@ describe('operatingHours', () => {
       // eslint-disable-next-line no-underscore-dangle
       runtime._addAsset('/operatingInfo/test.json', './test.operatingHours.json');
       // eslint-disable-next-line no-underscore-dangle
-      runtime._addAsset(
-        '/translations/en-US/messages.json',
-        '../assets/translations/en-US/messages.private.json',
-      );
+      runtime._addAsset('translations.json', '../assets/translations.private.json');
       helpers.setup({}, runtime);
     });
     afterAll(() => {

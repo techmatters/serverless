@@ -125,11 +125,10 @@ const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-U
 
   // Try to get the translated message
   try {
-    const translation: Messages = JSON.parse(
-      Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
-    );
+    const translations = JSON.parse(Runtime.getAssets()['translations.json'].open());
+    const { messages }: { messages: Messages } = translations[language];
 
-    const message = translation[messageKey];
+    const message = messages[messageKey];
     if (message) return message;
   } catch {
     console.warn(`Couldn't retrieve EndChatMsg message translation for ${language}`);

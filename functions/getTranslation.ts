@@ -43,9 +43,10 @@ export const handler = TokenValidator(
         return;
       }
 
-      const translation = Runtime.getAssets()[`/translations/${language}/flexUI.json`].open();
+      const translations = JSON.parse(Runtime.getAssets()['translations.json'].open());
+      const { flexUI } = translations[language];
 
-      resolve(success(translation));
+      resolve(success(JSON.stringify(flexUI)));
     } catch (err: any) {
       resolve(error500(err));
     }
