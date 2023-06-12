@@ -141,6 +141,10 @@ runs:
     - name: Transpile typescript to javascript
       run: npx tsc
       shell: bash
+    # Bundle Translations into a singe file
+    - name: Bundle Translations
+      run: npm run bundle-translations
+      shell: bash
     # Install Twilio CLI and run deploy command
     - name: Install Twilio CLI and run deploy command
       run: npm install twilio-cli -g && twilio plugins:install @twilio-labs/plugin-serverless
