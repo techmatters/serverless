@@ -37,7 +37,7 @@ type EnvVars = {
   SURVEY_WORKFLOW_SID: string;
 };
 
-type Body = {
+export type Body = {
   channelSid: string; // (in Studio Flow, flow.channel.address) The channel to capture
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
   fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
