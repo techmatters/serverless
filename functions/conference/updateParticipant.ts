@@ -34,8 +34,7 @@ const validUpdates = ['endConferenceOnExit', 'hold', 'muted'] as const;
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  updateAttribute: typeof validUpdates[number];
-  updateValue: string;
+  updates: { [K in typeof validUpdates[number]]?: boolean };
   request: { cookies: {}; headers: {} };
 };
 
@@ -44,15 +43,19 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid, updateAttribute, updateValue } = event;
+    const { callSid, conferenceSid, updates } = event;
 
     try {
       if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (!updateAttribute || !validUpdates.includes(updateAttribute)) {
-        return resolve(error400('updateAttribute'));
+      if (
+        !updates ||
+        !Object.entries(updates).every(
+          ([k, v]) => validUpdates.includes(k as any) && typeof v === 'boolean',
+        )
+      ) {
+        return resolve(error400('updates'));
       }
-      if (!updateValue) return resolve(error400('updateValue'));
 
       const participant = await context
         .getTwilioClient()
@@ -60,29 +63,9 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      const updateAsBool = Boolean(updateValue === 'true');
+      await participant.update(updates);
 
-      switch (updateAttribute) {
-        case 'endConferenceOnExit': {
-          await participant.update({ endConferenceOnExit: updateAsBool });
-          break;
-        }
-        case 'hold': {
-          await participant.update({ hold: updateAsBool });
-          break;
-        }
-        case 'muted': {
-          await participant.update({ muted: updateAsBool });
-          break;
-        }
-        default: {
-          throw new Error(`'Unexpected case reached, updateAttribute ${updateAttribute}`);
-        }
-      }
-
-      return resolve(
-        success({ message: `Participant updated: ${updateAttribute} ${updateValue}` }),
-      );
+      return resolve(success({ message: `Participant updated: ${updates}` }));
     } catch (err: any) {
       return resolve(error500(err));
     }

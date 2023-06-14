@@ -154,8 +154,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'muted',
-        updateValue: 'true',
+        updates: { muted: true },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -167,8 +166,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'muted',
-        updateValue: 'false',
+        updates: { muted: false },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -180,8 +178,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'hold',
-        updateValue: 'true',
+        updates: { hold: true },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -193,8 +190,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'hold',
-        updateValue: 'false',
+        updates: { hold: false },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -206,8 +202,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'endConferenceOnExit',
-        updateValue: 'true',
+        updates: { endConferenceOnExit: true },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -219,12 +214,26 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'endConferenceOnExit',
-        updateValue: 'false',
+        updates: { endConferenceOnExit: false },
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
         expect(mockParticipantUpdate).toHaveBeenCalledWith({ endConferenceOnExit: false });
+      },
+    },
+    {
+      when: 'valid update: set multiple properties',
+      body: {
+        conferenceSid: 'conferenceSid',
+        callSid: 'callSid',
+        updates: { endConferenceOnExit: false, hold: true },
+      },
+      expectCallback: () => {
+        expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
+        expect(mockParticipantUpdate).toHaveBeenCalledWith({
+          endConferenceOnExit: false,
+          hold: true,
+        });
       },
     },
   ]).test('when $when, should return status 200', async ({ body, expectCallback }) => {
