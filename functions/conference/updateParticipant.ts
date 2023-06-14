@@ -34,8 +34,24 @@ const validUpdates = ['endConferenceOnExit', 'hold', 'muted'] as const;
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  updates: { [K in typeof validUpdates[number]]?: boolean };
+  updates: string;
   request: { cookies: {}; headers: {} };
+};
+
+type ParsedUpdates = { [K in typeof validUpdates[number]]?: boolean };
+const parseUpdates = (updates: string): ParsedUpdates | null => {
+  const parsed = JSON.parse(updates);
+
+  if (
+    !parsed ||
+    !Object.entries(parsed).every(
+      ([k, v]) => validUpdates.includes(k as any) && typeof v === 'boolean',
+    )
+  ) {
+    return null;
+  }
+
+  return parsed;
 };
 
 export const handler = TokenValidator(
@@ -48,12 +64,9 @@ export const handler = TokenValidator(
     try {
       if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (
-        !updates ||
-        !Object.entries(updates).every(
-          ([k, v]) => validUpdates.includes(k as any) && typeof v === 'boolean',
-        )
-      ) {
+
+      const parsedUpdates = parseUpdates(updates);
+      if (!parsedUpdates) {
         return resolve(error400('updates'));
       }
 
@@ -63,7 +76,7 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      await participant.update(updates);
+      await participant.update(parsedUpdates);
 
       return resolve(success({ message: `Participant updated: ${updates}` }));
     } catch (err: any) {

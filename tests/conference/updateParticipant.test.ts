@@ -154,7 +154,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { muted: true },
+        updates: JSON.stringify({ muted: true }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -166,7 +166,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { muted: false },
+        updates: JSON.stringify({ muted: false }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -178,7 +178,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { hold: true },
+        updates: JSON.stringify({ hold: true }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -190,7 +190,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { hold: false },
+        updates: JSON.stringify({ hold: false }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -202,7 +202,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { endConferenceOnExit: true },
+        updates: JSON.stringify({ endConferenceOnExit: true }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -214,7 +214,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { endConferenceOnExit: false },
+        updates: JSON.stringify({ endConferenceOnExit: false }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
@@ -226,7 +226,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updates: { endConferenceOnExit: false, hold: true },
+        updates: JSON.stringify({ endConferenceOnExit: false, hold: true }),
       },
       expectCallback: () => {
         expect(mockParticipantFetch).toHaveBeenCalledTimes(1);
