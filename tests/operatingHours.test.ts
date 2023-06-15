@@ -289,7 +289,7 @@ describe('operatingHours', () => {
       // eslint-disable-next-line no-underscore-dangle
       runtime._addAsset(
         '/translations/en-US/messages.json',
-        '../assets/translations/en-US/messages.private.json',
+        '../assets/translations/en-US/messages.json',
       );
       helpers.setup({}, runtime);
     });

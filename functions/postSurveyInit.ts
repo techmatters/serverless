@@ -109,6 +109,8 @@ const getTriggerMessage = (event: Pick<Body, 'taskLanguage'>): string => {
         Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
       );
 
+      console.log('translation', translation);
+
       if (translation.triggerMessage) return translation.triggerMessage;
     } catch {
       console.error(`Couldn't retrieve triggerMessage translation for ${taskLanguage}`);
