@@ -39,6 +39,8 @@ const context = {
   AWS_REGION: 'us-east-1',
 };
 
+// const channelAttributes = context.getTwilioClient().chat.services().channels().fetch().attributes;
+
 describe('chatbotCallback', () => {
   beforeEach(() => {});
 
@@ -60,7 +62,7 @@ describe('chatbotCallback', () => {
   it('should handle the event and send messages', async () => {
     const event: Body = {
       Body: 'Test body',
-      From: 'Test from',
+      From: 'channelAttributes',
       ChannelSid: 'Test channelSid',
       EventType: 'onMessageSent',
     };
@@ -74,6 +76,14 @@ describe('chatbotCallback', () => {
       event.ChannelSid,
     );
     expect(context.getTwilioClient().chat.services().channels().fetch).toHaveBeenCalled();
+
+    // expect(mockCallback.mock.calls[0][0]).toBeNull();
+    // expect(mockCallback.mock.calls[0][1]).toEqual(
+    //   expect.objectContaining({
+    //     _body: 'All messages sent :)',
+    //     _statusCode: 200,
+    //   }),
+    // );
   });
 
   it('should handle the event and ignore it', async () => {

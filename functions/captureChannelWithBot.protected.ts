@@ -92,6 +92,10 @@ export const handler = async (
       .channels(channelSid)
       .webhooks.list();
 
+    console.log('channelWebhooks', channelWebhooks);
+    console.log('channelAttributes', channelAttributes);
+    console.log('channel', channel);
+
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
     await Promise.all(
       channelWebhooks.map(async (w) => {
