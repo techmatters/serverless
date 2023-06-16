@@ -43,6 +43,7 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     const { conferenceSid, from, to, label } = event;
+    console.log('>>> add Participant label', label, to);
 
     try {
       if (!conferenceSid) return resolve(error400('conferenceSid'));
