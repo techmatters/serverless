@@ -41,21 +41,12 @@ export type EnvVars = {
 // ================== //
 // TODO: unify this code with Flex codebase
 
-const hasTransferStarted = (taskAttributes: {
-  transferMeta?: TransferMeta;
-}): taskAttributes is { transferMeta: TransferMeta } =>
-  Boolean(taskAttributes && taskAttributes.transferMeta);
-
-const hasTaskControl = (taskSid: string, taskAttributes: { transferMeta?: TransferMeta }) =>
-  !hasTransferStarted(taskAttributes) || taskAttributes.transferMeta.sidWithTaskControl === taskSid;
-
 const getTaskLanguage = (helplineLanguage: string) => (taskAttributes: { language?: string }) =>
   taskAttributes.language || helplineLanguage;
 // ================== //
 
 const isTriggerPostSurvey = (
   eventType: EventType,
-  taskSid: string,
   taskChannelUniqueName: string,
   taskAttributes: { channelType?: string; transferMeta?: TransferMeta },
 ) => {
@@ -63,8 +54,6 @@ const isTriggerPostSurvey = (
 
   // Post survey is for chat tasks only. This will change when we introduce voice based post surveys
   if (taskChannelUniqueName !== 'chat') return false;
-
-  if (!hasTaskControl(taskSid, taskAttributes)) return false;
 
   // Post survey does not plays well with custom channels (autopilot)
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
@@ -94,7 +83,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
-    if (isTriggerPostSurvey(eventType, taskSid, taskChannelUniqueName, taskAttributes)) {
+    if (isTriggerPostSurvey(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling post survey trigger...');
       const client = context.getTwilioClient();
 

@@ -65,7 +65,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       await addCustomerExternalId(context, event);
 
       if (taskAttributes.channelType === 'web') {
-        // Add taskSid to channel attr so we can end the chat from webchat client (see endChat function)
+        // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
         const addTaskHandlerPath =
           Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
         const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
