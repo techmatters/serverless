@@ -43,12 +43,12 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     const { conferenceSid, from, to, label } = event;
-    console.log('>>> add Participant label', label, to);
 
     try {
       if (!conferenceSid) return resolve(error400('conferenceSid'));
       if (!from) return resolve(error400('from'));
       if (!to) return resolve(error400('to'));
+      if (!label) return resolve(error400('label'));
 
       const participant = await context
         .getTwilioClient()
