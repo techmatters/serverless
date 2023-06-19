@@ -24,6 +24,7 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import axios from 'axios';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -100,14 +101,18 @@ const triggerPostSurveyFlow = async (
     });
 };
 
-const getTriggerMessage = (event: Pick<Body, 'taskLanguage'>): string => {
+const getTriggerMessage = async (
+  event: Pick<Body, 'taskLanguage'>,
+  context: Context,
+): Promise<string> => {
   // Try to retrieve the triggerMessage for the approapriate language (if any)
   const { taskLanguage } = event;
   if (taskLanguage) {
     try {
-      const translation = JSON.parse(
-        Runtime.getAssets()[`/translations/${taskLanguage}/postSurveyMessages.json`].open(),
+      const response = await axios.get(
+        `https://${context.DOMAIN_NAME}/translations/${taskLanguage}/postSurveyMessages.json`,
       );
+      const translation = response.data;
 
       console.log('translation', translation);
 
@@ -126,7 +131,7 @@ export const postSurveyInitHandler = async (
 ) => {
   const { channelSid, taskSid, taskLanguage } = event;
 
-  const triggerMessage = getTriggerMessage(event);
+  const triggerMessage = await getTriggerMessage(event, context);
 
   await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
   await triggerPostSurveyFlow(context, channelSid, triggerMessage);

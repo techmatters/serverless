@@ -106,13 +106,17 @@ const saveSurveyInHRM = async (
   });
 };
 
-const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string => {
+const getPostSurveyCompleteMessage = async (
+  context: Context,
+  taskLanguage: string | undefined,
+): Promise<string> => {
   try {
     const language = taskLanguage || 'en-US';
 
-    const translation = JSON.parse(
-      Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
+    const response = await axios.get(
+      `https://${context.DOMAIN_NAME}/translations/${language}/postSurveyMessages.json`,
     );
+    const translation = response.data;
 
     if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
@@ -197,7 +201,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       }
     }
 
-    const say = getPostSurveyCompleteMessage(taskLanguage);
+    const say = await getPostSurveyCompleteMessage(context, taskLanguage);
 
     // This is the tasks that are sent back to the bot. For now, it just sends a thanks message before finishing bot's execution.
     const actions = [
