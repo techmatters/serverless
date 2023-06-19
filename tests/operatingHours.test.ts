@@ -16,9 +16,12 @@
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import MockDate from 'mockdate';
+import axios from 'axios';
 import { handler as operatingHours, Body } from '../functions/operatingHours';
 
 import helpers, { MockedResponse } from './helpers';
+
+jest.mock('axios');
 
 // I use a timestamp to make sure the date stays fixed to the ms
 
@@ -470,6 +473,13 @@ describe('operatingHours', () => {
       });
 
       test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
+        jest.spyOn(axios, 'get').mockResolvedValue({
+          data: {
+            status: 'closed',
+            message: 'The helpline is out of shift, please reach us later.',
+          },
+        });
+
         const event: Body = {
           channel: 'another',
           office: 'office1',
