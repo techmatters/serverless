@@ -92,10 +92,6 @@ export const handler = async (
       .channels(channelSid)
       .webhooks.list();
 
-    console.log('channelWebhooks', channelWebhooks);
-    console.log('channelAttributes', channelAttributes);
-    console.log('channel', channel);
-
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
     await Promise.all(
       channelWebhooks.map(async (w) => {
@@ -145,7 +141,7 @@ export const handler = async (
       });
 
     const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
-    const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+    const lexClient = require(handlerPath) as LexClient;
 
     const lexResponse = await lexClient.postText(context, {
       botName: updatedChannelAttributes.channelCapturedByBot.botName,

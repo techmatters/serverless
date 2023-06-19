@@ -13,12 +13,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
-
+import '@twilio-labs/serverless-runtime-types';
 import {
   handler as captureChannelWithBot,
   Body,
 } from '../functions/captureChannelWithBot.protected';
 import helpers from './helpers';
+import lexClient from '../functions/helpers/lexClient.private';
+
+
+jest.mock('../functions/helpers/lexClient.private', () => ({
+    postText: jest.fn(),
+  }));
 
 const fetch = jest.fn().mockReturnValue({
   attributes: JSON.stringify({
@@ -27,6 +33,25 @@ const fetch = jest.fn().mockReturnValue({
       botAliasId: 'TSTALIASID',
       localeId: 'en_US',
     },
+  }),
+  webhooks: jest.fn().mockReturnValue({
+    create: jest.fn().mockReturnValue({}),
+  }),
+  update: jest.fn().mockReturnValue({
+    attributes: JSON.stringify({
+      channelCapturedByBot: {
+        botName: 'C6HUSTIFBR',
+        botAlias: 'TSTALIASID',
+        localeId: 'en_US',
+      },
+    }),
+  }),
+  messages: jest.fn().mockReturnValue({
+    create: jest.fn().mockReturnValue({
+      body: 'lexResponse',
+      from: 'Bot',
+      xTwilioWebhookEnabled: 'true',
+    }),
   }),
 });
 
@@ -40,6 +65,20 @@ const mockContext = {
           }),
         }),
       },
+      services: jest.fn().mockReturnValue({
+        channels: jest.fn().mockReturnValue({
+          webhooks: {
+            list: jest.fn().mockReturnValue([]),
+          },
+        }),
+      }),
+    },
+    taskrouter: {
+      workspaces: jest.fn().mockReturnValue({
+        tasks: {
+          create: jest.fn().mockReturnValue({}),
+        },
+      }),
     },
   })),
   DOMAIN_NAME: 'domain.com',
@@ -59,39 +98,97 @@ const mockEvent: Body = {
   message: 'Message sent',
   fromServiceUser: 'Test User',
   studioFlowSid: 'FL0123xxdew',
-  botName: 'test',
+  botName: 'C6HUSTIFBR',
 };
 
+const mockCallback = jest.fn();
+const lexResponse = { message: 'Lex response message' };
+
+beforeAll(() => {
+  const runtime = new helpers.MockRuntime(mockContext);
+  // eslint-disable-next-line no-underscore-dangle
+  runtime._addFunction('captureChannelWithBot', 'functions/captureChannelWithBot.protected');
+  helpers.setup({}, runtime);
+});
+
+
+beforeEach(() => {
+  const functions = {
+    'helpers/lexClient': {
+      path: '../functions/helpers/lexClient.private.ts',
+    },
+  };
+
+  const getFunctionsMock = jest.fn().mockReturnValue(functions);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  global.Runtime.getFunctions = () => getFunctionsMock();
+
+  lexClient.postText = jest.fn().mockResolvedValue(lexResponse);
+
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
 describe('captureChannelWithBot', () => {
-  beforeAll(() => {
-    const runtime = new helpers.MockRuntime({});
-    // eslint-disable-next-line no-underscore-dangle
-    helpers.setup({}, runtime);
+  test('should return lexResonse, update channel, and resolve with succes', async () => {
+    const event: Body = {
+      channelSid: 'SID123xxx09sa',
+      message: 'Message sent',
+      fromServiceUser: 'Test User',
+      studioFlowSid: 'FL0123xxdew',
+      botName: 'C6HUSTIFBR',
+    };
+
+    const updatedChannelAttributes = {
+      channelCapturedByBot: {
+        botName: 'C6HUSTIFBR',
+        botAlias: 'TSTALIASID',
+      },
+    };
+
+
+    const expectedPostTextArgs = [
+      mockContext,
+      expect.objectContaining({
+        botName: updatedChannelAttributes.channelCapturedByBot.botName,
+        botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
+        inputText: event.message,
+      }),
+    ];
+
+    const createMessageMock = jest.fn().mockResolvedValueOnce({});
+    const channel = {
+      messages: jest.fn(() => ({
+        create: createMessageMock,
+      })),
+    };
+
+    await channel.messages().create({
+      body: lexResponse.message,
+      from: 'Bot',
+      xTwilioWebhookEnabled: 'true',
+    });
+
+    await captureChannelWithBot(mockContext, event, mockCallback);
+
+    expect(lexClient.postText).toHaveBeenCalledWith(...expectedPostTextArgs);
+    expect(createMessageMock).toHaveBeenCalledWith({
+      body: lexResponse.message,
+      from: 'Bot',
+      xTwilioWebhookEnabled: 'true',
+    });
+
+    expect(mockCallback).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({
+        _body: 'Channel captured by bot =)',
+        _statusCode: 200,
+      }),
+    );
   });
-  afterAll(() => {
-    helpers.teardown();
-  });
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  const mockCallback = jest.fn();
-
-  // This is the failing test
-  //   test('should resolve with success message when all required fields are present', async () => {
-  //     await captureChannelWithBot(mockContext, mockEvent, mockCallback);
-
-  //     expect(mockContext.getTwilioClient).toHaveBeenCalled();
-  //     expect(mockCallback.mock.calls[0][0]).toBeNull();
-  //     expect(mockCallback.mock.calls[0][1]).toEqual(
-  //       expect.objectContaining({
-  //         _body: 'Channel captured by bot =)',
-  //         _statusCode: 200,
-  //       }),
-  //     );
-  //   });
-
   //  We need to ignore the typescript error since channelSid is required.
   //  Same apply to others
 
@@ -101,6 +198,7 @@ describe('captureChannelWithBot', () => {
     // @ts-ignore
     await captureChannelWithBot(mockContext, event, mockCallback);
 
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({
@@ -119,6 +217,7 @@ describe('captureChannelWithBot', () => {
     // @ts-ignore
     await captureChannelWithBot(mockContext, event, mockCallback);
 
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({
@@ -137,6 +236,7 @@ describe('captureChannelWithBot', () => {
     // @ts-ignore
     await captureChannelWithBot(mockContext, event, mockCallback);
 
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({
@@ -155,6 +255,7 @@ describe('captureChannelWithBot', () => {
     // @ts-ignore
     await captureChannelWithBot(mockContext, event, mockCallback);
 
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({

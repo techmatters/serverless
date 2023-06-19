@@ -19,6 +19,13 @@ import {
   Body,
 } from '../../functions/webhooks/chatbotCallback.protected';
 import helpers from '../helpers';
+import lexClient from '../../functions/helpers/lexClient.private'
+
+jest.mock('../../functions/helpers/lexClient.private', () => ({
+  postText: jest.fn(),
+  isEndOfDialog: jest.fn(),
+  deleteSession: jest.fn(),
+}));
 
 const context = {
   getTwilioClient: jest.fn().mockReturnValue({
@@ -26,7 +33,41 @@ const context = {
       services: jest.fn().mockReturnValue({
         channels: jest.fn().mockReturnValue({
           fetch: jest.fn().mockResolvedValue({
-            attributes: JSON.stringify({}),
+            attributes: JSON.stringify({
+              channelSid: 'SID123xxx09sa',
+              message: 'Message sent',
+              fromServiceUser: 'channelAttributes',
+              studioFlowSid: 'FL0123xxdew',
+              botName: 'C6HUSTIFBR',
+              channelCapturedByBot: {
+                botName: 'C6HUSTIFBR',
+                botAlias: 'TSTALIASID',
+                studioFlowSid: 'FL0123xxdew',
+                localeId: 'en_US',
+              },
+            }),
+            messages: jest.fn().mockReturnValue({
+              create: jest.fn().mockReturnValue({
+                body: 'lexResponse',
+                from: 'Bot',
+                xTwilioWebhookEnabled: 'true',
+              }),
+            }),
+            update: jest.fn().mockReturnValue({
+              attributes: JSON.stringify({
+                channelCapturedByBot: {
+                  botName: 'C6HUSTIFBR',
+                  botAlias: 'TSTALIASID',
+                  localeId: 'en_US',
+                },
+              }),
+            }),
+            webhooks: jest.fn().mockReturnValue({
+              get: jest.fn().mockReturnValue({
+                remove: jest.fn().mockReturnValue({})
+              })
+            })
+            
           }),
           messages: jest.fn().mockReturnValue({
             create: jest.fn().mockResolvedValue({}),
@@ -43,6 +84,15 @@ const context = {
         }),
       },
     },
+    taskrouter: {
+      v1: {
+        workspaces: jest.fn().mockReturnValue({
+          tasks: jest.fn().mockReturnValue({
+            update: jest.fn().mockResolvedValue({}),
+          })       
+        }),
+      },
+    },
   }),
 
   DOMAIN_NAME: 'string',
@@ -55,27 +105,45 @@ const context = {
   AWS_REGION: 'us-east-1',
 };
 
-// const channelAttributes = context.getTwilioClient().chat.services().channels().fetch().attributes;
+const mockCallback = jest.fn();
+const lexResponse = { message: 'Lex response message', dialogState: 'dialogState response state', deleteSession: {} };
+
+
+beforeAll(() => {
+  const runtime = new helpers.MockRuntime(context);
+  // eslint-disable-next-line no-underscore-dangle
+  runtime._addFunction(
+    'webhooks/chatbotCallback',
+    'functions/webhooks/chatbotCallback.protected',
+  );
+  helpers.setup({}, runtime);
+});
+
+beforeEach(() => {
+  const functions = {
+    'helpers/lexClient': {
+      path: '../../functions/helpers/lexClient.private.ts',
+    },
+  };
+
+  const getFunctionsMock = jest.fn().mockReturnValue(functions);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  global.Runtime.getFunctions = () => getFunctionsMock();
+
+  lexClient.postText = jest.fn().mockResolvedValue(lexResponse);
+  lexClient.isEndOfDialog = jest.fn().mockResolvedValue(lexResponse);
+  lexClient.deleteSession = jest.fn().mockResolvedValue(lexResponse);
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('chatbotCallback', () => {
-  beforeEach(() => {});
 
-  beforeAll(() => {
-    const runtime = new helpers.MockRuntime({});
-    // eslint-disable-next-line no-underscore-dangle
-    helpers.setup({}, runtime);
-  });
-  afterAll(() => {
-    helpers.teardown();
-  });
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  const mockCallback = jest.fn();
-
-  it('should handle the event and send messages', async () => {
+  test('should return lexResonse, update channel, and resolve with succes', async () => {
     const event: Body = {
       Body: 'Test body',
       From: 'channelAttributes',
@@ -83,6 +151,7 @@ describe('chatbotCallback', () => {
       EventType: 'onMessageSent',
     };
 
+    const { attributes } = await context.getTwilioClient().chat.services().channels().fetch();
     await chatbotCallback(context, event, mockCallback);
 
     // Assert that the necessary functions were called with the correct arguments
@@ -93,16 +162,58 @@ describe('chatbotCallback', () => {
     );
     expect(context.getTwilioClient().chat.services().channels().fetch).toHaveBeenCalled();
 
-    // expect(mockCallback.mock.calls[0][0]).toBeNull();
-    // expect(mockCallback.mock.calls[0][1]).toEqual(
-    //   expect.objectContaining({
-    //     _body: 'All messages sent :)',
-    //     _statusCode: 200,
-    //   }),
-    // );
+    if (
+      event.EventType === 'onMessageSent' &&
+      JSON.parse(attributes).fromServiceUser === event.From
+    ) {
+  
+      const updatedChannelAttributes = {
+        channelCapturedByBot: {
+          botName: 'C6HUSTIFBR',
+          botAlias: 'TSTALIASID',
+        },
+      };
+
+      const expectedPostTextArgs = [
+        context,
+        expect.objectContaining({
+          botName: updatedChannelAttributes.channelCapturedByBot.botName,
+          botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
+          inputText: event.Body,
+        }),
+      ];
+
+      const createMessageMock = jest.fn().mockResolvedValueOnce({});
+      const channel = {
+        messages: jest.fn(() => ({
+          create: createMessageMock,
+        })),
+      };
+
+      await channel.messages().create({
+        body: lexResponse.message,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
+
+      expect(lexClient.postText).toHaveBeenCalledWith(...expectedPostTextArgs);
+      expect(createMessageMock).toHaveBeenCalledWith({
+        body: lexResponse.message,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
+
+      expect(mockCallback.mock.calls[0][0]).toBeNull();
+      expect(mockCallback.mock.calls[0][1]).toEqual(
+        expect.objectContaining({
+          _body: 'All messages sent :)',
+          _statusCode: 200,
+        }),
+      );
+    }
   });
 
-  it('should handle the event and ignore it', async () => {
+  test('should handle the event and ignore it', async () => {
     const event: Body = {
       Body: 'Test body',
       From: 'Test from',
@@ -112,6 +223,7 @@ describe('chatbotCallback', () => {
 
     await chatbotCallback(context, event, mockCallback);
 
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({
@@ -121,12 +233,13 @@ describe('chatbotCallback', () => {
     );
   });
 
-  it('should resolve with error message when event is empty', async () => {
+  test('should resolve with error message when event is empty', async () => {
     const event = {};
 
     await chatbotCallback(context, event, mockCallback);
 
     // Assert that the necessary functions were called with the correct arguments
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({
@@ -139,7 +252,7 @@ describe('chatbotCallback', () => {
     );
   });
 
-  it('should handle errors', async () => {
+  test('should handle errors', async () => {
     const event: Body = {
       Body: 'Test body',
       From: 'Test from',
@@ -153,6 +266,7 @@ describe('chatbotCallback', () => {
     await chatbotCallback(context, event, mockCallback);
 
     // Assert that the necessary functions were called with the correct arguments
+    expect(lexClient.postText).not.toHaveBeenCalled();
     expect(mockCallback.mock.calls[0][0]).toBeNull();
     expect(mockCallback.mock.calls[0][1]).toEqual(
       expect.objectContaining({

@@ -78,7 +78,7 @@ export const handler = async (
     // Send message to bot only if it's from child
     if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
       const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
-      const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+      const lexClient = require(handlerPath) as LexClient;
 
       const lexResponse = await lexClient.postText(context, {
         botName: channelAttributes.channelCapturedByBot.botName,
