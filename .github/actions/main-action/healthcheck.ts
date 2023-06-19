@@ -23,7 +23,7 @@
 
 import { setOutput, setFailed } from '@actions/core';
 import fetch from 'node-fetch';
-import * as Twilio from 'twilio';
+import Twilio from 'twilio';
 
 async function healthCheck () {
     // `who-to-greet` input defined in action metadata file
