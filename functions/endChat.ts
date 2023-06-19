@@ -26,6 +26,8 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import axios from 'axios';
+
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { ChatChannelJanitor } from './helpers/chatChannelJanitor.private';
 
@@ -41,19 +43,20 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
-type Messages = {
+type Messages = Required<{
   EndChatMsg: string;
-};
+}>;
 
-const getEndChatMessage = (event: Body): string => {
+const getEndChatMessage = async (event: Body, context: Context): Promise<string> => {
   // Retrieve the EndChatMsg for appropriate language
   const { language } = event;
 
   if (language) {
     try {
-      const translation: Messages = JSON.parse(
-        Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
+      const response = await axios.get<Messages>(
+        `https://${context.DOMAIN_NAME}/translations/${language}/messages.json`,
       );
+      const translation = response.data;
       const { EndChatMsg } = translation;
       if (EndChatMsg) return EndChatMsg;
     } catch {
@@ -87,7 +90,7 @@ const updateTaskAssignmentStatus = async (
 
     // Send a Message indicating user left the conversation
     if (task.assignmentStatus === 'assigned') {
-      const endChatMessage = getEndChatMessage(event);
+      const endChatMessage = await getEndChatMessage(event, context);
       await context
         .getTwilioClient()
         .chat.services(context.CHAT_SERVICE_SID)
