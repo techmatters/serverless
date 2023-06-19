@@ -21,10 +21,9 @@ import {
 import helpers from './helpers';
 import lexClient from '../functions/helpers/lexClient.private';
 
-
 jest.mock('../functions/helpers/lexClient.private', () => ({
-    postText: jest.fn(),
-  }));
+  postText: jest.fn(),
+}));
 
 const fetch = jest.fn().mockReturnValue({
   attributes: JSON.stringify({
@@ -111,7 +110,6 @@ beforeAll(() => {
   helpers.setup({}, runtime);
 });
 
-
 beforeEach(() => {
   const functions = {
     'helpers/lexClient': {
@@ -125,7 +123,6 @@ beforeEach(() => {
   global.Runtime.getFunctions = () => getFunctionsMock();
 
   lexClient.postText = jest.fn().mockResolvedValue(lexResponse);
-
 });
 
 afterEach(() => {
@@ -148,7 +145,6 @@ describe('captureChannelWithBot', () => {
         botAlias: 'TSTALIASID',
       },
     };
-
 
     const expectedPostTextArgs = [
       mockContext,

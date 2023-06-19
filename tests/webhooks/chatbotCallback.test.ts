@@ -19,7 +19,7 @@ import {
   Body,
 } from '../../functions/webhooks/chatbotCallback.protected';
 import helpers from '../helpers';
-import lexClient from '../../functions/helpers/lexClient.private'
+import lexClient from '../../functions/helpers/lexClient.private';
 
 jest.mock('../../functions/helpers/lexClient.private', () => ({
   postText: jest.fn(),
@@ -64,10 +64,9 @@ const context = {
             }),
             webhooks: jest.fn().mockReturnValue({
               get: jest.fn().mockReturnValue({
-                remove: jest.fn().mockReturnValue({})
-              })
-            })
-            
+                remove: jest.fn().mockReturnValue({}),
+              }),
+            }),
           }),
           messages: jest.fn().mockReturnValue({
             create: jest.fn().mockResolvedValue({}),
@@ -89,7 +88,7 @@ const context = {
         workspaces: jest.fn().mockReturnValue({
           tasks: jest.fn().mockReturnValue({
             update: jest.fn().mockResolvedValue({}),
-          })       
+          }),
         }),
       },
     },
@@ -106,16 +105,16 @@ const context = {
 };
 
 const mockCallback = jest.fn();
-const lexResponse = { message: 'Lex response message', dialogState: 'dialogState response state', deleteSession: {} };
-
+const lexResponse = {
+  message: 'Lex response message',
+  dialogState: 'dialogState response state',
+  deleteSession: {},
+};
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(context);
   // eslint-disable-next-line no-underscore-dangle
-  runtime._addFunction(
-    'webhooks/chatbotCallback',
-    'functions/webhooks/chatbotCallback.protected',
-  );
+  runtime._addFunction('webhooks/chatbotCallback', 'functions/webhooks/chatbotCallback.protected');
   helpers.setup({}, runtime);
 });
 
@@ -141,8 +140,6 @@ afterEach(() => {
 });
 
 describe('chatbotCallback', () => {
-
-
   test('should return lexResonse, update channel, and resolve with succes', async () => {
     const event: Body = {
       Body: 'Test body',
@@ -166,7 +163,6 @@ describe('chatbotCallback', () => {
       event.EventType === 'onMessageSent' &&
       JSON.parse(attributes).fromServiceUser === event.From
     ) {
-  
       const updatedChannelAttributes = {
         channelCapturedByBot: {
           botName: 'C6HUSTIFBR',
