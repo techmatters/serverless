@@ -122,17 +122,6 @@ describe('Post survey init', () => {
       },
       rejectReason: 'is not chat task',
     },
-    {
-      task: {
-        ...successfullyTrasferred,
-        taskChannelUniqueName: 'chat',
-        attributes: {
-          ...successfullyTrasferred.attributes,
-          transferMeta: { sidWithTaskControl: 'a-different-one' },
-        },
-      },
-      rejectReason: 'does not have task controll (incomplete/rejected transfer)',
-    },
     ...Object.values(AseloCustomChannels).map((channelType) => ({
       task: {
         ...nonTrasferred,
@@ -182,8 +171,22 @@ describe('Post survey init', () => {
     },
   );
 
-  each([nonTrasferred, successfullyTrasferred].map((task) => ({ task }))).test(
-    'Task should trigger post survey for candidate taskSid $task.taskSid',
+  each([
+    { task: nonTrasferred },
+    { task: successfullyTrasferred },
+    {
+      task: {
+        ...successfullyTrasferred,
+        taskChannelUniqueName: 'chat',
+        attributes: {
+          ...successfullyTrasferred.attributes,
+          transferMeta: { sidWithTaskControl: 'a-different-one' },
+        },
+      },
+      extraDescription: 'even if does not have task control (in progress/rejected transfer)',
+    },
+  ]).test(
+    'Task should trigger post survey for candidate taskSid $task.taskSid $extraDescription',
     async ({ task }) => {
       const event = {
         ...mock<EventFields>(),

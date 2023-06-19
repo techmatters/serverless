@@ -57,7 +57,7 @@ const getEndChatMessage = (event: Body): string => {
       const { EndChatMsg } = translation;
       if (EndChatMsg) return EndChatMsg;
     } catch {
-      console.error(`Couldn't retrieve EndChatMsg message translation for ${language}`);
+      console.warn(`Couldn't retrieve EndChatMsg message translation for ${language}`);
     }
   }
   return 'User left the conversation';
@@ -77,51 +77,53 @@ const updateTaskAssignmentStatus = async (
   context: Context<EnvVars>,
   event: Body,
 ) => {
-  const client = context.getTwilioClient();
-  let channelCleanupRequired = false;
-
-  // Fetch the Task to 'cancel' or 'wrapup'
-  const task = await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks(taskSid)
-    .fetch();
-
-  // Send a Message indicating user left the conversation
-  if (task.assignmentStatus === 'assigned') {
-    const endChatMessage = getEndChatMessage(event);
-    await context
-      .getTwilioClient()
-      .chat.services(context.CHAT_SERVICE_SID)
-      .channels(channelSid)
-      .messages.create({
-        body: endChatMessage,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
-  }
-
-  // Update the task assignmentStatus
-  const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
-    client.taskrouter
+  try {
+    const client = context.getTwilioClient();
+    // Fetch the Task to 'cancel' or 'wrapup'
+    const task = await client.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(taskSid)
-      .update({ assignmentStatus });
+      .fetch();
 
-  switch (task.assignmentStatus) {
-    case 'reserved':
-    case 'pending': {
-      await updateAssignmentStatus('canceled');
-      channelCleanupRequired = true;
-      break;
+    // Send a Message indicating user left the conversation
+    if (task.assignmentStatus === 'assigned') {
+      const endChatMessage = getEndChatMessage(event);
+      await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .messages.create({
+          body: endChatMessage,
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
     }
-    case 'assigned': {
-      await updateAssignmentStatus('wrapping');
-      break;
+
+    // Update the task assignmentStatus
+    const updateAssignmentStatus = (assignmentStatus: TaskInstance['assignmentStatus']) =>
+      client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(taskSid)
+        .update({ assignmentStatus });
+
+    switch (task.assignmentStatus) {
+      case 'reserved':
+      case 'pending': {
+        await updateAssignmentStatus('canceled');
+        return 'cleanup'; // indicate that there's cleanup needed
+      }
+      case 'assigned': {
+        await updateAssignmentStatus('wrapping');
+        return 'keep-alive'; // keep the channel alive for post survey
+      }
+      default:
     }
-    default:
+
+    return 'noop'; // no action needed
+  } catch (err) {
+    console.warn(`Unable to end task ${taskSid}:`, err);
+    return 'noop'; // no action needed
   }
-
-  return channelCleanupRequired;
 };
 
 /**
@@ -134,41 +136,27 @@ const endContactOrPostSurvey = async (
   context: Context<EnvVars>,
   event: Body,
 ) => {
-  const { taskSid, surveyTaskSid } = channelAttributes;
+  const { tasksSids, surveyTaskSid } = channelAttributes;
+
   const { channelSid } = event;
-  const updateTaskPromises: Promise<boolean>[] = [];
+  const actionsOnChannel = await Promise.allSettled(
+    [...tasksSids, surveyTaskSid]
+      .filter(Boolean)
+      .map((tSid) => updateTaskAssignmentStatus(tSid, channelSid as string, context, event)),
+  );
 
-  if (taskSid) {
-    const updateContactTask = updateTaskAssignmentStatus(
-      taskSid,
-      channelSid as string,
-      context,
-      event,
-    );
-    updateTaskPromises.push(updateContactTask);
-  }
+  // Cleanup the channel if there's no keep-alive and at least one cleanup
+  const isChannelCleanupRequired =
+    !actionsOnChannel.some((p) => p.status === 'fulfilled' && p.value === 'keep-alive') &&
+    actionsOnChannel.some((p) => p.status === 'fulfilled' && p.value === 'cleanup');
 
-  if (surveyTaskSid) {
-    const updatePostSurveyTask = updateTaskAssignmentStatus(
-      surveyTaskSid,
-      channelSid as string,
-      context,
-      event,
-    );
-    updateTaskPromises.push(updatePostSurveyTask);
-  }
-
-  const resolvedPromises = await Promise.allSettled(updateTaskPromises);
-  const isChannelCleanupRequired = (result: PromiseSettledResult<boolean>) =>
-    result.status === 'fulfilled' && result.value;
-  return resolvedPromises.some(isChannelCleanupRequired);
+  return isChannelCleanupRequired;
 };
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
-    console.log(' ------ endChat execution starts -----');
 
     try {
       const client = context.getTwilioClient();
@@ -195,6 +183,17 @@ export const handler = TokenValidator(
         channelAttributes,
         context,
         event,
+      );
+
+      const members = await channel.members().list();
+      await Promise.all(
+        members.map((m) => {
+          if (JSON.parse(m.attributes).member_type !== 'guest') {
+            return m.remove();
+          }
+
+          return Promise.resolve();
+        }),
       );
 
       /** ==================== */
