@@ -71,8 +71,7 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: undefined,
         callSid: 'callSid',
-        updateAttribute: 'hold',
-        updateValue: 'false',
+        updates: JSON.stringify({ hold: false }),
       },
       expectedStatus: 400,
     },
@@ -81,40 +80,36 @@ describe('conference/updateParticipant', () => {
       body: {
         conferenceSid: 'conferenceSid',
         callSid: undefined,
-        updateAttribute: 'hold',
-        updateValue: 'false',
+        updates: JSON.stringify({ hold: false }),
       },
       expectedStatus: 400,
     },
     {
-      when: 'updateAttribute is missing',
+      when: 'update attribute is an invalid value',
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: undefined,
-        updateValue: 'false',
+        updates: JSON.stringify({ invalid: false }),
       },
       expectedStatus: 400,
     },
     {
-      when: 'updateAttribute is an invalid value',
+      when: 'update value is not bool',
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'invalid',
-        updateValue: 'false',
+        updates: JSON.stringify({ hold: 1 }),
       },
       expectedStatus: 400,
     },
     {
-      when: 'updateValue is missing',
+      when: 'update is missing',
       body: {
         conferenceSid: 'conferenceSid',
         callSid: 'callSid',
-        updateAttribute: 'hold',
-        updateValue: undefined,
+        updates: undefined,
       },
-      expectedStatus: 400,
+      expectedStatus: 500,
     },
     {
       when: 'conferenceSid does not exists',
