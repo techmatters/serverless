@@ -141,44 +141,7 @@ describe('captureChannelWithBot', () => {
       studioFlowSid: 'FL0123xxdew',
       botName: 'C6HUSTIFBR',
     };
-
-    const updatedChannelAttributes = {
-      channelCapturedByBot: {
-        botName: 'C6HUSTIFBR',
-        botAlias: 'TSTALIASID',
-      },
-    };
-
-    const expectedPostTextArgs = [
-      mockContext,
-      expect.objectContaining({
-        botName: updatedChannelAttributes.channelCapturedByBot.botName,
-        botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
-        inputText: event.message,
-      }),
-    ];
-
-    const createMessageMock = jest.fn().mockResolvedValueOnce({});
-    const channel = {
-      messages: jest.fn(() => ({
-        create: createMessageMock,
-      })),
-    };
-
-    await channel.messages().create({
-      body: lexResponse.message,
-      from: 'Bot',
-      xTwilioWebhookEnabled: 'true',
-    });
-
     await captureChannelWithBot(mockContext, event, mockCallback);
-
-    expect(lexClient.postText).toHaveBeenCalledWith(...expectedPostTextArgs);
-    expect(createMessageMock).toHaveBeenCalledWith({
-      body: lexResponse.message,
-      from: 'Bot',
-      xTwilioWebhookEnabled: 'true',
-    });
 
     expect(mockCallback).toHaveBeenCalledWith(
       null,

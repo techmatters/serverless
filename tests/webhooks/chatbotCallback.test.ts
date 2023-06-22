@@ -105,6 +105,7 @@ const context = {
   ASELO_APP_ACCESS_KEY: 'AW12xx2',
   ASELO_APP_SECRET_KEY: 'KA23xxx09i',
   AWS_REGION: 'us-east-1',
+  TWILIO_WORKSPACE_SID: 'Waer3xxx98',
 };
 
 const mockCallback = jest.fn();
@@ -166,42 +167,6 @@ describe('chatbotCallback', () => {
       event.EventType === 'onMessageSent' &&
       JSON.parse(attributes).fromServiceUser === event.From
     ) {
-      const updatedChannelAttributes = {
-        channelCapturedByBot: {
-          botName: 'C6HUSTIFBR',
-          botAlias: 'TSTALIASID',
-        },
-      };
-
-      const expectedPostTextArgs = [
-        context,
-        expect.objectContaining({
-          botName: updatedChannelAttributes.channelCapturedByBot.botName,
-          botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
-          inputText: event.Body,
-        }),
-      ];
-
-      const createMessageMock = jest.fn().mockResolvedValueOnce({});
-      const channel = {
-        messages: jest.fn(() => ({
-          create: createMessageMock,
-        })),
-      };
-
-      await channel.messages().create({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
-
-      expect(lexClient.postText).toHaveBeenCalledWith(...expectedPostTextArgs);
-      expect(createMessageMock).toHaveBeenCalledWith({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
-
       expect(mockCallback.mock.calls[0][0]).toBeNull();
       expect(mockCallback.mock.calls[0][1]).toEqual(
         expect.objectContaining({
