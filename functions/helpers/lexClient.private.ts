@@ -21,7 +21,7 @@ type AWSCredentials = {
   AWS_REGION: string;
 };
 
-const postText = async (
+export const postText = async (
   credentials: AWSCredentials,
   {
     botName,
@@ -50,10 +50,10 @@ const postText = async (
   return lexResponse;
 };
 
-const isEndOfDialog = (dialogState: string | undefined) =>
+export const isEndOfDialog = (dialogState: string | undefined) =>
   dialogState === 'Fulfilled' || dialogState === 'Failed';
 
-const deleteSession = (
+export const deleteSession = (
   credentials: AWSCredentials,
   {
     botName,
@@ -80,12 +80,6 @@ const deleteSession = (
     botAlias,
     userId,
   }).promise();
-};
-
-export default {
-  postText,
-  isEndOfDialog,
-  deleteSession,
 };
 
 export type LexClient = {
