@@ -19,7 +19,10 @@ import {
   Body,
 } from '../../functions/webhooks/chatbotCallback.protected';
 import helpers from '../helpers';
-import lexClient from '../../functions/helpers/lexClient.private';
+import { LexClient } from '../../functions/helpers/lexClient.private';
+
+// eslint-disable-next-line global-require
+const lexClient = require('../../functions/helpers/lexClient.private') as LexClient;
 
 jest.mock('../../functions/helpers/lexClient.private', () => ({
   postText: jest.fn(),
