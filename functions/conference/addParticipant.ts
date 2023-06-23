@@ -33,6 +33,7 @@ export type Body = {
   conferenceSid?: string;
   from?: string;
   to?: string;
+  callStatusSyncDocumentSid?: string;
   label?: string;
   request: { cookies: {}; headers: {} };
 };
@@ -42,12 +43,13 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { conferenceSid, from, to, label } = event;
+    const { conferenceSid, from, to, label, callStatusSyncDocumentSid } = event;
 
     try {
       if (!conferenceSid) return resolve(error400('conferenceSid'));
       if (!from) return resolve(error400('from'));
       if (!to) return resolve(error400('to'));
+      if (!callStatusSyncDocumentSid) return resolve(error400('callStatusSyncDocumentSid'));
 
       const participant = await context
         .getTwilioClient()
@@ -58,6 +60,8 @@ export const handler = TokenValidator(
           earlyMedia: true,
           endConferenceOnExit: false,
           label: label || 'external party', // Probably want to pass this from the caller
+          statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+          statusCallback: `https://${context.DOMAIN_NAME}/conference/statusCallback?callStatusSyncDocumentSid=${callStatusSyncDocumentSid}`,
         });
 
       return resolve(success({ message: 'New participant succesfully added', participant }));
