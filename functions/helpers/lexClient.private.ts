@@ -16,35 +16,49 @@
 import AWS from 'aws-sdk';
 
 type AWSCredentials = {
+  HELPLINE_CODE: string;
+  ENVIRONMENT_CODE: string;
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   AWS_REGION: string;
 };
 
+export type BotType = 'pre_survey' | 'post_survey';
+
 export const postText = async (
   credentials: AWSCredentials,
   {
-    botName,
+    language,
+    type,
     botAlias,
     inputText,
     userId,
   }: {
-    botName: string;
+    language: string;
+    type: BotType;
     botAlias: string;
     inputText: string;
     userId: string;
   },
 ) => {
+  const {
+    ASELO_APP_ACCESS_KEY,
+    ASELO_APP_SECRET_KEY,
+    AWS_REGION,
+    ENVIRONMENT_CODE,
+    HELPLINE_CODE,
+  } = credentials;
   AWS.config.update({
     credentials: {
-      accessKeyId: credentials.ASELO_APP_ACCESS_KEY,
-      secretAccessKey: credentials.ASELO_APP_SECRET_KEY,
+      accessKeyId: ASELO_APP_ACCESS_KEY,
+      secretAccessKey: ASELO_APP_SECRET_KEY,
     },
-    region: credentials.AWS_REGION,
+    region: AWS_REGION,
   });
 
   const Lex = new AWS.LexRuntime();
 
+  const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${language.replace('-', '_')}`;
   const lexResponse = await Lex.postText({ botName, botAlias, inputText, userId }).promise();
 
   return lexResponse;

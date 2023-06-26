@@ -67,8 +67,11 @@ inputs:
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
     required: true
-  helpline-name:
-    description: 'The identifier in the format "<short helpline>-<short env>" used for this helpline'
+  helpline-code:
+    description: 'The short (usually 2 character) upper case code used to identify the helpline internally, e.g. ZA, IN, BR.'
+    required: true
+  environment-code:
+    description: 'The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV'
     required: true
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
@@ -78,6 +81,8 @@ inputs:
     description: 'Specifies if we should disable enforcement of operating hours (uuseful for non production accounts). Defaults to false'
     required: false
     default: 'false'
+env:
+  helpline-name: ${{inputs.helpline-code}}_${{inputs.environment-code}}
 runs:
   using: 'composite'
   steps:
@@ -100,6 +105,8 @@ runs:
     - name: Fill .env
       run: |
         cat <<EOT >> .env
+        HELPLINE_CODE=${{ inputs.helpline-code }}
+        ENVIRONMENT_CODE=${{ inputs.environment-code }}
         TWILIO_WORKSPACE_SID=${{ inputs.workspace-sid }}
         TWILIO_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.transfer-workflow-sid }}
         SYNC_SERVICE_API_KEY=${{ inputs.sync-service-api-key }}
@@ -131,7 +138,7 @@ runs:
     - name: Execute custom action (if any)
       uses: ./.github/actions/custom-actions
       with:
-        helpline-name: ${{ inputs.helpline-name }}
+        helpline-name: ${{ env.helpline-name }}
         account-sid: ${{ inputs.account-sid }}
     # Install dependencies for the twilio functions
     - name: Install dependencies for the twilio functions
@@ -170,6 +177,6 @@ runs:
       if: ${{ inputs.send-slack-message != 'false' }}
       with:
         channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
-        slack-message: "`[Serverless]` Deployment to `${{ inputs.helpline-name }}` from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
+        slack-message: "`[Serverless]` Deployment to `${{ env.helpline-name }}` from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
