@@ -152,7 +152,6 @@ describe('chatbotCallback', () => {
       EventType: 'onMessageSent',
     };
 
-    const { attributes } = await context.getTwilioClient().chat.services().channels().fetch();
     await chatbotCallback(context, event, mockCallback);
 
     // Assert that the necessary functions were called with the correct arguments
@@ -162,19 +161,13 @@ describe('chatbotCallback', () => {
       event.ChannelSid,
     );
     expect(context.getTwilioClient().chat.services().channels().fetch).toHaveBeenCalled();
-
-    if (
-      event.EventType === 'onMessageSent' &&
-      JSON.parse(attributes).fromServiceUser === event.From
-    ) {
-      expect(mockCallback.mock.calls[0][0]).toBeNull();
-      expect(mockCallback.mock.calls[0][1]).toEqual(
-        expect.objectContaining({
-          _body: 'All messages sent :)',
-          _statusCode: 200,
-        }),
-      );
-    }
+    expect(mockCallback.mock.calls[0][0]).toBeNull();
+    expect(mockCallback.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        _body: 'All messages sent :)',
+        _statusCode: 200,
+      }),
+    );
   });
 
   test('should handle the event and ignore it', async () => {
