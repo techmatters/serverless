@@ -50,23 +50,40 @@ jobs:
         with:
           node-version: '16.x'
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
       # Clone flex-plugins repo
       - name: Clone flex-plugins repo
         run: git clone https://github.com/techmatters/flex-plugins
         shell: bash
+
+      - name: Install Flex Plugin
+        uses: ./flex-plugins/.github/actions/install-flex-plugin
+        with:
+          path: ./flex-plugins
+
       # Build Playwright
       - name: Install e2e-tests dependencies
-        run: npm install
+        run: npm ci
         working-directory: ./flex-plugins/e2e-tests
+
       - name: Setup dependencies for playwright/browsers
         uses: microsoft/playwright-github-action@v1
+
       - name: Install Playwright CLI
         run: npx playwright install
         working-directory: ./flex-plugins/e2e-tests
+
       # Run E2E tests against actual E2E Flex instance
       - name: Run Playwright tests
-        run: DEBUG=pw:api PLAYWRIGHT_BASEURL=${{secrets.PLAYWRIGHT_BASEURL_E2E}} PLAYWRIGHT_USER_USERNAME=${{secrets.PLAYWRIGHT_USER_USERNAME}} PLAYWRIGHT_USER_PASSWORD=${{secrets.PLAYWRIGHT_USER_PASSWORD}} TWILIO_ACCOUNT_SID=${{secrets.E2E_DEV_ACCOUNT_SID}} TWILIO_AUTH_TOKEN=${{secrets.E2E_DEV_AUTH_TOKEN}} npx playwright test --workers 1
+        run: npm run test:development:e2e
         working-directory: ./flex-plugins/e2e-tests
+
       # Upload artifacts
       # TODO: this is not working and cant tell why :(
       - uses: actions/upload-artifact@v2
