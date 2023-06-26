@@ -34,6 +34,7 @@ type EnvVars = {
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   AWS_REGION: string;
+  TWILIO_WORKSPACE_SID: string;
 };
 
 export type Body = Partial<WebhookEvent> & {};
@@ -78,7 +79,7 @@ export const handler = async (
     // Send message to bot only if it's from child
     if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
       const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
-      const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+      const lexClient = require(handlerPath) as LexClient;
 
       const lexResponse = await lexClient.postText(context, {
         botName: channelAttributes.channelCapturedByBot.botName,
@@ -124,7 +125,7 @@ export const handler = async (
           }),
           // Move control task to complete state
           client.taskrouter.v1
-            .workspaces('WORKFLOW_SID')
+            .workspaces(context.TWILIO_WORKSPACE_SID)
             .tasks(channelAttributes.controlTaskSid)
             .update({ assignmentStatus: 'completed' }),
           // Remove this webhook from the channel

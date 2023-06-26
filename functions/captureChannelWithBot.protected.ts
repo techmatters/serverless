@@ -37,7 +37,7 @@ type EnvVars = {
   SURVEY_WORKFLOW_SID: string;
 };
 
-type Body = {
+export type Body = {
   channelSid: string; // (in Studio Flow, flow.channel.address) The channel to capture
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
   fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
@@ -141,7 +141,7 @@ export const handler = async (
       });
 
     const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
-    const lexClient = require(handlerPath).addCustomerExternalId as LexClient;
+    const lexClient = require(handlerPath) as LexClient;
 
     const lexResponse = await lexClient.postText(context, {
       botName: updatedChannelAttributes.channelCapturedByBot.botName,
