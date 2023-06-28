@@ -34,9 +34,24 @@ const validUpdates = ['endConferenceOnExit', 'hold', 'muted'] as const;
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  updateAttribute: typeof validUpdates[number];
-  updateValue: string;
+  updates: string;
   request: { cookies: {}; headers: {} };
+};
+
+type ParsedUpdates = { [K in typeof validUpdates[number]]?: boolean };
+const parseUpdates = (updates: string): ParsedUpdates | null => {
+  const parsed = JSON.parse(updates);
+
+  if (
+    !parsed ||
+    !Object.entries(parsed).every(
+      ([k, v]) => validUpdates.includes(k as any) && typeof v === 'boolean',
+    )
+  ) {
+    return null;
+  }
+
+  return parsed;
 };
 
 export const handler = TokenValidator(
@@ -44,15 +59,16 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid, updateAttribute, updateValue } = event;
+    const { callSid, conferenceSid, updates } = event;
 
     try {
       if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (!updateAttribute || !validUpdates.includes(updateAttribute)) {
-        return resolve(error400('updateAttribute'));
+
+      const parsedUpdates = parseUpdates(updates);
+      if (!parsedUpdates) {
+        return resolve(error400('updates'));
       }
-      if (!updateValue) return resolve(error400('updateValue'));
 
       const participant = await context
         .getTwilioClient()
@@ -60,29 +76,9 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      const updateAsBool = Boolean(updateValue === 'true');
+      await participant.update(parsedUpdates);
 
-      switch (updateAttribute) {
-        case 'endConferenceOnExit': {
-          await participant.update({ endConferenceOnExit: updateAsBool });
-          break;
-        }
-        case 'hold': {
-          await participant.update({ hold: updateAsBool });
-          break;
-        }
-        case 'muted': {
-          await participant.update({ muted: updateAsBool });
-          break;
-        }
-        default: {
-          throw new Error(`'Unexpected case reached, updateAttribute ${updateAttribute}`);
-        }
-      }
-
-      return resolve(
-        success({ message: `Participant updated: ${updateAttribute} ${updateValue}` }),
-      );
+      return resolve(success({ message: `Participant updated: ${updates}` }));
     } catch (err: any) {
       return resolve(error500(err));
     }
