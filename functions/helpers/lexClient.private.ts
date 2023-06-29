@@ -58,7 +58,8 @@ export const postText = async (
 
   const Lex = new AWS.LexRuntime();
 
-  const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${language.replace('-', '_')}`;
+  // const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${language.replace('-', '_')}`;
+  const botName = 'development_as_survey_en';
   const lexResponse = await Lex.postText({ botName, botAlias, inputText, userId }).promise();
 
   return lexResponse;

@@ -76,10 +76,6 @@ export const handler = async (
       resolve(error400('studioFlowSid'));
       return;
     }
-    if (!language) {
-      resolve(error400('language'));
-      return;
-    }
     if (!type) {
       resolve(error400('type'));
       return;
@@ -123,7 +119,7 @@ export const handler = async (
         fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         // All of this can be passed as url params to the webhook instead
         channelCapturedByBot: {
-          language,
+          language: language || 'en',
           type,
           botAlias: 'latest', // assume we always use the latest published version
           studioFlowSid,
