@@ -66,6 +66,7 @@ describe('conference/addParticipant', () => {
         from: 'from',
         to: 'to',
         label: 'label',
+        callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
       },
     },
     {
@@ -75,6 +76,7 @@ describe('conference/addParticipant', () => {
         from: undefined,
         to: 'to',
         label: 'label',
+        callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
       },
     },
     {
@@ -84,6 +86,17 @@ describe('conference/addParticipant', () => {
         from: 'from',
         to: undefined,
         label: 'label',
+        callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
+      },
+    },
+    {
+      when: 'callStatusSyncDocumentSid is missing',
+      body: {
+        conferenceSid: 'conferenceSid',
+        from: 'from',
+        to: 'to',
+        label: 'label',
+        callStatusSyncDocumentSid: undefined,
       },
     },
   ]).test('when $when, should return status 400', async ({ body }) => {
@@ -102,6 +115,7 @@ describe('conference/addParticipant', () => {
       from: 'from',
       to: 'to',
       label: 'label',
+      callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
       request: { cookies: {}, headers: {} },
     };
 
@@ -122,6 +136,7 @@ describe('conference/addParticipant', () => {
         from: 'from',
         to: 'to',
         label: 'label',
+        callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
       },
       expectCallback: () => {
         expect(mockParticipantCreate).toHaveBeenCalledWith({
@@ -130,6 +145,8 @@ describe('conference/addParticipant', () => {
           earlyMedia: true,
           endConferenceOnExit: false,
           label: 'label',
+          statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+          statusCallback: `https://${baseContext.DOMAIN_NAME}/conference/statusCallback?callStatusSyncDocumentSid=callStatusSyncDocumentSid`,
         });
       },
     },
@@ -139,6 +156,7 @@ describe('conference/addParticipant', () => {
         conferenceSid: 'conferenceSid',
         from: 'from',
         to: 'to',
+        callStatusSyncDocumentSid: 'callStatusSyncDocumentSid',
       },
       expectCallback: () => {
         expect(mockParticipantCreate).toHaveBeenCalledWith({
@@ -147,6 +165,8 @@ describe('conference/addParticipant', () => {
           earlyMedia: true,
           endConferenceOnExit: false,
           label: 'external party',
+          statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
+          statusCallback: `https://${baseContext.DOMAIN_NAME}/conference/statusCallback?callStatusSyncDocumentSid=callStatusSyncDocumentSid`,
         });
       },
     },

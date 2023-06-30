@@ -29,12 +29,29 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
 };
 
+const validUpdates = ['endConferenceOnExit', 'hold', 'muted'] as const;
+
 export type Body = {
   callSid: string;
   conferenceSid: string;
-  updateAttribute: 'hold' | 'endConferenceOnExit';
-  updateValue: string;
+  updates: string;
   request: { cookies: {}; headers: {} };
+};
+
+type ParsedUpdates = { [K in typeof validUpdates[number]]?: boolean };
+const parseUpdates = (updates: string): ParsedUpdates | null => {
+  const parsed = JSON.parse(updates);
+
+  if (
+    !parsed ||
+    !Object.entries(parsed).every(
+      ([k, v]) => validUpdates.includes(k as any) && typeof v === 'boolean',
+    )
+  ) {
+    return null;
+  }
+
+  return parsed;
 };
 
 export const handler = TokenValidator(
@@ -42,18 +59,16 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { callSid, conferenceSid, updateAttribute, updateValue } = event;
+    const { callSid, conferenceSid, updates } = event;
 
     try {
       if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (
-        !updateAttribute ||
-        (updateAttribute !== 'endConferenceOnExit' && updateAttribute !== 'hold')
-      ) {
-        return resolve(error400('updateAttribute'));
+
+      const parsedUpdates = parseUpdates(updates);
+      if (!parsedUpdates) {
+        return resolve(error400('updates'));
       }
-      if (!updateValue) return resolve(error400('updateValue'));
 
       const participant = await context
         .getTwilioClient()
@@ -61,22 +76,9 @@ export const handler = TokenValidator(
         .participants(callSid)
         .fetch();
 
-      const updateAsBool = Boolean(updateValue === 'true');
+      await participant.update(parsedUpdates);
 
-      const updatedAttributes =
-        updateAttribute === 'hold'
-          ? {
-              hold: updateAsBool,
-            }
-          : {
-              endConferenceOnExit: updateAsBool,
-            };
-
-      await participant.update(updatedAttributes);
-
-      return resolve(
-        success({ message: `Participant updated: ${updateAttribute} ${updateValue}` }),
-      );
+      return resolve(success({ message: `Participant updated: ${updates}` }));
     } catch (err: any) {
       return resolve(error500(err));
     }

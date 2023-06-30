@@ -19,39 +19,43 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   responseWithCors,
   bindResolve,
-  error400,
   error500,
   success,
-  functionValidator as TokenValidator,
+  error400,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
+
+type EnvVars = {
+  SYNC_SERVICE_SID: string;
+};
 
 export type Body = {
-  language?: string;
+  callStatusSyncDocumentSid?: string;
+  CallStatus: string;
   request: { cookies: {}; headers: {} };
 };
 
-export const handler = TokenValidator(
-  async (context: Context, event: Body, callback: ServerlessCallback) => {
-    const response = responseWithCors();
-    const resolve = bindResolve(callback)(response);
+export const handler = async (
+  context: Context<EnvVars>,
+  event: Body,
+  callback: ServerlessCallback,
+  // eslint-disable-next-line consistent-return
+) => {
+  const response = responseWithCors();
+  const resolve = bindResolve(callback)(response);
 
-    const { language } = event;
+  const { callStatusSyncDocumentSid, CallStatus } = event;
 
-    try {
-      if (language === undefined) {
-        resolve(error400('language'));
-        return;
-      }
+  const client = context.getTwilioClient();
+  try {
+    if (!callStatusSyncDocumentSid) return resolve(error400('callStatusSyncDocumentSid'));
 
-      const axiosResponse = await axios.get(
-        `https://${context.DOMAIN_NAME}/translations/${language}/flexUI.json`,
-      );
-      const translation = axiosResponse.data;
+    await client.sync
+      .services(context.SYNC_SERVICE_SID)
+      .documents(callStatusSyncDocumentSid)
+      .update({ data: { CallStatus } });
 
-      resolve(success(translation));
-    } catch (err: any) {
-      resolve(error500(err));
-    }
-  },
-);
+    resolve(success('Ok'));
+  } catch (err: any) {
+    resolve(error500(err));
+  }
+};
