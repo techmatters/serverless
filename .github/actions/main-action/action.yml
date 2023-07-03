@@ -86,8 +86,10 @@ runs:
   steps:
     - name: Set helpline-name
       run: echo "helpline-name=${{ inputs.helpline-code }}_${{ inputs.environment-code }}" >> $GITHUB_ENV
+      shell: bash
     - name: Test helpline-name
       run: echo ${{ env.helpline-name }}
+      shell: bash
     # Set any env vars needed from Parameter Store here
     # Slack env
     - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
