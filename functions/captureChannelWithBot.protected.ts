@@ -151,7 +151,6 @@ export const handler = async (
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
 
-
     const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
     const lexClient = require(handlerPath) as LexClient;
 
