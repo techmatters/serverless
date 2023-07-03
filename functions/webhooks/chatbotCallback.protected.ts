@@ -127,7 +127,7 @@ export const handler = async (
           client.taskrouter.v1
             .workspaces(context.TWILIO_WORKSPACE_SID)
             .tasks(channelAttributes.controlTaskSid)
-            .update({ assignmentStatus: 'completed' }),
+            .update({ assignmentStatus: 'canceled' }),
           // Remove this webhook from the channel
           channel
             .webhooks()
