@@ -81,11 +81,13 @@ inputs:
     description: 'Specifies if we should disable enforcement of operating hours (uuseful for non production accounts). Defaults to false'
     required: false
     default: 'false'
-env:
-  helpline-name: ${{ github.event.inputs.helpline-code }}_${{ github.event.inputs.environment-code }}
 runs:
   using: 'composite'
   steps:
+    - name: Set helpline-name
+      run: echo "helpline-name=${{ inputs.helpline-code }}_${{ inputs.environment-code }}" >> $GITHUB_ENV
+    - name: Test helpline-name
+      run: echo ${{ env.helpline-name }}
     # Set any env vars needed from Parameter Store here
     # Slack env
     - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
