@@ -30,6 +30,8 @@ import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel
 import { LexClient } from '../helpers/lexClient.private';
 
 type EnvVars = {
+  HELPLINE_CODE: string;
+  ENVIRONMENT_CODE: string;
   CHAT_SERVICE_SID: string;
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
@@ -82,7 +84,8 @@ export const handler = async (
       const lexClient = require(handlerPath) as LexClient;
 
       const lexResponse = await lexClient.postText(context, {
-        botName: channelAttributes.channelCapturedByBot.botName,
+        language: channelAttributes.channelCapturedByBot.language,
+        type: channelAttributes.channelCapturedByBot.type,
         botAlias: channelAttributes.channelCapturedByBot.botAlias,
         inputText: Body,
         userId: channel.sid,
