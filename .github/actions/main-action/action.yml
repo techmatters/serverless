@@ -82,7 +82,7 @@ inputs:
     required: false
     default: 'false'
 env:
-  helpline-name: ${{inputs.helpline-code}}_${{inputs.environment-code}}
+  helpline-name: ${{ inputs.helpline-code }}_${{ inputs.environment-code }}
 runs:
   using: 'composite'
   steps:
