@@ -120,9 +120,24 @@ export const handler = async (
       },
     });
 
+    // Cleanup task for captured channel by the bot
+    const controlTask = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        attributes: JSON.stringify({
+          isChatCaptureControl: true,
+          channelSid,
+        }),
+        taskChannel: 'survey',
+        timeout: 45600, // 720 minutes or 12 hours
+      });
+
     const updated = await channel.update({
       attributes: JSON.stringify({
         ...channelAttributes,
+        controlTaskSid: controlTask.sid,
         fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         // All of this can be passed as url params to the webhook instead
         channelCapturedByBot: {
@@ -136,19 +151,6 @@ export const handler = async (
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
 
-    // Cleanup task for captured channel by the bot
-    await context
-      .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks.create({
-        workflowSid: context.SURVEY_WORKFLOW_SID,
-        attributes: JSON.stringify({
-          isChatCaptureControl: true,
-          channelSid,
-        }),
-        taskChannel: 'survey',
-        timeout: 45600, // 720 minutes or 12 hours
-      });
 
     const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
     const lexClient = require(handlerPath) as LexClient;
