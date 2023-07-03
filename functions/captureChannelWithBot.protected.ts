@@ -154,7 +154,7 @@ export const handler = async (
     const lexClient = require(handlerPath) as LexClient;
 
     const lexResponse = await lexClient.postText(context, {
-      botName: updatedChannelAttributes.botName,
+      botName: updatedChannelAttributes.channelCapturedByBot.botName,
       botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
       inputText: message,
       userId: channel.sid,
