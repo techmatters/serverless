@@ -108,6 +108,9 @@ export const handler = async (
       }),
     );
 
+    const { ENVIRONMENT_CODE, HELPLINE_CODE } = context;
+    const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${language.replace('-', '_')}`;
+
     const chatbotCallbackWebhook = await channel.webhooks().create({
       type: 'webhook',
       configuration: {
@@ -123,8 +126,7 @@ export const handler = async (
         fromServiceUser, // Save this in the outer scope so it's persisted for later chatbots
         // All of this can be passed as url params to the webhook instead
         channelCapturedByBot: {
-          language,
-          type,
+          botName,
           botAlias: 'latest', // assume we always use the latest published version
           studioFlowSid,
           chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
@@ -152,8 +154,7 @@ export const handler = async (
     const lexClient = require(handlerPath) as LexClient;
 
     const lexResponse = await lexClient.postText(context, {
-      language: updatedChannelAttributes.channelCapturedByBot.language,
-      type: updatedChannelAttributes.channelCapturedByBot.type,
+      botName: updatedChannelAttributes.botName,
       botAlias: updatedChannelAttributes.channelCapturedByBot.botAlias,
       inputText: message,
       userId: channel.sid,

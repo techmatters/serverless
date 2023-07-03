@@ -106,8 +106,6 @@ const context = {
   ASELO_APP_SECRET_KEY: 'KA23xxx09i',
   AWS_REGION: 'us-east-1',
   TWILIO_WORKSPACE_SID: 'Waer3xxx98',
-  HELPLINE_CODE: 'AS',
-  ENVIRONMENT_CODE: 'DEV',
 };
 
 const mockCallback = jest.fn();
