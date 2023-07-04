@@ -116,11 +116,17 @@ export const handler = async (
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
-          // Move survey task to canceled state
-          client.taskrouter.v1
-            .workspaces(context.TWILIO_WORKSPACE_SID)
-            .tasks(channelAttributes.channelCapturedByBot.surveyTaskSid)
-            .update({ assignmentStatus: 'canceled' }),
+          // Move control task to complete state
+          (async () => {
+            try {
+              await client.taskrouter.v1
+                .workspaces(context.TWILIO_WORKSPACE_SID)
+                .tasks(channelAttributes.controlTaskSid)
+                .update({ assignmentStatus: 'completed' });
+            } catch (err) {
+              console.log(err);
+            }
+          })(),
           // Remove this webhook from the channel
           channel
             .webhooks()
