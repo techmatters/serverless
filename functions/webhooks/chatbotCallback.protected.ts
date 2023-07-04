@@ -131,14 +131,11 @@ export const handler = async (
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
-          /* I think we're not storing controlTaskSid anywhere. Also, if it's not assigned,
-           * it cannot be moved to 'completed' status. (maybe 'canceled'?)
-          // Move control task to complete state
+          // Move survey task to canceled state
           client.taskrouter.v1
             .workspaces(context.TWILIO_WORKSPACE_SID)
-            .tasks(channelAttributes.controlTaskSid) // Who set this sid?
-            .update({ assignmentStatus: 'completed' }),
-          */
+            .tasks(channelAttributes.channelCapturedByBot.surveyTaskSid)
+            .update({ assignmentStatus: 'canceled' }),
           // Remove this webhook from the channel
           channel
             .webhooks()
