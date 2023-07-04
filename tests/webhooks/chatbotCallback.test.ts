@@ -69,6 +69,7 @@ const context = {
               get: jest.fn().mockReturnValue({
                 remove: jest.fn().mockReturnValue({}),
               }),
+              create: jest.fn(),
             }),
           }),
           messages: jest.fn().mockReturnValue({
@@ -145,31 +146,31 @@ afterEach(() => {
 
 describe('chatbotCallback', () => {
   // TODO: Fix test
-  // test('should return lexResonse, update channel, and resolve with succes', async () => {
-  //   const event: Body = {
-  //     Body: 'Test body',
-  //     From: 'channelAttributes',
-  //     ChannelSid: 'Test channelSid',
-  //     EventType: 'onMessageSent',
-  //   };
+  test('should return lexResonse, update channel, and resolve with succes', async () => {
+    const event: Body = {
+      Body: 'Test body',
+      From: 'channelAttributes',
+      ChannelSid: 'Test channelSid',
+      EventType: 'onMessageSent',
+    };
 
-  //   await chatbotCallback(context, event, mockCallback);
+    await chatbotCallback(context, event, mockCallback);
 
-  //   // Assert that the necessary functions were called with the correct arguments
-  //   expect(context.getTwilioClient).toHaveBeenCalled();
-  //   expect(context.getTwilioClient().chat.services).toHaveBeenCalledWith(context.CHAT_SERVICE_SID);
-  //   expect(context.getTwilioClient().chat.services().channels).toHaveBeenCalledWith(
-  //     event.ChannelSid,
-  //   );
-  //   expect(context.getTwilioClient().chat.services().channels().fetch).toHaveBeenCalled();
-  //   expect(mockCallback.mock.calls[0][0]).toBeNull();
-  //   expect(mockCallback.mock.calls[0][1]).toEqual(
-  //     expect.objectContaining({
-  //       _body: 'All messages sent :)',
-  //       _statusCode: 200,
-  //     }),
-  //   );
-  // });
+    // Assert that the necessary functions were called with the correct arguments
+    expect(context.getTwilioClient).toHaveBeenCalled();
+    expect(context.getTwilioClient().chat.services).toHaveBeenCalledWith(context.CHAT_SERVICE_SID);
+    expect(context.getTwilioClient().chat.services().channels).toHaveBeenCalledWith(
+      event.ChannelSid,
+    );
+    expect(context.getTwilioClient().chat.services().channels().fetch).toHaveBeenCalled();
+    expect(mockCallback.mock.calls[0][0]).toBeNull();
+    expect(mockCallback.mock.calls[0][1]).toEqual(
+      expect.objectContaining({
+        _body: 'All messages sent :)',
+        _statusCode: 200,
+      }),
+    );
+  });
 
   test('should handle the event and ignore it', async () => {
     const event: Body = {
