@@ -88,12 +88,6 @@ export const handler = async (
         userId: channel.sid,
       });
 
-      await channel.messages().create({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
-
       // If the session ended, we should unlock the channel to continue the Studio Flow
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
         const releasedChannelAttributes = {
@@ -110,15 +104,6 @@ export const handler = async (
               flowSid: channelAttributes.channelCapturedByBot.studioFlowSid,
             },
           });
-        // const nextAction = client.studio.v2
-        //   .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
-        //   .executions.create({
-        //     from: ChannelSid,
-        //     to: ChannelSid,
-        //     parameters: {
-        //       ChannelAttributes: releasedChannelAttributes,
-        //     },
-        //   });
 
         await Promise.all([
           // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
