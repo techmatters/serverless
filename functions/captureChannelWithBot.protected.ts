@@ -58,7 +58,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message, fromServiceUser, studioFlowSid, language, type } = event;
+    const { channelSid, message, fromServiceUser, studioFlowSid, language = 'en-US', type } = event;
 
     if (!channelSid) {
       resolve(error400('channelSid'));
@@ -74,10 +74,6 @@ export const handler = async (
     }
     if (!studioFlowSid) {
       resolve(error400('studioFlowSid'));
-      return;
-    }
-    if (!language) {
-      resolve(error400('language'));
       return;
     }
     if (!type) {
