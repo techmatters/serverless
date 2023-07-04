@@ -58,7 +58,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message, fromServiceUser, studioFlowSid, language = 'en-US', type } = event;
+    const { channelSid, message, fromServiceUser, studioFlowSid, language, type } = event;
 
     if (!channelSid) {
       resolve(error400('channelSid'));
@@ -105,7 +105,8 @@ export const handler = async (
     );
 
     const { ENVIRONMENT_CODE, HELPLINE_CODE } = context;
-    const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${language.replace('-', '_')}`;
+    const languageSuffix = (language || 'en-US').replace('-', '_');
+    const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${languageSuffix}`;
 
     const chatbotCallbackWebhook = await channel.webhooks().create({
       type: 'webhook',
