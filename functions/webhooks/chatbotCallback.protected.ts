@@ -139,7 +139,6 @@ export const handler = async (
         console.log('Channel unblocked and bot session deleted');
       }
 
-      // Why we need to send this message?
       await channel.messages().create({
         body: lexResponse.message,
         from: 'Bot',
