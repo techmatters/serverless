@@ -26,9 +26,11 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import { LexClient } from './helpers/lexClient.private';
+import { LexClient, BotType } from './helpers/lexClient.private';
 
 type EnvVars = {
+  HELPLINE_CODE: string;
+  ENVIRONMENT_CODE: string;
   CHAT_SERVICE_SID: string;
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
@@ -42,7 +44,8 @@ export type Body = {
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
   fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
   studioFlowSid: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
-  botName: string;
+  language: string;
+  type: BotType;
 };
 
 export const handler = async (
@@ -55,7 +58,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid, message, fromServiceUser, studioFlowSid, botName } = event;
+    const { channelSid, message, fromServiceUser, studioFlowSid, language, type } = event;
 
     if (!channelSid) {
       resolve(error400('channelSid'));
@@ -73,8 +76,8 @@ export const handler = async (
       resolve(error400('studioFlowSid'));
       return;
     }
-    if (!botName) {
-      resolve(error400('botName'));
+    if (!type) {
+      resolve(error400('type'));
       return;
     }
 
@@ -101,6 +104,10 @@ export const handler = async (
       }),
     );
 
+    const { ENVIRONMENT_CODE, HELPLINE_CODE } = context;
+    const languageSuffix = (language || 'en-US').replace('-', '_');
+    const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${languageSuffix}`;
+
     const chatbotCallbackWebhook = await channel.webhooks().create({
       type: 'webhook',
       configuration: {
@@ -126,7 +133,6 @@ export const handler = async (
 
     const updatedChannelAttributes = JSON.parse(updated.attributes);
 
-    // Cleanup task for captured channel by the bot
     await context
       .getTwilioClient()
       .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)

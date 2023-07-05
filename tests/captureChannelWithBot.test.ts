@@ -93,6 +93,8 @@ const mockContext = {
   AWS_REGION: 'us-east-1',
   TWILIO_WORKSPACE_SID: 'WE23xxx0orre',
   SURVEY_WORKFLOW_SID: 'AZexxx903esd',
+  HELPLINE_CODE: 'AS',
+  ENVIRONMENT_CODE: 'DEV',
 };
 
 const mockEvent: Body = {
@@ -100,7 +102,8 @@ const mockEvent: Body = {
   message: 'Message sent',
   fromServiceUser: 'Test User',
   studioFlowSid: 'FL0123xxdew',
-  botName: 'C6HUSTIFBR',
+  language: 'en_US',
+  type: 'pre_survey',
 };
 
 const mockCallback = jest.fn();
@@ -139,7 +142,8 @@ describe('captureChannelWithBot', () => {
       message: 'Message sent',
       fromServiceUser: 'Test User',
       studioFlowSid: 'FL0123xxdew',
-      botName: 'C6HUSTIFBR',
+      language: 'en_US',
+      type: 'pre_survey',
     };
     await captureChannelWithBot(mockContext, event, mockCallback);
 

@@ -88,27 +88,20 @@ export const handler = async (
         userId: channel.sid,
       });
 
-      await channel.messages().create({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
-
       // If the session ended, we should unlock the channel to continue the Studio Flow
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
         const releasedChannelAttributes = {
           ...omit(channelAttributes, 'channelCapturedByBot'),
           memory: lexResponse.slots,
+          preSurveyComplete: true,
         };
 
         // TODO: This is now only assuming pre-survey bot. We should have a way to specify what's the next step after the bot execution is ended
-        const nextAction = client.studio.v2
-          .flows(channelAttributes.channelCapturedByBot.studioFlowSid)
-          .executions.create({
-            from: ChannelSid,
-            to: ChannelSid,
-            parameters: {
-              ChannelAttributes: releasedChannelAttributes,
+        const nextAction = () =>
+          channel.webhooks().create({
+            type: 'studio',
+            configuration: {
+              flowSid: channelAttributes.channelCapturedByBot.studioFlowSid,
             },
           });
 
@@ -124,21 +117,33 @@ export const handler = async (
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
           // Move control task to complete state
-          client.taskrouter.v1
-            .workspaces(context.TWILIO_WORKSPACE_SID)
-            .tasks(channelAttributes.controlTaskSid)
-            .update({ assignmentStatus: 'completed' }),
+          (async () => {
+            try {
+              await client.taskrouter.v1
+                .workspaces(context.TWILIO_WORKSPACE_SID)
+                .tasks(channelAttributes.controlTaskSid)
+                .update({ assignmentStatus: 'completed' });
+            } catch (err) {
+              console.log(err);
+            }
+          })(),
           // Remove this webhook from the channel
           channel
             .webhooks()
             .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
             .remove(),
           // Trigger the next step once the channel is released
-          nextAction,
+          nextAction(),
         ]);
 
         console.log('Channel unblocked and bot session deleted');
       }
+
+      await channel.messages().create({
+        body: lexResponse.message,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
 
       resolve(success('All messages sent :)'));
       return;

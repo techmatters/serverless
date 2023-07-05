@@ -21,6 +21,8 @@ type AWSCredentials = {
   AWS_REGION: string;
 };
 
+export type BotType = 'pre_survey' | 'post_survey';
+
 export const postText = async (
   credentials: AWSCredentials,
   {
@@ -35,12 +37,13 @@ export const postText = async (
     userId: string;
   },
 ) => {
+  const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, AWS_REGION } = credentials;
   AWS.config.update({
     credentials: {
-      accessKeyId: credentials.ASELO_APP_ACCESS_KEY,
-      secretAccessKey: credentials.ASELO_APP_SECRET_KEY,
+      accessKeyId: ASELO_APP_ACCESS_KEY,
+      secretAccessKey: ASELO_APP_SECRET_KEY,
     },
-    region: credentials.AWS_REGION,
+    region: AWS_REGION,
   });
 
   const Lex = new AWS.LexRuntime();

@@ -42,6 +42,8 @@ For help on twilio-run commands run:
 | `S3_ENDPOINT`                       | _local transcripts only_ http://localhost:4566                                                                 |
 | `ASELO_APP_ACCESS_KEY`              | AWS_ACCESS_KEY_ID with access to s3 bucket (can be any string for localstack)                                  |
 | `ASELO_APP_SECRET_KEY`              | AWS_SECRET_ACCESS_KEY for ASELO_APP_ACCESS_KEY (can be any string for localstack                               |
+| `HELPLINE_CODE`                     | The short (usually 2 character) upper case code used to identify the helpline internally, e.g. ZA, IN, BR.     |
+| `ENVIRONMENT_CODE`                  | The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV                     |
 
 ## Deployment
 

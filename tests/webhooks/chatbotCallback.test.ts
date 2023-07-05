@@ -69,6 +69,7 @@ const context = {
               get: jest.fn().mockReturnValue({
                 remove: jest.fn().mockReturnValue({}),
               }),
+              create: jest.fn(),
             }),
           }),
           messages: jest.fn().mockReturnValue({
