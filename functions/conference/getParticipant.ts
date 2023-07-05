@@ -30,11 +30,8 @@ type EnvVars = {
 };
 
 export type Body = {
-  conferenceSid?: string;
-  from?: string;
-  to?: string;
-  callStatusSyncDocumentSid?: string;
-  label?: string;
+  callSid: string;
+  conferenceSid: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -43,28 +40,19 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const { conferenceSid, from, to, label, callStatusSyncDocumentSid } = event;
+    const { callSid, conferenceSid } = event;
 
     try {
+      if (!callSid) return resolve(error400('callSid'));
       if (!conferenceSid) return resolve(error400('conferenceSid'));
-      if (!from) return resolve(error400('from'));
-      if (!to) return resolve(error400('to'));
-      if (!callStatusSyncDocumentSid) return resolve(error400('callStatusSyncDocumentSid'));
 
       const participant = await context
         .getTwilioClient()
         .conferences(conferenceSid)
-        .participants.create({
-          from,
-          to,
-          earlyMedia: true,
-          endConferenceOnExit: false,
-          label: label || 'external party', // Probably want to pass this from the caller
-          statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-          statusCallback: `https://${context.DOMAIN_NAME}/conference/statusCallback?callStatusSyncDocumentSid=${callStatusSyncDocumentSid}`,
-        });
+        .participants(callSid)
+        .fetch();
 
-      return resolve(success({ message: 'New participant succesfully added', participant }));
+      return resolve(success({ participant }));
     } catch (err: any) {
       return resolve(error500(err));
     }
