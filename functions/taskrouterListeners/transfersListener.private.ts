@@ -46,7 +46,7 @@ type EnvVars = {
 
 export type TransferMeta = {
   mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected' | 'timeout';
+  transferStatus: 'transferring' | 'accepted' | 'rejected';
   sidWithTaskControl: string;
 };
 
@@ -113,22 +113,15 @@ const isVoiceTransferOriginalInWrapup = (
   taskAttributes.transferMeta &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
 
-const isVoiceTransferTimedOut = (
+const isWarmVoiceTransferTimedOut = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: { transferMeta?: TransferMeta },
 ) =>
-  // eventType === RESERVATION_TIMEOUT &&
-  // taskChannelUniqueName === 'voice' &&
-  // taskAttributes.transferMeta &&
-  // taskAttributes.transferMeta.transferStatus === 'timeout'
-  console.log(
-    'taskAttributes.transferMeta.transferStatus',
-    taskAttributes?.transferMeta?.transferStatus,
-    eventType,
-    taskChannelUniqueName,
-  );
-
+  eventType === RESERVATION_TIMEOUT &&
+  taskChannelUniqueName === 'voice' &&
+  taskAttributes.transferMeta &&
+  taskAttributes.transferMeta.mode === 'WARM';
 /**
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
@@ -148,7 +141,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
-    console.log(isVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes));
+    console.log(isWarmVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes));
 
     /**
      * If a chat transfer gets accepted, it should:
@@ -271,6 +264,29 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         });
 
       console.log('Finished handling warm voice transfer rejected.');
+      return;
+    }
+
+    if (isWarmVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling warm voice transfer timeout...');
+
+      const client = context.getTwilioClient();
+
+      const updatedAttributes = {
+        ...taskAttributes,
+        transferMeta: {
+          ...taskAttributes.transferMeta,
+          sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
+          transferStatus: 'timeout',
+        },
+      };
+
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(taskSid)
+        .update({ attributes: JSON.stringify(updatedAttributes) });
+
+      console.log('Finished handling warm voice transfer timeout.');
       return;
     }
 
