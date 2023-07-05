@@ -145,7 +145,6 @@ afterEach(() => {
 });
 
 describe('chatbotCallback', () => {
-  // TODO: Fix test
   test('should return lexResonse, update channel, and resolve with succes', async () => {
     const event: Body = {
       Body: 'Test body',
