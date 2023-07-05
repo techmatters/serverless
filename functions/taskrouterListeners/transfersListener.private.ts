@@ -46,7 +46,7 @@ type EnvVars = {
 
 export type TransferMeta = {
   mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
+  transferStatus: 'transferring' | 'accepted' | 'rejected' | 'timeout';
   sidWithTaskControl: string;
 };
 
@@ -113,6 +113,22 @@ const isVoiceTransferOriginalInWrapup = (
   taskAttributes.transferMeta &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
 
+const isVoiceTransferTimedOut = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: { transferMeta?: TransferMeta },
+) =>
+  // eventType === RESERVATION_TIMEOUT &&
+  // taskChannelUniqueName === 'voice' &&
+  // taskAttributes.transferMeta &&
+  // taskAttributes.transferMeta.transferStatus === 'timeout'
+  console.log(
+    'taskAttributes.transferMeta.transferStatus',
+    taskAttributes?.transferMeta?.transferStatus,
+    eventType,
+    taskChannelUniqueName,
+  );
+
 /**
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
@@ -131,6 +147,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
+
+    console.log(isVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes));
 
     /**
      * If a chat transfer gets accepted, it should:
