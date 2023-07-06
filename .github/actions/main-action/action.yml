@@ -73,6 +73,9 @@ inputs:
   environment-code:
     description: 'The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV'
     required: true
+  environment:
+    description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)
+    required: true
   send-slack-message:
     description: 'Specifies if should send a Slack message at the end of successful run. Defaults to true'
     required: false
@@ -107,7 +110,7 @@ runs:
       run: |
         cat <<EOT >> .env
         HELPLINE_CODE=${{ inputs.helpline-code }}
-        ENVIRONMENT_CODE=${{ inputs.environment-code }}
+        ENVIRONMENT=${{ inputs.environment }}
         TWILIO_WORKSPACE_SID=${{ inputs.workspace-sid }}
         TWILIO_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.transfer-workflow-sid }}
         SYNC_SERVICE_API_KEY=${{ inputs.sync-service-api-key }}
