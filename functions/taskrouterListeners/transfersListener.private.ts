@@ -139,7 +139,7 @@ const updateWarmVoiceTransferAttributes = async (
   taskAttributes: { transferMeta: { originalReservation: string } },
   taskSid: string,
 ) => {
-  console.log(`Handling warm voice transfer ${transferStatus}...`);
+  console.info(`Handling warm voice transfer ${transferStatus} with taskSid ${taskSid}...`);
 
   const client = context.getTwilioClient();
 
@@ -157,7 +157,7 @@ const updateWarmVoiceTransferAttributes = async (
     .tasks(taskSid)
     .update({ attributes: JSON.stringify(updatedAttributes) });
 
-  console.log(`Finished handling warm voice transfer ${transferStatus}.`);
+  console.info(`Finished handling warm voice transfer ${transferStatus} with taskSid ${taskSid}.`);
 };
 
 /**
@@ -178,8 +178,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
-
-    console.log(isWarmVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes));
 
     /**
      * If a chat transfer gets accepted, it should:
