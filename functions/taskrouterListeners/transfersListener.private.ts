@@ -113,6 +113,53 @@ const isVoiceTransferOriginalInWrapup = (
   taskAttributes.transferMeta &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
 
+const isWarmVoiceTransferTimedOut = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: { transferMeta?: TransferMeta },
+) =>
+  eventType === RESERVATION_TIMEOUT &&
+  taskChannelUniqueName === 'voice' &&
+  taskAttributes.transferMeta &&
+  taskAttributes.transferMeta.mode === 'WARM';
+
+/**
+ * updateWarmVoiceTransferAttributes is a DRY function that checks
+ * when warm voice transfer gets rejected or timeout
+ *
+ * If a warm voice transfer gets rejected, it should:
+ * 1) Adjust original task attributes:
+ *    - transferMeta.transferStatus: 'rejected'
+ *    - transferMeta.sidWithTaskControl: to original reservation
+ * Same applies to when transfer timeout
+ */
+const updateWarmVoiceTransferAttributes = async (
+  transferStatus: string,
+  context: Context<EnvVars>,
+  taskAttributes: { transferMeta: { originalReservation: string } },
+  taskSid: string,
+) => {
+  console.info(`Handling warm voice transfer ${transferStatus} with taskSid ${taskSid}...`);
+
+  const client = context.getTwilioClient();
+
+  const updatedAttributes = {
+    ...taskAttributes,
+    transferMeta: {
+      ...taskAttributes.transferMeta,
+      sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
+      transferStatus,
+    },
+  };
+
+  await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(taskSid)
+    .update({ attributes: JSON.stringify(updatedAttributes) });
+
+  console.info(`Finished handling warm voice transfer ${transferStatus} with taskSid ${taskSid}.`);
+};
+
 /**
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
@@ -225,34 +272,13 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    /**
-     * If a warm voice transfer gets rejected, it should:
-     * 1) Adjust original task attributes:
-     *    - transferMeta.transferStatus: 'rejected'
-     *    - transferMeta.sidWithTaskControl: to original reservation
-     */
     if (isWarmVoiceTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling warm voice transfer rejected...');
+      await updateWarmVoiceTransferAttributes('rejected', context, taskAttributes, taskSid);
+      return;
+    }
 
-      const client = context.getTwilioClient();
-
-      const updatedAttributes = {
-        ...taskAttributes,
-        transferMeta: {
-          ...taskAttributes.transferMeta,
-          sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
-          transferStatus: 'rejected',
-        },
-      };
-
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(taskSid)
-        .update({
-          attributes: JSON.stringify(updatedAttributes),
-        });
-
-      console.log('Finished handling warm voice transfer rejected.');
+    if (isWarmVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes)) {
+      await updateWarmVoiceTransferAttributes('timeout', context, taskAttributes, taskSid);
       return;
     }
 
