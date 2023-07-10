@@ -26,11 +26,11 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import { LexClient, BotType } from './helpers/lexClient.private';
+import { LexClient } from './helpers/lexClient.private';
 
 type EnvVars = {
   HELPLINE_CODE: string;
-  ENVIRONMENT_CODE: string;
+  ENVIRONMENT: string;
   CHAT_SERVICE_SID: string;
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
@@ -44,8 +44,8 @@ export type Body = {
   message: string; // (in Studio Flow, trigger.message.Body) The triggering message
   fromServiceUser: string; // (in Studio Flow, trigger.message.From) The service user unique name
   studioFlowSid: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
-  language: string;
-  type: BotType;
+  language: string; // (in Studio Flow, {{trigger.message.ChannelAttributes.pre_engagement_data.language | default: 'en-US'}} )
+  type: 'pre_survey' | 'post_survey'; // (hardcoded in Studio Flow)
 };
 
 export const handler = async (
@@ -80,6 +80,10 @@ export const handler = async (
       resolve(error400('type'));
       return;
     }
+    if (!language) {
+      resolve(error400('language'));
+      return;
+    }
 
     const channel = await context
       .getTwilioClient()
@@ -104,9 +108,9 @@ export const handler = async (
       }),
     );
 
-    const { ENVIRONMENT_CODE, HELPLINE_CODE } = context;
-    const languageSuffix = (language || 'en-US').replace('-', '_');
-    const botName = `${ENVIRONMENT_CODE}_${HELPLINE_CODE}_${type}_${languageSuffix}`;
+    const { ENVIRONMENT, HELPLINE_CODE } = context;
+    const languageSanitized = language.replace('-', '_'); // Lex doesn't accept '-'
+    const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${type}`;
 
     const chatbotCallbackWebhook = await channel.webhooks().create({
       type: 'webhook',

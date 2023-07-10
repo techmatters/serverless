@@ -94,7 +94,7 @@ const mockContext = {
   TWILIO_WORKSPACE_SID: 'WE23xxx0orre',
   SURVEY_WORKFLOW_SID: 'AZexxx903esd',
   HELPLINE_CODE: 'AS',
-  ENVIRONMENT_CODE: 'DEV',
+  ENVIRONMENT: 'development',
 };
 
 const mockEvent: Body = {
