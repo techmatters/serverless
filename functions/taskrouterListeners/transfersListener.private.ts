@@ -189,6 +189,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
+      console.log('isChatTransferToWorkerAccepted', originalTaskSid, context.TWILIO_WORKSPACE_SID);
+
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
@@ -211,6 +213,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
+
+      console.log('isChatTransferToQueueComplete', originalTaskSid, context.TWILIO_WORKSPACE_SID);
 
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
