@@ -84,7 +84,7 @@ const isChatTransferToWorkerRejected = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'worker';
 
-const isChatTransferToQueueComplete = (
+export const isChatTransferToQueueComplete = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
@@ -229,7 +229,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
         .update({
-          assignmentStatus: 'reserved',
+          assignmentStatus: 'completed',
           reason: 'task transferred into queue',
         });
 

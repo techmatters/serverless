@@ -25,6 +25,7 @@ import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
 import { TaskrouterListener, EventFields } from '@tech-matters/serverless-helpers/taskrouter';
+import { isChatTransferToQueueComplete } from '../taskrouterListeners/transfersListener.private';
 
 const LISTENERS_FOLDER = 'taskrouterListeners/';
 
@@ -67,9 +68,29 @@ export const handler = async (
 
   try {
     console.log(`===== Executing TaskrouterCallback for event: ${event.EventType} =====`);
-    await runTaskrouterListeners(context, event, callback);
 
-    const { EventType: eventType } = event;
+    const {
+      EventType: eventType,
+      TaskChannelUniqueName: taskChannelUniqueName,
+      TaskAttributes: taskAttributesString,
+    } = event;
+
+    const taskAttributes = JSON.parse(taskAttributesString);
+
+    const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+    const client = context.getTwilioClient();
+
+    if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .update({
+          assignmentStatus: 'pending',
+          reason: 'task transferred into queue',
+        });
+    }
+
+    await runTaskrouterListeners(context, event, callback);
 
     resolve(success(JSON.stringify({ eventType })));
   } catch (err) {
