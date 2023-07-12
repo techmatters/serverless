@@ -93,6 +93,15 @@ const isChatTransferToQueueComplete = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'queue';
 
+const isChatTransferToQueueWorker = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: ChatTransferTaskAttributes,
+) =>
+  eventType === TASK_QUEUE_ENTERED &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'worker';
+
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
@@ -238,6 +247,30 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .tasks(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
+          reason: 'task transferred into queue',
+        });
+
+      console.log('Finished handling chat queue transfer.');
+      return;
+    }
+
+    if (isChatTransferToQueueWorker(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling chat transfer to queue entering target queue...');
+
+      const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+      const client = context.getTwilioClient();
+
+      console.log(
+        'isChatTransferToQueueComplete',
+        originalTaskSid,
+        taskAttributes.transferTargetType,
+      );
+
+      await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .update({
+          assignmentStatus: 'pending',
           reason: 'task transferred into queue',
         });
 
