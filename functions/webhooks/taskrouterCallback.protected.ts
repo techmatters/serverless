@@ -115,6 +115,8 @@ export const handler = async (
     const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
     const client = context.getTwilioClient();
 
+    await runTaskrouterListeners(context, event, callback);
+
     if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -124,8 +126,6 @@ export const handler = async (
           reason: 'task transferred into queue',
         });
     }
-
-    await runTaskrouterListeners(context, event, callback);
 
     resolve(success(JSON.stringify({ eventType })));
   } catch (err) {
