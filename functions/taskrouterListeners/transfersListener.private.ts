@@ -183,7 +183,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const testClient = clients.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks(taskAttributes.transferMeta.originalTask.originalTaskSid);
+      .tasks(taskAttributes.transferMeta.originalTask.originalTaskSid)
+      .update();
 
     console.log('testClient', testClient);
 
@@ -228,7 +229,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
         .update({
-          assignmentStatus: 'pending',
+          assignmentStatus: 'completed',
           reason: 'task transferred into queue',
         });
 
@@ -266,6 +267,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         transferMeta: {
           ...originalAttributes.transferMeta,
           sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+          transferStatus: 'rejected',
         },
       };
 
@@ -276,10 +278,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           .update({
             attributes: JSON.stringify(attributesWithChannelSid),
           }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-          assignmentStatus: 'canceled',
-          reason: 'task transferred rejected',
-        }),
+        // client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
+        //   // assignmentStatus: 'canceled',
+        //   reason: 'task transferred rejected',
+        // }),
       ]);
 
       console.log('Finished handling chat transfer rejected.');
