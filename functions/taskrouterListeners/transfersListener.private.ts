@@ -179,6 +179,14 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
+    const clients = context.getTwilioClient();
+
+    const testClient = clients.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskAttributes.transferMeta.originalTask.originalTaskSid);
+
+    console.log('testClient', testClient);
+
     /**
      * If a chat transfer gets accepted, it should:
      * 1) Complete the original task
