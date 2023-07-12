@@ -122,6 +122,7 @@ export const handler = async (
     switch (result.status) {
       case 'sent':
         resolve(success(result.response));
+        console.log('result.response 1', result.response);
         return;
       case 'ignored':
         resolve(success('Ignored event.'));

@@ -220,7 +220,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
         .update({
-          assignmentStatus: 'completed',
+          assignmentStatus: 'pending',
           reason: 'task transferred into queue',
         });
 
@@ -240,6 +240,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
+
+      console.log('isChatTransferToWorkerRejected', originalTaskSid, context.TWILIO_WORKSPACE_SID);
 
       const originalTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
