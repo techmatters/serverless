@@ -24,50 +24,14 @@
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, success, error500 } from '@tech-matters/serverless-helpers';
-import {
-  TaskrouterListener,
-  EventFields,
-  EventType,
-  TASK_QUEUE_ENTERED,
-} from '@tech-matters/serverless-helpers/taskrouter';
+import { TaskrouterListener, EventFields } from '@tech-matters/serverless-helpers/taskrouter';
 
 const LISTENERS_FOLDER = 'taskrouterListeners/';
-
-export const eventTypes: EventType[] = [TASK_QUEUE_ENTERED];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
 };
-
-export type TransferMeta = {
-  mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
-  sidWithTaskControl: string;
-};
-
-type ChatTransferTaskAttributes = {
-  transferMeta?: TransferMeta;
-  transferTargetType: 'worker' | 'queue';
-};
-
-const isChatTransfer = (
-  taskChannelUniqueName: string,
-  taskAttributes: { transferMeta?: TransferMeta },
-) =>
-  taskChannelUniqueName !== 'voice' &&
-  taskAttributes.transferMeta &&
-  taskAttributes.transferMeta.mode === 'COLD' &&
-  taskAttributes.transferMeta.transferStatus === 'accepted';
-
-export const isChatTransferToQueueComplete = (
-  eventType: EventType,
-  taskChannelUniqueName: string,
-  taskAttributes: ChatTransferTaskAttributes,
-) =>
-  eventType === TASK_QUEUE_ENTERED &&
-  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
-  taskAttributes.transferTargetType === 'queue';
 
 /**
  * Fetch all taskrouter listeners from the listeners folder
@@ -103,29 +67,9 @@ export const handler = async (
 
   try {
     console.log(`===== Executing TaskrouterCallback for event: ${event.EventType} =====`);
-
-    const {
-      EventType: eventType,
-      TaskChannelUniqueName: taskChannelUniqueName,
-      TaskAttributes: taskAttributesString,
-    } = event;
-
-    const taskAttributes = JSON.parse(taskAttributesString);
-
-    const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
-    const client = context.getTwilioClient();
-
     await runTaskrouterListeners(context, event, callback);
 
-    if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
-        .update({
-          assignmentStatus: 'pending',
-          reason: 'task transferred into queue',
-        });
-    }
+    const { EventType: eventType } = event;
 
     resolve(success(JSON.stringify({ eventType })));
   } catch (err) {

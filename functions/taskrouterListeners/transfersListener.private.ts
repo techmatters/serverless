@@ -225,13 +225,37 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       console.log('isChatTransferToQueueComplete', originalTaskSid, eventType);
 
-      await client.taskrouter
+      const originalTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
-        .update({
-          assignmentStatus: 'completed',
+        .fetch();
+
+      const { attributes: attributesRaw } = originalTask;
+      const originalAttributes = JSON.parse(attributesRaw);
+
+      const { channelSid } = taskAttributes;
+      const attributesWithChannelSid = {
+        ...originalAttributes,
+        channelSid,
+        transferMeta: {
+          ...originalAttributes.transferMeta,
+          sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+          // transferStatus: 'rejected',
+        },
+      };
+
+      await Promise.all([
+        client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(originalTaskSid)
+          .update({
+            attributes: JSON.stringify(attributesWithChannelSid),
+          }),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
+          assignmentStatus: 'pending',
           reason: 'task transferred into queue',
-        });
+        }),
+      ]);
 
       console.log('Finished handling chat queue transfer.');
       return;
