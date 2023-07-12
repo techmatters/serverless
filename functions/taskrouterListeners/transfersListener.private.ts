@@ -271,18 +271,26 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         },
       };
 
-      await Promise.all([
-        client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(originalTaskSid)
-          .update({
-            attributes: JSON.stringify(attributesWithChannelSid),
+      const tasks = await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .fetch();
+
+      if (tasks.assignmentStatus === 'pending' || tasks.assignmentStatus === 'reserved') {
+        await Promise.all([
+          client.taskrouter
+            .workspaces(context.TWILIO_WORKSPACE_SID)
+            .tasks(originalTaskSid)
+            .update({
+              attributes: JSON.stringify(attributesWithChannelSid),
+            }),
+
+          client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
+            assignmentStatus: 'canceled',
+            reason: 'task transferred rejected',
           }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-          assignmentStatus: 'completed',
-          reason: 'task transferred rejected',
-        }),
-      ]);
+        ]);
+      }
 
       console.log('Finished handling chat transfer rejected.');
       return;
