@@ -192,7 +192,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const testClient = await clients.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks(taskAttributes.transferMeta.originalTask.originalTaskSid)
+      .tasks(taskSid)
       .fetch();
 
     console.log('testClient here', testClient.assignmentStatus);
