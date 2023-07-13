@@ -207,6 +207,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
+      console.log('testClient here 1', testClient.assignmentStatus);
+      console.log('originalTaskSid 1:', originalTaskSid, 'taskSid: 1', taskSid);
+
       console.log(
         'isChatTransferToWorkerAccepted',
         originalTaskSid,
@@ -235,6 +238,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
+      console.log('testClient here 2', testClient.assignmentStatus);
+      console.log('originalTaskSid: 2', originalTaskSid, 'taskSid: 2', taskSid);
 
       console.log(
         'isChatTransferToQueueComplete',
@@ -296,6 +301,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         originalTaskSid,
         taskAttributes.transferTargetType,
       );
+      console.log('testClient here 3', testClient.assignmentStatus);
+      console.log('originalTaskSid: 3', originalTaskSid, 'taskSid: 3', taskSid);
 
       const originalTask = await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -323,11 +330,14 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           .update({
             attributes: JSON.stringify(attributesWithChannelSid),
           }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).update({
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
           assignmentStatus: 'canceled',
           reason: 'task transferred rejected',
         }),
       ]);
+
+      console.log('testClient here 4', testClient.assignmentStatus);
+      console.log('originalTaskSid: 4', originalTaskSid, 'taskSid: 4', taskSid);
 
       console.log('Finished handling chat transfer rejected.');
       return;
