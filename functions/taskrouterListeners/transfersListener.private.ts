@@ -176,24 +176,22 @@ const updateWarmVoiceTransferAttributes = async (
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
-  try {
-    const {
-      EventType: eventType,
-      TaskChannelUniqueName: taskChannelUniqueName,
-      TaskSid: taskSid,
-      TaskAttributes: taskAttributesString,
-    } = event;
+  const {
+    EventType: eventType,
+    TaskChannelUniqueName: taskChannelUniqueName,
+    TaskSid: taskSid,
+    TaskAttributes: taskAttributesString,
+  } = event;
 
+  const clients = context.getTwilioClient();
+  const testClient = await clients.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(taskSid)
+    .fetch();
+  try {
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
-
-    const clients = context.getTwilioClient();
-
-    const testClient = await clients.taskrouter
-      .workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks(taskSid)
-      .fetch();
 
     console.log('testClient here', testClient.assignmentStatus);
 
@@ -379,6 +377,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
   } catch (err) {
     console.log('===== TransfersListener has failed =====');
     console.log(String(err));
+    console.log('testClient here 5', testClient.assignmentStatus);
     throw err;
   }
 };
