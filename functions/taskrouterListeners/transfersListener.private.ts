@@ -27,6 +27,7 @@ import {
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  // RESERVATION_CANCELED,
   TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
@@ -317,7 +318,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         transferMeta: {
           ...originalAttributes.transferMeta,
           sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
-          // transferStatus: 'rejected',
+          transferStatus: 'rejected',
         },
       };
 
@@ -328,12 +329,11 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           .update({
             attributes: JSON.stringify(attributesWithChannelSid),
           }),
+        // client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
+        //   assignmentStatus: 'canceled',
+        //   reason: 'task transferred rejected',
+        // }),
       ]);
-
-      await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-        assignmentStatus: 'canceled',
-        reason: 'task transferred rejected',
-      });
 
       console.log('testClient here 4', testClient.assignmentStatus);
       console.log('originalTaskSid: 4', originalTaskSid, 'taskSid: 4', taskSid);
