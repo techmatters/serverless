@@ -329,10 +329,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           .update({
             attributes: JSON.stringify(attributesWithChannelSid),
           }),
-        // client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-        //   assignmentStatus: 'canceled',
-        //   reason: 'task transferred rejected',
-        // }),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).update({
+          assignmentStatus: 'canceled',
+          reason: 'task transferred rejected',
+        }),
       ]);
 
       console.log('testClient here 4', testClient.assignmentStatus);
