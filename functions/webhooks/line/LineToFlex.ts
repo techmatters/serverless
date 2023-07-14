@@ -157,6 +157,7 @@ export const handler = async (
       switch (result.status) {
         case 'sent':
           responses.push(result.response);
+          console.log('result.response 2', result.response, responses);
           break;
         case 'ignored':
           responses.push('Ignored event.');
