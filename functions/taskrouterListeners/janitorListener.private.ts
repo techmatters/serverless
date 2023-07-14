@@ -59,7 +59,7 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes
     return false;
   }
 
-  if (!hasTaskControl(taskAttributes)) return false;
+  // if (!hasTaskControl(taskAttributes)) return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
