@@ -47,3 +47,7 @@ export const hasTaskControl = (task: Attributes) =>
   !isTwilioTask(task) ||
   !hasTransferStarted(task) ||
   task.transferMeta?.sidWithTaskControl === task.taskSid;
+
+export type HasTaskControl = {
+  hasTaskControl: typeof hasTaskControl;
+};

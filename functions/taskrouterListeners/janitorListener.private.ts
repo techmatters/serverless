@@ -31,7 +31,7 @@ import {
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
-// import { hasTaskControl, Attributes } from '../transfer/helpers';
+import type { HasTaskControl, Attributes } from '../transfer/helpers.private';
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -45,42 +45,14 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
-export type TransferMeta = {
-  mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
-  sidWithTaskControl: string;
-};
-
-export type Attributes = {
-  transferMeta?: TransferMeta;
-  isContactlessTask?: true;
-  isInMyBehalf?: true;
-  taskSid: string;
-  channelType?: string;
-};
-
-export const offlineContactTaskSid = 'offline-contact-task-sid';
-
-export const isInMyBehalfITask = (task: Attributes) =>
-  task && task.isContactlessTask && task.isInMyBehalf;
-
-export const isOfflineContactTask = (task: Attributes) => task.taskSid === offlineContactTaskSid;
-
-export const isTwilioTask = (task: Attributes) =>
-  task && !isOfflineContactTask(task) && !isInMyBehalfITask(task);
-
-export const hasTransferStarted = (task: Attributes) => Boolean(task && task.transferMeta);
-
-export const hasTaskControl = (task: Attributes) =>
-  !isTwilioTask(task) ||
-  !hasTransferStarted(task) ||
-  task.transferMeta?.sidWithTaskControl === task.taskSid;
-
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
   (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
 
+const handleTaskControl = Runtime.getFunctions()['transfer/helpers'].path;
+const taskControl = require(handleTaskControl) as HasTaskControl;
+
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes) => {
-  console.log('hasTaskControl(taskAttributes) 1', hasTaskControl(taskAttributes));
+  console.log('hasTaskControl(taskAttributes) 1', taskControl.hasTaskControl(taskAttributes));
   if (
     !(
       eventType === TASK_DELETED ||
@@ -91,9 +63,9 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes
     return false;
   }
 
-  console.log('hasTaskControl(taskAttributes) 2', hasTaskControl(taskAttributes));
+  console.log('hasTaskControl(taskAttributes) 2', taskControl.hasTaskControl(taskAttributes));
 
-  if (!hasTaskControl(taskAttributes)) return false;
+  if (!taskControl.hasTaskControl(taskAttributes)) return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
