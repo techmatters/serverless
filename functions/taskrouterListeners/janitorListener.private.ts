@@ -80,6 +80,7 @@ const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTas
   (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
 
 const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes) => {
+  console.log('hasTaskControl(taskAttributes) 1', hasTaskControl(taskAttributes));
   if (
     !(
       eventType === TASK_DELETED ||
@@ -89,6 +90,8 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes
   ) {
     return false;
   }
+
+  console.log('hasTaskControl(taskAttributes) 2', hasTaskControl(taskAttributes));
 
   if (!hasTaskControl(taskAttributes)) return false;
 
