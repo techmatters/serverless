@@ -31,6 +31,7 @@ import {
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
+import { hasTaskControl, Attributes } from '../transfer/helpers';
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -47,7 +48,7 @@ type EnvVars = {
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
   (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
 
-const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
+const isCleanupCustomChannel = (eventType: EventType, taskAttributes: Attributes) => {
   if (
     !(
       eventType === TASK_DELETED ||
@@ -57,6 +58,8 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelT
   ) {
     return false;
   }
+
+  if (!hasTaskControl(taskAttributes)) return false;
 
   const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
   const channelToFlex = require(handlerPath) as ChannelToFlex;
