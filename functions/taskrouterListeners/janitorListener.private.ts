@@ -31,7 +31,7 @@ import {
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
-import { hasTaskControl, Attributes } from '../transfer/helpers';
+// import { hasTaskControl, Attributes } from '../transfer/helpers';
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -44,6 +44,37 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
 };
+
+export type TransferMeta = {
+  mode: 'COLD' | 'WARM';
+  transferStatus: 'transferring' | 'accepted' | 'rejected';
+  sidWithTaskControl: string;
+};
+
+export type Attributes = {
+  transferMeta?: TransferMeta;
+  isContactlessTask?: true;
+  isInMyBehalf?: true;
+  taskSid: string;
+  channelType?: string;
+};
+
+export const offlineContactTaskSid = 'offline-contact-task-sid';
+
+export const isInMyBehalfITask = (task: Attributes) =>
+  task && task.isContactlessTask && task.isInMyBehalf;
+
+export const isOfflineContactTask = (task: Attributes) => task.taskSid === offlineContactTaskSid;
+
+export const isTwilioTask = (task: Attributes) =>
+  task && !isOfflineContactTask(task) && !isInMyBehalfITask(task);
+
+export const hasTransferStarted = (task: Attributes) => Boolean(task && task.transferMeta);
+
+export const hasTaskControl = (task: Attributes) =>
+  !isTwilioTask(task) ||
+  !hasTransferStarted(task) ||
+  task.transferMeta?.sidWithTaskControl === task.taskSid;
 
 const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
   (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
