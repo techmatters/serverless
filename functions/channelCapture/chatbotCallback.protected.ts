@@ -85,7 +85,7 @@ export const handler = async (
     const channelAttributes = JSON.parse(channel.attributes);
 
     // Send message to bot only if it's from child
-    if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
+    if (EventType === 'onMessageSent' && channelAttributes.serviceUserIdentity === From) {
       const lexClient = require(Runtime.getFunctions()['helpers/lexClient'].path) as LexClient;
 
       const capturedChannelAttributes =

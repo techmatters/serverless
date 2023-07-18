@@ -19,6 +19,7 @@ import axios from 'axios';
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
 import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
+import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
 import type { AWSCredentials, LexClient, LexMemory } from '../helpers/lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
@@ -61,7 +62,24 @@ export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?
  * Capture handlers wrap the logic needed for capturing a channel: updating it's attributes, creating a control task, triggering a chatbot, etc
  */
 
-const updateChannelWithCapture = (
+const getServiceUserIdentity = async (
+  channel: ChannelInstance,
+  channelAttributes: { [k: string]: string },
+): Promise<MemberInstance['identity']> => {
+  // If there's no service user, find which is the first one and add it channel attributes (only occurs on first capture)
+  if (!channelAttributes.serviceUserIdentity) {
+    console.log('Setting serviceUserIdentity');
+    const members = await channel.members().list();
+    console.log('members: ', JSON.stringify(members));
+    const firstMember = members.sort((a, b) => (a.dateCreated > b.dateCreated ? 1 : -1))[0];
+    console.log('firstMember: ', JSON.stringify(firstMember));
+    return firstMember.identity;
+  }
+
+  return channelAttributes.serviceUserIdentity;
+};
+
+const updateChannelWithCapture = async (
   channel: ChannelInstance,
   attributes: CapturedChannelAttributes,
 ) => {
@@ -76,11 +94,15 @@ const updateChannelWithCapture = (
     memoryAttribute,
     releaseFlag,
   } = attributes;
+
   const channelAttributes = JSON.parse(channel.attributes);
+
+  const serviceUserIdentity = await getServiceUserIdentity(channel, channelAttributes);
 
   return channel.update({
     attributes: JSON.stringify({
       ...channelAttributes,
+      serviceUserIdentity,
       // All of this can be passed as url params to the webhook instead
       capturedChannelAttributes: {
         userId,
@@ -196,7 +218,7 @@ const triggerOnNextMessage = async (
     configuration: {
       filters: ['onMessageSent'],
       method: 'POST',
-      url: `https://${context.DOMAIN_NAME}/webhooks/chatbotCallback`,
+      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
   });
 
@@ -298,49 +320,39 @@ export const handleChannelCapture = async (
     .channels(channelSid)
     .fetch();
 
-  const channelWebhooks = await context
-    .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .webhooks.list();
-
-  // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-  await Promise.all(
-    channelWebhooks.map(async (w) => {
-      if (w.type === 'studio') {
-        await w.remove();
-      }
-    }),
-  );
+  const [, controlTask] = await Promise.all([
+    // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+    context
+      .getTwilioClient()
+      .chat.services(context.CHAT_SERVICE_SID)
+      .channels(channelSid)
+      .webhooks.list()
+      .then((channelWebhooks) =>
+        channelWebhooks.map(async (w) => {
+          if (w.type === 'studio') {
+            await w.remove();
+          }
+        }),
+      ),
+    // Create control task to prevent channel going stale
+    context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        taskChannel: 'survey',
+        attributes: JSON.stringify({
+          isChatCaptureControl: true,
+          channelSid,
+          ...parsedAdditionalControlTaskAttributes,
+        }),
+        timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+      }),
+  ]);
 
   const { ENVIRONMENT, HELPLINE_CODE } = context;
   const languageSanitized = language.replace('-', '_'); // Lex doesn't accept '-'
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
-
-  // Create control task to prevent channel going stale
-  const controlTask = await context
-    .getTwilioClient()
-    .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks.create({
-      workflowSid: context.SURVEY_WORKFLOW_SID,
-      taskChannel: 'survey',
-      attributes: JSON.stringify({
-        isChatCaptureControl: true,
-        channelSid,
-        ...parsedAdditionalControlTaskAttributes,
-      }),
-      timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
-    });
-
-  // If there's no service user, find which is the first one and add it channel attributes (only occurs on first capture)
-  const channelAttributes = JSON.parse(channel.attributes);
-  if (!channelAttributes.fromServiceUser) {
-    const members = await channel.members().list();
-    const firstMember = members.sort((a, b) => (a.dateCreated > b.dateCreated ? 1 : -1))[0];
-    await channel.update({
-      attributes: { ...channelAttributes, fromServiceUser: firstMember.identity },
-    });
-  }
 
   const options: CaptureChannelOptions = {
     botName,
