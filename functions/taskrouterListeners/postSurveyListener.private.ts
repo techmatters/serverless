@@ -25,17 +25,21 @@ import {
   EventType,
   TASK_WRAPUP,
 } from '@tech-matters/serverless-helpers/taskrouter';
-import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 import type { TransferMeta } from './transfersListener.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
+import type { AWSCredentials } from '../helpers/lexClient.private';
+import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
-export type EnvVars = {
+export type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
   POST_SURVEY_BOT_CHAT_URL: string;
+  HRM_STATIC_KEY: string;
+  HELPLINE_CODE: string;
+  ENVIRONMENT: string;
 };
 
 // ================== //
@@ -48,18 +52,24 @@ const getTaskLanguage = (helplineLanguage: string) => (taskAttributes: { languag
 const isTriggerPostSurvey = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { channelType?: string; transferMeta?: TransferMeta },
+  taskAttributes: {
+    channelType?: string;
+    transferMeta?: TransferMeta;
+    isChatCaptureControl?: boolean;
+  },
 ) => {
   if (eventType !== TASK_WRAPUP) return false;
 
   // Post survey is for chat tasks only. This will change when we introduce voice based post surveys
   if (taskChannelUniqueName !== 'chat') return false;
 
-  // Post survey does not plays well with custom channels (autopilot)
-  const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
-  const channelToFlex = require(handlerPath) as ChannelToFlex;
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
 
-  if (channelToFlex.isAseloCustomChannel(taskAttributes.channelType)) return false;
+  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    return false;
+  }
 
   return true;
 };

@@ -155,7 +155,6 @@ export const postSurveyInitHandler = async (
       botSuffix: 'post_survey',
       triggerType: 'onNextMessage',
       releaseType: 'postSurveyComplete',
-      // studioFlowSid,
       memoryAttribute: 'postSurvey',
       releaseFlag: 'postSuveyComplete',
       additionControlTaskAttributes: JSON.stringify({

@@ -52,7 +52,7 @@ const isCleanupBotCapture = (
 ) => {
   if (eventType === TASK_CANCELED) {
     const channelCaptureHandlers = require(Runtime.getFunctions()[
-      'channelCapture/channelCaptureHandlers.private.ts'
+      'channelCapture/channelCaptureHandlers'
     ].path) as ChannelCaptureHandlers;
     return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
   }
@@ -74,7 +74,7 @@ const isCleanupCustomChannel = (
   }
 
   const channelCaptureHandlers = require(Runtime.getFunctions()[
-    'channelCapture/channelCaptureHandlers.private.ts'
+    'channelCapture/channelCaptureHandlers'
   ].path) as ChannelCaptureHandlers;
 
   if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
