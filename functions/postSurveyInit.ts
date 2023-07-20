@@ -153,7 +153,7 @@ export const postSurveyInitHandler = async (
       message: triggerMessage,
       language: taskLanguage,
       botSuffix: 'post_survey',
-      triggerType: 'onNextMessage',
+      triggerType: 'withNextMessage',
       releaseType: 'postSurveyComplete',
       memoryAttribute: 'postSurvey',
       releaseFlag: 'postSuveyComplete',

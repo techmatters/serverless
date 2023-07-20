@@ -36,7 +36,7 @@ type EnvVars = AWSCredentials & {
   SURVEY_WORKFLOW_SID: string;
 };
 
-const triggerTypes = ['redirectMessage', 'onNextMessage'] as const;
+const triggerTypes = ['withUserMessage', 'withNextMessage'] as const;
 export type TriggerTypes = typeof triggerTypes[number];
 
 const releaseTypes = ['triggerStudioFlow', 'postSurveyComplete'] as const;
@@ -134,7 +134,7 @@ type CaptureChannelOptions = {
 /**
  * Trigger a chatbot execution by redirecting a message that already exists in the channel (used to trigger executions from service user messages)
  */
-const triggerRedirectingMessage = async (
+const triggerWithUserMessage = async (
   context: Context<EnvVars>,
   channel: ChannelInstance,
   {
@@ -192,7 +192,7 @@ const triggerRedirectingMessage = async (
 /**
  * Send a message to the channel and add the chatbot after, so it will get triggered on the next response from the service user (used to trigger executions from system, like post surveys)
  */
-const triggerOnNextMessage = async (
+const triggerWithNextMessage = async (
   context: Context<EnvVars>,
   channel: ChannelInstance,
   {
@@ -366,12 +366,12 @@ export const handleChannelCapture = async (
     controlTaskSid: controlTask.sid,
   };
 
-  if (triggerType === 'redirectMessage') {
-    await triggerRedirectingMessage(context, channel, options);
+  if (triggerType === 'withUserMessage') {
+    await triggerWithUserMessage(context, channel, options);
   }
 
-  if (triggerType === 'onNextMessage') {
-    await triggerOnNextMessage(context, channel, options);
+  if (triggerType === 'withNextMessage') {
+    await triggerWithNextMessage(context, channel, options);
   }
 
   return { status: 'success' } as const;
