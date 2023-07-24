@@ -15,7 +15,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 import each from 'jest-each';
-import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
 import {
   handler as chatbotCallback,
   Body,
