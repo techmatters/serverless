@@ -292,6 +292,11 @@ export const handleChannelCapture = async (
   context: Context<EnvVars>,
   params: Partial<HandleChannelCaptureParams>,
 ) => {
+  const validationResult = validateHandleChannelCaptureParams(params);
+  if (validationResult.status === 'invalid') {
+    return { status: 'failure', validationResult } as const;
+  }
+
   const {
     channelSid,
     message,
@@ -304,11 +309,7 @@ export const handleChannelCapture = async (
     releaseFlag,
     additionControlTaskAttributes,
     controlTaskTTL,
-  } = params;
-  const validationResult = validateHandleChannelCaptureParams(params);
-  if (validationResult.status === 'invalid') {
-    return { status: 'failure', validationResult } as const;
-  }
+  } = params as HandleChannelCaptureParams;
 
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
