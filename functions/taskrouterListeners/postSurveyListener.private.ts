@@ -104,7 +104,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       /** ==================== */
       // TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the check on post_survey_serverless_handled can be removed
-      if (featureFlags.enable_post_survey && featureFlags.post_survey_serverless_handled) {
+      if (featureFlags.enable_post_survey) {
         const channelToFlex = require(Runtime.getFunctions()[
           'helpers/customChannels/customChannelToFlex'
         ].path) as ChannelToFlex;

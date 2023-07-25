@@ -199,17 +199,12 @@ export const handler = TokenValidator(
         }),
       );
 
-      /** ==================== */
-      /* TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the following clean up can be removed */
-      const serviceConfig = await client.flexApi.configuration.get().fetch();
-      const { feature_flags: featureFlags } = serviceConfig.attributes;
-      if (channelCleanupRequired || !featureFlags.post_survey_serverless_handled) {
+      if (channelCleanupRequired) {
         // Deactivate channel and proxy
         const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
         const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
         await chatChannelJanitor(context, { channelSid });
       }
-      /** ==================== */
 
       resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
       return;
