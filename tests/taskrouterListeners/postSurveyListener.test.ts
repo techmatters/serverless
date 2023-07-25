@@ -133,13 +133,13 @@ describe('Post survey init', () => {
     {
       task: nonTrasferred,
       isCandidate: true,
-      featureFlags: { enable_post_survey: true, post_survey_serverless_handled: false },
-      rejectReason: 'is candidate but post_survey_serverless_handled === false',
+      featureFlags: { enable_post_survey: true },
+      rejectReason: 'is candidate with enable_post_survey === true',
     },
     {
       task: nonTrasferred,
       isCandidate: true,
-      featureFlags: { enable_post_survey: false, post_survey_serverless_handled: true },
+      featureFlags: { enable_post_survey: false },
       rejectReason: 'is candidate but enable_post_survey === false',
     },
   ]).test(
@@ -167,7 +167,11 @@ describe('Post survey init', () => {
       } else {
         expect(mockFetchConfig).not.toHaveBeenCalled();
       }
-      expect(postSurveyInitHandlerSpy).not.toHaveBeenCalled();
+      if (featureFlags && featureFlags.enable_post_survey) {
+        expect(postSurveyInitHandlerSpy).toHaveBeenCalled();
+      } else {
+        expect(postSurveyInitHandlerSpy).not.toHaveBeenCalled();
+      }
     },
   );
 
@@ -198,7 +202,7 @@ describe('Post survey init', () => {
 
       mockFetchConfig.mockReturnValue({
         attributes: {
-          feature_flags: { enable_post_survey: true, post_survey_serverless_handled: true },
+          feature_flags: { enable_post_survey: true },
         },
       });
 
