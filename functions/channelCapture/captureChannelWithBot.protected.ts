@@ -28,8 +28,7 @@ import {
 import type { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import type {
   ChannelCaptureHandlers,
-  ReleaseTypes,
-  TriggerTypes,
+  HandleChannelCaptureParams,
 } from './channelCaptureHandlers.private';
 import type { AWSCredentials } from '../helpers/lexClient.private';
 
@@ -42,19 +41,7 @@ type EnvVars = {
   HRM_STATIC_KEY: string;
 } & AWSCredentials;
 
-export type Body = {
-  channelSid: string; // (in Studio Flow, flow.channel.address) The channel to capture
-  message: string; // (in Studio Flow, trigger.message.Body) The triggering message
-  language: string; // (in Studio Flow, {{trigger.message.ChannelAttributes.pre_engagement_data.language | default: 'en-US'}} )
-  botSuffix: string; // (hardcoded in Studio Flow)
-  triggerType: TriggerTypes;
-  releaseType: ReleaseTypes;
-  studioFlowSid?: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
-  memoryAttribute?: string; // where in the task attributes we want to save the bot's memory (allows compatibility for multiple bots)
-  releaseFlag?: string; // the flag we want to set true when the channel is released
-  additionControlTaskAttributes?: string; // optional attributes to include in the control task, in the string representation of a JSON
-  controlTaskTTL?: number;
-};
+export type Body = Partial<HandleChannelCaptureParams>;
 
 export const handler = async (
   context: Context<EnvVars>,

@@ -189,11 +189,12 @@ export const handler = TokenValidator(
 
       if (channelSid === undefined) return resolve(error400('channelSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
+      if (taskLanguage === undefined) return resolve(error400('taskLanguage'));
 
       const result = await postSurveyInitHandler(context, {
         channelSid,
         taskSid,
-        taskLanguage: taskLanguage || 'en-US',
+        taskLanguage,
       });
 
       if (result.status === 'failure' && result.validationResult.status === 'invalid') {

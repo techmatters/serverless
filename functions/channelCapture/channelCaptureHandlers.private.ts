@@ -236,7 +236,7 @@ const triggerWithNextMessage = async (
   });
 };
 
-type HandleChannelCaptureParams = {
+export type HandleChannelCaptureParams = {
   channelSid: string; // The channel to capture (in Studio Flow, flow.channel.address)
   message: string; // The triggering message (in Studio Flow, trigger.message.Body)
   language: string; // (in Studio Flow, {{trigger.message.ChannelAttributes.pre_engagement_data.language | default: 'en-US'}} )
@@ -290,7 +290,7 @@ const validateHandleChannelCaptureParams = (params: Partial<HandleChannelCapture
 
 export const handleChannelCapture = async (
   context: Context<EnvVars>,
-  params: HandleChannelCaptureParams,
+  params: Partial<HandleChannelCaptureParams>,
 ) => {
   const {
     channelSid,
