@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /**
  * Copyright (C) 2021-2023 Technology Matters
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +18,6 @@
 import {
   EventFields,
   EventType,
-  TASK_CREATED,
   TASK_WRAPUP,
   TASK_CANCELED,
   TASK_DELETED,
@@ -26,25 +26,22 @@ import {
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
 
+import each from 'jest-each';
 import * as janitorListener from '../../functions/taskrouterListeners/janitorListener.private';
+import { AseloCustomChannels } from '../../functions/helpers/customChannels/customChannelToFlex.private';
+import helpers from '../helpers';
 
-const functions = {
-  'helpers/chatChannelJanitor': {
-    path: 'helpers/chatChannelJanitor',
-  },
-  'helpers/customChannels/customChannelToFlex': {
-    path: 'helpers/customChannels/customChannelToFlex',
-  },
-};
-global.Runtime.getFunctions = () => functions;
+const mockChannelJanitor = jest.fn();
+jest.mock('../../functions/helpers/chatChannelJanitor.private', () => ({
+  chatChannelJanitor: mockChannelJanitor,
+}));
 
-const postSurveyTaskAttributes = {
-  isSurveyTask: true,
+const captureControlTaskAttributes = {
+  isChatCaptureControl: true,
   channelSid: 'channelSid',
 };
 
 const nonPostSurveyTaskAttributes = {
-  isSurveyTask: false,
   channelSid: 'channelSid',
 };
 
@@ -69,127 +66,103 @@ const context = {
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
 };
 
-const channelJanitorMock = jest.fn();
-
-beforeEach(() => {
-  const channelJanitorModule = {
-    chatChannelJanitor: channelJanitorMock,
-  };
-  jest.doMock('helpers/chatChannelJanitor', () => channelJanitorModule, { virtual: true });
-
-  jest.doMock(
-    'helpers/customChannels/customChannelToFlex',
-    () => ({
-      isAseloCustomChannel: (channelType: string) => {
-        if (channelType === customChannelTaskAttributes.channelType) {
-          return true;
-        }
-        return false;
-      },
-    }),
-    {
-      virtual: true,
-    },
+beforeAll(() => {
+  const runtime = new helpers.MockRuntime(context);
+  runtime._addFunction(
+    'helpers/chatChannelJanitor',
+    'functions/helpers/chatChannelJanitor.private',
   );
+  runtime._addFunction(
+    'helpers/customChannels/customChannelToFlex',
+    'functions/helpers/customChannels/customChannelToFlex.private',
+  );
+  runtime._addFunction(
+    'channelCapture/channelCaptureHandlers',
+    'functions/channelCapture/channelCaptureHandlers.private',
+  );
+  helpers.setup({}, runtime);
+});
+afterAll(() => {
+  helpers.teardown();
 });
 
 afterEach(() => {
   jest.clearAllMocks();
 });
 
-describe('Post-survey cleanup', () => {
-  test('task wrapup', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_WRAPUP as EventType,
-      TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
+describe('isCleanupBotCapture', () => {
+  each(['web', ...Object.values(AseloCustomChannels)]).test(
+    'capture control task canceled with channelType $channelType, should trigger janitor',
+    async ({ channelType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: TASK_CANCELED as EventType,
+        TaskAttributes: JSON.stringify({ ...captureControlTaskAttributes, channelType }),
+      };
+      await janitorListener.handleEvent(context, event);
 
-    const { channelSid } = postSurveyTaskAttributes;
-    expect(channelJanitorMock).toHaveBeenCalledWith(context, { channelSid });
-  });
+      const { channelSid } = captureControlTaskAttributes;
+      expect(mockChannelJanitor).toHaveBeenCalledWith(context, { channelSid });
+    },
+  );
 
-  test('task canceled', async () => {
+  each([TASK_WRAPUP, TASK_DELETED, TASK_SYSTEM_DELETED].map((eventType) => ({ eventType }))).test(
+    'not task canceled ($eventType), shouldnt trigger janitor',
+    async ({ eventType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType,
+        TaskAttributes: JSON.stringify(captureControlTaskAttributes),
+      };
+      await janitorListener.handleEvent(context, event);
+
+      expect(mockChannelJanitor).not.toHaveBeenCalled();
+    },
+  );
+
+  test('non isCleanupBotCapture task cancel, shouldnt trigger janitor', async () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_CANCELED as EventType,
-      TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
-
-    const { channelSid } = postSurveyTaskAttributes;
-    expect(channelJanitorMock).toHaveBeenCalledWith(context, { channelSid });
-  });
-
-  test('not task wrapup/created', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_CREATED as EventType,
-      TaskAttributes: JSON.stringify(postSurveyTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
-
-    expect(channelJanitorMock).not.toHaveBeenCalled();
-  });
-
-  test('non post-survey task wrapup', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_WRAPUP as EventType,
       TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
     };
     await janitorListener.handleEvent(context, event);
 
-    expect(channelJanitorMock).not.toHaveBeenCalled();
+    expect(mockChannelJanitor).not.toHaveBeenCalled();
   });
 });
 
-describe('Custom channel cleanup', () => {
-  test('task deleted', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_DELETED as EventType,
-      TaskAttributes: JSON.stringify(customChannelTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
+describe('isCleanupCustomChannel', () => {
+  each(
+    [TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap((eventType) =>
+      Object.values(AseloCustomChannels).map((channelType) => ({ channelType, eventType })),
+    ),
+  ).test(
+    'eventType $eventType with channelType $channelType, should trigger janitor',
+    async ({ channelType, eventType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
+      };
+      await janitorListener.handleEvent(context, event);
 
-    const { channelSid } = customChannelTaskAttributes;
-    expect(channelJanitorMock).toHaveBeenCalledWith(context, { channelSid });
-  });
+      const { channelSid } = customChannelTaskAttributes;
+      expect(mockChannelJanitor).toHaveBeenCalledWith(context, { channelSid });
+    },
+  );
 
-  test('task system deleted', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_SYSTEM_DELETED as EventType,
-      TaskAttributes: JSON.stringify(customChannelTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
+  each([TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].map((eventType) => ({ eventType }))).test(
+    'eventType $eventType with non custom channel, should not trigger janitor',
+    async ({ eventType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify(nonCustomChannelTaskAttributes),
+      };
+      await janitorListener.handleEvent(context, event);
 
-    const { channelSid } = customChannelTaskAttributes;
-    expect(channelJanitorMock).toHaveBeenCalledWith(context, { channelSid });
-  });
-
-  test('task system deleted', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_CANCELED as EventType,
-      TaskAttributes: JSON.stringify(customChannelTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
-
-    const { channelSid } = customChannelTaskAttributes;
-    expect(channelJanitorMock).toHaveBeenCalledWith(context, { channelSid });
-  });
-
-  test('non custom channel task deleted', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: TASK_DELETED as EventType,
-      TaskAttributes: JSON.stringify(nonCustomChannelTaskAttributes),
-    };
-    await janitorListener.handleEvent(context, event);
-
-    expect(channelJanitorMock).not.toHaveBeenCalled();
-  });
+      expect(mockChannelJanitor).not.toHaveBeenCalled();
+    },
+  );
 });

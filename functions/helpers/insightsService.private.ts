@@ -15,8 +15,10 @@
  */
 
 import { get } from 'lodash';
-// eslint-disable-next-line prettier/prettier
-import type { BotMemory } from '../postSurveyComplete.protected';
+import type { AutopilotMemory } from '../postSurveyComplete.protected';
+import type { LexMemory } from './lexClient.private';
+
+type BotMemory = AutopilotMemory | LexMemory;
 
 type InsightsAttributes = {
   conversations?: { [key: string]: string | number };
@@ -54,11 +56,12 @@ const mergeAttributes = (
 });
 
 const applyCustomUpdate =
-  (customUpdate: OneToManyConfigSpec): SurveyInsightsUpdateFunction =>
+  (
+    customUpdate: OneToManyConfigSpec,
+    pathBuilder: (question: string) => string,
+  ): SurveyInsightsUpdateFunction =>
   (memory) => {
-    const updatePaths = customUpdate.questions.map(
-      (question) => `twilio.collected_data.collect_survey.answers.${question}.answer`, // Path where the answer for each question should be in bot memory
-    );
+    const updatePaths = customUpdate.questions.map(pathBuilder);
     // concatenate the values, taken from dataSource using paths (e.g. 'contactForm.childInformation.province')
     const value = updatePaths.map((path) => get(memory, path, '')).join(delimiter);
 
@@ -71,8 +74,11 @@ const applyCustomUpdate =
 
 const bindApplyCustomUpdates = (
   oneToManyConfigSpecs: OneToManyConfigSpec[],
+  pathBuilder: (question: string) => string,
 ): SurveyInsightsUpdateFunction[] => {
-  const customUpdatesFuns = oneToManyConfigSpecs.map(applyCustomUpdate);
+  const customUpdatesFuns = oneToManyConfigSpecs.map((spec) =>
+    applyCustomUpdate(spec, pathBuilder),
+  );
 
   return customUpdatesFuns;
 };
@@ -81,11 +87,9 @@ export const buildSurveyInsightsData = (
   oneToManyConfigSpecs: OneToManyConfigSpec[],
   taskAttributes: TaskAttributes,
   memory: BotMemory,
+  pathBuilder: (question: string) => string = (q) => q,
 ) => {
-  // NOTE: I assume that if surveys are enabled this is not needed, right?
-  // if (!shouldSendInsightsData(task)) return previousAttributes;
-
-  const applyCustomUpdates = bindApplyCustomUpdates(oneToManyConfigSpecs);
+  const applyCustomUpdates = bindApplyCustomUpdates(oneToManyConfigSpecs, pathBuilder);
 
   const finalAttributes: TaskAttributes = applyCustomUpdates
     .map((f) => f(memory))

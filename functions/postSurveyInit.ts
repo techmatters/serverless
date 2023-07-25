@@ -25,12 +25,17 @@ import {
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
 import axios from 'axios';
+import type { ChannelCaptureHandlers } from './channelCapture/channelCaptureHandlers.private';
+import type { AWSCredentials } from './helpers/lexClient.private';
 
-type EnvVars = {
+type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
   POST_SURVEY_BOT_CHAT_URL: string;
+  HRM_STATIC_KEY: string;
+  HELPLINE_CODE: string;
+  ENVIRONMENT: string;
 };
 
 export type Body = {
@@ -127,14 +132,47 @@ const getTriggerMessage = async (
 
 export const postSurveyInitHandler = async (
   context: Context<EnvVars>,
-  event: Required<Pick<Body, 'channelSid' | 'taskSid'>> & Pick<Body, 'taskLanguage'>,
+  event: Required<Pick<Body, 'channelSid' | 'taskSid' | 'taskLanguage'>>,
 ) => {
   const { channelSid, taskSid, taskLanguage } = event;
 
   const triggerMessage = await getTriggerMessage(event, context);
 
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const { enable_lex } = serviceConfig.attributes.feature_flags;
+
+  if (enable_lex) {
+    // eslint-disable-next-line import/no-dynamic-require, global-require
+    const channelCaptureHandlers = require(Runtime.getFunctions()[
+      'channelCapture/channelCaptureHandlers'
+    ].path) as ChannelCaptureHandlers;
+
+    const result = await channelCaptureHandlers.handleChannelCapture(context, {
+      channelSid,
+      message: triggerMessage,
+      language: taskLanguage,
+      botSuffix: 'post_survey',
+      triggerType: 'withNextMessage',
+      releaseType: 'postSurveyComplete',
+      memoryAttribute: 'postSurvey',
+      releaseFlag: 'postSuveyComplete',
+      additionControlTaskAttributes: JSON.stringify({
+        isSurveyTask: true,
+        contactTaskId: taskSid,
+        conversations: { conversation_id: taskSid },
+        language: taskLanguage, // if there's a task language, attach it to the post survey task
+      }),
+      controlTaskTTL: 3600,
+    });
+
+    return result;
+  }
+
+  // Else, use legacy post survey
   await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
   await triggerPostSurveyFlow(context, channelSid, triggerMessage);
+  return { status: 'success' } as const;
 };
 
 export type PostSurveyInitHandler = typeof postSurveyInitHandler;
@@ -151,8 +189,19 @@ export const handler = TokenValidator(
 
       if (channelSid === undefined) return resolve(error400('channelSid'));
       if (taskSid === undefined) return resolve(error400('taskSid'));
+      if (taskLanguage === undefined) return resolve(error400('taskLanguage'));
 
-      await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+      const result = await postSurveyInitHandler(context, {
+        channelSid,
+        taskSid,
+        taskLanguage,
+      });
+
+      if (result.status === 'failure' && result.validationResult.status === 'invalid') {
+        resolve(error400(result.validationResult.error));
+        // eslint-disable-next-line consistent-return
+        return;
+      }
 
       return resolve(success(JSON.stringify({ message: 'Post survey init OK!' })));
     } catch (err: any) {

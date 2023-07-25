@@ -25,17 +25,22 @@ import {
   EventType,
   TASK_WRAPUP,
 } from '@tech-matters/serverless-helpers/taskrouter';
-import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 import type { TransferMeta } from './transfersListener.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
+import type { AWSCredentials } from '../helpers/lexClient.private';
+import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
+import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
-export type EnvVars = {
+export type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
   POST_SURVEY_BOT_CHAT_URL: string;
+  HRM_STATIC_KEY: string;
+  HELPLINE_CODE: string;
+  ENVIRONMENT: string;
 };
 
 // ================== //
@@ -48,18 +53,24 @@ const getTaskLanguage = (helplineLanguage: string) => (taskAttributes: { languag
 const isTriggerPostSurvey = (
   eventType: EventType,
   taskChannelUniqueName: string,
-  taskAttributes: { channelType?: string; transferMeta?: TransferMeta },
+  taskAttributes: {
+    channelType?: string;
+    transferMeta?: TransferMeta;
+    isChatCaptureControl?: boolean;
+  },
 ) => {
   if (eventType !== TASK_WRAPUP) return false;
 
   // Post survey is for chat tasks only. This will change when we introduce voice based post surveys
   if (taskChannelUniqueName !== 'chat') return false;
 
-  // Post survey does not plays well with custom channels (autopilot)
-  const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
-  const channelToFlex = require(handlerPath) as ChannelToFlex;
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
 
-  if (channelToFlex.isAseloCustomChannel(taskAttributes.channelType)) return false;
+  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    return false;
+  }
 
   return true;
 };
@@ -94,16 +105,23 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /** ==================== */
       // TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the check on post_survey_serverless_handled can be removed
       if (featureFlags.enable_post_survey && featureFlags.post_survey_serverless_handled) {
-        const { channelSid } = taskAttributes;
+        const channelToFlex = require(Runtime.getFunctions()[
+          'helpers/customChannels/customChannelToFlex'
+        ].path) as ChannelToFlex;
 
-        const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
+        // TODO: Remove this once all accounts are migrated to Lex
+        // Only trigger post survey if handled by Lex or if is not a custom channel
+        if (featureFlags.enable_lex || !channelToFlex.isAseloCustomChannel(taskAttributes)) {
+          const { channelSid } = taskAttributes;
 
-        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
-        const postSurveyInitHandler = require(handlerPath)
-          .postSurveyInitHandler as PostSurveyInitHandler;
+          const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-        await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+          const handlerPath = Runtime.getFunctions().postSurveyInit.path;
+          const postSurveyInitHandler = require(handlerPath)
+            .postSurveyInitHandler as PostSurveyInitHandler;
 
+          await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+        }
         console.log('Finished handling post survey trigger.');
       }
     }

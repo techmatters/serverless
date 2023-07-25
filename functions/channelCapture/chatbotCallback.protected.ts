@@ -27,14 +27,22 @@ import {
 } from '@tech-matters/serverless-helpers';
 import { omit } from 'lodash';
 import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
-import { LexClient } from '../helpers/lexClient.private';
+import type { AWSCredentials, LexClient } from '../helpers/lexClient.private';
+import type {
+  CapturedChannelAttributes,
+  ChannelCaptureHandlers,
+} from './channelCaptureHandlers.private';
 
-type EnvVars = {
+type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   AWS_REGION: string;
   TWILIO_WORKSPACE_SID: string;
+  HRM_STATIC_KEY: string;
+  HELPLINE_CODE: string;
+  ENVIRONMENT: string;
+  SURVEY_WORKFLOW_SID: string;
 };
 
 export type Body = Partial<WebhookEvent> & {};
@@ -77,63 +85,57 @@ export const handler = async (
     const channelAttributes = JSON.parse(channel.attributes);
 
     // Send message to bot only if it's from child
-    if (EventType === 'onMessageSent' && channelAttributes.fromServiceUser === From) {
-      const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
-      const lexClient = require(handlerPath) as LexClient;
+    if (EventType === 'onMessageSent' && channelAttributes.serviceUserIdentity === From) {
+      const lexClient = require(Runtime.getFunctions()['helpers/lexClient'].path) as LexClient;
+
+      const capturedChannelAttributes =
+        channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
       const lexResponse = await lexClient.postText(context, {
-        botName: channelAttributes.channelCapturedByBot.botName,
-        botAlias: channelAttributes.channelCapturedByBot.botAlias,
+        botName: capturedChannelAttributes.botName,
+        botAlias: capturedChannelAttributes.botAlias,
+        userId: capturedChannelAttributes.userId,
         inputText: Body,
-        userId: channel.sid,
       });
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
+        const memory = lexResponse.slots || {};
+
         const releasedChannelAttributes = {
-          ...omit(channelAttributes, 'channelCapturedByBot'),
-          memory: lexResponse.slots,
-          preSurveyComplete: true,
+          ...omit(channelAttributes, ['capturedChannelAttributes']),
+          ...(capturedChannelAttributes.memoryAttribute
+            ? { [capturedChannelAttributes.memoryAttribute]: memory }
+            : { memory }),
+          ...(capturedChannelAttributes.releaseFlag && {
+            [capturedChannelAttributes.releaseFlag]: true,
+          }),
         };
 
-        // TODO: This is now only assuming pre-survey bot. We should have a way to specify what's the next step after the bot execution is ended
-        const nextAction = () =>
-          channel.webhooks().create({
-            type: 'studio',
-            configuration: {
-              flowSid: channelAttributes.channelCapturedByBot.studioFlowSid,
-            },
-          });
+        const channelCaptureHandlers = require(Runtime.getFunctions()[
+          'channelCapture/channelCaptureHandlers'
+        ].path) as ChannelCaptureHandlers;
 
         await Promise.all([
           // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
           lexClient.deleteSession(context, {
-            botName: channelAttributes.channelCapturedByBot.botName,
-            botAlias: channelAttributes.channelCapturedByBot.botAlias,
+            botName: capturedChannelAttributes.botName,
+            botAlias: capturedChannelAttributes.botAlias,
             userId: channel.sid,
           }),
           // Update channel attributes (remove channelCapturedByBot and add memory)
           channel.update({
             attributes: JSON.stringify(releasedChannelAttributes),
           }),
-          // Move control task to complete state
-          (async () => {
-            try {
-              await client.taskrouter.v1
-                .workspaces(context.TWILIO_WORKSPACE_SID)
-                .tasks(channelAttributes.controlTaskSid)
-                .update({ assignmentStatus: 'completed' });
-            } catch (err) {
-              console.log(err);
-            }
-          })(),
           // Remove this webhook from the channel
-          channel
-            .webhooks()
-            .get(channelAttributes.channelCapturedByBot.chatbotCallbackWebhookSid)
-            .remove(),
+          channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
           // Trigger the next step once the channel is released
-          nextAction(),
+          channelCaptureHandlers.handleChannelRelease(
+            context,
+            channel,
+            capturedChannelAttributes,
+            memory,
+          ),
         ]);
 
         console.log('Channel unblocked and bot session deleted');

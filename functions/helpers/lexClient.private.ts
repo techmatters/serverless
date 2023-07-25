@@ -15,13 +15,15 @@
  */
 import AWS from 'aws-sdk';
 
-type AWSCredentials = {
+export type AWSCredentials = {
   ASELO_APP_ACCESS_KEY: string;
   ASELO_APP_SECRET_KEY: string;
   AWS_REGION: string;
 };
 
 export type BotType = 'pre_survey' | 'post_survey';
+
+export type LexMemory = { [q: string]: string | number };
 
 export const postText = async (
   credentials: AWSCredentials,
