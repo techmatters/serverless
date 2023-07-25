@@ -29,6 +29,7 @@ import type { TransferMeta } from './transfersListener.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
 import type { AWSCredentials } from '../helpers/lexClient.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
+import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
@@ -104,16 +105,23 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /** ==================== */
       // TODO: Once all accounts are ready to manage triggering post survey on task wrap within taskRouterCallback, the check on post_survey_serverless_handled can be removed
       if (featureFlags.enable_post_survey && featureFlags.post_survey_serverless_handled) {
-        const { channelSid } = taskAttributes;
+        const channelToFlex = require(Runtime.getFunctions()[
+          'helpers/customChannels/customChannelToFlex'
+        ].path) as ChannelToFlex;
 
-        const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
+        // TODO: Remove this once all accounts are migrated to Lex
+        // Only trigger post survey if handled by Lex or if is not a custom channel
+        if (featureFlags.enable_lex || !channelToFlex.isAseloCustomChannel(taskAttributes)) {
+          const { channelSid } = taskAttributes;
 
-        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
-        const postSurveyInitHandler = require(handlerPath)
-          .postSurveyInitHandler as PostSurveyInitHandler;
+          const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-        await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+          const handlerPath = Runtime.getFunctions().postSurveyInit.path;
+          const postSurveyInitHandler = require(handlerPath)
+            .postSurveyInitHandler as PostSurveyInitHandler;
 
+          await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+        }
         console.log('Finished handling post survey trigger.');
       }
     }
