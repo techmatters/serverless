@@ -17,7 +17,7 @@
 import { get } from 'lodash';
 // eslint-disable-next-line prettier/prettier
 import type { AutopilotMemory } from '../postSurveyComplete.protected';
-import type { LexMemory } from './lexClient.private';
+import type { LexMemory } from '../channelCapture/lexClient.private';
 import type { OneToManyConfigSpec } from './insightsService.private';
 
 export type PostSurveyData = { [question: string]: string | number };
