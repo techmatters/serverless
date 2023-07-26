@@ -252,6 +252,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         transferMeta: {
           ...originalAttributes.transferMeta,
           sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+          transferStatus: 'rejected',
         },
       };
 
