@@ -31,7 +31,8 @@ import {
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
-import { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
+import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
+import type { ChatTransferTaskAttributes, TransferHelpers } from '../transfer/helpers.private';
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -61,7 +62,11 @@ const isCleanupBotCapture = (
 
 const isCleanupCustomChannel = (
   eventType: EventType,
-  taskAttributes: { channelType?: string; isChatCaptureControl?: boolean },
+  taskSid: string,
+  taskAttributes: {
+    channelType?: string;
+    isChatCaptureControl?: boolean;
+  } & ChatTransferTaskAttributes,
 ) => {
   if (
     !(
@@ -78,6 +83,13 @@ const isCleanupCustomChannel = (
   ].path) as ChannelCaptureHandlers;
 
   if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    return false;
+  }
+
+  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
+    .path) as TransferHelpers;
+
+  if (transferHelers.hasTaskControl(taskSid, taskAttributes)) {
     return false;
   }
 
@@ -100,7 +112,7 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
-    const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
+    const { EventType: eventType, TaskAttributes: taskAttributesString, TaskSid: taskSid } = event;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
@@ -118,7 +130,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    if (isCleanupCustomChannel(eventType, taskAttributes)) {
+    if (isCleanupCustomChannel(eventType, taskSid, taskAttributes)) {
       console.log('Handling clean up custom channel...');
 
       const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)

@@ -25,7 +25,7 @@ import {
   EventType,
   TASK_WRAPUP,
 } from '@tech-matters/serverless-helpers/taskrouter';
-import type { TransferMeta } from './transfersListener.private';
+import type { TransferMeta } from '../transfer/helpers.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
 import type { AWSCredentials } from '../channelCapture/lexClient.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';

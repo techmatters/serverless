@@ -30,6 +30,7 @@ import {
   TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
+import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
@@ -42,17 +43,6 @@ export const eventTypes: EventType[] = [
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-};
-
-export type TransferMeta = {
-  mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
-  sidWithTaskControl: string;
-};
-
-type ChatTransferTaskAttributes = {
-  transferMeta?: TransferMeta;
-  transferTargetType: 'worker' | 'queue';
 };
 
 const isChatTransfer = (
