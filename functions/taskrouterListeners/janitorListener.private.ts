@@ -31,6 +31,7 @@ import {
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
+import { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -44,10 +45,24 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
-const isCleanupPostSurvey = (eventType: EventType, taskAttributes: { isSurveyTask?: boolean }) =>
-  (eventType === TASK_CANCELED || eventType === TASK_WRAPUP) && taskAttributes.isSurveyTask;
+// This applies to both pre-survey(isChatCaptureControl) and post-survey
+const isCleanupBotCapture = (
+  eventType: EventType,
+  taskAttributes: { isChatCaptureControl?: boolean },
+) => {
+  if (eventType === TASK_CANCELED) {
+    const channelCaptureHandlers = require(Runtime.getFunctions()[
+      'channelCapture/channelCaptureHandlers'
+    ].path) as ChannelCaptureHandlers;
+    return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
+  }
+  return false;
+};
 
-const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelType?: string }) => {
+const isCleanupCustomChannel = (
+  eventType: EventType,
+  taskAttributes: { channelType?: string; isChatCaptureControl?: boolean },
+) => {
   if (
     !(
       eventType === TASK_DELETED ||
@@ -58,8 +73,16 @@ const isCleanupCustomChannel = (eventType: EventType, taskAttributes: { channelT
     return false;
   }
 
-  const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
-  const channelToFlex = require(handlerPath) as ChannelToFlex;
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
+
+  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    return false;
+  }
+
+  const channelToFlex = require(Runtime.getFunctions()['helpers/customChannels/customChannelToFlex']
+    .path) as ChannelToFlex;
 
   return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
 };
@@ -83,23 +106,23 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     const taskAttributes = JSON.parse(taskAttributesString);
 
-    if (isCleanupPostSurvey(eventType, taskAttributes)) {
-      console.log('Handling clean up post-survey...');
+    if (isCleanupBotCapture(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
-      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
-      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
+      const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
+        .chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
 
-      console.log('Finished handling clean up post-survey.');
+      console.log('Finished handling clean up.');
+
       return;
     }
 
     if (isCleanupCustomChannel(eventType, taskAttributes)) {
       console.log('Handling clean up custom channel...');
 
-      const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
-      const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
+      const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
+        .chatChannelJanitor as ChatChannelJanitor;
       await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
 
       console.log('Finished handling clean up custom channel.');
