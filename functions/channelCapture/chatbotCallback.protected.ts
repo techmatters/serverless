@@ -27,7 +27,7 @@ import {
 } from '@tech-matters/serverless-helpers';
 import { omit } from 'lodash';
 import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
-import type { AWSCredentials, LexClient } from '../helpers/lexClient.private';
+import type { AWSCredentials, LexClient } from './lexClient.private';
 import type {
   CapturedChannelAttributes,
   ChannelCaptureHandlers,
@@ -86,7 +86,8 @@ export const handler = async (
 
     // Send message to bot only if it's from child
     if (EventType === 'onMessageSent' && channelAttributes.serviceUserIdentity === From) {
-      const lexClient = require(Runtime.getFunctions()['helpers/lexClient'].path) as LexClient;
+      const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient']
+        .path) as LexClient;
 
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;

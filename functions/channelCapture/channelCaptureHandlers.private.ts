@@ -20,7 +20,7 @@ import type { Context } from '@twilio-labs/serverless-runtime-types/types';
 import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
-import type { AWSCredentials, LexClient, LexMemory } from '../helpers/lexClient.private';
+import type { AWSCredentials, LexClient, LexMemory } from './lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
   BuildSurveyInsightsData,
@@ -171,7 +171,7 @@ const triggerWithUserMessage = async (
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
 
-  const handlerPath = Runtime.getFunctions()['helpers/lexClient'].path;
+  const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
   const lexClient = require(handlerPath) as LexClient;
 
   const lexResponse = await lexClient.postText(context, {

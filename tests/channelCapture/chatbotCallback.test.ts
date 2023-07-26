@@ -20,11 +20,8 @@ import {
   Body,
 } from '../../functions/channelCapture/chatbotCallback.protected';
 import helpers from '../helpers';
-import * as lexClient from '../../functions/helpers/lexClient.private';
+import * as lexClient from '../../functions/channelCapture/lexClient.private';
 import * as channelCaptureHandlers from '../../functions/channelCapture/channelCaptureHandlers.private';
-
-// jest.mock('../../functions/helpers/lexClient.private')
-// jest.mock('../../functions/channelCapture/channelCaptureHandlers.private');
 
 const mockCreateMessage = jest.fn();
 const mockRemoveWebhook = jest.fn();
@@ -100,7 +97,7 @@ const context = {
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(context);
-  runtime._addFunction('helpers/lexClient', 'functions/helpers/lexClient.private');
+  runtime._addFunction('channelCapture/lexClient', 'functions/channelCapture/lexClient.private');
   runtime._addFunction(
     'channelCapture/channelCaptureHandlers',
     'functions/channelCapture/channelCaptureHandlers.private',

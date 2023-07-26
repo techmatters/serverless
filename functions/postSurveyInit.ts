@@ -26,7 +26,7 @@ import {
 } from '@tech-matters/serverless-helpers';
 import axios from 'axios';
 import type { ChannelCaptureHandlers } from './channelCapture/channelCaptureHandlers.private';
-import type { AWSCredentials } from './helpers/lexClient.private';
+import type { AWSCredentials } from './channelCapture/lexClient.private';
 
 type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;

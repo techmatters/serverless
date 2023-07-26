@@ -27,7 +27,7 @@ import {
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { TransferMeta } from './transfersListener.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
-import type { AWSCredentials } from '../helpers/lexClient.private';
+import type { AWSCredentials } from '../channelCapture/lexClient.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 

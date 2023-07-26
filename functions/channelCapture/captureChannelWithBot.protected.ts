@@ -30,7 +30,7 @@ import type {
   ChannelCaptureHandlers,
   HandleChannelCaptureParams,
 } from './channelCaptureHandlers.private';
-import type { AWSCredentials } from '../helpers/lexClient.private';
+import type { AWSCredentials } from './lexClient.private';
 
 type EnvVars = {
   HELPLINE_CODE: string;
