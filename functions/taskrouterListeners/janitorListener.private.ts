@@ -89,7 +89,7 @@ const isCleanupCustomChannel = (
   const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
 
-  if (transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
     return false;
   }
 
