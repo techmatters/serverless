@@ -59,11 +59,6 @@ const isCleanupBotCapture = (
     'channelCapture/channelCaptureHandlers'
   ].path) as ChannelCaptureHandlers;
 
-  console.log(
-    'isCleanupBotCapture: ',
-    channelCaptureHandlers.isChatCaptureControlTask(taskAttributes),
-  );
-
   return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
 };
 
@@ -75,8 +70,6 @@ const isCleanupCustomChannel = (
     isChatCaptureControl?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
-  console.log('[isCleanupCustomChannel] Entered isCleanupCustomChannel');
-
   if (
     !(
       eventType === TASK_DELETED ||
@@ -88,20 +81,11 @@ const isCleanupCustomChannel = (
   }
 
   if (isCleanupBotCapture(eventType, taskAttributes)) {
-    console.log(
-      '[isCleanupCustomChannel] isCleanupBotCapture: ',
-      isCleanupBotCapture(eventType, taskAttributes),
-    );
     return false;
   }
 
   const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
-
-  console.log(
-    '[isCleanupCustomChannel] hasTaskControl',
-    transferHelers.hasTaskControl(taskSid, taskAttributes),
-  );
 
   if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
     return false;
@@ -109,11 +93,6 @@ const isCleanupCustomChannel = (
 
   const channelToFlex = require(Runtime.getFunctions()['helpers/customChannels/customChannelToFlex']
     .path) as ChannelToFlex;
-
-  console.log(
-    '[isCleanupCustomChannel] isAseloCustomChannel',
-    channelToFlex.isAseloCustomChannel(taskAttributes.channelType),
-  );
 
   return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
 };
