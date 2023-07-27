@@ -26,3 +26,4 @@ jobs:
       environment_code: 'STG'
       environment: 'staging'
       changelog: 'Deploying individual account'
+      send-slack-message: false

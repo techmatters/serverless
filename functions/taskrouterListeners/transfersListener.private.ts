@@ -222,7 +222,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * 2) Cancel rejected task
      */
     if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling chat transfer rejected...');
+      console.log('Handling isChatTransferToWorkerRejected...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
