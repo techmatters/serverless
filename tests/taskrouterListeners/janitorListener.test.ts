@@ -166,4 +166,34 @@ describe('isCleanupCustomChannel', () => {
       expect(mockChannelJanitor).not.toHaveBeenCalled();
     },
   );
+
+  each([
+    ...Object.values(AseloCustomChannels).map((channelType) => ({
+      description: `is rejected transfer task for channelType ${channelType}`,
+      taskAttributes: {
+        ...customChannelTaskAttributes,
+        channelType,
+        transferMeta: { sidWithTaskControl: 'not this task' },
+      },
+    })),
+    ...['web', 'sms', 'whatsapp', 'facebook'].map((channelType) => ({
+      description: `is not custom channel (channelType ${channelType})`,
+      taskAttributes: {
+        ...customChannelTaskAttributes,
+        channelType,
+      },
+    })),
+  ]).test(
+    'canceled task for custom channel $description, should not trigger janitor',
+    async ({ taskAttributes }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: TASK_CANCELED as EventType,
+        TaskAttributes: JSON.stringify(taskAttributes),
+      };
+      await janitorListener.handleEvent(context, event);
+
+      expect(mockChannelJanitor).not.toHaveBeenCalled();
+    },
+  );
 });
