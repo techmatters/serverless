@@ -196,4 +196,25 @@ describe('isCleanupCustomChannel', () => {
       expect(mockChannelJanitor).not.toHaveBeenCalled();
     },
   );
+  each(
+    Object.values(AseloCustomChannels).flatMap((channelType) =>
+      [TASK_DELETED, TASK_SYSTEM_DELETED].map((eventType) => ({
+        description: `is capture control task for channelType ${channelType}`,
+        eventType,
+        taskAttributes: { ...captureControlTaskAttributes, channelType },
+      })),
+    ),
+  ).test(
+    '$eventType for custom channel $description, should not trigger janitor',
+    async ({ taskAttributes, eventType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify(taskAttributes),
+      };
+      await janitorListener.handleEvent(context, event);
+
+      expect(mockChannelJanitor).not.toHaveBeenCalled();
+    },
+  );
 });
