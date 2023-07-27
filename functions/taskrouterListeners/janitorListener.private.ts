@@ -80,7 +80,11 @@ const isCleanupCustomChannel = (
     return false;
   }
 
-  if (isCleanupBotCapture(eventType, taskAttributes)) {
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
+
+  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
     return false;
   }
 
