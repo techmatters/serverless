@@ -217,7 +217,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * 1) Adjust original task attributes:
      *    - channelSid: from 'CH00000000000000000000000000000000' to original channelSid
      *    - transferMeta.sidWithTaskControl: to original reservation
-     * 2) Cancel rejected task
+     * 2) Adjust the transfer rejected task attributes
+     *    - channelSid: from original channelSid to 'CH00000000000000000000000000000000'
+     * 3) Cancel rejected task
      */
     if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer rejected...');
@@ -225,37 +227,47 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      const originalTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
-        .fetch();
+      const [originalTask, rejectedTask] = await Promise.all([
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).fetch(),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).fetch(),
+      ]);
+
+      const { channelSid } = taskAttributes;
 
       const { attributes: attributesRaw } = originalTask;
       const originalAttributes = JSON.parse(attributesRaw);
 
-      const { channelSid } = taskAttributes;
-      const attributesWithChannelSid = {
+      const transferMeta = {
+        ...originalAttributes.transferMeta,
+        sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+        transferStatus: 'rejected',
+      };
+
+      const updatedOriginalTaskAttributes = {
         ...originalAttributes,
+        transferMeta,
         channelSid,
-        transferMeta: {
-          ...originalAttributes.transferMeta,
-          sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
-          transferStatus: 'rejected',
-        },
+      };
+
+      const updatedRejectedTaskAttributes = {
+        ...JSON.parse(rejectedTask.attributes),
+        transferMeta,
+        channelSid: 'CH00000000000000000000000000000000',
       };
 
       await Promise.all([
-        client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(originalTaskSid)
-          .update({
-            attributes: JSON.stringify(attributesWithChannelSid),
-          }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-          assignmentStatus: 'canceled',
-          reason: 'task transferred rejected',
+        originalTask.update({
+          attributes: JSON.stringify(updatedOriginalTaskAttributes),
+        }),
+        rejectedTask.update({
+          attributes: JSON.stringify(updatedRejectedTaskAttributes),
         }),
       ]);
+
+      await rejectedTask.update({
+        assignmentStatus: 'canceled',
+        reason: 'task transferred rejected',
+      });
 
       console.log('Finished handling chat transfer rejected.');
       return;
