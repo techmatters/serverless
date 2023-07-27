@@ -14,8 +14,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-/* eslint-disable global-require */
-/* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 

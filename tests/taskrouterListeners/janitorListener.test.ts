@@ -80,6 +80,7 @@ beforeAll(() => {
     'channelCapture/channelCaptureHandlers',
     'functions/channelCapture/channelCaptureHandlers.private',
   );
+  runtime._addFunction('transfer/helpers', 'functions/transfer/helpers.private');
   helpers.setup({}, runtime);
 });
 afterAll(() => {

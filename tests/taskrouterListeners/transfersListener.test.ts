@@ -259,6 +259,7 @@ describe('Chat transfers', () => {
         transferMeta: {
           ...taskAttributes.transferMeta,
           sidWithTaskControl: 'originalReservation-sid',
+          transferStatus: 'rejected',
         },
       };
 
