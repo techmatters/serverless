@@ -14,8 +14,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-/* eslint-disable global-require */
-/* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
@@ -30,6 +28,7 @@ import {
   TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
+import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
@@ -42,17 +41,6 @@ export const eventTypes: EventType[] = [
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-};
-
-export type TransferMeta = {
-  mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
-  sidWithTaskControl: string;
-};
-
-type ChatTransferTaskAttributes = {
-  transferMeta?: TransferMeta;
-  transferTargetType: 'worker' | 'queue';
 };
 
 const isChatTransfer = (
@@ -229,7 +217,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * 1) Adjust original task attributes:
      *    - channelSid: from 'CH00000000000000000000000000000000' to original channelSid
      *    - transferMeta.sidWithTaskControl: to original reservation
-     * 2) Cancel rejected task
+     * 2) Adjust the transfer rejected task attributes
+     *    - channelSid: from original channelSid to 'CH00000000000000000000000000000000'
+     * 3) Cancel rejected task
      */
     if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer rejected...');
@@ -237,36 +227,47 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      const originalTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
-        .fetch();
+      const [originalTask, rejectedTask] = await Promise.all([
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).fetch(),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).fetch(),
+      ]);
+
+      const { channelSid } = taskAttributes;
 
       const { attributes: attributesRaw } = originalTask;
       const originalAttributes = JSON.parse(attributesRaw);
 
-      const { channelSid } = taskAttributes;
-      const attributesWithChannelSid = {
+      const transferMeta = {
+        ...originalAttributes.transferMeta,
+        sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+        transferStatus: 'rejected',
+      };
+
+      const updatedOriginalTaskAttributes = {
         ...originalAttributes,
+        transferMeta,
         channelSid,
-        transferMeta: {
-          ...originalAttributes.transferMeta,
-          sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
-        },
+      };
+
+      const updatedRejectedTaskAttributes = {
+        ...JSON.parse(rejectedTask.attributes),
+        transferMeta,
+        channelSid: 'CH00000000000000000000000000000000',
       };
 
       await Promise.all([
-        client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(originalTaskSid)
-          .update({
-            attributes: JSON.stringify(attributesWithChannelSid),
-          }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-          assignmentStatus: 'canceled',
-          reason: 'task transferred rejected',
+        originalTask.update({
+          attributes: JSON.stringify(updatedOriginalTaskAttributes),
+        }),
+        rejectedTask.update({
+          attributes: JSON.stringify(updatedRejectedTaskAttributes),
         }),
       ]);
+
+      await rejectedTask.update({
+        assignmentStatus: 'canceled',
+        reason: 'task transferred rejected',
+      });
 
       console.log('Finished handling chat transfer rejected.');
       return;
