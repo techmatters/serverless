@@ -30,8 +30,9 @@ const workspaces: { [x: string]: any } = {
   WSxxx: {
     tasks: {
       create: async (options: any) => {
-        if (JSON.parse(options.attributes).helpline === 'intentionallyThrow')
+        if (JSON.parse(options.attributes).helpline === 'intentionallyThrow') {
           throw new Error('Intentionally thrown error');
+        }
 
         tasks = [...tasks, { sid: Math.random(), ...options }];
       },

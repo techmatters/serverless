@@ -111,7 +111,7 @@ export const handler = TokenValidator(
 
       // If action is "complete", we want to update the task attributes to it's final form and complete it
       if (action === 'complete') {
-        const { taskSid, finalTaskAttributes } = event;
+        const { finalTaskAttributes } = event;
 
         if (finalTaskAttributes === undefined) {
           resolve(error400('finalTaskAttributes'));

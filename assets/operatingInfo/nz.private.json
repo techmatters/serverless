@@ -1,0 +1,19 @@
+{
+  "timezone": "Pacific/Auckland",
+  "holidays": {
+    "12/25/2023":"Christmas",
+    "01/01/2024":"New Years Day"
+  
+  },
+  "operatingHours": {
+    "webchat": {
+      "1": [{ "open": 800, "close": 2359 }],
+      "2": [{ "open": 800, "close": 2359 }],
+      "3": [{ "open": 800, "close": 2359 }],
+      "4": [{ "open": 800, "close": 2359 }],
+      "5": [{ "open": 800, "close": 2359 }],
+      "6": [{ "open": 800, "close": 2359 }],
+      "7": [{ "open": 800, "close": 2359 }]
+    }
+  }
+}

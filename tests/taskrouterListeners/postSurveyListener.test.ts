@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /**
  * Copyright (C) 2021-2023 Technology Matters
  * This program is free software: you can redistribute it and/or modify
@@ -32,21 +33,12 @@ import each from 'jest-each';
 import * as postSurveyListener from '../../functions/taskrouterListeners/postSurveyListener.private';
 import * as postSurveyInit from '../../functions/postSurveyInit';
 import { AseloCustomChannels } from '../../functions/helpers/customChannels/customChannelToFlex.private';
-
-const functions = {
-  postSurveyInit: {
-    path: '../postSurveyInit',
-  },
-  'helpers/customChannels/customChannelToFlex': {
-    path: '../helpers/customChannels/customChannelToFlex.private.ts',
-  },
-};
-global.Runtime.getFunctions = () => functions;
+import helpers from '../helpers';
 
 jest.mock('../../functions/postSurveyInit');
 
-// const mockFeatureFlags = {};
-// const mockFetchConfig = jest.fn(() => ({ attributes: { feature_flags: mockFeatureFlags } }));
+const defaultFeatureFlags = { enable_lex: false }; // Just give compatibility for legacy tests for now. TODO: add tests for the new schema
+
 const mockFetchConfig = jest.fn();
 const context = {
   ...mock<Context<postSurveyListener.EnvVars>>(),
@@ -59,8 +51,38 @@ const context = {
       },
     },
   }),
+  flexApi: {
+    configuration: () => ({
+      get: () => ({
+        fetch: () => ({
+          serviceConfig: {
+            attributes: {
+              feature_flags: defaultFeatureFlags,
+            },
+          },
+        }),
+      }),
+    }),
+  },
   TWILIO_WORKSPACE_SID: 'WSxxx',
 };
+
+beforeAll(() => {
+  const runtime = new helpers.MockRuntime(context);
+  runtime._addFunction('postSurveyInit', 'functions/postSurveyInit');
+  runtime._addFunction(
+    'helpers/customChannels/customChannelToFlex',
+    'functions/helpers/customChannels/customChannelToFlex.private',
+  );
+  runtime._addFunction(
+    'channelCapture/channelCaptureHandlers',
+    'functions/channelCapture/channelCaptureHandlers.private',
+  );
+  helpers.setup({}, runtime);
+});
+afterAll(() => {
+  helpers.teardown();
+});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -122,17 +144,6 @@ describe('Post survey init', () => {
       },
       rejectReason: 'is not chat task',
     },
-    {
-      task: {
-        ...successfullyTrasferred,
-        taskChannelUniqueName: 'chat',
-        attributes: {
-          ...successfullyTrasferred.attributes,
-          transferMeta: { sidWithTaskControl: 'a-different-one' },
-        },
-      },
-      rejectReason: 'does not have task controll (incomplete/rejected transfer)',
-    },
     ...Object.values(AseloCustomChannels).map((channelType) => ({
       task: {
         ...nonTrasferred,
@@ -144,18 +155,18 @@ describe('Post survey init', () => {
     {
       task: nonTrasferred,
       isCandidate: true,
-      featureFlags: { enable_post_survey: true, post_survey_serverless_handled: false },
-      rejectReason: 'is candidate but post_survey_serverless_handled === false',
+      featureFlags: { enable_post_survey: true },
+      rejectReason: 'is candidate with enable_post_survey === true',
     },
     {
       task: nonTrasferred,
       isCandidate: true,
-      featureFlags: { enable_post_survey: false, post_survey_serverless_handled: true },
+      featureFlags: { enable_post_survey: false },
       rejectReason: 'is candidate but enable_post_survey === false',
     },
   ]).test(
     'Task should not trigger post survey because $rejectReason',
-    async ({ task, featureFlags, isCandidate }) => {
+    async ({ task, featureFlags }) => {
       const event = {
         ...mock<EventFields>(),
         EventType: TASK_WRAPUP as EventType,
@@ -165,25 +176,37 @@ describe('Post survey init', () => {
       };
 
       mockFetchConfig.mockReturnValue({
-        attributes: { feature_flags: featureFlags || {} },
+        attributes: { feature_flags: { ...defaultFeatureFlags, ...(featureFlags || {}) } },
       });
 
       const postSurveyInitHandlerSpy = jest.spyOn(postSurveyInit, 'postSurveyInitHandler');
 
       await postSurveyListener.handleEvent(context, event);
 
-      // If isCandidate, it will reach service config checks
-      if (isCandidate) {
-        expect(mockFetchConfig).toHaveBeenCalled();
+      if (featureFlags && featureFlags.enable_post_survey) {
+        expect(postSurveyInitHandlerSpy).toHaveBeenCalled();
       } else {
-        expect(mockFetchConfig).not.toHaveBeenCalled();
+        expect(postSurveyInitHandlerSpy).not.toHaveBeenCalled();
       }
-      expect(postSurveyInitHandlerSpy).not.toHaveBeenCalled();
     },
   );
 
-  each([nonTrasferred, successfullyTrasferred].map((task) => ({ task }))).test(
-    'Task should trigger post survey for candidate taskSid $task.taskSid',
+  each([
+    { task: nonTrasferred },
+    { task: successfullyTrasferred },
+    {
+      task: {
+        ...successfullyTrasferred,
+        taskChannelUniqueName: 'chat',
+        attributes: {
+          ...successfullyTrasferred.attributes,
+          transferMeta: { sidWithTaskControl: 'a-different-one' },
+        },
+      },
+      extraDescription: 'even if does not have task control (in progress/rejected transfer)',
+    },
+  ]).test(
+    'Task should trigger post survey for candidate taskSid $task.taskSid $extraDescription',
     async ({ task }) => {
       const event = {
         ...mock<EventFields>(),
@@ -195,13 +218,13 @@ describe('Post survey init', () => {
 
       mockFetchConfig.mockReturnValue({
         attributes: {
-          feature_flags: { enable_post_survey: true, post_survey_serverless_handled: true },
+          feature_flags: { enable_post_survey: true },
         },
       });
 
       const postSurveyInitHandlerSpy = jest
         .spyOn(postSurveyInit, 'postSurveyInitHandler')
-        .mockImplementationOnce(async () => {});
+        .mockImplementationOnce(async () => ({} as any));
 
       await postSurveyListener.handleEvent(context, event);
 

@@ -24,7 +24,6 @@ import {
 } from '@twilio-labs/serverless-runtime-types/types';
 // We use axios instead of node-fetch in this repo because the later one raises a run time error when trying to import it. The error is related to how JS modules are loaded.
 import axios from 'axios';
-// eslint-disable-next-line prettier/prettier
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import type {
   BuildSurveyInsightsData,
@@ -32,7 +31,7 @@ import type {
 } from './helpers/insightsService.private';
 import type { BuildDataObject, PostSurveyData } from './helpers/hrmDataManipulation.private';
 
-export type BotMemory = {
+export type AutopilotMemory = {
   memory: {
     twilio: { collected_data: { collect_survey: { [question: string]: string | number } } };
   };
@@ -57,9 +56,12 @@ type EnvVars = {
   HRM_STATIC_KEY: string;
 };
 
+const pathBuilder = (question: string) =>
+  `twilio.collected_data.collect_survey.answers.${question}.answer`;
+
 const saveSurveyInInsights = async (
   postSurveyConfigJson: OneToManyConfigSpec[],
-  memory: BotMemory,
+  memory: AutopilotMemory,
   surveyTask: TaskInstance,
   surveyTaskAttributes: any,
 ) => {
@@ -71,6 +73,7 @@ const saveSurveyInInsights = async (
     postSurveyConfigJson,
     surveyTaskAttributes,
     memory,
+    pathBuilder,
   );
 
   await surveyTask.update({ attributes: JSON.stringify(finalAttributes) });
@@ -78,7 +81,7 @@ const saveSurveyInInsights = async (
 
 const saveSurveyInHRM = async (
   postSurveyConfigJson: OneToManyConfigSpec[],
-  memory: BotMemory,
+  memory: AutopilotMemory,
   surveyTask: TaskInstance,
   surveyTaskAttributes: any,
   hrmBaseUrl: string,
@@ -87,7 +90,7 @@ const saveSurveyInHRM = async (
   const handlerPath = Runtime.getFunctions()['helpers/hrmDataManipulation'].path;
   const buildDataObject = require(handlerPath).buildDataObject as BuildDataObject;
 
-  const data = buildDataObject(postSurveyConfigJson, memory);
+  const data = buildDataObject(postSurveyConfigJson, memory, pathBuilder);
 
   const body: PostSurveyBody = {
     contactTaskId: surveyTaskAttributes.contactTaskId,
@@ -106,18 +109,22 @@ const saveSurveyInHRM = async (
   });
 };
 
-const getPostSurveyCompleteMessage = (taskLanguage: string | undefined): string => {
+const getPostSurveyCompleteMessage = async (
+  context: Context,
+  taskLanguage: string | undefined,
+): Promise<string> => {
   try {
     const language = taskLanguage || 'en-US';
 
-    const translation = JSON.parse(
-      Runtime.getAssets()[`/translations/${language}/postSurveyMessages.json`].open(),
+    const response = await axios.get(
+      `https://${context.DOMAIN_NAME}/translations/${language}/postSurveyMessages.json`,
     );
+    const translation = response.data;
 
-    if (translation.postSurvetCompleteMessage) return translation.postSurvetCompleteMessage;
+    if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
     console.error(
-      `Couldn't retrieve postSurvetCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
+      `Couldn't retrieve postSurveyCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
     );
   }
 
@@ -147,6 +154,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       if (channelAttributes.surveyTaskSid) {
         // get the postSurvey definition
         const serviceConfig = await client.flexApi.configuration.get().fetch();
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         const { definitionVersion, hrm_base_url, hrm_api_version } = serviceConfig.attributes;
         const postSurveyConfigJson =
           Runtime.getAssets()[`/formDefinitions/${definitionVersion}/insights/postSurvey.json`];
@@ -196,7 +204,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
       }
     }
 
-    const say = getPostSurveyCompleteMessage(taskLanguage);
+    const say = await getPostSurveyCompleteMessage(context, taskLanguage);
 
     // This is the tasks that are sent back to the bot. For now, it just sends a thanks message before finishing bot's execution.
     const actions = [

@@ -66,7 +66,11 @@ export const handler = TokenValidator(
         region: AWS_REGION,
       });
 
-      const s3Client = new AWS.S3(S3_ENDPOINT ? { endpoint: S3_ENDPOINT } : {});
+      const s3Client = new AWS.S3(
+        S3_ENDPOINT
+          ? { endpoint: S3_ENDPOINT, s3ForcePathStyle: true, signatureVersion: 'v4' }
+          : { signatureVersion: 'v4' },
+      );
       const uploadUrl = await s3Client.getSignedUrl('putObject', getUrlParams);
 
       resolve(success({ uploadUrl, fileNameAtAws }));

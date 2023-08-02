@@ -80,6 +80,7 @@ const getSaveContactFn = (
           : resolveCallback(callbackPayload);
       };
 
+      // eslint-disable-next-line no-promise-executor-return
       return saveContactHandler(context, { ...event, payload }, callback);
     });
 };
@@ -95,8 +96,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
   const { SYNC_SERVICE_SID, SAVE_CONTACT_FN, SAVE_PENDING_CONTACTS_STATIC_KEY } = context;
 
   if (!SAVE_CONTACT_FN) throw new Error('SAVE_CONTACT_FN env var not provided.');
-  if (!SAVE_PENDING_CONTACTS_STATIC_KEY)
+  if (!SAVE_PENDING_CONTACTS_STATIC_KEY) {
     throw new Error('SAVE_PENDING_CONTACTS_STATIC_KEY env var not provided.');
+  }
 
   const isValid = await isValidRequest(context, event);
 

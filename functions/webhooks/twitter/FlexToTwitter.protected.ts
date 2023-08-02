@@ -121,7 +121,13 @@ export const handler = async (
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
-    const sanitizedEvent = { Body, From, ChannelSid, EventType, Source };
+    const sanitizedEvent = {
+      Body,
+      From,
+      ChannelSid,
+      EventType,
+      Source,
+    };
 
     const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
       event: sanitizedEvent,

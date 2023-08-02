@@ -67,12 +67,21 @@ export type Body = {
   request: Request;
 };
 
+// https://gist.github.com/jirawatee/366d6bef98b137131ab53dfa079bd0a4 - but fixed :facepalm:
+// We get signature mismatches when emojis are present in the payload because the signature on the line side seems to have been generated using escaped versions of emoji unicode characters
+const fixUnicodeForLine = (text: string): string =>
+  text.replace(/\p{Emoji_Presentation}/gu, (emojiChars) =>
+    emojiChars
+      .split('')
+      .map((c) => `\\u${c.charCodeAt(0).toString(16).toUpperCase()}`)
+      .join(''),
+  );
+
 /**
  * Validates that the payload is signed with LINE_CHANNEL_SECRET so we know it's comming from Line
  */
 const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => {
   const xLineSignature = event.request.headers['x-line-signature'];
-
   if (!xLineSignature) return false;
 
   // Twilio Serverless adds a 'request' property the payload
@@ -81,15 +90,10 @@ const isValidLinePayload = (event: Body, lineChannelSecret: string): boolean => 
 
   const expectedSignature = crypto
     .createHmac('sha256', lineChannelSecret)
-    .update(originalPayloadAsString)
+    .update(fixUnicodeForLine(originalPayloadAsString))
     .digest('base64');
 
-  const isValidRequest = crypto.timingSafeEqual(
-    Buffer.from(xLineSignature),
-    Buffer.from(expectedSignature),
-  );
-
-  return isValidRequest;
+  return crypto.timingSafeEqual(Buffer.from(xLineSignature), Buffer.from(expectedSignature));
 };
 
 export const handler = async (

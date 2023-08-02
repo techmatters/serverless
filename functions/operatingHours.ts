@@ -24,6 +24,7 @@ import {
   error400,
 } from '@tech-matters/serverless-helpers';
 import moment from 'moment-timezone';
+import axios from 'axios';
 
 type OperatingShift = { open: number; close: number };
 
@@ -116,18 +117,24 @@ const getOperatingStatus = (operatingInfo: OperatingInfo, channel: string, offic
   return status;
 };
 
-type Messages = {
+type Messages = Required<{
   ClosedOutOfShift?: string;
   ClosedHolidays?: string;
-};
-const getClosedMessage = (status: 'closed' | 'holiday', language: string = 'en-US'): string => {
+}>;
+
+const getClosedMessage = async (
+  context: Context,
+  status: 'closed' | 'holiday',
+  language: string = 'en-US',
+): Promise<string> => {
   const messageKey = status === 'closed' ? 'ClosedOutOfShift' : 'ClosedHolidays';
 
   // Try to get the translated message
   try {
-    const translation: Messages = JSON.parse(
-      Runtime.getAssets()[`/translations/${language}/messages.json`].open(),
+    const response = await axios.get<Messages>(
+      `https://${context.DOMAIN_NAME}/translations/${language}/messages.json`,
     );
+    const translation = response.data;
 
     const message = translation[messageKey];
     if (message) return message;
@@ -149,8 +156,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
-  const response = responseWithCors();
-  const resolve = bindResolve(callback)(response);
+  const res = responseWithCors();
+  const resolve = bindResolve(callback)(res);
 
   try {
     const { OPERATING_INFO_KEY, DISABLE_OPERATING_HOURS_CHECK } = context;
@@ -194,7 +201,7 @@ export const handler = async (
     // Return a the status and, if closed, the appropriate message
     const response = {
       status,
-      message: status === 'open' ? undefined : getClosedMessage(status, language),
+      message: status === 'open' ? undefined : await getClosedMessage(context, status, language),
     };
 
     resolve(success(response));

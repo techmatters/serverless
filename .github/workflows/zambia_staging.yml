@@ -16,13 +16,13 @@
 
 name: Zambia Staging deploy
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   deploy:
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
-      helpline_code: "ZM"
-      environment_code: "STG"
-      changelog: "Deploying individual account"
+      helpline_code: 'ZM'
+      environment_code: 'STG'
+      environment: 'staging'
+      changelog: 'Deploying individual account'

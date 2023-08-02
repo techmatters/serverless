@@ -20,6 +20,7 @@ import {
   RESERVATION_ACCEPTED,
   RESERVATION_REJECTED,
   RESERVATION_WRAPUP,
+  TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
@@ -237,41 +238,45 @@ describe('Chat transfers', () => {
     expect(tasks['second-task'].update).not.toHaveBeenCalled();
   });
 
-  test('rejected reservation for worker transfer - cancels transfer task & updates the original with transfer task changes', async () => {
-    const event = {
-      ...mock<EventFields>(),
-      EventType: RESERVATION_REJECTED as EventType,
-      TaskChannelUniqueName: 'chat',
-      TaskSid: 'second-task',
-      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
-    };
+  each([{ eventType: RESERVATION_REJECTED }, { eventType: TASK_CANCELED }]).test(
+    'event $eventType for worker transfer - cancels transfer task & updates the original with transfer task changes',
+    async ({ eventType }) => {
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType,
+        TaskChannelUniqueName: 'chat',
+        TaskSid: 'second-task',
+        TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
+      };
 
-    await transfersListener.handleEvent(context, event);
+      await transfersListener.handleEvent(context, event);
 
-    const taskAttributes = JSON.parse(tasks['second-task'].attributes);
+      const taskAttributes = JSON.parse(tasks['second-task'].attributes);
 
-    const attributesWithChannelSid = {
-      ...taskAttributes,
-      channelSid: 'channelSid',
-      transferMeta: {
-        ...taskAttributes.transferMeta,
-        sidWithTaskControl: 'originalReservation-sid',
-      },
-    };
+      const attributesWithChannelSid = {
+        ...taskAttributes,
+        channelSid: 'channelSid',
+        transferMeta: {
+          ...taskAttributes.transferMeta,
+          sidWithTaskControl: 'originalReservation-sid',
+          transferStatus: 'rejected',
+        },
+      };
 
-    const attributesPayload = {
-      attributes: JSON.stringify(attributesWithChannelSid),
-    };
+      const attributesPayload = {
+        attributes: JSON.stringify(attributesWithChannelSid),
+      };
 
-    const canceledPayload = {
-      assignmentStatus: 'canceled',
-      reason: 'task transferred rejected',
-    };
+      const canceledPayload = {
+        assignmentStatus: 'canceled',
+        reason: 'task transferred rejected',
+      };
 
-    console.log((tasks['original-task'].update as jest.Mock).mock.calls);
-    expect(tasks['original-task'].update).toHaveBeenCalledWith(attributesPayload);
-    expect(tasks['second-task'].update).toHaveBeenCalledWith(canceledPayload);
-  });
+      console.log((tasks['original-task'].update as jest.Mock).mock.calls);
+      expect(tasks['original-task'].update).toHaveBeenCalledWith(attributesPayload);
+      expect(tasks['second-task'].update).toHaveBeenCalledWith(canceledPayload);
+    },
+  );
 
   test('rejected reservation for queue transfer - does nothing', async () => {
     const event = {

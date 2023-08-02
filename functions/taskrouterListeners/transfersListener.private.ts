@@ -14,8 +14,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-/* eslint-disable global-require */
-/* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
@@ -27,30 +25,22 @@ import {
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
+import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
   RESERVATION_REJECTED,
   RESERVATION_TIMEOUT,
   RESERVATION_WRAPUP,
+  TASK_CANCELED,
   TASK_QUEUE_ENTERED,
 ];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
-};
-
-export type TransferMeta = {
-  mode: 'COLD' | 'WARM';
-  transferStatus: 'transferring' | 'accepted' | 'rejected';
-  sidWithTaskControl: string;
-};
-
-type ChatTransferTaskAttributes = {
-  transferMeta?: TransferMeta;
-  transferTargetType: 'worker' | 'queue';
 };
 
 const isChatTransfer = (
@@ -76,7 +66,9 @@ const isChatTransferToWorkerRejected = (
   taskChannelUniqueName: string,
   taskAttributes: ChatTransferTaskAttributes,
 ) =>
-  (eventType === RESERVATION_REJECTED || eventType === RESERVATION_TIMEOUT) &&
+  (eventType === RESERVATION_REJECTED ||
+    eventType === RESERVATION_TIMEOUT ||
+    eventType === TASK_CANCELED) &&
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'worker';
 
@@ -108,6 +100,53 @@ const isVoiceTransferOriginalInWrapup = (
   taskChannelUniqueName === 'voice' &&
   taskAttributes.transferMeta &&
   taskAttributes.transferMeta.transferStatus === 'accepted';
+
+const isWarmVoiceTransferTimedOut = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: { transferMeta?: TransferMeta },
+) =>
+  eventType === RESERVATION_TIMEOUT &&
+  taskChannelUniqueName === 'voice' &&
+  taskAttributes.transferMeta &&
+  taskAttributes.transferMeta.mode === 'WARM';
+
+/**
+ * updateWarmVoiceTransferAttributes is a DRY function that checks
+ * when warm voice transfer gets rejected or timeout
+ *
+ * If a warm voice transfer gets rejected, it should:
+ * 1) Adjust original task attributes:
+ *    - transferMeta.transferStatus: 'rejected'
+ *    - transferMeta.sidWithTaskControl: to original reservation
+ * Same applies to when transfer timeout
+ */
+const updateWarmVoiceTransferAttributes = async (
+  transferStatus: string,
+  context: Context<EnvVars>,
+  taskAttributes: { transferMeta: { originalReservation: string } },
+  taskSid: string,
+) => {
+  console.info(`Handling warm voice transfer ${transferStatus} with taskSid ${taskSid}...`);
+
+  const client = context.getTwilioClient();
+
+  const updatedAttributes = {
+    ...taskAttributes,
+    transferMeta: {
+      ...taskAttributes.transferMeta,
+      sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
+      transferStatus,
+    },
+  };
+
+  await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(taskSid)
+    .update({ attributes: JSON.stringify(updatedAttributes) });
+
+  console.info(`Finished handling warm voice transfer ${transferStatus} with taskSid ${taskSid}.`);
+};
 
 /**
  * Checks the event type to determine if the listener should handle the event or not.
@@ -178,7 +217,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * 1) Adjust original task attributes:
      *    - channelSid: from 'CH00000000000000000000000000000000' to original channelSid
      *    - transferMeta.sidWithTaskControl: to original reservation
-     * 2) Cancel rejected task
+     * 2) Adjust the transfer rejected task attributes
+     *    - channelSid: from original channelSid to 'CH00000000000000000000000000000000'
+     * 3) Cancel rejected task
      */
     if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer rejected...');
@@ -186,69 +227,59 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      const originalTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
-        .fetch();
+      const [originalTask, rejectedTask] = await Promise.all([
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).fetch(),
+        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).fetch(),
+      ]);
+
+      const { channelSid } = taskAttributes;
 
       const { attributes: attributesRaw } = originalTask;
       const originalAttributes = JSON.parse(attributesRaw);
 
-      const { channelSid } = taskAttributes;
-      const attributesWithChannelSid = {
+      const transferMeta = {
+        ...originalAttributes.transferMeta,
+        sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
+        transferStatus: 'rejected',
+      };
+
+      const updatedOriginalTaskAttributes = {
         ...originalAttributes,
+        transferMeta,
         channelSid,
-        transferMeta: {
-          ...originalAttributes.transferMeta,
-          sidWithTaskControl: originalAttributes.transferMeta.originalReservation,
-        },
+      };
+
+      const updatedRejectedTaskAttributes = {
+        ...JSON.parse(rejectedTask.attributes),
+        transferMeta,
+        channelSid: 'CH00000000000000000000000000000000',
       };
 
       await Promise.all([
-        client.taskrouter
-          .workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(originalTaskSid)
-          .update({
-            attributes: JSON.stringify(attributesWithChannelSid),
-          }),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).update({
-          assignmentStatus: 'canceled',
-          reason: 'task transferred rejected',
+        originalTask.update({
+          attributes: JSON.stringify(updatedOriginalTaskAttributes),
+        }),
+        rejectedTask.update({
+          attributes: JSON.stringify(updatedRejectedTaskAttributes),
         }),
       ]);
+
+      await rejectedTask.update({
+        assignmentStatus: 'canceled',
+        reason: 'task transferred rejected',
+      });
 
       console.log('Finished handling chat transfer rejected.');
       return;
     }
 
-    /**
-     * If a warm voice transfer gets rejected, it should:
-     * 1) Adjust original task attributes:
-     *    - transferMeta.transferStatus: 'rejected'
-     *    - transferMeta.sidWithTaskControl: to original reservation
-     */
     if (isWarmVoiceTransferRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling warm voice transfer rejected...');
+      await updateWarmVoiceTransferAttributes('rejected', context, taskAttributes, taskSid);
+      return;
+    }
 
-      const client = context.getTwilioClient();
-
-      const updatedAttributes = {
-        ...taskAttributes,
-        transferMeta: {
-          ...taskAttributes.transferMeta,
-          sidWithTaskControl: taskAttributes.transferMeta.originalReservation,
-          transferStatus: 'rejected',
-        },
-      };
-
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(taskSid)
-        .update({
-          attributes: JSON.stringify(updatedAttributes),
-        });
-
-      console.log('Finished handling warm voice transfer rejected.');
+    if (isWarmVoiceTransferTimedOut(eventType, taskChannelUniqueName, taskAttributes)) {
+      await updateWarmVoiceTransferAttributes('timeout', context, taskAttributes, taskSid);
       return;
     }
 
