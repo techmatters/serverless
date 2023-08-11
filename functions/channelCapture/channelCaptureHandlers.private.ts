@@ -207,11 +207,14 @@ const triggerWithNextMessage = async (
     memoryAttribute,
   }: CaptureChannelOptions,
 ) => {
+  console.log('triggerWithNextMessage executed');
   /** const messageResult = */
   await channel.messages().create({
     body: inputText,
     xTwilioWebhookEnabled: 'true',
   });
+
+  console.log('message sent', inputText);
 
   const chatbotCallbackWebhook = await channel.webhooks().create({
     type: 'webhook',
@@ -221,6 +224,13 @@ const triggerWithNextMessage = async (
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
   });
+
+  console.log(
+    'chatbotCallbackWebhook attached to channel',
+    chatbotCallbackWebhook,
+    'channel.sid',
+    channel.sid,
+  );
 
   // const updated =
   await updateChannelWithCapture(channel, {
@@ -234,6 +244,8 @@ const triggerWithNextMessage = async (
     memoryAttribute,
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
+
+  console.log('updateChannelWithCapture executed')
 };
 
 export type HandleChannelCaptureParams = {
