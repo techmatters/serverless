@@ -123,7 +123,7 @@ const getPostSurveyCompleteMessage = async (
 
     if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
-    console.error(
+    console.log(
       `Couldn't retrieve postSurveyCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
     );
   }
