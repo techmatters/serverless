@@ -123,7 +123,7 @@ const getTriggerMessage = async (
 
       if (translation.triggerMessage) return translation.triggerMessage;
     } catch {
-      console.error(`Couldn't retrieve triggerMessage translation for ${taskLanguage}`);
+      console.log(`Couldn't retrieve triggerMessage translation for ${taskLanguage}`);
     }
   }
 
