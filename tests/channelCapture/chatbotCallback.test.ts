@@ -102,6 +102,10 @@ beforeAll(() => {
     'channelCapture/channelCaptureHandlers',
     'functions/channelCapture/channelCaptureHandlers.private',
   );
+  runtime._addFunction(
+    'channelCapture/chatbotCallbackCleanup',
+    'functions/channelCapture/chatbotCallbackCleanup.protected',
+  );
   helpers.setup({}, runtime);
 });
 beforeEach(() => {
