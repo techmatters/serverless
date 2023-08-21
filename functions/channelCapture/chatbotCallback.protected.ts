@@ -97,12 +97,14 @@ export const handler = async (
       });
 
       if (lexResult.status === 'failure') {
+        console.log(lexResult.error.message);
         if (
           lexResult.error.message.includes(
             'Concurrent Client Requests: Encountered resource conflict while saving session data',
           )
         ) {
           console.log('Swallowed Concurrent Client Requests error');
+          resolve(success('Swallowed Concurrent Client Requests error'));
           return;
         }
 
