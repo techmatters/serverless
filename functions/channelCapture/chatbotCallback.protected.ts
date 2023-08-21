@@ -89,13 +89,27 @@ export const handler = async (
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
-      const lexResponse = await lexClient.postText(context, {
+      const lexResult = await lexClient.postText(context, {
         botName: capturedChannelAttributes.botName,
         botAlias: capturedChannelAttributes.botAlias,
         userId: capturedChannelAttributes.userId,
         inputText: Body,
       });
 
+      if (lexResult.status === 'failure') {
+        if (
+          lexResult.error.message.includes(
+            'Concurrent Client Requests: Encountered resource conflict while saving session data',
+          )
+        ) {
+          console.log('Swallowed Concurrent Client Requests error');
+          return;
+        }
+
+        throw lexResult.error;
+      }
+
+      const { lexResponse } = lexResult;
       // If the session ended, we should unlock the channel to continue the Studio Flow
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
         const { chatbotCallbackCleanup } = require(Runtime.getFunctions()[

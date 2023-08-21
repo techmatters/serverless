@@ -40,19 +40,23 @@ export const postText = async (
   },
 ) => {
   const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, AWS_REGION } = credentials;
-  AWS.config.update({
-    credentials: {
-      accessKeyId: ASELO_APP_ACCESS_KEY,
-      secretAccessKey: ASELO_APP_SECRET_KEY,
-    },
-    region: AWS_REGION,
-  });
+  try {
+    AWS.config.update({
+      credentials: {
+        accessKeyId: ASELO_APP_ACCESS_KEY,
+        secretAccessKey: ASELO_APP_SECRET_KEY,
+      },
+      region: AWS_REGION,
+    });
 
-  const Lex = new AWS.LexRuntime();
+    const Lex = new AWS.LexRuntime();
 
-  const lexResponse = await Lex.postText({ botName, botAlias, inputText, userId }).promise();
+    const lexResponse = await Lex.postText({ botName, botAlias, inputText, userId }).promise();
 
-  return lexResponse;
+    return { status: 'success', lexResponse } as const;
+  } catch (error) {
+    return { status: 'failure', error } as { status: 'failure'; error: Error };
+  }
 };
 
 export const isEndOfDialog = (dialogState: string | undefined) =>
