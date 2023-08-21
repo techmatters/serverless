@@ -25,13 +25,10 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import { omit } from 'lodash';
 import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
 import type { AWSCredentials, LexClient } from './lexClient.private';
-import type {
-  CapturedChannelAttributes,
-  ChannelCaptureHandlers,
-} from './channelCaptureHandlers.private';
+import type { CapturedChannelAttributes } from './channelCaptureHandlers.private';
+import type { ChatbotCallbackCleanupModule } from './chatbotCallbackCleanup.protected';
 
 type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
@@ -101,45 +98,17 @@ export const handler = async (
 
       // If the session ended, we should unlock the channel to continue the Studio Flow
       if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
-        const memory = lexResponse.slots || {};
+        const { chatbotCallbackCleanup } = require(Runtime.getFunctions()[
+          'channelCapture/chatbotCallbackCleanup'
+        ].path) as ChatbotCallbackCleanupModule;
 
-        const releasedChannelAttributes = {
-          ...omit(channelAttributes, ['capturedChannelAttributes']),
-          ...(capturedChannelAttributes.memoryAttribute
-            ? { [capturedChannelAttributes.memoryAttribute]: memory }
-            : { memory }),
-          ...(capturedChannelAttributes.releaseFlag && {
-            [capturedChannelAttributes.releaseFlag]: true,
-          }),
-        };
-
-        const channelCaptureHandlers = require(Runtime.getFunctions()[
-          'channelCapture/channelCaptureHandlers'
-        ].path) as ChannelCaptureHandlers;
-
-        await Promise.all([
-          // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
-          lexClient.deleteSession(context, {
-            botName: capturedChannelAttributes.botName,
-            botAlias: capturedChannelAttributes.botAlias,
-            userId: channel.sid,
-          }),
-          // Update channel attributes (remove channelCapturedByBot and add memory)
-          channel.update({
-            attributes: JSON.stringify(releasedChannelAttributes),
-          }),
-          // Remove this webhook from the channel
-          channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
-          // Trigger the next step once the channel is released
-          channelCaptureHandlers.handleChannelRelease(
-            context,
-            channel,
-            capturedChannelAttributes,
-            memory,
-          ),
-        ]);
-
-        console.log('Channel unblocked and bot session deleted');
+        await chatbotCallbackCleanup({
+          context,
+          channel,
+          channelAttributes,
+          memory: lexResponse.slots,
+          lexClient,
+        });
       }
 
       await channel.messages().create({
