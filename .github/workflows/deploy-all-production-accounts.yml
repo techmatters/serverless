@@ -23,25 +23,25 @@ jobs:
   deploy-helplines:
     env:
       helplines: -|
-      "[
-        'AS'
-        #'CA',
-        #'CL',
-        #'PH',
-        #'ET',
-        #'JM',
-        #'MW',
-        #'IN',
-        #'BR',
-        #'ZA',
-        #'CO',
-        #'TH',
-        #'HU',
-        #'ZM',
-        #'ZW',
-        #'MT',
-      ]"
-      environments: "['PROD']"
+      '[
+        "AS"
+        #"CA",
+        #"CL",
+        #"PH",
+        #"ET",
+        #"JM",
+        #"MW",
+        #"IN",
+        #"BR",
+        #"ZA",
+        #"CO",
+        #"TH",
+        #"HU",
+        #"ZM",
+        #"ZW",
+        #"MT",
+      ]'
+      environments: '["PROD"]'
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
