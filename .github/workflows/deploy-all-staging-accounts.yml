@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: toJson([
+      helplines: ${{ toJson([
           'AS',
           'CA',
           'CL',
@@ -45,5 +45,5 @@ jobs:
           'PL',
           'MT',
           'NZ'
-      ])
-      environments: toJson([ STG ])
+      ]) }}
+      environments: ${{ toJson([ STG ]) }}
