@@ -14,39 +14,13 @@
 
 # This is a basic workflow to deploy Serverless to all helpline staging environments
 
-name: Deploy Serverless to all Staging Accounts
+name: Deploy Serverless to all Production Accounts
 
 on:
-  workflow_dispatch:
-    inputs:
-      changelog:
-        description: Release Changelog - Add a comment about the changes to be included in this release.
-        required: true
+  workflow_dispatch
 
 jobs:
   deploy-helplines:
-    strategy:
-      fail-fast: false
-      matrix:
-        short_helplines: [
-                          'AS',
-                          #'CA',
-                          #'CL',
-                          #'PH',
-                          #'ET',
-                          #'JM',
-                          #'MW',
-                          #'IN',
-                          #'BR',
-                          #'ZA',
-                          #'CO',
-                          #'TH',
-                          #'HU',
-                          #'ZM',
-                          #'ZW',
-                          #'MT',
-        ]
-        environment_code: [ PROD ]
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
