@@ -21,32 +21,31 @@ on:
 
 jobs:
   deploy-helplines:
-    env:
-      helplines: [
-      'AS',
-      'CA',
-      'CL',
-      'PH',
-      'ET',
-      'JM',
-      'MW',
-      'IN',
-      'RO',
-      'BR',
-      'ZA',
-      'CO',
-      'TH',
-      'UK',
-      'HU',
-      'ZM',
-      'ZW',
-      'PL',
-      'MT',
-      'NZ'
-      ]
-      environments: [ STG ]
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ${{ toJson(env.helplines) }}
-      environments: ${{ toJson(env.environments) }}
+      helplines: -|
+      '[
+      "AS",
+      "CA",
+      "CL",
+      "PH",
+      "ET",
+      "JM",
+      "MW",
+      "IN",
+      "RO",
+      "BR",
+      "ZA",
+      "CO",
+      "TH",
+      "UK",
+      "HU",
+      "ZM",
+      "ZW",
+      "PL",
+      "MT",
+      "NZ"
+      ]'
+      environments: '[ "STG" ]'
+
