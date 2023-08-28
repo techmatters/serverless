@@ -21,11 +21,9 @@ on:
 
 jobs:
   deploy-helplines:
-    uses: ./.github/workflows/deploy-multiple-accounts.yml
-    secrets: inherit
-    with:
-      helplines: ${{ toJson([
-          'AS',
+    env:
+      helplines: [
+        'AS'
         #'CA',
         #'CL',
         #'PH',
@@ -41,6 +39,11 @@ jobs:
         #'ZM',
         #'ZW',
         #'MT',
-      ]) }}
-      environments: ${{ toJson([ PROD ]) }}
+      ]
+      environments: [ PROD ]
+    uses: ./.github/workflows/deploy-multiple-accounts.yml
+    secrets: inherit
+    with:
+      helplines: ${{ toJson(toJson(env.helplines)) }}
+      environments: ${{ toJson(env.environments) }}
 
