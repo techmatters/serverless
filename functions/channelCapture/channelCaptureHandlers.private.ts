@@ -149,6 +149,21 @@ const triggerWithUserMessage = async (
     memoryAttribute,
   }: CaptureChannelOptions,
 ) => {
+  const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
+  const lexClient = require(handlerPath) as LexClient;
+
+  // trigger Lex first, in order to reduce the time between the creating the webhook and sending the message
+  const lexResult = await lexClient.postText(context, {
+    botName,
+    botAlias,
+    userId,
+    inputText,
+  });
+
+  if (lexResult.status === 'failure') {
+    throw lexResult.error;
+  }
+
   const chatbotCallbackWebhook = await channel.webhooks().create({
     type: 'webhook',
     configuration: {
@@ -171,15 +186,7 @@ const triggerWithUserMessage = async (
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
 
-  const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
-  const lexClient = require(handlerPath) as LexClient;
-
-  const lexResponse = await lexClient.postText(context, {
-    botName,
-    botAlias,
-    userId,
-    inputText,
-  });
+  const { lexResponse } = lexResult;
 
   // Send message to trigger the recently created chatbot integration
   await channel.messages().create({

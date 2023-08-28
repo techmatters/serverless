@@ -19,7 +19,7 @@ import {
   handler as chatbotCallback,
   Body,
 } from '../../functions/channelCapture/chatbotCallback.protected';
-import helpers from '../helpers';
+import helpers, { MockedResponse } from '../helpers';
 import * as lexClient from '../../functions/channelCapture/lexClient.private';
 import * as channelCaptureHandlers from '../../functions/channelCapture/channelCaptureHandlers.private';
 
@@ -102,6 +102,10 @@ beforeAll(() => {
     'channelCapture/channelCaptureHandlers',
     'functions/channelCapture/channelCaptureHandlers.private',
   );
+  runtime._addFunction(
+    'channelCapture/chatbotCallbackCleanup',
+    'functions/channelCapture/chatbotCallbackCleanup.protected',
+  );
   helpers.setup({}, runtime);
 });
 beforeEach(() => {
@@ -157,8 +161,11 @@ describe('chatbotCallback', () => {
     const postTextSpy = jest.spyOn(lexClient, 'postText').mockImplementation(
       async () =>
         ({
-          dialogState: 'ElicitIntent',
-          message: 'Some response from Lex',
+          status: 'success',
+          lexResponse: {
+            dialogState: 'ElicitIntent',
+            message: 'Some response from Lex',
+          },
         } as any),
     );
     const updateChannelSpy = jest.spyOn(mockedChannel, 'update');
@@ -209,9 +216,12 @@ describe('chatbotCallback', () => {
       const postTextSpy = jest.spyOn(lexClient, 'postText').mockImplementation(
         async () =>
           ({
-            dialogState,
-            message: 'Some response from Lex',
-            slots: memory,
+            status: 'success',
+            lexResponse: {
+              dialogState,
+              message: 'Some response from Lex',
+              slots: memory,
+            },
           } as any),
       );
       const deleteSessionSpy = jest
@@ -286,9 +296,12 @@ describe('chatbotCallback', () => {
     jest.spyOn(lexClient, 'postText').mockImplementation(
       async () =>
         ({
-          dialogState: 'Fulfilled',
-          message: 'Some response from Lex',
-          slots: memory,
+          status: 'success',
+          lexResponse: {
+            dialogState: 'Fulfilled',
+            message: 'Some response from Lex',
+            slots: memory,
+          },
         } as any),
     );
     jest.spyOn(lexClient, 'deleteSession').mockImplementation(() => Promise.resolve() as any);
@@ -340,9 +353,12 @@ describe('chatbotCallback', () => {
     jest.spyOn(lexClient, 'postText').mockImplementation(
       async () =>
         ({
-          dialogState: 'Fulfilled',
-          message: 'Some response from Lex',
-          slots: memory,
+          status: 'success',
+          lexResponse: {
+            dialogState: 'Fulfilled',
+            message: 'Some response from Lex',
+            slots: memory,
+          },
         } as any),
     );
     jest.spyOn(lexClient, 'deleteSession').mockImplementation(() => Promise.resolve() as any);
@@ -357,6 +373,52 @@ describe('chatbotCallback', () => {
         ...channelAttributes,
         memoryAttribute: memory,
       }),
+    });
+  });
+
+  test('when Concurrent Client Requests is thrown by Lex client, the callback silently ignores it', async () => {
+    const event: Body = {
+      Body: 'Test body',
+      From: 'serviceUserIdentity',
+      ChannelSid: 'CH123',
+      EventType: 'onMessageSent',
+    };
+
+    const { capturedChannelAttributes, ...channelAttributes } = JSON.parse(
+      mockedChannel.attributes,
+    );
+
+    mockedChannel = {
+      ...defaultChannel,
+      attributes: JSON.stringify({
+        ...channelAttributes,
+        capturedChannelAttributes: {
+          ...capturedChannelAttributes,
+          memoryAttribute: 'memoryAttribute',
+        },
+      }),
+    };
+
+    const updateChannelSpy = jest.spyOn(mockedChannel, 'update');
+
+    jest.spyOn(lexClient, 'postText').mockImplementation(async () => ({
+      status: 'failure',
+      error: new Error(
+        'Concurrent Client Requests: Encountered resource conflict while saving session data',
+      ),
+    }));
+
+    await chatbotCallback(context as any, event, (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+    });
+
+    expect(updateChannelSpy).not.toHaveBeenCalled();
+    expect(mockCreateMessage).not.toHaveBeenCalledWith({
+      body: 'Some response from Lex',
+      from: 'Bot',
+      xTwilioWebhookEnabled: 'true',
     });
   });
 });
