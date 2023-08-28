@@ -44,7 +44,7 @@ jobs:
           'ZW',
           'PL',
           'MT',
-          'NZ',
+          'NZ'
       ]
       environments: [ STG ]
       changelog: ${{ inputs.changelog }}
