@@ -35,15 +35,6 @@ on:
           - DEV
           - STG
           - PROD
-      environment:
-        description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)
-        required: true
-        type: choice
-        default: staging
-        options:
-          - development
-          - staging
-          - production
       force_enable_operating_hours:
         type: boolean
         description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
@@ -53,9 +44,6 @@ on:
         required: true
         type: string
       environment_code:
-        required: true
-        type: string
-      environment:
         required: true
         type: string
       changelog:
@@ -74,6 +62,7 @@ jobs:
       TWILIO_SSM_PREFIX: ${{inputs.environment_code}}_TWILIO_${{inputs.helpline_code}}
       TWILIO_ACCOUNT_SID_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_ACCOUNT_SID
       TWILIO_AUTH_TOKEN_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_AUTH_TOKEN
+      FULL_ENVIRONMENT_NAME: ${{inputs.environment_code == 'PROD' && 'production' || inputs.environment_code == 'STG' && 'staging' || 'development'}}
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
@@ -163,7 +152,7 @@ jobs:
         uses: marvinpinto/action-inject-ssm-secrets@latest
         continue-on-error: true
         with:
-          ssm_parameter: /${{ inputs.environment }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
+          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
           env_variable_name: HELPLINE_AWS_REGION
 
       - name: Set HELPLINE_AWS_REGION to default
@@ -193,7 +182,7 @@ jobs:
           s3-bucket: $S3_BUCKET
           helpline-code: ${{inputs.helpline_code}}
           environment-code: ${{inputs.environment_code}}
-          environment: ${{inputs.environment}}
+          environment: ${{env.FULL_ENVIRONMENT_NAME}}
           # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
           disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == 'PROD') && 'false' || 'true' }}
           send-slack-message: ${{ inputs.send-slack-message }}
