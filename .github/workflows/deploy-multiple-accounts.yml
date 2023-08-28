@@ -20,20 +20,20 @@ on:
   workflow_call:
     inputs:
       helplines:
-        description: 'List of helplines to deploy to'
+        description: 'List of helplines to deploy to (as a JSON array)'
         required: true
-        type: array
+        type: string
       environments:
-        type: array
-        description: Release Changelog - Add a comment about the changes to be included in this release.
+        type: string
+        description: Environments to deploy to (as a JSON array)
         required: true
 jobs:
   deploy-helplines:
     strategy:
       fail-fast: false
       matrix:
-        short_helplines: input.helplines
-        environment_codes: input.environments
+        short_helplines: fromJson(input.helplines)
+        environment_codes: fromJson(input.environments)
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
