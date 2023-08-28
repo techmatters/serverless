@@ -152,6 +152,7 @@ const triggerWithUserMessage = async (
   const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
   const lexClient = require(handlerPath) as LexClient;
 
+  // trigger Lex first, in order to reduce the time between the creating the webhook and sending the message
   const lexResult = await lexClient.postText(context, {
     botName,
     botAlias,
