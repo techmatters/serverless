@@ -30,7 +30,7 @@ runs:
       id: determine-target-helplines
       shell: bash
       run: |
-        environment=${( inputs.environment }}
+        environment=${{ inputs.environment }}
         # Fetch all parameters under the path '/${environment}/twilio'
         ssm_parameters=$(aws ssm get-parameters-by-path --path "/${environment}/twilio" --recursive --query "Parameters[].Name" --output json)
 
