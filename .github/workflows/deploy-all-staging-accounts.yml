@@ -31,7 +31,7 @@ jobs:
       - id: read-config
         run: |
           content=`cat ./.github/workflows/config/staging-helplines.json`
-          echo "staging_helplines=content" >> $GITHUB_OUTPUT
+          echo "staging_helplines=$content" >> $GITHUB_OUTPUT
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
