@@ -21,17 +21,26 @@ on:
 
 jobs:
   configure:
-    name: Load Configuration
+    name: Determine Configuration
     runs-on: ubuntu-latest
     outputs:
-      staging_helplines: ${{ steps.read-config.outputs.staging_helplines }}
+      staging_helplines: ${{ steps.determine-target-helplines.outputs.staging_helplines }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - id: read-config
+      - name: Determine staging helplines to deploy to
+        id: determine-target-helplines
         run: |
-          content=`jq -c '.' ./.github/workflows/config/staging-helplines.json`
-          echo "staging_helplines=$content" >> $GITHUB_OUTPUT
+          environment=STG
+          # Fetch all parameters under the path '/${environment}/twilio'
+          ssm_parameters=$(aws ssm get-parameters-by-path --path "/${environment}/twilio" --recursive --query "Parameters[].Name" --output json)
+
+          # Use jq to filter out parameters that match the pattern and extract accounts
+          accounts=$(echo $ssm_parameters | jq -r '.[] | select(test("/${environment}/twilio/[^/]+/account_sid")) | gsub("/${environment}/twilio/";"") | gsub("/account_sid";"")')
+
+          # Convert the extracted accounts to a JSON array
+          helplines=$(echo $accounts | jq -c '.')
+
+          # Set the GitHub Actions output
+          echo "staging_helplines=$helplines" >> $GITHUB_OUTPUT
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
