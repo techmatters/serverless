@@ -40,7 +40,7 @@ jobs:
           ssm_parameters=$(aws ssm get-parameters-by-path --path "/${environment}/twilio" --recursive --query "Parameters[].Name" --output json)
 
           # Use jq to filter out parameters that match the pattern and extract accounts
-          accounts=$(echo $ssm_parameters | jq -r '.[] | select(test("/${environment}/twilio/[^/]+/account_sid")) | gsub("/${environment}/twilio/";"") | gsub("/account_sid";"")')
+          accounts=$(echo $ssm_parameters | jq -r '.[] | select(test("/'$environment'/twilio/[^/]+/account_sid")) | gsub("/'$environment'/twilio/";"") | gsub("/account_sid";"")')
 
           # Convert the extracted accounts to a JSON array
           helplines=$(echo $accounts | jq -c '.')
