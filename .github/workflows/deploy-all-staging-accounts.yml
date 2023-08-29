@@ -26,11 +26,11 @@ jobs:
     outputs:
       target_helplines: ${{ steps.determine-target-helplines.outputs.target_helplines }}
     steps:
-      id: determine-target-helplines
-      name: Executing main-action
-      uses: ./.github/actions/determine-target-helplines-action
-      with:
-        environment: staging
+      - id: determine-target-helplines
+        name: Executing main-action
+        uses: ./.github/actions/determine-target-helplines-action
+        with:
+          environment: staging
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
