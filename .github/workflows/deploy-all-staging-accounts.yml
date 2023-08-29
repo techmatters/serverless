@@ -21,6 +21,8 @@ on:
 
 jobs:
   configure:
+    name: Load Configuration
+    runs-on: ubuntu-latest
     outputs:
       staging_helplines: ${{ steps.read-config.outputs.staging_helplines }}
     steps:
@@ -31,6 +33,8 @@ jobs:
           content=`cat ./.github/workflows/config/staging-helplines.json`
           echo "staging_helplines=content" >> $GITHUB_OUTPUT
   deploy-helplines:
+    name: Run All Staging Deployments
+    runs-on: ubuntu-latest
     needs: configure
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
