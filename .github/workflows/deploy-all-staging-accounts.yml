@@ -20,32 +20,19 @@ on:
   workflow_dispatch:
 
 jobs:
+
   deploy-helplines:
-    uses: ./.github/workflows/deploy-multiple-accounts.yml
-    secrets: inherit
-    with:
-      helplines: -|
-      '[
-      "AS",
-      "CA",
-      "CL",
-      "PH",
-      "ET",
-      "JM",
-      "MW",
-      "IN",
-      "RO",
-      "BR",
-      "ZA",
-      "CO",
-      "TH",
-      "UK",
-      "HU",
-      "ZM",
-      "ZW",
-      "PL",
-      "MT",
-      "NZ"
-      ]'
-      environments: '[ "STG" ]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: read-config
+        run: |
+          content=`cat ./.github/workflows/config/staging-helplines.json`
+          echo "staging_helplines=content" >> $GITHUB_OUTPUT
+      - name: run-deployments
+        uses: ./.github/workflows/deploy-multiple-accounts.yml
+        secrets: inherit
+        with:
+          helplines: ${{ steps.read-config.outputs.staging_helplines }}
+          environments: '[ "STG" ]'
 
