@@ -18,13 +18,13 @@
 
 name: Aselo Staging release
 
-on:
-  workflow_dispatch
+on: workflow_dispatch
 jobs:
   deploy:
-    uses: ./.github/workflows/custom_helpline.yml
+    uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helpline_code: "AS"
-      environment_code: "STG"
-      changelog: "Deploying individual account"
+      helplines: '["AS"]'
+      environments: '["STG"]'
+      send_final_slack_message: false
+

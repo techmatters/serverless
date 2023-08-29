@@ -19,10 +19,10 @@ name: Aselo Production deploy
 on: workflow_dispatch
 jobs:
   deploy:
-    uses: ./.github/workflows/custom_helpline.yml
+    uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helpline_code: 'AS'
-      environment_code: 'PROD'
-      environment: 'production'
-      changelog: 'Deploying individual account'
+      helplines: '["AS"]'
+      environments: '["PROD"]'
+      send_final_slack_message: false
+
