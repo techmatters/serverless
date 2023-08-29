@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v3
       - id: read-config
         run: |
-          content=`cat ./.github/workflows/config/staging-helplines.json`
+          content=`jq -c '.' ./.github/workflows/config/staging-helplines.json`
           echo "staging_helplines=$content" >> $GITHUB_OUTPUT
   deploy-helplines:
     name: Run All Staging Deployments
