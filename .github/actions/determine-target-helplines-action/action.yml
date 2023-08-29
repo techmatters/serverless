@@ -19,12 +19,6 @@ inputs:
   environment:
     description: The environment to deploy to, e.g. staging, production, development
     required: true
-  aws_access_key_id:
-    description: AWS credentials to use for deployment
-    required: true
-  aws_secret_access_key:
-    description: AWS credentials to use for deployment
-    required: true
 outputs:
   target_helplines:
     description: 'The short codes of each helpline in the target environment as a JSON array string'
@@ -32,12 +26,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ inputs.aws_secret_access_key }}
-        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
-        aws-region: us-east-1
     - name: Determine helplines to deploy
       id: determine-target-helplines
       shell: bash
