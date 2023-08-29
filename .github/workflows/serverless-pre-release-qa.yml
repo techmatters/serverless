@@ -32,8 +32,8 @@ jobs:
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ["E2E"]
-      environments: ["DEV"]
+      helplines: '["E2E"]'
+      environments: '["DEV"]'
       send_final_slack_message: false
       send_slack_message_per_deploy: false
   run-e2e-tests:

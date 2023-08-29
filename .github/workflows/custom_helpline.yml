@@ -53,8 +53,8 @@ jobs:
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: [ "${{ inputs.helpline }}" ]
-      environments: [ "${{ inputs.environment_code }}" ]
+      helplines: '[ "${{ inputs.helpline }}" ]'
+      environments: '[ "${{ inputs.environment_code }}" ]'
       force_enable_operating_hours: ${{ inputs.force_enable_operating_hours }}
       send_final_slack_message: 'false'
       send_slack_message_per_deploy: ${{ inputs.send-slack-message }}
