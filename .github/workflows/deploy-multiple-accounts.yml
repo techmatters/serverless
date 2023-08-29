@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        short_helpline: ${{ fromJson(inputs.helplines) }}
+        helpline_code: ${{ fromJson(inputs.helplines) }}
         environment_code: ${{ fromJson(inputs.environments) }}
     runs-on: ubuntu-latest
     env:
