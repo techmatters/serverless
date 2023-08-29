@@ -32,8 +32,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        short_helplines: fromJson(input.helplines)
-        environment_codes: fromJson(input.environments)
+        short_helplines: ${{ fromJson(input.helplines) }}
+        environment_codes: ${{ fromJson(input.environments) }}
     uses: ./.github/workflows/custom_helpline.yml
     secrets: inherit
     with:
