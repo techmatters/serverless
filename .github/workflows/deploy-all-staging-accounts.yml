@@ -24,32 +24,19 @@ jobs:
     name: Determine Configuration
     runs-on: ubuntu-latest
     outputs:
-      staging_helplines: ${{ steps.determine-target-helplines.outputs.staging_helplines }}
+      target_helplines: ${{ steps.determine-target-helplines.outputs.target_helplines }}
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - name: Determine staging helplines to deploy
-        id: determine-target-helplines
-        run: |
-          environment=staging
-          # Fetch all parameters under the path '/${environment}/twilio'
-          ssm_parameters=$(aws ssm get-parameters-by-path --path "/${environment}/twilio" --recursive --query "Parameters[].Name" --output json)
-
-          # Use jq to filter out parameters that match the pattern and extract accounts into an array
-          helplines=$(echo $ssm_parameters | jq -c 'map(select(test("/'$environment'/twilio/[^/]+/account_sid")) | gsub("/'$environment'/twilio/";"") | gsub("/account_sid";""))')
-
-          # Set the GitHub Actions output
-          echo "staging_helplines=$helplines" >> $GITHUB_OUTPUT
+      id: determine-target-helplines
+      name: Executing main-action
+      uses: ./.github/actions/determine-target-helplines-action
+      with:
+        environment: staging
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ${{ needs.configure.outputs.staging_helplines }}
+      helplines: ${{ needs.configure.outputs.target_helplines }}
       environments: '[ "STG" ]'
 
