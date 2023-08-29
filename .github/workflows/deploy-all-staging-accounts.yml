@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: read-config
+      - id: read-config
         run: |
           content=`cat ./.github/workflows/config/staging-helplines.json`
           echo "staging_helplines=content" >> $GITHUB_OUTPUT
