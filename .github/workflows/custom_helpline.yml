@@ -12,12 +12,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-# This job lets you deploy the Aselo serverless functions to an arbitrary helpline, useful for deploying to a developers private account.
-# The short environment & helpline codes need to be specified manually,
-# It will not run any custom action, only the basic ones common to all helplines
-# You need to have all the required SSM parameters set up in AWS and populated correctly (best achieved by applying an Aselo Terraform configuration against the account)
-# You will also need the Twilio account creds set up as Github secrets using the correct names according to the convention
-name: Custom helpline account release
+# This job lets you deploy the Aselo serverless functions to a single environment for a single helpline
+name: Deploy Serverless to a single helpline/environment
 
 # Controls when the action will run.
 on:
@@ -35,15 +31,6 @@ on:
           - DEV
           - STG
           - PROD
-      environment:
-        description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)
-        required: true
-        type: choice
-        default: staging
-        options:
-          - development
-          - staging
-          - production
       force_enable_operating_hours:
         type: boolean
         description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
@@ -55,145 +42,19 @@ on:
       environment_code:
         required: true
         type: string
-      environment:
-        required: true
-        type: string
-      changelog:
-        description: Release Changelog - Add a comment about the changes to be included in this release.
-        required: true
-        type: string
       send-slack-message:
         description: Specifies if should send a Slack message at the end of successful run. Defaults to true
         required: false
         default: 'true'
         type: string
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      TWILIO_SSM_PREFIX: ${{inputs.environment_code}}_TWILIO_${{inputs.helpline_code}}
-      TWILIO_ACCOUNT_SID_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_ACCOUNT_SID
-      TWILIO_AUTH_TOKEN_SECRET_NAME: ${{inputs.helpline_code}}_${{inputs.environment_code}}_AUTH_TOKEN
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
-      # Setup credentials to access AWS for parameters
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-      # Get AWS parameters to setup environment variables for Serverless function
-      - name: Set Twilio Sync API key
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_API_KEY
-          env_variable_name: SYNC_SERVICE_API_KEY
-      - name: Set Twilio Chat service ID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_CHAT_SERVICE_SID
-          env_variable_name: CHAT_SERVICE_SID
-      - name: Set Twilio Chat transfer workflow ID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_CHAT_WORKFLOW_SID
-          env_variable_name: TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-      - name: Set Twilio Sync API secret
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SECRET
-          env_variable_name: SYNC_SERVICE_API_SECRET
-      - name: Set Twilio Sync service ID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SYNC_SID
-          env_variable_name: SYNC_SERVICE_SID
-      - name: Set Twilio Workspace ID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_WORKSPACE_SID
-          env_variable_name: TWILIO_WORKSPACE_SID
-      - name: Set operating information file key
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_OPERATING_INFO_KEY
-          env_variable_name: OPERATING_INFO_KEY
-      - name: Set Twilio Flex Proxy service ID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_FLEX_PROXY_SERVICE_SID
-          env_variable_name: FLEX_PROXY_SERVICE_SID
-      - name: Set HRM static key to make HRM calls
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_HRM_STATIC_KEY
-          env_variable_name: HRM_STATIC_KEY
-      - name: Set Survey Workflow SID
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SURVEY_WORKFLOW_SID
-          env_variable_name: SURVEY_WORKFLOW_SID
-      - name: Set Post Survey Bot Programmable Chat URL
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_POST_SURVEY_BOT_CHAT_URL
-          env_variable_name: POST_SURVEY_BOT_CHAT_URL
-      - name: Set AWS credentials for Aselo user
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ASELO_APP_ACCESS_KEY
-          env_variable_name: ASELO_APP_ACCESS_KEY
-      - name: Set AWS credentials for Aselo user
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ASELO_APP_SECRET_KEY
-          env_variable_name: ASELO_APP_SECRET_KEY
-      - name: Set S3 bucket name where Aselo documents are stored
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_S3_BUCKET_DOCS
-          env_variable_name: S3_BUCKET
-
-      - name: AWS region where Aselo documents bucket is hosted
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        continue-on-error: true
-        with:
-          ssm_parameter: /${{ inputs.environment }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
-          env_variable_name: HELPLINE_AWS_REGION
-
-      - name: Set HELPLINE_AWS_REGION to default
-        run: |
-          echo "HELPLINE_AWS_REGION=${HELPLINE_AWS_REGION:-us-east-1}" >> $GITHUB_OUTPUT
-
-      # Call main-action to compile and deploy
-      - name: Executing main-action
-        uses: ./.github/actions/main-action
-        with:
-          account-sid: ${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}
-          auth-token: ${{ secrets[env.TWILIO_AUTH_TOKEN_SECRET_NAME] }}
-          workspace-sid: $TWILIO_WORKSPACE_SID
-          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
-          sync-service-api-key: $SYNC_SERVICE_API_KEY
-          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
-          sync-service-sid: $SYNC_SERVICE_SID
-          chat-service-sid: $CHAT_SERVICE_SID
-          operating-info-key: $OPERATING_INFO_KEY
-          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
-          hrm-static-key: $HRM_STATIC_KEY
-          survey-workflow-sid: $SURVEY_WORKFLOW_SID
-          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
-          aselo-app-access-key: $ASELO_APP_ACCESS_KEY
-          aselo-app-secret-key: $ASELO_APP_SECRET_KEY
-          aws-region: $HELPLINE_AWS_REGION
-          s3-bucket: $S3_BUCKET
-          helpline-code: ${{inputs.helpline_code}}
-          environment-code: ${{inputs.environment_code}}
-          environment: ${{inputs.environment}}
-          # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
-          disable-operating-hours: ${{ (inputs.force_enable_operating_hours || inputs.environment_code == 'PROD') && 'false' || 'true' }}
-          send-slack-message: ${{ inputs.send-slack-message }}
+  deploy-helplines:
+    name: Run Deployment
+    uses: ./.github/workflows/deploy-multiple-accounts.yml
+    secrets: inherit
+    with:
+      helplines: '[ "${{ inputs.helpline_code }}" ]'
+      environments: '[ "${{ inputs.environment_code }}" ]'
+      force_enable_operating_hours: ${{ inputs.force_enable_operating_hours }}
+      send_final_slack_message: 'false'
+      send_slack_message_per_deploy: ${{ inputs.send-slack-message }}

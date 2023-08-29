@@ -1,0 +1,215 @@
+# Copyright (C) 2021-2023 Technology Matters
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/.
+
+# This is a basic workflow to deploy Serverless to several helplines, in 1 or more environments
+
+name: Deploy Serverless to multiple Accounts
+
+on:
+  workflow_call:
+    inputs:
+      helplines:
+        description: 'List of helplines to deploy to (as a JSON array)'
+        required: true
+        type: string
+      environments:
+        type: string
+        description: Environments to deploy to (as a JSON array)
+        required: true
+      force_enable_operating_hours:
+        type: string
+        description: Force enable operating hours
+        required: false
+      send_final_slack_message:
+        type: string
+        description: Send a Slack Message when all deploys are complete
+        required: false
+        default: true
+      send_slack_message_per_deploy:
+        type: string
+        description: Send a slack message confirming each deploy
+        required: false
+        default: true
+jobs:
+  deploy-helplines:
+    strategy:
+      fail-fast: false
+      matrix:
+        helpline_code: ${{ fromJson(inputs.helplines) }}
+        environment_code: ${{ fromJson(inputs.environments) }}
+    runs-on: ubuntu-latest
+    env:
+      TWILIO_SSM_PREFIX: ${{matrix.environment_code}}_TWILIO_${{matrix.helpline_code}}
+      TWILIO_ACCOUNT_SID_SECRET_NAME: ${{matrix.helpline_code}}_${{matrix.environment_code}}_ACCOUNT_SID
+      TWILIO_AUTH_TOKEN_SECRET_NAME: ${{matrix.helpline_code}}_${{matrix.environment_code}}_AUTH_TOKEN
+      FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'PROD' && 'production' || matrix.environment_code == 'STG' && 'staging' || 'development'}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      # Setup credentials to access AWS for parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      # Get AWS parameters to setup environment variables for Serverless function
+      - name: Set Twilio Sync API key
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_API_KEY
+          env_variable_name: SYNC_SERVICE_API_KEY
+      - name: Set Twilio Chat service ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_CHAT_SERVICE_SID
+          env_variable_name: CHAT_SERVICE_SID
+      - name: Set Twilio Chat transfer workflow ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_CHAT_WORKFLOW_SID
+          env_variable_name: TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+      - name: Set Twilio Sync API secret
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SECRET
+          env_variable_name: SYNC_SERVICE_API_SECRET
+      - name: Set Twilio Sync service ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SYNC_SID
+          env_variable_name: SYNC_SERVICE_SID
+      - name: Set Twilio Workspace ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_WORKSPACE_SID
+          env_variable_name: TWILIO_WORKSPACE_SID
+      - name: Set operating information file key
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_OPERATING_INFO_KEY
+          env_variable_name: OPERATING_INFO_KEY
+      - name: Set Twilio Flex Proxy service ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_FLEX_PROXY_SERVICE_SID
+          env_variable_name: FLEX_PROXY_SERVICE_SID
+      - name: Set HRM static key to make HRM calls
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_HRM_STATIC_KEY
+          env_variable_name: HRM_STATIC_KEY
+      - name: Set Survey Workflow SID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SURVEY_WORKFLOW_SID
+          env_variable_name: SURVEY_WORKFLOW_SID
+      - name: Set Post Survey Bot Programmable Chat URL
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_POST_SURVEY_BOT_CHAT_URL
+          env_variable_name: POST_SURVEY_BOT_CHAT_URL
+      - name: Set AWS credentials for Aselo user
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ASELO_APP_ACCESS_KEY
+          env_variable_name: ASELO_APP_ACCESS_KEY
+      - name: Set AWS credentials for Aselo user
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ASELO_APP_SECRET_KEY
+          env_variable_name: ASELO_APP_SECRET_KEY
+      - name: Set S3 bucket name where Aselo documents are stored
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_S3_BUCKET_DOCS
+          env_variable_name: S3_BUCKET
+
+      - name: AWS region where Aselo documents bucket is hosted
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        continue-on-error: true
+        with:
+          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
+          env_variable_name: HELPLINE_AWS_REGION
+
+      - name: Set HELPLINE_AWS_REGION to default
+        run: |
+          echo "HELPLINE_AWS_REGION=${HELPLINE_AWS_REGION:-us-east-1}" >> $GITHUB_OUTPUT
+
+      # Call main-action to compile and deploy
+      - name: Executing main-action
+        uses: ./.github/actions/main-action
+        with:
+          account-sid: ${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}
+          auth-token: ${{ secrets[env.TWILIO_AUTH_TOKEN_SECRET_NAME] }}
+          workspace-sid: $TWILIO_WORKSPACE_SID
+          transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          sync-service-api-key: $SYNC_SERVICE_API_KEY
+          sync-service-api-secret: $SYNC_SERVICE_API_SECRET
+          sync-service-sid: $SYNC_SERVICE_SID
+          chat-service-sid: $CHAT_SERVICE_SID
+          operating-info-key: $OPERATING_INFO_KEY
+          flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
+          hrm-static-key: $HRM_STATIC_KEY
+          survey-workflow-sid: $SURVEY_WORKFLOW_SID
+          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
+          aselo-app-access-key: $ASELO_APP_ACCESS_KEY
+          aselo-app-secret-key: $ASELO_APP_SECRET_KEY
+          aws-region: $HELPLINE_AWS_REGION
+          s3-bucket: $S3_BUCKET
+          helpline-code: ${{matrix.helpline_code}}
+          environment-code: ${{matrix.environment_code}}
+          environment: ${{env.FULL_ENVIRONMENT_NAME}}
+          # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
+          disable-operating-hours: ${{ (inputs.force_enable_operating_hours == 'true' || matrix.environment_code == 'PROD') && 'false' || 'true' }}
+          send-slack-message: ${{ inputs.send_slack_message_per_deploy }}
+  # Send Slack notifying success
+  send-slack-message:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: [deploy-helplines]
+    if: ${{ inputs.send_final_slack_message == 'true' }}
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Setup credentials to access AWS for parameters
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+      # Set any env vars needed from Parameter Store here
+      # Slack env
+      - name: Set GITHUB_ACTIONS_SLACK_BOT_TOKEN
+        uses: 'marvinpinto/action-inject-ssm-secrets@latest'
+        with:
+          ssm_parameter: 'GITHUB_ACTIONS_SLACK_BOT_TOKEN'
+          env_variable_name: 'GITHUB_ACTIONS_SLACK_BOT_TOKEN'
+      - name: Set ASELO_DEPLOYS_CHANNEL_ID
+        uses: 'marvinpinto/action-inject-ssm-secrets@latest'
+        with:
+          ssm_parameter: 'ASELO_DEPLOYS_CHANNEL_ID'
+          env_variable_name: 'ASELO_DEPLOYS_CHANNEL_ID'
+
+      - name: Slack Aselo channel
+        id: slack
+        uses: slackapi/slack-github-action@v1.14.0
+        with:
+          channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
+          slack-message: '`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:.'
+        env:
+          SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}

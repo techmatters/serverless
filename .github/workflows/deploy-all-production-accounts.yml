@@ -12,9 +12,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-# This is a basic workflow to deploy Serverless to all helpline staging environments
+# This is a basic workflow to deploy Serverless to all helpline production environments
 
-name: Deploy Serverless to all Staging Accounts
+name: Deploy Serverless to all Production Accounts
 
 on:
   workflow_dispatch:
@@ -24,20 +24,20 @@ jobs:
     name: Load Configuration
     runs-on: ubuntu-latest
     outputs:
-      staging_helplines: ${{ steps.read-config.outputs.staging_helplines }}
+      production_helplines: ${{ steps.read-config.outputs.production_helplines }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - id: read-config
         run: |
-          content=`jq -c '.' ./.github/workflows/config/staging-helplines.json`
-          echo "staging_helplines=$content" >> $GITHUB_OUTPUT
+          content=`jq -c '.' ./.github/workflows/config/production-helplines.json`
+          echo "production_helplines=$content" >> $GITHUB_OUTPUT
   deploy-helplines:
-    name: Run All Staging Deployments
+    name: Run All Production Deployments
     needs: configure
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ${{ needs.configure.outputs.staging_helplines }}
-      environments: '[ "STG" ]'
+      helplines: ${{ needs.configure.outputs.production_helplines }}
+      environments: '[ "PROD" ]'
 
