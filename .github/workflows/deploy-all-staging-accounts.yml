@@ -35,7 +35,7 @@ jobs:
       - name: Determine staging helplines to deploy
         id: determine-target-helplines
         run: |
-          environment=STG
+          environment=staging
           # Fetch all parameters under the path '/${environment}/twilio'
           ssm_parameters=$(aws ssm get-parameters-by-path --path "/${environment}/twilio" --recursive --query "Parameters[].Name" --output json)
 
