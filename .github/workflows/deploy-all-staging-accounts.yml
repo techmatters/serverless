@@ -26,6 +26,7 @@ jobs:
     outputs:
       target_helplines: ${{ steps.determine-target-helplines.outputs.target_helplines }}
     steps:
+      - uses: actions/checkout@v2
       - id: determine-target-helplines
         name: Executing main-action
         uses: ./.github/actions/determine-target-helplines-action
