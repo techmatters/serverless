@@ -20,8 +20,9 @@ on:
   workflow_dispatch:
 
 jobs:
-
-  deploy-helplines:
+  configure:
+    outputs:
+      staging_helplines: ${{ steps.read-config.outputs.staging_helplines }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,10 +30,11 @@ jobs:
         run: |
           content=`cat ./.github/workflows/config/staging-helplines.json`
           echo "staging_helplines=content" >> $GITHUB_OUTPUT
-      - name: run-deployments
-        uses: ./.github/workflows/deploy-multiple-accounts.yml
-        secrets: inherit
-        with:
-          helplines: ${{ steps.read-config.outputs.staging_helplines }}
-          environments: '[ "STG" ]'
+  deploy-helplines:
+    needs: configure
+    uses: ./.github/workflows/deploy-multiple-accounts.yml
+    secrets: inherit
+    with:
+      helplines: ${{ needs.configure.outputs.staging_helplines }}
+      environments: '[ "STG" ]'
 
