@@ -32,6 +32,8 @@ jobs:
         uses: ./.github/actions/determine-target-helplines-action
         with:
           environment: staging
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
