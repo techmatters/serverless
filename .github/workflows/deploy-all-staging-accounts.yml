@@ -21,23 +21,29 @@ on:
 
 jobs:
   configure:
-    name: Load Configuration
+    name: Determine Configuration
     runs-on: ubuntu-latest
     outputs:
-      staging_helplines: ${{ steps.read-config.outputs.staging_helplines }}
+      target_helplines: ${{ steps.determine-target-helplines.outputs.target_helplines }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - id: read-config
-        run: |
-          content=`jq -c '.' ./.github/workflows/config/staging-helplines.json`
-          echo "staging_helplines=$content" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - id: determine-target-helplines
+        name: Executing main-action
+        uses: ./.github/actions/determine-target-helplines-action
+        with:
+          environment: staging
   deploy-helplines:
     name: Run All Staging Deployments
     needs: configure
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ${{ needs.configure.outputs.staging_helplines }}
+      helplines: ${{ needs.configure.outputs.target_helplines }}
       environments: '[ "STG" ]'
 

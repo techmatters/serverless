@@ -21,17 +21,23 @@ on:
 
 jobs:
   configure:
-    name: Load Configuration
+    name: Determine Configuration
     runs-on: ubuntu-latest
     outputs:
-      production_helplines: ${{ steps.read-config.outputs.production_helplines }}
+      target_helplines: ${{ steps.determine-target-helplines.outputs.target_helplines }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - id: read-config
-        run: |
-          content=`jq -c '.' ./.github/workflows/config/production-helplines.json`
-          echo "production_helplines=$content" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - id: determine-target-helplines
+        name: Executing main-action
+        uses: ./.github/actions/determine-target-helplines-action
+        with:
+          environment: production
   deploy-helplines:
     name: Run All Production Deployments
     needs: configure
