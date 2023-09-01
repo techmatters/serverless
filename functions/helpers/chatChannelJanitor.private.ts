@@ -44,7 +44,7 @@ const deleteProxySession = async (context: Context<EnvVars>, proxySession: strin
 
     if (!ps) {
       // eslint-disable-next-line no-console
-      console.warn(`Tried to remove proxy session ${proxySession} but couldn't find it.`);
+      console.log(`Tried to remove proxy session ${proxySession} but couldn't find it.`);
       return false;
     }
 
@@ -53,7 +53,7 @@ const deleteProxySession = async (context: Context<EnvVars>, proxySession: strin
     return removed;
   } catch (err) {
     // eslint-disable-next-line no-console
-    console.warn('deleteProxySession error: ', err);
+    console.log('deleteProxySession error: ', err);
     return false;
   }
 };
