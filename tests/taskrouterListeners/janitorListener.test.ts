@@ -19,6 +19,7 @@ import {
   EventFields,
   EventType,
   TASK_WRAPUP,
+  TASK_COMPLETED,
   TASK_CANCELED,
   TASK_DELETED,
   TASK_SYSTEM_DELETED,
@@ -60,8 +61,19 @@ type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
 };
 
+const mockFetchFlexApiConfig = jest.fn(() => ({
+  attributes: {
+    feature_flags: {
+      enable_post_survey: true,
+      backend_handled_chat_janitor: true,
+    },
+  },
+}));
 const context = {
   ...mock<Context<EnvVars>>(),
+  getTwilioClient: (): any => ({
+    flexApi: { configuration: { get: () => ({ fetch: mockFetchFlexApiConfig }) } },
+  }),
   CHAT_SERVICE_SID: 'CHxxx',
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
 };
@@ -92,13 +104,14 @@ afterEach(() => {
 });
 
 describe('isCleanupBotCapture', () => {
-  each(['web', ...Object.values(AseloCustomChannels)]).test(
+  each(['web', ...Object.values(AseloCustomChannels)].map((channelType) => ({ channelType }))).test(
     'capture control task canceled with channelType $channelType, should trigger janitor',
     async ({ channelType }) => {
       const event = {
         ...mock<EventFields>(),
         EventType: TASK_CANCELED as EventType,
         TaskAttributes: JSON.stringify({ ...captureControlTaskAttributes, channelType }),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
@@ -114,6 +127,7 @@ describe('isCleanupBotCapture', () => {
         ...mock<EventFields>(),
         EventType: eventType,
         TaskAttributes: JSON.stringify(captureControlTaskAttributes),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
@@ -126,6 +140,7 @@ describe('isCleanupBotCapture', () => {
       ...mock<EventFields>(),
       EventType: TASK_CANCELED as EventType,
       TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
+      TaskChannelUniqueName: 'chat',
     };
     await janitorListener.handleEvent(context, event);
 
@@ -145,6 +160,7 @@ describe('isCleanupCustomChannel', () => {
         ...mock<EventFields>(),
         EventType: eventType as EventType,
         TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
@@ -160,6 +176,7 @@ describe('isCleanupCustomChannel', () => {
         ...mock<EventFields>(),
         EventType: eventType as EventType,
         TaskAttributes: JSON.stringify(nonCustomChannelTaskAttributes),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
@@ -190,6 +207,7 @@ describe('isCleanupCustomChannel', () => {
         ...mock<EventFields>(),
         EventType: TASK_CANCELED as EventType,
         TaskAttributes: JSON.stringify(taskAttributes),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
@@ -211,10 +229,106 @@ describe('isCleanupCustomChannel', () => {
         ...mock<EventFields>(),
         EventType: eventType as EventType,
         TaskAttributes: JSON.stringify(taskAttributes),
+        TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
 
       expect(mockChannelJanitor).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe('isDeactivateConversationOrchestration', () => {
+  each(
+    // [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
+    [TASK_WRAPUP, TASK_COMPLETED].flatMap((eventType) =>
+      [...Object.values(AseloCustomChannels), 'web', 'sms', 'whatsapp', 'facebook'].map(
+        (channelType) => ({ channelType, eventType }),
+      ),
+    ),
+  ).test(
+    'when enable_post_survey=false & backend_handled_chat_janitor=false, eventType $eventType with channelType $channelType, should not trigger janitor',
+    async ({ channelType, eventType }) => {
+      mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+        attributes: {
+          feature_flags: {
+            enable_post_survey: true,
+            backend_handled_chat_janitor: true,
+          },
+        },
+      }));
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
+        TaskChannelUniqueName: 'chat',
+      };
+      await janitorListener.handleEvent(context, event);
+
+      const { channelSid } = customChannelTaskAttributes;
+      expect(mockChannelJanitor).not.toHaveBeenCalledWith(context, { channelSid });
+    },
+  );
+
+  each(
+    // [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
+    [TASK_WRAPUP, TASK_COMPLETED].flatMap((eventType) =>
+      [...Object.values(AseloCustomChannels), 'web', 'sms', 'whatsapp', 'facebook'].map(
+        (channelType) => ({ channelType, eventType }),
+      ),
+    ),
+  ).test(
+    'when enable_post_survey=true & backend_handled_chat_janitor=true, eventType $eventType with channelType $channelType, should not trigger janitor',
+    async ({ channelType, eventType }) => {
+      mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+        attributes: {
+          feature_flags: {
+            enable_post_survey: true,
+            backend_handled_chat_janitor: true,
+          },
+        },
+      }));
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
+        TaskChannelUniqueName: 'chat',
+      };
+      await janitorListener.handleEvent(context, event);
+
+      const { channelSid } = customChannelTaskAttributes;
+      expect(mockChannelJanitor).not.toHaveBeenCalledWith(context, { channelSid });
+    },
+  );
+
+  each(
+    [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
+      (eventType) =>
+        [...Object.values(AseloCustomChannels), 'web', 'sms', 'whatsapp', 'facebook'].map(
+          (channelType) => ({ channelType, eventType }),
+        ),
+    ),
+  ).test(
+    'when enable_post_survey=false & backend_handled_chat_janitor=true, eventType $eventType with channelType $channelType, should trigger janitor',
+    async ({ channelType, eventType }) => {
+      mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+        attributes: {
+          feature_flags: {
+            enable_post_survey: false,
+            backend_handled_chat_janitor: true,
+          },
+        },
+      }));
+      const event = {
+        ...mock<EventFields>(),
+        EventType: eventType as EventType,
+        TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
+        TaskChannelUniqueName: 'chat',
+      };
+      await janitorListener.handleEvent(context, event);
+
+      const { channelSid } = customChannelTaskAttributes;
+      expect(mockChannelJanitor).toHaveBeenCalledWith(context, { channelSid });
     },
   );
 });

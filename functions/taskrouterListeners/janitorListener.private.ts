@@ -38,6 +38,7 @@ import type { ChatTransferTaskAttributes, TransferHelpers } from '../transfer/he
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
   TASK_WRAPUP,
+  TASK_COMPLETED,
   TASK_DELETED,
   TASK_SYSTEM_DELETED,
 ];
