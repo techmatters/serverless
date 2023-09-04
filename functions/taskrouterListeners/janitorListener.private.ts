@@ -146,7 +146,15 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
-    const { EventType: eventType, TaskAttributes: taskAttributesString, TaskSid: taskSid } = event;
+    const {
+      EventType: eventType,
+      TaskAttributes: taskAttributesString,
+      TaskSid: taskSid,
+      TaskChannelUniqueName: taskChannelUniqueName,
+    } = event;
+
+    // The janitor is only be executed for chat based tasks
+    if (taskChannelUniqueName !== 'chat') return;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
