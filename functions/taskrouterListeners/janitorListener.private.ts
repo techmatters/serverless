@@ -27,6 +27,7 @@ import {
   TASK_WRAPUP,
   TASK_DELETED,
   TASK_SYSTEM_DELETED,
+  TASK_COMPLETED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
@@ -37,6 +38,7 @@ import type { ChatTransferTaskAttributes, TransferHelpers } from '../transfer/he
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
   TASK_WRAPUP,
+  TASK_COMPLETED,
   TASK_DELETED,
   TASK_SYSTEM_DELETED,
 ];
@@ -62,6 +64,31 @@ const isCleanupBotCapture = (
   return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
 };
 
+const isHandledByOtherListener = (
+  taskSid: string,
+  taskAttributes: {
+    channelType?: string;
+    isChatCaptureControl?: boolean;
+  } & ChatTransferTaskAttributes,
+) => {
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
+
+  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    return true;
+  }
+
+  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
+    .path) as TransferHelpers;
+
+  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+    return true;
+  }
+
+  return false;
+};
+
 const isCleanupCustomChannel = (
   eventType: EventType,
   taskSid: string,
@@ -70,28 +97,11 @@ const isCleanupCustomChannel = (
     isChatCaptureControl?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
-  if (
-    !(
-      eventType === TASK_DELETED ||
-      eventType === TASK_SYSTEM_DELETED ||
-      eventType === TASK_CANCELED
-    )
-  ) {
+  if (![TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].includes(eventType)) {
     return false;
   }
 
-  const channelCaptureHandlers = require(Runtime.getFunctions()[
-    'channelCapture/channelCaptureHandlers'
-  ].path) as ChannelCaptureHandlers;
-
-  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
-    return false;
-  }
-
-  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
-    .path) as TransferHelpers;
-
-  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+  if (isHandledByOtherListener(taskSid, taskAttributes)) {
     return false;
   }
 
@@ -99,6 +109,29 @@ const isCleanupCustomChannel = (
     .path) as ChannelToFlex;
 
   return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
+};
+
+const isDeactivateConversationOrchestration = (
+  eventType: EventType,
+  taskSid: string,
+  taskAttributes: {
+    channelType?: string;
+    isChatCaptureControl?: boolean;
+  } & ChatTransferTaskAttributes,
+) => {
+  if (
+    ![TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].includes(
+      eventType,
+    )
+  ) {
+    return false;
+  }
+
+  if (isHandledByOtherListener(taskSid, taskAttributes)) {
+    return false;
+  }
+
+  return true;
 };
 
 const wait = (ms: number): Promise<void> =>
@@ -114,7 +147,15 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
-    const { EventType: eventType, TaskAttributes: taskAttributesString, TaskSid: taskSid } = event;
+    const {
+      EventType: eventType,
+      TaskAttributes: taskAttributesString,
+      TaskSid: taskSid,
+      TaskChannelUniqueName: taskChannelUniqueName,
+    } = event;
+
+    // The janitor is only be executed for chat based tasks
+    if (taskChannelUniqueName !== 'chat') return;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
@@ -143,6 +184,25 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
+    if (isDeactivateConversationOrchestration(eventType, taskSid, taskAttributes)) {
+      // This task has reached a point where the channel should be deactivated, unless post survey is enabled
+      const client = context.getTwilioClient();
+      const serviceConfig = await client.flexApi.configuration.get().fetch();
+      const { feature_flags: featureFlags } = serviceConfig.attributes;
+
+      // TODO: remove featureFlags.backend_handled_chat_janitor condition once all accounts are updated, since we want this code to be executed in all Flex instances once CHI-2202 is implemented and in place
+      if (!featureFlags.enable_post_survey && featureFlags.backend_handled_chat_janitor) {
+        console.log('Handling DeactivateConversationOrchestration...');
+
+        const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor']
+          .path).chatChannelJanitor as ChatChannelJanitor;
+        await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+
+        console.log('Finished DeactivateConversationOrchestration.');
+        return;
+      }
+    }
+
     console.log('===== JanitorListener finished successfully =====');
   } catch (err) {
     console.log('===== JanitorListener has failed =====');
@@ -155,9 +215,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
  * The taskrouter callback expects that all taskrouter listeners return
  * a default object of type TaskrouterListener.
  */
-const transfersListener: TaskrouterListener = {
+const janitorListener: TaskrouterListener = {
   shouldHandle,
   handleEvent,
 };
 
-export default transfersListener;
+export default janitorListener;
