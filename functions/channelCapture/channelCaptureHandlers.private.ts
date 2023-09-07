@@ -507,7 +507,7 @@ const handlePostSurveyComplete = async (
         : !postSurveyConfigJson
         ? `No postSurveyConfigJson found for definitionVersion ${definitionVersion}.`
         : `postSurveyConfigJson for definitionVersion ${definitionVersion} is not a Twilio asset as expected`; // This should removed when if we move definition versions to an external source.
-    console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
+    console.info(`Error accessing to the post survey form definitions: ${errorMEssage}`);
   }
 };
 
