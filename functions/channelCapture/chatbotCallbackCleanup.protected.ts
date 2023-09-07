@@ -69,12 +69,13 @@ export const chatbotCallbackCleanup = async ({
 
   const releasedChannelAttributes = {
     ...omit(channelAttributes, ['capturedChannelAttributes']),
-    ...(capturedChannelAttributes.memoryAttribute
+    ...(capturedChannelAttributes && capturedChannelAttributes.memoryAttribute
       ? { [capturedChannelAttributes.memoryAttribute]: memory }
       : { memory }),
-    ...(capturedChannelAttributes.releaseFlag && {
-      [capturedChannelAttributes.releaseFlag]: true,
-    }),
+    ...(capturedChannelAttributes &&
+      capturedChannelAttributes.releaseFlag && {
+        [capturedChannelAttributes.releaseFlag]: true,
+      }),
   };
 
   const channelCaptureHandlers = require(Runtime.getFunctions()[
@@ -83,17 +84,19 @@ export const chatbotCallbackCleanup = async ({
 
   await Promise.all([
     // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
-    lexClient.deleteSession(context, {
-      botName: capturedChannelAttributes.botName,
-      botAlias: capturedChannelAttributes.botAlias,
-      userId: channel.sid,
-    }),
+    capturedChannelAttributes &&
+      lexClient.deleteSession(context, {
+        botName: capturedChannelAttributes.botName,
+        botAlias: capturedChannelAttributes.botAlias,
+        userId: channel.sid,
+      }),
     // Update channel attributes (remove channelCapturedByBot and add memory)
     channel.update({
       attributes: JSON.stringify(releasedChannelAttributes),
     }),
     // Remove this webhook from the channel
-    channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
+    capturedChannelAttributes &&
+      channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
     // Trigger the next step once the channel is released
     channelCaptureHandlers.handleChannelRelease(
       context,
