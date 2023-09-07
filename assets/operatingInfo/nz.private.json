@@ -1,19 +1,24 @@
 {
   "timezone": "Pacific/Auckland",
-  "holidays": {
-    "12/25/2023":"Christmas",
-    "01/01/2024":"New Years Day"
-  
-  },
+  "holidays": {},
   "operatingHours": {
     "webchat": {
-      "1": [{ "open": 800, "close": 2359 }],
-      "2": [{ "open": 800, "close": 2359 }],
-      "3": [{ "open": 800, "close": 2359 }],
-      "4": [{ "open": 800, "close": 2359 }],
-      "5": [{ "open": 800, "close": 2359 }],
-      "6": [{ "open": 800, "close": 2359 }],
-      "7": [{ "open": 800, "close": 2359 }]
+      "1": [{ "open": 1000, "close": 2200 }],
+      "2": [{ "open": 1000, "close": 2200 }],
+      "3": [{ "open": 1000, "close": 2200 }],
+      "4": [{ "open": 1000, "close": 2200 }],
+      "5": [{ "open": 1000, "close": 2200 }],
+      "6": [{ "open": 1000, "close": 2200 }],
+      "7": [{ "open": 1000, "close": 2200 }]
+    },
+    "sms": {
+      "1": [{ "open": 1000, "close": 2200 }],
+      "2": [{ "open": 1000, "close": 2200 }],
+      "3": [{ "open": 1000, "close": 2200 }],
+      "4": [{ "open": 1000, "close": 2200 }],
+      "5": [{ "open": 1000, "close": 2200 }],
+      "6": [{ "open": 1000, "close": 2200 }],
+      "7": [{ "open": 1000, "close": 2200 }]
     }
   }
 }
