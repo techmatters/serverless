@@ -160,10 +160,6 @@ const triggerWithUserMessage = async (
     inputText,
   });
 
-  if (lexResult.status === 'failure') {
-    throw lexResult.error;
-  }
-
   const chatbotCallbackWebhook = await channel.webhooks().create({
     type: 'webhook',
     configuration: {
@@ -185,6 +181,11 @@ const triggerWithUserMessage = async (
     memoryAttribute,
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
+
+  // Bubble exception after the channel is updated because capture attributes are needed for the cleanup
+  if (lexResult.status === 'failure') {
+    throw lexResult.error;
+  }
 
   const { lexResponse } = lexResult;
 
