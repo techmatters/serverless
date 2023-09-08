@@ -21,8 +21,6 @@ export type AWSCredentials = {
   AWS_REGION: string;
 };
 
-export type BotType = 'pre_survey' | 'post_survey';
-
 export type LexMemory = { [q: string]: string | number };
 
 export const postText = async (
@@ -55,14 +53,17 @@ export const postText = async (
 
     return { status: 'success', lexResponse } as const;
   } catch (error) {
-    return { status: 'failure', error } as { status: 'failure'; error: Error };
+    return {
+      status: 'failure',
+      error: error instanceof Error ? error : new Error(String(error)),
+    } as const;
   }
 };
 
 export const isEndOfDialog = (dialogState: string | undefined) =>
   dialogState === 'Fulfilled' || dialogState === 'Failed';
 
-export const deleteSession = (
+export const deleteSession = async (
   credentials: AWSCredentials,
   {
     botName,
@@ -74,21 +75,30 @@ export const deleteSession = (
     userId: string;
   },
 ) => {
-  AWS.config.update({
-    credentials: {
-      accessKeyId: credentials.ASELO_APP_ACCESS_KEY,
-      secretAccessKey: credentials.ASELO_APP_SECRET_KEY,
-    },
-    region: credentials.AWS_REGION,
-  });
+  try {
+    AWS.config.update({
+      credentials: {
+        accessKeyId: credentials.ASELO_APP_ACCESS_KEY,
+        secretAccessKey: credentials.ASELO_APP_SECRET_KEY,
+      },
+      region: credentials.AWS_REGION,
+    });
 
-  const Lex = new AWS.LexRuntime();
+    const Lex = new AWS.LexRuntime();
 
-  return Lex.deleteSession({
-    botName,
-    botAlias,
-    userId,
-  }).promise();
+    const lexResponse = await Lex.deleteSession({
+      botName,
+      botAlias,
+      userId,
+    }).promise();
+
+    return { status: 'success', lexResponse } as const;
+  } catch (error) {
+    return {
+      status: 'failure',
+      error: error instanceof Error ? error : new Error(String(error)),
+    } as const;
+  }
 };
 
 export type LexClient = {

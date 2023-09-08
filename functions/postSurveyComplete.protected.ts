@@ -123,7 +123,7 @@ const getPostSurveyCompleteMessage = async (
 
     if (translation.postSurveyCompleteMessage) return translation.postSurveyCompleteMessage;
   } catch {
-    console.error(
+    console.info(
       `Couldn't retrieve postSurveyCompleteMessage translation for ${taskLanguage}, neither default (en-US).`,
     );
   }
@@ -196,7 +196,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
               : !postSurveyConfigJson
               ? `No postSurveyConfigJson found for definitionVersion ${definitionVersion}.`
               : `postSurveyConfigJson for definitionVersion ${definitionVersion} is not a Twilio asset as expected`; // This should removed when if we move definition versions to an external source.
-          console.error(`Error accessing to the post survey form definitions: ${errorMEssage}`);
+          console.info(`Error accessing to the post survey form definitions: ${errorMEssage}`);
         }
 
         // As survey tasks will never be assigned to a worker, they'll be kept in pending state. A pending can't transition to completed state, so we cancel them here to raise a task.canceled taskrouter event.

@@ -71,7 +71,7 @@ const baseContext = {
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
 
-const logSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+const logSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
 
 beforeAll(() => {
   helpers.setup({});
