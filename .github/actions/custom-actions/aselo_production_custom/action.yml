@@ -12,8 +12,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-name: 'Aselo Development release custom action'
-description: 'Sets up environment variables related to non-standard additional features in use in the development environment'
+name: 'Aselo Production release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the prodcution environment'
 inputs:
   account-sid:
     description: 'The Twilio Account SID for this account'
