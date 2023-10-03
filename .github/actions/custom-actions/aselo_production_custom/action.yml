@@ -1,0 +1,49 @@
+# Copyright (C) 2021-2023 Technology Matters
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/.
+
+name: 'Aselo Production release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the prodcution environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    # Line environment variables
+    - name: Set helpline Line Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_AS_LINE_FLEX_FLOW_SID"
+        env_variable_name: "LINE_FLEX_FLOW_SID"
+    - name: Set Line Channel Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_LINE_AS_CHANNEL_SECRET"
+        env_variable_name: "LINE_CHANNEL_SECRET"
+    - name: Set Line Channel Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_LINE_AS_CHANNEL_ACCESS_TOKEN"
+        env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
+    # Append environment variables
+    - name: Add LINE_FLEX_FLOW_SID
+      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_SECRET
+      run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
+      shell: bash
+    - name: Add LINE_CHANNEL_ACCESS_TOKEN
+      run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
