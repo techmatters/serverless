@@ -25,6 +25,17 @@ import {
 import { bindResolve, error500, responseWithCors, send } from '@tech-matters/serverless-helpers';
 import { Body, EnvVars as SendSystemEnv, SendSystemMessageModule } from './sendSystemMessage';
 
+const removeStudioWebhook = async (context: Context<SendSystemEnv>, event: Body) => {
+  const webhooks = await context
+    .getTwilioClient()
+    .chat.services(context.CHAT_SERVICE_SID)
+    .channels(event.channelSid!)
+    .webhooks.list();
+
+  const studioWebhook = webhooks.find((w) => w.type === 'studio');
+  await studioWebhook?.remove();
+};
+
 export const handler: ServerlessFunctionSignature<SendSystemEnv, Body> = async (
   context: Context<SendSystemEnv>,
   event: Body,
@@ -37,6 +48,11 @@ export const handler: ServerlessFunctionSignature<SendSystemEnv, Body> = async (
     const handlerPath = Runtime.getFunctions().sendSystemMessage.path;
     const { sendSystemMessage } = require(handlerPath) as SendSystemMessageModule;
 
+    /**
+     * We need to remove the studio webhook before calling sendSystemMessage
+     * because it would trigger another execution of studio.
+     */
+    await removeStudioWebhook(context, event);
     const result = await sendSystemMessage(context, event);
 
     resolve(send(result.status)(result.message));
