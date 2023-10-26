@@ -191,7 +191,7 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $HELPLINE_AWS_REGION
           s3-bucket: $S3_BUCKET
-          helpline-code: "${{ env.HELPLINE_CODE }}"
+          helpline-code: "${{env.HELPLINE_CODE}}"
           environment-code: ${{matrix.environment_code}}
           environment: ${{env.FULL_ENVIRONMENT_NAME}}
           # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
