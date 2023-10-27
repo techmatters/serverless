@@ -124,6 +124,8 @@ jobs:
           ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_POST_SURVEY_BOT_CHAT_URL
           env_variable_name: POST_SURVEY_BOT_CHAT_URL
 
+      # Since we can't provision a lex chat bot with e2e as the helpline code
+      # we will have to change the helpline code for the E2E account to "ee" on serverless
       - name: Set Helpline Code for E2E Account
         if: matrix.helpline_code == 'E2E'
         uses: marvinpinto/action-inject-ssm-secrets@latest
