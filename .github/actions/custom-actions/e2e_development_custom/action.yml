@@ -30,5 +30,9 @@ runs:
           env_variable_name: "HELPLINE_CODE"
       # Append environment variables
       - name: Add HELPLINE_CODE
-        run: echo "HELPLINE_CODE=${{ env.HELPLINE_CODE }}" >> .env
+        # run: echo "HELPLINE_CODE=${{ env.HELPLINE_CODE }}" >> .env
+
+        run: |
+          echo "Setting helpline-code for e2e"
+          echo "HELPLINE_CODE=$HELPLINE_CODE" >> .env
         shell: bash
