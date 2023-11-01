@@ -124,27 +124,6 @@ jobs:
           ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_POST_SURVEY_BOT_CHAT_URL
           env_variable_name: POST_SURVEY_BOT_CHAT_URL
 
-      # Since we can't provision a lex chat bot with e2e as the helpline code
-      # we will have to change the helpline code for the E2E account to "ee" on serverless
-      - name: Set Helpline Code for E2E Account
-        if: matrix.helpline_code == 'E2E'
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_HELPLINE_CODE
-          env_variable_name: HELPLINE_CODE
-        
-      - name: Check and Set Helpline Code
-        if: matrix.helpline_code == 'E2E'
-        run: |
-          echo "Setting helpline-code to $HELPLINE_CODE"
-          echo "HELPLINE_CODE=$HELPLINE_CODE" >> $GITHUB_ENV
-          
-      - name: Set Helpline Code (else part)
-        if: matrix.helpline_code != 'E2E'
-        run: |
-          echo "Setting helpline-code to matrix.helpline_code"
-          echo "HELPLINE_CODE=${{ matrix.helpline_code }}" >> $GITHUB_ENV
-
       - name: Set AWS credentials for Aselo user
         uses: marvinpinto/action-inject-ssm-secrets@latest
         with:
@@ -193,7 +172,7 @@ jobs:
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $HELPLINE_AWS_REGION
           s3-bucket: $S3_BUCKET
-          helpline-code: "${{env.HELPLINE_CODE}}"
+          helpline-code: ${{matrix.helpline_code}}
           environment-code: ${{matrix.environment_code}}
           environment: ${{env.FULL_ENVIRONMENT_NAME}}
           # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
