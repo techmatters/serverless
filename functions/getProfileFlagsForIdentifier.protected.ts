@@ -104,8 +104,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     const serviceConfig = await client.flexApi.configuration.get().fetch();
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { hrm_base_url, hrm_api_version } = serviceConfig.attributes;
-    // const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
-    const hrmBaseUrl = `http://localhost:8080/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
+    const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
     const { trigger } = event;
 
     const identifier = getIdentifier(trigger);
