@@ -364,7 +364,7 @@ export const handleChannelCapture = async (
 
   // This is used to match all digits (0-9) and replace them with no space since Lex doesn't accept numbers
   if (/\d/.test(languageSanitized)) {
-    languageSanitized = languageSanitized.replace(/d/g, '');
+    languageSanitized = languageSanitized.replace(/\d/g, '');
   }
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
