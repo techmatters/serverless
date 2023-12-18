@@ -44,5 +44,5 @@ jobs:
     uses: ./.github/workflows/deploy-multiple-accounts.yml
     secrets: inherit
     with:
-      helplines: ${{ needs.configure.outputs.production_helplines }}
+      helplines: ${{ needs.configure.outputs.target_helplines }}
       environments: '[ "PROD" ]'

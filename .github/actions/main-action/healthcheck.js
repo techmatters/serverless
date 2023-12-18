@@ -21,9 +21,9 @@
  * For details see https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action#commit-tag-and-push-your-action-to-github 
  */ 
 
-import { setOutput, setFailed } from '@actions/core';
-import fetch from 'node-fetch';
-import Twilio from 'twilio';
+const { setOutput, setFailed } = require('@actions/core');
+const fetch = require('node-fetch');
+const Twilio = require('twilio');
 
 async function healthCheck () {
     // `who-to-greet` input defined in action metadata file
