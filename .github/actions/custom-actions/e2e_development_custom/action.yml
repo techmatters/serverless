@@ -1,0 +1,34 @@
+# Copyright (C) 2021-2023 Technology Matters
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/.
+
+name: 'E2E Development release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in E2E Development environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    # Since we can't provision a lex chat bot with e2e as the helpline code
+      # we will have to change the helpline code for the E2E account to "ee" on serverless
+      - name: Set Helpline Code for E2E Account
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: "DEV_TWILIO_E2E_HELPLINE_CODE"
+          env_variable_name: "HELPLINE_CODE"
+      # Append environment variables
+      - name: Add HELPLINE_CODE
+        run: echo "HELPLINE_CODE=${{ env.HELPLINE_CODE }}" >> .env
+        shell: bash

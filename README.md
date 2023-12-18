@@ -38,7 +38,7 @@ For help on twilio-run commands run:
 | `SYNC_SERVICE_API_KEY`              | api resource to use above sync client (under /sync/tools, named Shared State Service)                          |
 | `SYNC_SERVICE_API_SECRET`           | api secret of the above resource (no way to acces in Twilio console, ask this to the repo owner)               |
 | `CHAT_SERVICE_SID`                  | programmable chat sid used for chat tasks (under /chat/services, named Flex Chat Service)                      |
-| `S3_BUCKET`                         | s3 bucket for ACCOUNT_SID ('contact-docs-bucket' in localstack)                                                |
+| `S3_BUCKET`                         | s3 bucket for ACCOUNT_SID ('docs-bucket' in localstack)                                                        |
 | `S3_ENDPOINT`                       | _local transcripts only_ http://localhost:4566                                                                 |
 | `ASELO_APP_ACCESS_KEY`              | AWS_ACCESS_KEY_ID with access to s3 bucket (can be any string for localstack)                                  |
 | `ASELO_APP_SECRET_KEY`              | AWS_SECRET_ACCESS_KEY for ASELO_APP_ACCESS_KEY (can be any string for localstack                               |

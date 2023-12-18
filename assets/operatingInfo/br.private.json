@@ -1,30 +1,62 @@
 {
   "timezone": "America/Sao_Paulo",
   "holidays": {
-    "10/12/2022":"Our Lady of Aparecida's day",
-    "11/02/2022":"All Souls Day",
-    "11/15/2022":"Republic Day",
-    "12/25/2022":"Christmas Day",
-    "01/01/2023":"New Year's Day",
-    "02/21/2023":"Shrove Tuesday",
-    "04/07/2023":"Good Friday",
-    "04/09/2023":"Easter Sunday",
-    "04/21/2023":"Tiradentes Day",
-    "05/01/2023":"Labour Day",
-    "06/08/2023":"Corpus Christi",
-    "09/07/2023":"Independence Day",
-    "10/12/2023":"Our Lady of Aparecida's day",
-    "11/02/2023":"All Souls Day",
-    "11/15/2023":"Republic Day",
-    "12/25/2023":"Christmas Day"
+    "12/22/2023": "end of year recess",
+    "12/24/2023": "Christmas Eve",
+    "12/25/2023": "Christmas",
+    "12/26/2023": "end of year recess",
+    "12/27/2023": "end of year recess",
+    "12/28/2023": "end of year recess",
+    "12/29/2023": "end of year recess",
+    "01/01/2024": "national holiday",
+    "01/02/2024": "end of year recess",
+    "01/03/2024": "end of year recess",
+    "01/04/2024": "end of year recess",
+    "01/05/2024": "end of year recess",
+    "02/13/2024": "carnival",
+    "03/29/2024": "national holiday",
+    "04/21/2024": "national holiday",
+    "05/01/2024": "national holiday",
+    "09/07/2024": "national holiday",
+    "10/12/2024": "national holiday",
+    "11/02/2024": "national holiday",
+    "11/15/2024": "national holiday",
+    "11/20/2024": "national holiday",
+    "12/24/2024": "Christmas Eve",
+    "12/25/2024": "Christmas"
   },
   "operatingHours": {
     "facebook": {
-      "1": [{ "open": 1400, "close": 1800 }],
-      "2": [{ "open": 900, "close": 1300 }],
-      "3": [{ "open": 1400, "close": 1800 }],
-      "4": [{ "open": 900, "close": 1300 }],
-      "5": [{ "open": 1400, "close": 1800 }],
+      "1": [
+        {
+          "open": 1400,
+          "close": 1800
+        }
+      ],
+      "2": [
+        {
+          "open": 900,
+          "close": 1300
+        }
+      ],
+      "3": [
+        {
+          "open": 1400,
+          "close": 1800
+        }
+      ],
+      "4": [
+        {
+          "open": 900,
+          "close": 1300
+        }
+      ],
+      "5": [
+        {
+          "open": 1400,
+          "close": 1800
+        }
+      ],
       "6": [],
       "7": []
     }

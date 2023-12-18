@@ -82,3 +82,6 @@ runs:
     - name: Zambia Production release custom action
       if: inputs.helpline-name == format('ZM_PROD')
       uses: ./.github/actions/custom-actions/zambia_production_custom
+    - name: E2E Development release custom action
+      if: inputs.helpline-name == format('E2E_DEV')
+      uses: ./.github/actions/custom-actions/e2e_development_custom
