@@ -1,42 +1,87 @@
 {
   "timezone": "America/Santiago",
   "holidays": {
-    "5/1/2023": "Día del trabajo",
-    "5/7/2023": "Consejeros Institucionales",
-    "5/21/2023": "Glorias Navales",
-    "6/21/2023": "Pueblos indígenas",
-    "6/26/2023": "San Pedro y San Pablo",
-    "7/16/2023": "Día de la Virgen",
-    "8/15/2023": "Asunción de la Virgen",
-    "9/17/2023": "Fiestas patrias",
-    "9/18/2023": "Independencia",
-    "9/19/2023": "Glorias del ejército",
-    "10/9/2023": "Encuentro de dos mundos",
-    "10/27/2023": "Iglesias evangélicas",
-    "11/1/2023": "Día de todos los santos",
-    "12/8/2023": "Inmaculada Concepción",
-    "12/17/2023": "Plebiscito Nacional",
-    "12/24/2023": "Navidad",
     "12/25/2023": "Navidad",
-    "12/31/2023": "Año nuevo",
-    "01/01/2024": "Año nuevo"
+    "01/01/2024": "Año nuevo",
+    "03/29/2024": "Viernes santo",
+    "05/01/2024": "Día del trabajador",
+    "05/21/2024": "Glorias Navales",
+    "06/20/2024": "Día Nacional de los Pueblos Indígenas",
+    "07/16/2024": "Día de la Virgen del Carmen",
+    "08/15/2024": "Asunción de la Virgen",
+    "09/18/2024": "Independencia Nacional",
+    "09/19/2024": "Día de las Glorias del Ejército",
+    "09/20/2024": "Feriado Adicional Fiestas Patrias",
+    "10/31/2024": "Día de las Iglesias Evangélicas y Protestantes",
+    "11/01/2024": "Día de Todos los Santos",
+    "12/25/2024": "Navidad"
   },
   "operatingHours": {
     "webchat": {
-      "1": [{ "open": 1000, "close": 2200 }],
-      "2": [{ "open": 1000, "close": 2200 }],
-      "3": [{ "open": 1000, "close": 2200 }],
-      "4": [{ "open": 1000, "close": 2200 }],
-      "5": [{ "open": 1000, "close": 2200 }],
+      "1": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "2": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "3": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "4": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "5": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
       "6": [],
       "7": []
     },
     "voice": {
-      "1": [{ "open": 1000, "close": 2200 }],
-      "2": [{ "open": 1000, "close": 2200 }],
-      "3": [{ "open": 1000, "close": 2200 }],
-      "4": [{ "open": 1000, "close": 2200 }],
-      "5": [{ "open": 1000, "close": 2200 }],
+      "1": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "2": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "3": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "4": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
+      "5": [
+        {
+          "open": 1000,
+          "close": 1630
+        }
+      ],
       "6": [],
       "7": []
     }
