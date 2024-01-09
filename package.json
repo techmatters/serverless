@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "go": "npx tsc functions/webhooks/modica/FlexToModica.protected.ts && node functions/webhooks/modica/FlexToModica.protected.js",
     "test": "jest --verbose",
     "start": "npx tsc && twilio-run --env",
     "start:local": "npx tsc && twilio-run --env --port 3030",
