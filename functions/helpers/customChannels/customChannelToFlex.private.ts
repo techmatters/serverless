@@ -116,6 +116,7 @@ export enum AseloCustomChannels {
   Twitter = 'twitter',
   Instagram = 'instagram',
   Line = 'line',
+  Modica = 'modica',
 }
 
 export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
