@@ -95,6 +95,22 @@ runs:
       with:
         ssm_parameter: "DEV_LINE_AS_CHANNEL_ACCESS_TOKEN"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
+    # Modica environment variables
+    - name: Set Modica App Name
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/modica/${{inputs.account-sid}}/app_name"
+        env_variable_name: "MODICA_APP_NAME"
+    - name: Set Modica App Password
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/modica/${{inputs.account-sid}}/app_password"
+        env_variable_name: "MODICA_APP_PASSWORD"
+    - name: Set Modica Flex Flow Sid
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
+        env_variable_name: "MODICA_FLEX_FLOW_SID"
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -132,4 +148,13 @@ runs:
       shell: bash
     - name: Add LINE_CHANNEL_ACCESS_TOKEN
       run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add MODICA_APP_NAME
+      run: echo "MODICA_APP_NAME=${{ env.MODICA_APP_NAME }}" >> .env
+      shell: bash
+    - name: Add MODICA_APP_PASSWORD
+      run: echo "MODICA_APP_PASSWORD=${{ env.MODICA_APP_PASSWORD }}" >> .env
+      shell: bash
+    - name: Add MODICA_FLEX_FLOW_SID
+      run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
       shell: bash
