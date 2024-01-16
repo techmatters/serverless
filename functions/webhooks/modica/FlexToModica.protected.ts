@@ -31,6 +31,21 @@ import {
   FlexToCustomChannel,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
+class ModicaError extends Error {
+  status: number;
+
+  statusText: string;
+
+  data: any;
+
+  constructor(status: number, statusText: string, json: any) {
+    super(json);
+    this.status = status;
+    this.statusText = statusText;
+    this.data = json;
+  }
+}
+
 // This can be a candidate to be an environment variable
 const MODICA_SEND_MESSAGE_URL = 'https://api.modicagroup.com/rest/gateway/messages';
 
@@ -91,13 +106,10 @@ const sendMessageThroughModica =
 
     if (!result.ok) {
       /**
-       * What should we log as error?
-       * The fetch's response might include more useful info.
-       *
-       * Also, we're not using console.error here so we don't get duplicated
-       * errors on Twilio.
+       * Modica returns a json when the request fails.
        */
-      console.log('>> Could not send message through Modica');
+      const json = await result.json();
+      throw new ModicaError(result.status, result.statusText, json);
     }
   };
 
