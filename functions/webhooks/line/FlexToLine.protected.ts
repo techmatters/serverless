@@ -131,7 +131,7 @@ export const handler = async (
     }
   } catch (err: any) {
     // This will identify which custom channel the error originates from
-    err.channelType = 'line'
+    err.channelType = 'line';
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
   }
