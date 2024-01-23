@@ -277,7 +277,9 @@ export const sendMessageToFlex = async (
         channelSid,
       });
     }
-  } catch (err) {
+  } catch (err: any) {
+    // This will identify which custom channel the error originates from
+    err.channelType = channelType
     const removedStaleChannel = channelSid
       ? await removeChatChannel(context, { chatServiceSid, channelSid })
       : false;

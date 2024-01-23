@@ -169,6 +169,8 @@ export const handler = async (
     resolve(success(responses.join()));
   } catch (err: any) {
     // eslint-disable-next-line no-console
+    // This will identify which custom channel the error originates from
+    err.channelType = 'line'
     console.log(err);
     resolve(error500(err));
   }
