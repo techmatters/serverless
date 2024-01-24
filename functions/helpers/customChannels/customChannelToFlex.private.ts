@@ -277,7 +277,7 @@ export const sendMessageToFlex = async (
         channelSid,
       });
     }
-  } catch (err: any) {
+  } catch (err) {
     const removedStaleChannel = channelSid
       ? await removeChatChannel(context, { chatServiceSid, channelSid })
       : false;

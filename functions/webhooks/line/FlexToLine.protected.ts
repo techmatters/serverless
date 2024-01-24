@@ -129,7 +129,7 @@ export const handler = async (
       default:
         throw new Error('Reached unexpected default case');
     }
-  } catch (err: any) {
+  } catch (err) {
     /*
       For now, we are hard coding the error handler as we will need to update
       the error handler in Techmatters helper library to accomodate the channelType
