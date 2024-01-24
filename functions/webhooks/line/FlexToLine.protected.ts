@@ -24,8 +24,8 @@ import {
   responseWithCors,
   bindResolve,
   error400,
-  error500,
   success,
+  send,
 } from '@tech-matters/serverless-helpers';
 import {
   WebhookEvent,
@@ -130,9 +130,15 @@ export const handler = async (
         throw new Error('Reached unexpected default case');
     }
   } catch (err: any) {
-    // This will identify which custom channel the error originates from
-    err.channelType = 'line';
-    if (err instanceof Error) resolve(error500(err));
-    else resolve(error500(new Error(String(err))));
+    /*
+      For now, we are hard coding the error handler as we will need to update
+      the error handler in Techmatters helper library to accomodate the channelType
+    */
+    const error500 = (error: Error, channelType: string) =>
+      send(500)({ message: error.message, stack: error.stack, status: 500, channelType });
+    if (err instanceof Error) {
+      // This will identify which custom channel the error originates from
+      resolve(error500(err, 'line'));
+    } else resolve(error500(new Error(String(err)), 'line'));
   }
 };

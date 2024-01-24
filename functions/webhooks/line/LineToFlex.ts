@@ -21,9 +21,9 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   responseWithCors,
   bindResolve,
-  error500,
   error403,
   success,
+  send,
 } from '@tech-matters/serverless-helpers';
 import crypto from 'crypto';
 
@@ -168,10 +168,15 @@ export const handler = async (
 
     resolve(success(responses.join()));
   } catch (err: any) {
+    /*
+      For now, we are hard coding the error handler as we will need to update
+      the error handler in Techmatters helper library to accomodate the channelType
+    */
+    const error500 = (error: Error, channelType: string) =>
+      send(500)({ message: error.message, stack: error.stack, status: 500, channelType });
+
     // eslint-disable-next-line no-console
     // This will identify which custom channel the error originates from
-    err.channelType = 'line';
-    console.log(err);
-    resolve(error500(err));
+    resolve(error500(err, 'line'));
   }
 };
