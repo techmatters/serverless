@@ -285,7 +285,7 @@ export const sendMessageToFlex = async (
     // Propagate the error
     if (err instanceof Error) {
       throw new Error(
-        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}. channelType: ${channelType}`,
+        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
       );
     }
     // This will identify which custom channel the error originates from
