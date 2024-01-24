@@ -290,7 +290,7 @@ export const sendMessageToFlex = async (
     }
     // This will identify which custom channel the error originates from
     err.channelType = channelType;
-    console.error('err is here now', err)
+    console.error('err is here now', err);
     throw err;
   }
 
