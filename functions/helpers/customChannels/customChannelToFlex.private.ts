@@ -16,7 +16,20 @@
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
-import { CustomError } from '../customError.private';
+export class CustomError extends Error {
+  channelType: string;
+
+  constructor(message: string, channelType: string) {
+    // Call the constructor of the base class (Error)
+    super(message);
+
+    // Set the custom property
+    this.channelType = channelType;
+
+    // Set the prototype explicitly to ensure proper inheritance
+    Object.setPrototypeOf(this, CustomError.prototype);
+  }
+}
 
 /**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
