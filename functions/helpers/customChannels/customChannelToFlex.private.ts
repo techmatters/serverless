@@ -16,7 +16,7 @@
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
-import {CustomError} from '../customError.private'
+import { CustomError } from '../customError.private';
 
 /**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
@@ -288,7 +288,8 @@ export const sendMessageToFlex = async (
     if (err instanceof CustomError) {
       // err.channelType = channelType;
       throw new CustomError(
-        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`, channelType
+        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
+        channelType,
       );
     }
     // This will identify which custom channel the error originates from
