@@ -16,21 +16,6 @@
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
-export class CustomError extends Error {
-  channelType: string;
-
-  constructor(message: string, channelType: string) {
-    // Call the constructor of the base class (Error)
-    super(message);
-
-    // Set the custom property
-    this.channelType = channelType;
-
-    // Set the prototype explicitly to ensure proper inheritance
-    Object.setPrototypeOf(this, CustomError.prototype);
-  }
-}
-
 /**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
@@ -293,6 +278,7 @@ export const sendMessageToFlex = async (
       });
     }
   } catch (err: any) {
+    // This will identify which custom channel the error originates from
     err.channelType = channelType;
     const removedStaleChannel = channelSid
       ? await removeChatChannel(context, { chatServiceSid, channelSid })
@@ -300,14 +286,11 @@ export const sendMessageToFlex = async (
 
     // Propagate the error
     if (err instanceof Error) {
-      console.log('err is here now', err);
-      throw new CustomError(
-        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
-        channelType,
+      throw new Error(
+        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}. channelType: ${channelType}`,
       );
     }
-    // This will identify which custom channel the error originates from
-    console.log('err is here now', err);
+
     throw err;
   }
 
