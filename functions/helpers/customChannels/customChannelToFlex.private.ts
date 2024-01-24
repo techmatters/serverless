@@ -293,20 +293,20 @@ export const sendMessageToFlex = async (
       });
     }
   } catch (err: any) {
+    err.channelType = channelType;
     const removedStaleChannel = channelSid
       ? await removeChatChannel(context, { chatServiceSid, channelSid })
       : false;
 
     // Propagate the error
-    if (err instanceof CustomError) {
-      // err.channelType = channelType;
+    if (err instanceof Error) {
       throw new CustomError(
         `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
         channelType,
       );
     }
     // This will identify which custom channel the error originates from
-    console.error('err is here now', err);
+    console.log('err is here now', err);
     throw err;
   }
 
