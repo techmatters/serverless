@@ -73,60 +73,62 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    if (recipientId === undefined) {
-      resolve(error400('recipientId'));
-      return;
-    }
-    if (Body === undefined) {
-      resolve(error400('Body'));
-      return;
-    }
-    if (From === undefined) {
-      resolve(error400('From'));
-      return;
-    }
-    if (ChannelSid === undefined) {
-      resolve(error400('ChannelSid'));
-      return;
-    }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
+    throw new Error('this is testing error fromFlexToInstagram')
+    // const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
+    // if (recipientId === undefined) {
+    //   resolve(error400('recipientId'));
+    //   return;
+    // }
+    // if (Body === undefined) {
+    //   resolve(error400('Body'));
+    //   return;
+    // }
+    // if (From === undefined) {
+    //   resolve(error400('From'));
+    //   return;
+    // }
+    // if (ChannelSid === undefined) {
+    //   resolve(error400('ChannelSid'));
+    //   return;
+    // }
+    // if (EventType === undefined) {
+    //   resolve(error400('EventType'));
+    //   return;
+    // }
+    // if (Source === undefined) {
+    //   resolve(error400('Source'));
+    //   return;
+    // }
 
-    const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
-    const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
+    // const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
+    // const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
-    const sanitizedEvent = {
-      Body,
-      From,
-      ChannelSid,
-      EventType,
-      Source,
-    };
+    // const sanitizedEvent = {
+    //   Body,
+    //   From,
+    //   ChannelSid,
+    //   EventType,
+    //   Source,
+    // };
 
-    const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
-      event: sanitizedEvent,
-      recipientId,
-      sendExternalMessage: sendInstagramMessage(context),
-    });
+    // const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
+    //   event: sanitizedEvent,
+    //   recipientId,
+    //   sendExternalMessage: sendInstagramMessage(context),
+    // });
 
-    switch (result.status) {
-      case 'sent':
-        resolve(success(result.response));
-        return;
-      case 'ignored':
-        resolve(success('Ignored event.'));
-        return;
-      default:
-        throw new Error('Reached unexpected default case');
-    }
-  } catch (err) {
+    // switch (result.status) {
+    //   case 'sent':
+    //     resolve(success(result.response));
+    //     return;
+    //   case 'ignored':
+    //     resolve(success('Ignored event.'));
+    //     return;
+    //   default:
+    //     throw new Error('Reached unexpected default case');
+    // }
+  } catch (err: any) {
+    err.channelType = 'instagram';
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
   }

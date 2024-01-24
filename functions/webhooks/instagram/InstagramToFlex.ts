@@ -148,6 +148,7 @@ export const handler = async (
   }
 
   try {
+    throw new Error('this is testing error fromInstagramToFlex')
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
     const { message, sender } = event.entry[0].messaging[0];
@@ -166,86 +167,87 @@ export const handler = async (
     const chatServiceSid = context.CHAT_SERVICE_SID;
     const syncServiceSid = context.SYNC_SERVICE_SID;
 
-    if (isInstagramStoryReply(message)) {
-      resolve(success('Ignored story reply.'));
-      return;
-    }
-    // Handle message deletion for active conversations
-    if (isMessageDeleted(message)) {
-      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
-        syncServiceSid,
-        uniqueUserName,
-      });
+    // if (isInstagramStoryReply(message)) {
+    //   resolve(success('Ignored story reply.'));
+    //   return;
+    // }
+    // // Handle message deletion for active conversations
+    // if (isMessageDeleted(message)) {
+    //   const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+    //     syncServiceSid,
+    //     uniqueUserName,
+    //   });
 
-      if (channelSid) {
-        // const unsentMessage =
-        await unsendMessage(context, {
-          channelSid,
-          chatServiceSid,
-          messageExternalId,
-        });
+    //   if (channelSid) {
+    //     // const unsentMessage =
+    //     await unsendMessage(context, {
+    //       channelSid,
+    //       chatServiceSid,
+    //       messageExternalId,
+    //     });
 
-        resolve(success(`Message with external id ${messageExternalId} unsent.`));
-        return;
-      }
+    //     resolve(success(`Message with external id ${messageExternalId} unsent.`));
+    //     return;
+    //   }
 
-      resolve(
-        success(
-          `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
-        ),
-      );
-      return;
-    }
+    //   resolve(
+    //     success(
+    //       `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
+    //     ),
+    //   );
+    //   return;
+    // }
 
-    // Handle story tags for active conversations
-    if (isStoryMention(message)) {
-      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
-        syncServiceSid,
-        uniqueUserName,
-      });
+    // // Handle story tags for active conversations
+    // if (isStoryMention(message)) {
+    //   const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+    //     syncServiceSid,
+    //     uniqueUserName,
+    //   });
 
-      if (channelSid) {
-        messageText = getStoryMentionText(message);
-      } else {
-        resolve(
-          success(
-            `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
-          ),
-        );
-        return;
-      }
-    }
+    //   if (channelSid) {
+    //     messageText = getStoryMentionText(message);
+    //   } else {
+    //     resolve(
+    //       success(
+    //         `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
+    //       ),
+    //     );
+    //     return;
+    //   }
+    // }
 
-    // If messageText is empty at this point, handle as a "regular Instagram message"
-    messageText = messageText || message.text || '';
+    // // If messageText is empty at this point, handle as a "regular Instagram message"
+    // messageText = messageText || message.text || '';
 
-    const result = await channelToFlex.sendMessageToFlex(context, {
-      flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
-      chatServiceSid,
-      syncServiceSid,
-      channelType,
-      twilioNumber,
-      chatFriendlyName,
-      uniqueUserName,
-      senderScreenName,
-      onMessageSentWebhookUrl,
-      messageText,
-      messageAttributes,
-      senderExternalId,
-      subscribedExternalId,
-    });
+    // const result = await channelToFlex.sendMessageToFlex(context, {
+    //   flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
+    //   chatServiceSid,
+    //   syncServiceSid,
+    //   channelType,
+    //   twilioNumber,
+    //   chatFriendlyName,
+    //   uniqueUserName,
+    //   senderScreenName,
+    //   onMessageSentWebhookUrl,
+    //   messageText,
+    //   messageAttributes,
+    //   senderExternalId,
+    //   subscribedExternalId,
+    // });
 
-    switch (result.status) {
-      case 'sent':
-        resolve(success(result.response));
-        return;
-      case 'ignored':
-        resolve(success('Ignored event.'));
-        return;
-      default:
-        throw new Error('Reached unexpected default case');
-    }
-  } catch (err) {
+    // switch (result.status) {
+    //   case 'sent':
+    //     resolve(success(result.response));
+    //     return;
+    //   case 'ignored':
+    //     resolve(success('Ignored event.'));
+    //     return;
+    //   default:
+    //     throw new Error('Reached unexpected default case');
+    // }
+  } catch (err: any) {
+    err.channelType = 'instagram';
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
   }
