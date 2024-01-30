@@ -139,6 +139,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('>>> Incoming event:', JSON.stringify(event, null, 2)); // Log the incoming event
+
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -152,6 +154,9 @@ export const handler = async (
     const channelToFlex = require(handlerPath) as ChannelToFlex;
     const { message, sender } = event.entry[0].messaging[0];
 
+    console.log('>>> Message:', JSON.stringify(message, null, 2));
+    console.log('>>> Sender sender sender id', JSON.stringify(sender, null, 2), sender.id);
+
     let messageText = '';
     const senderExternalId = sender.id;
     const messageExternalId = message.mid;
@@ -159,11 +164,16 @@ export const handler = async (
     const channelType = channelToFlex.AseloCustomChannels.Instagram;
     const twilioNumber = `${channelType}:${subscribedExternalId}`;
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
+    console.log('>>> chatFriendlyName', chatFriendlyName);
     const uniqueUserName = `${channelType}:${senderExternalId}`;
+    console.log('>>> uniqueUserName', uniqueUserName);
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
+    console.log('>>> senderScreenName', senderScreenName);
+
     const messageAttributes = JSON.stringify({ messageExternalId });
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
     const chatServiceSid = context.CHAT_SERVICE_SID;
+    console.log('>>> chatServiceSid', chatServiceSid)
     const syncServiceSid = context.SYNC_SERVICE_SID;
 
     if (isInstagramStoryReply(message)) {
