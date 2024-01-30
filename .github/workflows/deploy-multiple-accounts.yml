@@ -118,11 +118,6 @@ jobs:
         with:
           ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_SURVEY_WORKFLOW_SID
           env_variable_name: SURVEY_WORKFLOW_SID
-      - name: Set Post Survey Bot Programmable Chat URL
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_POST_SURVEY_BOT_CHAT_URL
-          env_variable_name: POST_SURVEY_BOT_CHAT_URL
 
       - name: Set AWS credentials for Aselo user
         uses: marvinpinto/action-inject-ssm-secrets@latest
@@ -177,7 +172,6 @@ jobs:
           flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
           hrm-static-key: $HRM_STATIC_KEY
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
-          post-survey-bot-chat-url: $POST_SURVEY_BOT_CHAT_URL
           aselo-app-access-key: $ASELO_APP_ACCESS_KEY
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
           aws-region: $HELPLINE_AWS_REGION

@@ -37,8 +37,6 @@ import helpers from '../helpers';
 
 jest.mock('../../functions/postSurveyInit');
 
-const defaultFeatureFlags = { enable_lex: false }; // Just give compatibility for legacy tests for now. TODO: add tests for the new schema
-
 const mockFetchConfig = jest.fn();
 const context = {
   ...mock<Context<postSurveyListener.EnvVars>>(),
@@ -57,7 +55,7 @@ const context = {
         fetch: () => ({
           serviceConfig: {
             attributes: {
-              feature_flags: defaultFeatureFlags,
+              feature_flags: {},
             },
           },
         }),
@@ -150,14 +148,8 @@ describe('Post survey init', () => {
         taskChannelUniqueName: 'chat',
         attributes: { ...nonTrasferred.attributes, channelType },
       },
-      rejectReason: `is custom channel ${channelType}`,
+      rejectReason: `enable_post_survey === false (custom channel ${channelType})`,
     })),
-    {
-      task: nonTrasferred,
-      isCandidate: true,
-      featureFlags: { enable_post_survey: true },
-      rejectReason: 'is candidate with enable_post_survey === true',
-    },
     {
       task: nonTrasferred,
       isCandidate: true,
@@ -176,7 +168,7 @@ describe('Post survey init', () => {
       };
 
       mockFetchConfig.mockReturnValue({
-        attributes: { feature_flags: { ...defaultFeatureFlags, ...(featureFlags || {}) } },
+        attributes: { feature_flags: { ...(featureFlags || {}) } },
       });
 
       const postSurveyInitHandlerSpy = jest.spyOn(postSurveyInit, 'postSurveyInitHandler');
@@ -205,6 +197,14 @@ describe('Post survey init', () => {
       },
       extraDescription: 'even if does not have task control (in progress/rejected transfer)',
     },
+    ...Object.values(AseloCustomChannels).map((channelType) => ({
+      task: {
+        ...nonTrasferred,
+        taskChannelUniqueName: 'chat',
+        attributes: { ...nonTrasferred.attributes, channelType },
+      },
+      extraDescription: `for custom channel ${channelType}`,
+    })),
   ]).test(
     'Task should trigger post survey for candidate taskSid $task.taskSid $extraDescription',
     async ({ task }) => {

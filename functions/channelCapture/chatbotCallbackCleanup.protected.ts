@@ -122,7 +122,7 @@ export const handler = async (
   try {
     const { channelSid } = event;
     if (!channelSid) {
-      resolve(error400('Body'));
+      resolve(error400('channelSid'));
       return;
     }
 

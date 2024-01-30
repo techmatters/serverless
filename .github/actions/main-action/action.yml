@@ -52,9 +52,6 @@ inputs:
   survey-workflow-sid:
     description: 'Survey Workflow SID'
     required: true
-  post-survey-bot-chat-url:
-    description: 'Post Survey Bot Programmable Chat URL'
-    required: true
   aselo-app-access-key:
     description: 'AWS credentials for Aselo user'
     required: true
@@ -121,7 +118,6 @@ runs:
         FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
         HRM_STATIC_KEY=${{ inputs.hrm-static-key }}
         SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
-        POST_SURVEY_BOT_CHAT_URL=${{ inputs.post-survey-bot-chat-url }}
         ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
         ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
         S3_BUCKET=${{ inputs.s3-bucket }}
