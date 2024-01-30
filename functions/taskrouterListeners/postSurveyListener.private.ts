@@ -29,7 +29,6 @@ import type { TransferMeta } from '../transfer/helpers.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
 import type { AWSCredentials } from '../channelCapture/lexClient.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
-import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
@@ -37,7 +36,6 @@ export type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
-  POST_SURVEY_BOT_CHAT_URL: string;
   HRM_STATIC_KEY: string;
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
@@ -103,13 +101,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
       if (featureFlags.enable_post_survey) {
-        const channelToFlex = require(Runtime.getFunctions()[
-          'helpers/customChannels/customChannelToFlex'
-        ].path) as ChannelToFlex;
-
-        // TODO: Remove this once all accounts are migrated to Lex
-        // Only trigger post survey if handled by Lex or if is not a custom channel
-        if (featureFlags.enable_lex || !channelToFlex.isAseloCustomChannel(taskAttributes)) {
+        if (featureFlags.enable_lex) {
           const { channelSid } = taskAttributes;
 
           const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);

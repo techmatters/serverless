@@ -190,8 +190,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags } = serviceConfig.attributes;
 
-      // TODO: remove featureFlags.backend_handled_chat_janitor condition once all accounts are updated, since we want this code to be executed in all Flex instances once CHI-2202 is implemented and in place
-      if (!featureFlags.enable_post_survey && featureFlags.backend_handled_chat_janitor) {
+      if (!featureFlags.enable_post_survey) {
         console.log('Handling DeactivateConversationOrchestration...');
 
         const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor']
