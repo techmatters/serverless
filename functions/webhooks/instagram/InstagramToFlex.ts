@@ -173,8 +173,13 @@ export const handler = async (
     const messageAttributes = JSON.stringify({ messageExternalId });
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
     const chatServiceSid = context.CHAT_SERVICE_SID;
-    console.log('>>> chatServiceSid', chatServiceSid)
     const syncServiceSid = context.SYNC_SERVICE_SID;
+
+    const channelSidd = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+      syncServiceSid,
+      uniqueUserName,
+    });
+    console.log('>>> channelSid', channelSidd);
 
     if (isInstagramStoryReply(message)) {
       resolve(success('Ignored story reply.'));
