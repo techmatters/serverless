@@ -101,17 +101,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
       if (featureFlags.enable_post_survey) {
-        if (featureFlags.enable_lex) {
-          const { channelSid } = taskAttributes;
+        const { channelSid } = taskAttributes;
 
-          const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
+        const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-          const handlerPath = Runtime.getFunctions().postSurveyInit.path;
-          const postSurveyInitHandler = require(handlerPath)
-            .postSurveyInitHandler as PostSurveyInitHandler;
+        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
+        const postSurveyInitHandler = require(handlerPath)
+          .postSurveyInitHandler as PostSurveyInitHandler;
 
-          await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
-        }
+        await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+
         console.log('Finished handling post survey trigger.');
       }
     }
