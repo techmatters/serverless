@@ -197,7 +197,7 @@ describe('FlexToInstagram', () => {
       } else {
         expect(axios).toBeCalledWith(
           expect.objectContaining({
-            url: `https://graph.facebook.com/v12.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+            url: `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
             method: 'POST',
             data: JSON.stringify({
               recipient: {
