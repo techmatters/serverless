@@ -53,7 +53,7 @@ const sendInstagramMessage =
     };
 
     const response = await axios({
-      url: `https://graph.facebook.com/v12.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+      url: `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
       method: 'POST',
       data: JSON.stringify(body),
       headers: {
