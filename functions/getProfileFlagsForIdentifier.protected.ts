@@ -43,7 +43,7 @@ type ChatTrigger = {
     };
   };
 };
-const isChatTrigger = (obj: any): obj is VoiceTrigger =>
+const isChatTrigger = (obj: any): obj is ChatTrigger =>
   obj && obj.message && typeof obj.message === 'object';
 
 type VoiceTrigger = {
@@ -83,9 +83,14 @@ export const getIdentifier = (trigger: Event['trigger']) => {
     if (trigger.message.ChannelAttributes.channel_type === 'whatsapp') {
       return trigger.message.ChannelAttributes.from.replace('whatsapp:', '');
     }
+    if (trigger.message.ChannelAttributes.channel_type === 'modica') {
+      return trigger.message.ChannelAttributes.from.replace('modica:', '');
+    }
     if (trigger.message.ChannelAttributes.channel_type === 'web') {
       return getContactValueFromWebchat(trigger);
     }
+
+    return trigger.message.ChannelAttributes.from;
   }
 
   throw new Error('Trigger is none VoiceTrigger nor ChatTrigger');
