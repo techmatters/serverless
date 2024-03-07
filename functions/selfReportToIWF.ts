@@ -94,7 +94,7 @@ export const handler = TokenValidator(
 
       const responseData = {
         reportUrl,
-        status: report.data?.result,
+        status: data?.result,
       };
 
       return resolve(send(200)(responseData));
