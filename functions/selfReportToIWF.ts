@@ -44,6 +44,13 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+interface IWFResponse {
+  result?: string;
+  message?: {
+    access_token?: string;
+  };
+}
+
 export const handler = TokenValidator(
   async (
     context: Context<EnvVars>,
@@ -79,16 +86,18 @@ export const handler = TokenValidator(
 
       const report = await axios(config);
 
-      if (report.data?.result !== 'OK') return resolve(error400(report.data?.message));
+      const data = report.data as IWFResponse;
 
-      const reportUrl = `${context.IWF_REPORT_URL}/?t=${report.data?.message?.access_token}`;
+      if (data?.result !== 'OK') return resolve(error400(data.message?.access_token || ''));
 
-      const data = {
+      const reportUrl = `${context.IWF_REPORT_URL}/?t=${data.message?.access_token}`;
+
+      const responseData = {
         reportUrl,
         status: report.data?.result,
       };
 
-      return resolve(send(200)(data));
+      return resolve(send(200)(responseData));
     } catch (error) {
       return resolve(error500(error as any));
     }
