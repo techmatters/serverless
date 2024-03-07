@@ -55,7 +55,7 @@ jobs:
       TWILIO_AUTH_TOKEN_SECRET_NAME: ${{matrix.helpline_code}}_${{matrix.environment_code}}_AUTH_TOKEN
       FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'PROD' && 'production' || matrix.environment_code == 'STG' && 'staging' || 'development'}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
