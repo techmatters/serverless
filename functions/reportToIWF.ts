@@ -109,9 +109,7 @@ export const handler = TokenValidator(
         'base64',
       );
 
-      const report = await axios({
-        url: context.IWF_API_URL,
-        method: 'POST',
+      const report = await axios.post(context.IWF_API_URL, {
         data: JSON.stringify(body),
         headers: {
           'Content-Type': 'application/json',

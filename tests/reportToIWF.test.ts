@@ -26,7 +26,9 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
-jest.mock('axios');
+jest.mock('axios', () => ({
+  post: jest.fn(),
+}));
 
 const baseContext = {
   getTwilioClient: (): any => ({}),
@@ -122,9 +124,8 @@ describe('reportToIWF', () => {
   test('Should POST a payload to IWF_API_URL and return 200', async () => {
     let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.post.mockImplementationOnce((url, request) => {
       postedPayload = JSON.parse(request.data);
-      console.log('request here', request);
       return Promise.resolve({
         status: 200,
         data: 'Returned ok',
@@ -146,10 +147,9 @@ describe('reportToIWF', () => {
 
     await reportToIWF(baseContext, event, callback);
 
-    expect(axios).toHaveBeenCalledWith(
+    expect(axios.post).toHaveBeenCalledWith(
+      baseContext.IWF_API_URL,
       expect.objectContaining({
-        url: baseContext.IWF_API_URL,
-        method: 'POST',
         data: expect.anything(),
       }),
     );
@@ -159,7 +159,7 @@ describe('reportToIWF', () => {
   test('Extra report details should be copied into POST payload', async () => {
     let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.post.mockImplementationOnce((url, request) => {
       postedPayload = JSON.parse(request.data);
       return Promise.resolve({
         status: 200,
@@ -188,10 +188,9 @@ describe('reportToIWF', () => {
       () => {},
     );
 
-    expect(axios).toHaveBeenCalledWith(
+    expect(axios.post).toHaveBeenCalledWith(
+      baseContext.IWF_API_URL,
       expect.objectContaining({
-        url: baseContext.IWF_API_URL,
-        method: 'POST',
         data: expect.anything(),
       }),
     );
@@ -208,7 +207,7 @@ describe('reportToIWF', () => {
   test('Environment variables should override default values in POST', async () => {
     let postedPayload: IWFReportPayload | undefined;
     // @ts-ignore
-    axios.mockImplementationOnce((request) => {
+    axios.post.mockImplementationOnce((url, request) => {
       postedPayload = JSON.parse(request.data);
       return Promise.resolve({
         status: 200,
@@ -233,10 +232,9 @@ describe('reportToIWF', () => {
       () => {},
     );
 
-    expect(axios).toHaveBeenCalledWith(
+    expect(axios.post).toHaveBeenCalledWith(
+      baseContext.IWF_API_URL,
       expect.objectContaining({
-        url: baseContext.IWF_API_URL,
-        method: 'POST',
         data: expect.anything(),
       }),
     );
@@ -251,7 +249,7 @@ describe('reportToIWF', () => {
 
   test('Should return error code if axios call fails (redirect IWF payload)', async () => {
     // @ts-ignore
-    axios.mockImplementationOnce(() =>
+    axios.post.mockImplementationOnce(() =>
       Promise.resolve({
         status: 403,
         data: 'Unauthorized',

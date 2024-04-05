@@ -75,8 +75,6 @@ export const handler = TokenValidator(
       formData.append('user_age_range', body.user_age_range);
 
       const config: AxiosRequestConfig = {
-        method: 'POST',
-        url: context.IWF_API_CASE_URL,
         headers: {
           ...formData.getHeaders(),
         },
@@ -84,7 +82,7 @@ export const handler = TokenValidator(
         validateStatus: () => true,
       };
 
-      const report = await axios(config);
+      const report = await axios.post(context.IWF_API_CASE_URL, config);
 
       const data = report.data as IWFResponse;
 

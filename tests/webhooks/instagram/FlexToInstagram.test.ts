@@ -20,7 +20,9 @@ import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types'
 import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToInstagram } from '../../../functions/webhooks/instagram/FlexToInstagram.protected';
 
-jest.mock('axios');
+jest.mock('axios', () => ({
+  post: jest.fn(),
+}));
 
 const channels: { [x: string]: any } = {
   CHANNEL_SID: {
@@ -54,6 +56,8 @@ const validEvent = ({ recipientId = 'recipientId', From = 'senderId', Source = '
   ChannelSid: 'CHANNEL_SID',
   From,
 });
+
+const mockAxiosPost = axios.post as jest.MockedFunction<typeof axios.post>;
 
 describe('FlexToInstagram', () => {
   beforeAll(() => {
@@ -137,7 +141,7 @@ describe('FlexToInstagram', () => {
       expectedMessage,
     }) => {
       // @ts-ignore
-      (<jest.Mock>(<unknown>axios)).mockImplementation(endpointImpl);
+      mockAxiosPost.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -183,9 +187,9 @@ describe('FlexToInstagram', () => {
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
       // @ts-ignore
-      axios.mockClear();
+      mockAxiosPost.mockClear();
 
-      (<jest.Mock>(<unknown>axios)).mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockAxiosPost.mockImplementation(async () => ({ status: 200, data: 'OK' }));
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -193,12 +197,11 @@ describe('FlexToInstagram', () => {
       await FlexToInstagram(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(axios).not.toBeCalled();
+        expect(axios.post).not.toBeCalled();
       } else {
-        expect(axios).toBeCalledWith(
+        expect(axios.post).toBeCalledWith(
+          `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
           expect.objectContaining({
-            url: `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-            method: 'POST',
             data: JSON.stringify({
               recipient: {
                 id: event.recipientId,

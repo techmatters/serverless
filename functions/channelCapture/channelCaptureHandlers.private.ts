@@ -457,9 +457,7 @@ const saveSurveyInHRM = async (
     data,
   };
 
-  await axios({
-    url: `${hrmBaseUrl}/postSurveys`,
-    method: 'POST',
+  await axios.post(`${hrmBaseUrl}/postSurveys`, {
     data: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',

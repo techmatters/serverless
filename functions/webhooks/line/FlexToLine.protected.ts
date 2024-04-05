@@ -55,9 +55,7 @@ const sendLineMessage =
       ],
     };
 
-    return axios({
-      url: LINE_SEND_MESSAGE_URL,
-      method: 'POST',
+    return axios.post(LINE_SEND_MESSAGE_URL, {
       data: JSON.stringify(payload),
       headers: {
         'Content-Type': 'application/json',
