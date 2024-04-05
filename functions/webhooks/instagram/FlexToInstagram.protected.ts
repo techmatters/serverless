@@ -52,14 +52,15 @@ const sendInstagramMessage =
       },
     };
 
-    const response = await axios({
-      url: `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-      method: 'POST',
-      data: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await axios.post(
+      `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+      {
+        data: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     return response.data;
   };

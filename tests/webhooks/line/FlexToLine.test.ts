@@ -21,7 +21,11 @@ import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types'
 import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToLine } from '../../../functions/webhooks/line/FlexToLine.protected';
 
-jest.mock('axios');
+jest.mock('axios', () => ({
+  post: jest.fn(),
+}));
+
+const mockAxiosPost = axios.post as jest.MockedFunction<typeof axios.post>;
 
 const channels: { [x: string]: any } = {
   CHANNEL_SID: {
@@ -127,7 +131,7 @@ describe('FlexToLine', () => {
       expectedMessage,
     }) => {
       // @ts-ignore
-      (<jest.Mock>(<unknown>axios)).mockImplementation(endpointImpl);
+      mockAxiosPost.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -183,9 +187,9 @@ describe('FlexToLine', () => {
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
       // @ts-ignore
-      axios.mockClear();
+      mockAxiosPost.mockClear();
 
-      (<jest.Mock>(<unknown>axios)).mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockAxiosPost.mockImplementation(async () => ({ status: 200, data: 'OK' }));
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -193,12 +197,11 @@ describe('FlexToLine', () => {
       await FlexToLine(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(axios).not.toBeCalled();
+        expect(mockAxiosPost).not.toBeCalled();
       } else {
-        expect(axios).toBeCalledWith(
+        expect(mockAxiosPost).toBeCalledWith(
+          'https://api.line.me/v2/bot/message/push',
           expect.objectContaining({
-            url: 'https://api.line.me/v2/bot/message/push',
-            method: 'POST',
             data: JSON.stringify({
               to: event.recipientId,
               messages: [

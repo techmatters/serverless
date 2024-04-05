@@ -113,9 +113,7 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     const { trigger } = event;
 
     const identifier = getIdentifier(trigger);
-    const res = await axios({
-      url: `${hrmBaseUrl}/profiles/identifier/${identifier}/flags`,
-      method: 'GET',
+    const res = await axios.get(`${hrmBaseUrl}/profiles/identifier/${identifier}/flags`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Basic ${context.HRM_STATIC_KEY}`,
