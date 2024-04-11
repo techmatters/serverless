@@ -25,7 +25,7 @@ Describe how to validate your changes.
 
 ### AFTER YOU MERGE
 
-1. Cut a release tag using the GitHub workflow. Wait for it to complete and notify in the #aselo-deploys Slack channel.
+1. Cut a release tag using the GitHub workflow. Wait for it to complete and the notification to be posted in the #aselo-deploys Slack channel.
 2. Comment on the ticket with the release tag version AND any additional instructions required to configure an environment to test the changes.
 3. Only then move the ticket into the QA column in JIRA
 
