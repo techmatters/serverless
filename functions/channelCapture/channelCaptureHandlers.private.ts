@@ -323,12 +323,6 @@ export const handleChannelCapture = async (
     ? JSON.parse(additionControlTaskAttributes)
     : {};
 
-  const channel = await context
-    .getTwilioClient()
-    .chat.v2.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .fetch();
-
   const [, controlTask] = await Promise.all([
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
     context
@@ -368,6 +362,12 @@ export const handleChannelCapture = async (
   }
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
+
+  const channel = await context
+    .getTwilioClient()
+    .chat.v2.services(context.CHAT_SERVICE_SID)
+    .channels(channelSid)
+    .fetch();
 
   const options: CaptureChannelOptions = {
     botName,
