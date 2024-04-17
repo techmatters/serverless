@@ -98,12 +98,13 @@ export const chatbotCallbackCleanup = async ({
     capturedChannelAttributes?.chatbotCallbackWebhookSid &&
       channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
     // Trigger the next step once the channel is released
-    channelCaptureHandlers.handleChannelRelease(
-      context,
-      channel,
-      capturedChannelAttributes,
-      memory,
-    ),
+    capturedChannelAttributes &&
+      channelCaptureHandlers.handleChannelRelease(
+        context,
+        channel,
+        capturedChannelAttributes,
+        memory,
+      ),
   ]);
 
   console.log('Channel unblocked and bot session deleted');
