@@ -85,3 +85,8 @@ runs:
     - name: E2E Development release custom action
       if: inputs.helpline-name == format('E2E_DEV')
       uses: ./.github/actions/custom-actions/e2e_development_custom
+    - name: Youthline Production release custom action
+      if: inputs.helpline-name == format('NZ_PROD')
+      uses: ./.github/actions/custom-actions/youthline_production_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
