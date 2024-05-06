@@ -26,17 +26,17 @@ runs:
     - name: Set Modica App Name
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/app_name"
+        ssm_parameter: "/production/modica/${{inputs.account-sid}}/app_name"
         env_variable_name: "MODICA_APP_NAME"
     - name: Set Modica App Password
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/app_password"
+        ssm_parameter: "/production/modica/${{inputs.account-sid}}/app_password"
         env_variable_name: "MODICA_APP_PASSWORD"
     - name: Set Modica Flex Flow Sid
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
+        ssm_parameter: "/production/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
         env_variable_name: "MODICA_FLEX_FLOW_SID"
 
     # Append environment variables
