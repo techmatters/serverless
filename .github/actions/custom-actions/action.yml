@@ -90,3 +90,8 @@ runs:
       uses: ./.github/actions/custom-actions/youthline_production_custom
       with:
         account-sid: ${{ inputs.account-sid }}
+    - name: Youthline Staging release custom action
+      if: inputs.helpline-name == format('NZ_STG')
+      uses: ./.github/actions/custom-actions/youthline_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
