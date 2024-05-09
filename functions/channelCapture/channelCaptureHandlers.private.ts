@@ -149,6 +149,7 @@ const triggerWithUserMessage = async (
     memoryAttribute,
   }: CaptureChannelOptions,
 ) => {
+  console.log('>> triggerWithUserMessage 1');
   const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
   const lexClient = require(handlerPath) as LexClient;
 
@@ -159,6 +160,7 @@ const triggerWithUserMessage = async (
     userId,
     inputText,
   });
+  console.log('>> triggerWithUserMessage 2');
 
   // TODO: Should use conversation here instead of channel?
   const chatbotCallbackWebhook = await channel.webhooks().create({
@@ -169,6 +171,7 @@ const triggerWithUserMessage = async (
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
   });
+  console.log('>> triggerWithUserMessage 3');
 
   // const updated =
   await updateChannelWithCapture(channel, {
@@ -182,6 +185,7 @@ const triggerWithUserMessage = async (
     memoryAttribute,
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
+  console.log('>> triggerWithUserMessage 4');
 
   // Bubble exception after the channel is updated because capture attributes are needed for the cleanup
   if (lexResult.status === 'failure') {
@@ -196,6 +200,7 @@ const triggerWithUserMessage = async (
     from: 'Bot',
     xTwilioWebhookEnabled: 'true',
   });
+  console.log('>> triggerWithUserMessage 5');
 };
 
 /**
@@ -401,6 +406,7 @@ export const handleChannelCapture = async (
     controlTaskSid: controlTask.sid,
   };
 
+  console.log({ message, triggerType });
   if (triggerType === 'withUserMessage') {
     await triggerWithUserMessage(context, channel, options);
   }
