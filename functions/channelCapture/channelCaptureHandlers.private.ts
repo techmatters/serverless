@@ -179,8 +179,9 @@ const triggerWithUserMessage = async (
    */
   let chatbotCallbackWebhookForConversation;
   try {
-    chatbotCallbackWebhookForConversation = await client.conversations.v1
-      .conversations(channel.sid)
+    chatbotCallbackWebhookForConversation = await context
+      .getTwilioClient()
+      .conversations.v1.conversations(channel.sid)
       .webhooks.create({
         target: 'webhook',
         configuration: {
