@@ -79,7 +79,28 @@ const getServiceUserIdentity = async (
   return channelAttributes.serviceUserIdentity;
 };
 
+const getParticipantSid = async (
+  context: Context<EnvVars>,
+  channel: ChannelInstance,
+  channelAttributes: { [k: string]: string },
+): Promise<MemberInstance['identity']> => {
+  if (!channelAttributes.participantSid) {
+    console.log('Setting participantSid');
+    const conversation = await context
+      .getTwilioClient()
+      .conversations.v1.conversations(channel.sid)
+      .fetch();
+    const participants = await conversation.participants().list();
+    const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
+    const firstParticipant = participants.sort(sortByDateCreated)[0];
+    return firstParticipant.sid;
+  }
+
+  return channelAttributes.participantSid;
+};
+
 const updateChannelWithCapture = async (
+  context: Context<EnvVars>,
   channel: ChannelInstance,
   attributes: CapturedChannelAttributes,
 ) => {
@@ -98,11 +119,13 @@ const updateChannelWithCapture = async (
   const channelAttributes = JSON.parse(channel.attributes);
 
   const serviceUserIdentity = await getServiceUserIdentity(channel, channelAttributes);
+  const participantSid = await getParticipantSid(context, channel, channelAttributes);
 
   return channel.update({
     attributes: JSON.stringify({
       ...channelAttributes,
       serviceUserIdentity,
+      participantSid,
       // All of this can be passed as url params to the webhook instead
       capturedChannelAttributes: {
         userId,
@@ -195,7 +218,7 @@ const triggerWithUserMessage = async (
   }
   console.log('>> triggerWithUserMessage 3');
 
-  await updateChannelWithCapture(channel, {
+  await updateChannelWithCapture(context, channel, {
     userId,
     botName,
     botAlias,
@@ -259,7 +282,7 @@ const triggerWithNextMessage = async (
   });
 
   // const updated =
-  await updateChannelWithCapture(channel, {
+  await updateChannelWithCapture(context, channel, {
     userId,
     botName,
     botAlias,

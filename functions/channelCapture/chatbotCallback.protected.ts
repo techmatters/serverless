@@ -55,14 +55,14 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { Body, From, ChannelSid, EventType, Author, ConversationSid, ...rest } = event;
+    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid, ...rest } = event;
     console.log(JSON.stringify({ ConversationSid, rest }));
     if (!Body) {
       resolve(error400('Body'));
       return;
     }
-    if (!From && !Author) {
-      resolve(error400('From or Author'));
+    if (!From && !ParticipantSid) {
+      resolve(error400('From or ParticipantSid'));
       return;
     }
     if (!ChannelSid && !ConversationSid) {
@@ -95,7 +95,7 @@ export const handler = async (
     if (
       (EventType === 'onMessageSent' || EventType === 'onMessageAdded') &&
       (channelAttributes.serviceUserIdentity === From ||
-        channelAttributes.serviceUserIdentity === Author)
+        channelAttributes.participantSid === ParticipantSid)
     ) {
       const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient']
         .path) as LexClient;
