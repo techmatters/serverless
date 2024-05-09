@@ -19,7 +19,7 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 export type WebhookEvent = {
   Body: string;
   From: string;
-  Author: string;
+  Author?: string;
   ChannelSid: string;
   EventType: string;
   Source: string;
