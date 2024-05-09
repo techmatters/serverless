@@ -281,6 +281,29 @@ const triggerWithNextMessage = async (
     },
   });
 
+  /**
+   * "Same" as above but for Conversations. Differences to the Studio Webhook in this case:
+   * - different api
+   * - target: 'webhook'
+   * - filters: ['onMessageAdded']
+   */
+  let chatbotCallbackWebhookForConversation;
+  try {
+    chatbotCallbackWebhookForConversation = await context
+      .getTwilioClient()
+      .conversations.v1.conversations(channel.sid)
+      .webhooks.create({
+        target: 'webhook',
+        configuration: {
+          filters: ['onMessageAdded'],
+          method: 'POST',
+          url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+        },
+      });
+  } catch (error) {
+    console.log('>> Not a conversation channel');
+  }
+
   // const updated =
   await updateChannelWithCapture(context, channel, {
     userId,
@@ -292,7 +315,8 @@ const triggerWithNextMessage = async (
     releaseFlag,
     memoryAttribute,
     // How to determine which of webhooks to use?
-    chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid:
+      chatbotCallbackWebhookForConversation?.sid || chatbotCallbackWebhook.sid,
   });
 };
 

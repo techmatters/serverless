@@ -56,7 +56,7 @@ export const handler = async (
 
   try {
     const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid, ...rest } = event;
-    console.log(JSON.stringify({ ConversationSid, rest: JSON.stringify(rest) }));
+    console.log(JSON.stringify({ ParticipantSid, rest: JSON.stringify(rest) }));
     if (!Body) {
       resolve(error400('Body'));
       return;
