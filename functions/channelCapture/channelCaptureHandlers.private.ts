@@ -160,6 +160,7 @@ const triggerWithUserMessage = async (
     inputText,
   });
 
+  // TODO: Should use conversation here instead of channel?
   const chatbotCallbackWebhook = await channel.webhooks().create({
     type: 'webhook',
     configuration: {
@@ -323,7 +324,7 @@ export const handleChannelCapture = async (
     ? JSON.parse(additionControlTaskAttributes)
     : {};
 
-  const [, controlTask] = await Promise.all([
+  const [, , controlTask] = await Promise.all([
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
     context
       .getTwilioClient()
@@ -337,6 +338,24 @@ export const handleChannelCapture = async (
           }
         }),
       ),
+
+    /*
+     * Doing the "same" as above but for Conversations. Differences to the Studio Webhook in this case:
+     * - It's NOT found under the channel webhooks, but under the conversation webhooks
+     * - It uses the property 'target' instead of 'type'
+     */
+    context
+      .getTwilioClient()
+      .conversations.v1.conversations(channelSid)
+      .webhooks.list()
+      .then((channelWebhooks) =>
+        channelWebhooks.map(async (w) => {
+          if (w.target === 'studio') {
+            await w.remove();
+          }
+        }),
+      ),
+
     // Create control task to prevent channel going stale
     context
       .getTwilioClient()
@@ -363,6 +382,7 @@ export const handleChannelCapture = async (
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
+  // TODO: Should use conversation here instead of channel?
   const channel = await context
     .getTwilioClient()
     .chat.v2.services(context.CHAT_SERVICE_SID)
