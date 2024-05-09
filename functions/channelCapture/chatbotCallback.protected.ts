@@ -94,12 +94,15 @@ export const handler = async (
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
+      console.log('>> Post to Lex');
+      console.log(JSON.stringify(capturedChannelAttributes));
       const lexResult = await lexClient.postText(context, {
         botName: capturedChannelAttributes.botName,
         botAlias: capturedChannelAttributes.botAlias,
         userId: capturedChannelAttributes.userId,
         inputText: Body,
       });
+      console.log(JSON.stringify(lexResult));
 
       if (lexResult.status === 'failure') {
         console.log(lexResult.error.message);
@@ -123,6 +126,7 @@ export const handler = async (
           'channelCapture/chatbotCallbackCleanup'
         ].path) as ChatbotCallbackCleanupModule;
 
+        console.log('>> Chatbot callback cleanup');
         await chatbotCallbackCleanup({
           context,
           channel,
@@ -132,6 +136,8 @@ export const handler = async (
         });
       }
 
+      // TODO: should send through conversation API?
+      console.log('>> Send message to Flex');
       await channel.messages().create({
         body: lexResponse.message,
         from: 'Bot',
