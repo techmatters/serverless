@@ -162,7 +162,6 @@ const triggerWithUserMessage = async (
   });
   console.log('>> triggerWithUserMessage 2');
 
-  // TODO: Should use conversation here instead of channel?
   const chatbotCallbackWebhook = await channel.webhooks().create({
     type: 'webhook',
     configuration: {
@@ -171,9 +170,30 @@ const triggerWithUserMessage = async (
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
   });
+
+  /**
+   * "Same" as above but for Conversations. Differences to the Studio Webhook in this case:
+   * - different api
+   * - target: 'webhook'
+   * - filters: ['onMessageAdded']
+   */
+  let chatbotCallbackWebhookForConversation;
+  try {
+    chatbotCallbackWebhookForConversation = await client.conversations.v1
+      .conversations(channel.sid)
+      .webhooks.create({
+        target: 'webhook',
+        configuration: {
+          filters: ['onMessageAdded'],
+          method: 'POST',
+          url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+        },
+      });
+  } catch (error) {
+    console.log('>> Not a conversation channel');
+  }
   console.log('>> triggerWithUserMessage 3');
 
-  // const updated =
   await updateChannelWithCapture(channel, {
     userId,
     botName,
@@ -183,7 +203,8 @@ const triggerWithUserMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
-    chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid:
+      chatbotCallbackWebhookForConversation?.sid || chatbotCallbackWebhook.sid,
   });
   console.log('>> triggerWithUserMessage 4');
 
@@ -246,6 +267,7 @@ const triggerWithNextMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
+    // How to determine which of webhooks to use?
     chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
   });
 };
