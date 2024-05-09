@@ -81,6 +81,10 @@ export const handler = async (
       .fetch();
 
     const channelAttributes = JSON.parse(channel.attributes);
+    console.log('>> Before send message');
+    console.log(
+      JSON.stringify({ EventType, serviceUserIdentity: channelAttributes.serviceUserIdentity }),
+    );
 
     // Send message to bot only if it's from child
     if (
@@ -147,6 +151,8 @@ export const handler = async (
       resolve(success('All messages sent :)'));
       return;
     }
+
+    console.log('>> After send message');
 
     resolve(success('Event ignored'));
   } catch (err) {
