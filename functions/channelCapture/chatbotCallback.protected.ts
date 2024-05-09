@@ -80,8 +80,13 @@ export const handler = async (
       .channels(ChannelSid || String(ConversationSid))
       .fetch();
 
+    // const conversation = await client.conversations.v1
+    //   .conversations(String(ConversationSid))
+    //   .fetch();
+
     const channelAttributes = JSON.parse(channel.attributes);
     console.log('>> Before send message');
+    console.log(JSON.stringify(channelAttributes));
     console.log(
       JSON.stringify({ EventType, serviceUserIdentity: channelAttributes.serviceUserIdentity }),
     );
