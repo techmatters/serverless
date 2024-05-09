@@ -55,14 +55,14 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    console.log(JSON.stringify(event));
-    const { Body, From, ChannelSid, EventType } = event;
+    const { Body, From, ChannelSid, EventType, Author } = event;
+    console.log(JSON.stringify({ Body, From, ChannelSid, EventType, Author }));
     if (!Body) {
       resolve(error400('Body'));
       return;
     }
-    if (!From) {
-      resolve(error400('From'));
+    if (!From && !Author) {
+      resolve(error400('From or Author'));
       return;
     }
     if (!ChannelSid) {
@@ -83,7 +83,11 @@ export const handler = async (
     const channelAttributes = JSON.parse(channel.attributes);
 
     // Send message to bot only if it's from child
-    if (EventType === 'onMessageSent' && channelAttributes.serviceUserIdentity === From) {
+    if (
+      EventType === 'onMessageSent' &&
+      (channelAttributes.serviceUserIdentity === From ||
+        channelAttributes.serviceUserIdentity === Author)
+    ) {
       const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient']
         .path) as LexClient;
 
