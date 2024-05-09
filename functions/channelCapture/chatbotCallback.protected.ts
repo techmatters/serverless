@@ -55,8 +55,11 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid, ...rest } = event;
-    console.log(JSON.stringify({ ParticipantSid, rest: JSON.stringify(rest) }));
+    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid, request, ...rest } =
+      event as Body & { request: any };
+    console.log('>> ParticipantSid', ParticipantSid);
+    console.log('>> EventType', EventType);
+    console.log('>> rest', JSON.stringify(rest));
     if (!Body) {
       resolve(error400('Body'));
       return;
