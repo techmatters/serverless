@@ -28,12 +28,6 @@ runs:
       with:
         ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_104897000923069_TLTest"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
-    - name: Set helpline Instagram Flex Flow SID
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "STG_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
-        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
-    # Append environment variables
 
     - name: Add FACEBOOK_APP_SECRET
       run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
