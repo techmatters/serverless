@@ -55,6 +55,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
+    console.log(JSON.stringify(event));
     const { Body, From, ChannelSid, EventType } = event;
     if (!Body) {
       resolve(error400('Body'));
