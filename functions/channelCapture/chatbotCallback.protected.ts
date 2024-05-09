@@ -55,8 +55,8 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { Body, From, ChannelSid, EventType, Author } = event;
-    console.log(JSON.stringify({ Body, From, ChannelSid, EventType, Author }));
+    const { Body, From, ChannelSid, EventType, Author, ConversationSid, ...rest } = event;
+    console.log(JSON.stringify({ ConversationSid, rest }));
     if (!Body) {
       resolve(error400('Body'));
       return;
@@ -65,8 +65,8 @@ export const handler = async (
       resolve(error400('From or Author'));
       return;
     }
-    if (!ChannelSid) {
-      resolve(error400('ChannelSid'));
+    if (!ChannelSid && !ConversationSid) {
+      resolve(error400('ChannelSid or ConversationSid'));
       return;
     }
     if (!EventType) {
@@ -77,14 +77,14 @@ export const handler = async (
     const client = context.getTwilioClient();
     const channel = await client.chat
       .services(context.CHAT_SERVICE_SID)
-      .channels(ChannelSid)
+      .channels(ChannelSid || String(ConversationSid))
       .fetch();
 
     const channelAttributes = JSON.parse(channel.attributes);
 
     // Send message to bot only if it's from child
     if (
-      EventType === 'onMessageSent' &&
+      (EventType === 'onMessageSent' || EventType === 'onMessageAdded') &&
       (channelAttributes.serviceUserIdentity === From ||
         channelAttributes.serviceUserIdentity === Author)
     ) {

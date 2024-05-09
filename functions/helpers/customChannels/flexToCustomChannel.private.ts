@@ -21,6 +21,7 @@ export type WebhookEvent = {
   From: string;
   Author?: string;
   ChannelSid: string;
+  ConversationSid?: string;
   EventType: string;
   Source: string;
 };
