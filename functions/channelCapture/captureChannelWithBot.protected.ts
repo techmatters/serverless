@@ -41,7 +41,7 @@ type EnvVars = {
   HRM_STATIC_KEY: string;
 } & AWSCredentials;
 
-export type Body = Partial<HandleChannelCaptureParams>;
+export type Body = Partial<HandleChannelCaptureParams> & { isConversation: string };
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -65,7 +65,11 @@ export const handler = async (
       controlTaskTTL,
       memoryAttribute,
       releaseFlag,
+      isConversation: isConversationString,
     } = event;
+
+    const isConversation = isConversationString === 'true';
+    console.log('>> isConversation', isConversation);
 
     const handlerPath = Runtime.getFunctions()['channelCapture/channelCaptureHandlers'].path;
     const channelCaptureHandlers = require(handlerPath) as ChannelCaptureHandlers;
@@ -82,6 +86,7 @@ export const handler = async (
       releaseFlag,
       additionControlTaskAttributes,
       controlTaskTTL,
+      isConversation,
     });
 
     if (result.status === 'failure' && result.validationResult.status === 'invalid') {

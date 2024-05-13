@@ -63,6 +63,7 @@ export type CapturedChannelAttributes = {
   memoryAttribute?: string;
   releaseFlag?: string;
   chatbotCallbackWebhookSid: string;
+  isConversation: boolean;
 };
 
 export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?: boolean }) =>
@@ -116,6 +117,7 @@ const updateChannelWithCapture = async (
     studioFlowSid,
     memoryAttribute,
     releaseFlag,
+    isConversation,
   } = attributes;
 
   const channelAttributes = JSON.parse(channel.attributes);
@@ -145,11 +147,13 @@ const updateChannelWithCapture = async (
     }),
   };
 
-  if (channel instanceof ConversationInstance) {
-    return channel.update(newAttributes as ConversationInstanceUpdateOptions);
+  if (isConversation) {
+    return (channel as ConversationInstance).update(
+      newAttributes as ConversationInstanceUpdateOptions,
+    );
   }
 
-  return channel.update(newAttributes as ChannelInstanceUpdateOptions);
+  return (channel as ChannelInstance).update(newAttributes as ChannelInstanceUpdateOptions);
 };
 
 type CaptureChannelOptions = {
@@ -162,6 +166,7 @@ type CaptureChannelOptions = {
   studioFlowSid?: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
   memoryAttribute?: string; // where in the task attributes we want to save the bot's memory (allows compatibility for multiple bots)
   releaseFlag?: string; // the flag we want to set true when the channel is released
+  isConversation: boolean;
 };
 
 /**
@@ -180,6 +185,7 @@ const triggerWithUserMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
+    isConversation,
   }: CaptureChannelOptions,
 ) => {
   console.log('>> triggerWithUserMessage 1');
@@ -214,11 +220,17 @@ const triggerWithUserMessage = async (
   };
 
   let webhook;
-  if (channelOrConversation instanceof ConversationInstance) {
-    webhook = await channelOrConversation.webhooks().create(conversationWebhook);
+  if (isConversation) {
+    webhook = await (channelOrConversation as ConversationInstance)
+      .webhooks()
+      .create(conversationWebhook);
+    console.log('>> created conversation webhook: ');
   } else {
-    webhook = await channelOrConversation.webhooks().create(channelWebhook);
+    webhook = await (channelOrConversation as ChannelInstance).webhooks().create(channelWebhook);
+    console.log('>> created programmable chat webhook: ');
   }
+
+  console.log(JSON.stringify(webhook));
 
   console.log('>> triggerWithUserMessage 3');
 
@@ -232,6 +244,7 @@ const triggerWithUserMessage = async (
     releaseFlag,
     memoryAttribute,
     chatbotCallbackWebhookSid: webhook.sid,
+    isConversation,
   });
   console.log('>> triggerWithUserMessage 4');
 
@@ -242,23 +255,26 @@ const triggerWithUserMessage = async (
 
   const { lexResponse } = lexResult;
 
-  const message:
-    | ConversationMessageListInstanceCreateOptions
-    | ChannelMessageListInstanceCreateOptions = {
+  const conversationMessage: ConversationMessageListInstanceCreateOptions = {
     body: lexResponse.message,
-    from: 'Bot',
     author: 'Bot',
     xTwilioWebhookEnabled: 'true',
   };
 
-  if (channelOrConversation instanceof ConversationInstance) {
+  const channelMessage: ChannelMessageListInstanceCreateOptions = {
+    body: lexResponse.message,
+    from: 'Bot',
+    xTwilioWebhookEnabled: 'true',
+  };
+
+  if (isConversation) {
     console.log('>> is Conversation');
     console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
-    await channelOrConversation.messages().create(message);
+    await (channelOrConversation as ConversationInstance).messages().create(conversationMessage);
   } else {
     console.log('>> is Programmable Chat');
     console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
-    await channelOrConversation.messages().create(message);
+    await (channelOrConversation as ChannelInstance).messages().create(channelMessage);
   }
 
   console.log('>> triggerWithUserMessage 5');
@@ -280,18 +296,21 @@ const triggerWithNextMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
+    isConversation,
   }: CaptureChannelOptions,
 ) => {
-  if (channelOrConversation instanceof ConversationInstance) {
-    await channelOrConversation.messages().create({
+  if (isConversation) {
+    await (channelOrConversation as ConversationInstance).messages().create({
       body: inputText,
       xTwilioWebhookEnabled: 'true',
     });
+    console.log('Sending conversation message: ', inputText);
   } else {
-    await channelOrConversation.messages().create({
+    await (channelOrConversation as ChannelInstance).messages().create({
       body: inputText,
       xTwilioWebhookEnabled: 'true',
     });
+    console.log('Sending programmable chat message: ', inputText);
   }
 
   const channelWebhook: ChannelWebhookOpts = {
@@ -313,10 +332,12 @@ const triggerWithNextMessage = async (
   };
 
   let webhook;
-  if (channelOrConversation instanceof ConversationInstance) {
-    webhook = await channelOrConversation.webhooks().create(conversationWebhook);
+  if (isConversation) {
+    webhook = await (channelOrConversation as ConversationInstance)
+      .webhooks()
+      .create(conversationWebhook);
   } else {
-    webhook = await channelOrConversation.webhooks().create(channelWebhook);
+    webhook = await (channelOrConversation as ChannelInstance).webhooks().create(channelWebhook);
   }
 
   // const updated =
@@ -329,8 +350,8 @@ const triggerWithNextMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
-    // How to determine which of webhooks to use?
     chatbotCallbackWebhookSid: webhook.sid,
+    isConversation,
   });
 };
 
@@ -341,12 +362,12 @@ export type HandleChannelCaptureParams = {
   botSuffix: string;
   triggerType: TriggerTypes;
   releaseType: ReleaseTypes;
-  isConversation: string;
   studioFlowSid?: string; // The Studio Flow sid. Needed to trigger an API type execution once the channel is released. (in Studio Flow, flow.flow_sid)
   memoryAttribute?: string; // Where in the channel attributes we want to save the bot's memory (allows usage of multiple bots in same channel)
   releaseFlag?: string; // The flag we want to set true in the channel attributes when the channel is released
   additionControlTaskAttributes?: string; // Optional attributes to include in the control task, in the string representation of a JSON
   controlTaskTTL?: number;
+  isConversation: boolean;
 };
 
 type ValidationResult = { status: 'valid' } | { status: 'invalid'; error: string };
@@ -408,10 +429,10 @@ export const handleChannelCapture = async (
     releaseFlag,
     additionControlTaskAttributes,
     controlTaskTTL,
-    isConversation: isConversationString,
+    isConversation,
   } = params as HandleChannelCaptureParams;
 
-  const isConversation = isConversationString === 'true';
+  console.log('>> isConversation', isConversation);
 
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
@@ -485,12 +506,6 @@ export const handleChannelCapture = async (
         .channels(channelSid)
         .fetch();
 
-  // const channel = await context
-  //   .getTwilioClient()
-  //   .chat.v2.services(context.CHAT_SERVICE_SID)
-  //   .channels(channelSid)
-  //   .fetch();
-
   const options: CaptureChannelOptions = {
     botName,
     botAlias: 'latest', // Assume we always use the latest published version
@@ -501,9 +516,10 @@ export const handleChannelCapture = async (
     inputText: message,
     userId: channelOrConversation.sid,
     controlTaskSid: controlTask.sid,
+    isConversation,
   };
 
-  console.log({ message, triggerType });
+  console.log({ message, triggerType, isConversation });
   if (triggerType === 'withUserMessage') {
     await triggerWithUserMessage(context, channelOrConversation, options);
   }
@@ -527,9 +543,10 @@ const createStudioFlowTrigger = async (
 ) => {
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
   controlTask.remove();
+  const { isConversation } = capturedChannelAttributes;
 
-  if (channelOrConversation instanceof ConversationInstance) {
-    return channelOrConversation.webhooks().create({
+  if (isConversation) {
+    return (channelOrConversation as ConversationInstance).webhooks().create({
       target: 'studio',
       configuration: {
         flowSid: capturedChannelAttributes.studioFlowSid,
@@ -537,7 +554,7 @@ const createStudioFlowTrigger = async (
     });
   }
 
-  return channelOrConversation.webhooks().create({
+  return (channelOrConversation as ChannelInstance).webhooks().create({
     type: 'studio',
     configuration: {
       flowSid: capturedChannelAttributes.studioFlowSid,
