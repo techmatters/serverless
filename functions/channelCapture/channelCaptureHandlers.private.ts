@@ -252,9 +252,13 @@ const triggerWithUserMessage = async (
   };
 
   if (channelOrConversation instanceof ConversationInstance) {
-    channelOrConversation.messages().create(message);
+    console.log('>> is Conversation');
+    console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
+    await channelOrConversation.messages().create(message);
   } else {
-    channelOrConversation.messages().create(message);
+    console.log('>> is Programmable Chat');
+    console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
+    await channelOrConversation.messages().create(message);
   }
 
   console.log('>> triggerWithUserMessage 5');
