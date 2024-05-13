@@ -65,6 +65,7 @@ export const chatbotCallbackCleanup = async ({
 }) => {
   const memory = lexMemory || {};
   const { isConversation } = channelAttributes;
+  console.log('>> isConversation', isConversation);
 
   const capturedChannelAttributes =
     channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
@@ -97,6 +98,29 @@ export const chatbotCallbackCleanup = async ({
     }
   };
 
+  const removeWebhookFromChannelOrConversation = async () => {
+    if (!capturedChannelAttributes.chatbotCallbackWebhookSid) return;
+
+    console.log(
+      '>> Removing webhook with id: ',
+      capturedChannelAttributes.chatbotCallbackWebhookSid,
+    );
+    if (capturedChannelAttributes.chatbotCallbackWebhookSid) {
+      console.log('>> Removing webhook from conversation');
+      await (channelOrConversation as ConversationInstance)
+        .webhooks()
+        .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
+        .remove();
+    } else {
+      console.log('>> Removing webhook from programmable chat');
+      await (channelOrConversation as ChannelInstance)
+        .webhooks()
+        .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
+        .remove();
+    }
+  };
+
+  console.log('>> Before Promise.all');
   await Promise.all([
     // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
     capturedChannelAttributes?.botName &&
@@ -109,11 +133,7 @@ export const chatbotCallbackCleanup = async ({
     // Update channel attributes (remove channelCapturedByBot and add memory)
     updateChannelOrConversationAttributes(releasedChannelAttributes),
     // Remove this webhook from the channel
-    capturedChannelAttributes?.chatbotCallbackWebhookSid &&
-      channelOrConversation
-        .webhooks()
-        .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
-        .remove(),
+    removeWebhookFromChannelOrConversation(),
     // Trigger the next step once the channel is released
     capturedChannelAttributes &&
       channelCaptureHandlers.handleChannelRelease(
@@ -123,6 +143,7 @@ export const chatbotCallbackCleanup = async ({
         memory,
       ),
   ]);
+  console.log('>> After Promise.all');
 
   console.log('Channel unblocked and bot session deleted');
 };
