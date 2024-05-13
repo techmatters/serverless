@@ -17,9 +17,20 @@
  */
 import axios from 'axios';
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
-import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
+import type {
+  ChannelInstance,
+  ChannelInstanceUpdateOptions,
+} from 'twilio/lib/rest/chat/v2/service/channel';
+import {
+  ConversationInstance,
+  ConversationInstanceUpdateOptions,
+} from 'twilio/lib/rest/conversations/v1/conversation';
+import type { WebhookListInstanceCreateOptions as ChannelWebhookOpts } from 'twilio/lib/rest/chat/v2/service/channel/webhook';
+import type { WebhookListInstanceCreateOptions as ConversationWebhookOpts } from 'twilio/lib/rest/conversations/v1/conversation/webhook';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
+import { MessageListInstanceCreateOptions as ConversationMessageListInstanceCreateOptions } from 'twilio/lib/rest/conversations/v1/conversation/message';
+import { MessageListInstanceCreateOptions as ChannelMessageListInstanceCreateOptions } from 'twilio/lib/rest/chat/v2/service/channel/message';
 import type { AWSCredentials, LexClient, LexMemory } from './lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
@@ -62,10 +73,22 @@ export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?
  * Capture handlers wrap the logic needed for capturing a channel: updating it's attributes, creating a control task, triggering a chatbot, etc
  */
 
-const getServiceUserIdentity = async (
-  channel: ChannelInstance,
+const getServiceUserIdentityOrParticipantId = async (
+  channel: ChannelInstance | ConversationInstance,
   channelAttributes: { [k: string]: string },
 ): Promise<MemberInstance['identity']> => {
+  if (channel instanceof ConversationInstance) {
+    if (!channelAttributes.participantSid) {
+      console.log('Setting participantSid');
+      const conversation = channel;
+      const participants = await conversation.participants().list();
+      const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
+      const firstParticipant = participants.sort(sortByDateCreated)[0];
+      return firstParticipant.sid;
+    }
+    return channelAttributes.participantSid;
+  }
+
   // If there's no service user, find which is the first one and add it channel attributes (only occurs on first capture)
   if (!channelAttributes.serviceUserIdentity) {
     console.log('Setting serviceUserIdentity');
@@ -79,29 +102,8 @@ const getServiceUserIdentity = async (
   return channelAttributes.serviceUserIdentity;
 };
 
-const getParticipantSid = async (
-  context: Context<EnvVars>,
-  channel: ChannelInstance,
-  channelAttributes: { [k: string]: string },
-): Promise<MemberInstance['identity']> => {
-  if (!channelAttributes.participantSid) {
-    console.log('Setting participantSid');
-    const conversation = await context
-      .getTwilioClient()
-      .conversations.v1.conversations(channel.sid)
-      .fetch();
-    const participants = await conversation.participants().list();
-    const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
-    const firstParticipant = participants.sort(sortByDateCreated)[0];
-    return firstParticipant.sid;
-  }
-
-  return channelAttributes.participantSid;
-};
-
 const updateChannelWithCapture = async (
-  context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channel: ChannelInstance | ConversationInstance,
   attributes: CapturedChannelAttributes,
 ) => {
   const {
@@ -118,14 +120,16 @@ const updateChannelWithCapture = async (
 
   const channelAttributes = JSON.parse(channel.attributes);
 
-  const serviceUserIdentity = await getServiceUserIdentity(channel, channelAttributes);
-  const participantSid = await getParticipantSid(context, channel, channelAttributes);
+  const userIdentityOrParticipantId = await getServiceUserIdentityOrParticipantId(
+    channel,
+    channelAttributes,
+  );
 
-  return channel.update({
+  const newAttributes = {
     attributes: JSON.stringify({
       ...channelAttributes,
-      serviceUserIdentity,
-      participantSid,
+      serviceUserIdentity: userIdentityOrParticipantId,
+      participantSid: userIdentityOrParticipantId,
       // All of this can be passed as url params to the webhook instead
       capturedChannelAttributes: {
         userId,
@@ -139,7 +143,13 @@ const updateChannelWithCapture = async (
         ...(memoryAttribute && { memoryAttribute }),
       },
     }),
-  });
+  };
+
+  if (channel instanceof ConversationInstance) {
+    return channel.update(newAttributes as ConversationInstanceUpdateOptions);
+  }
+
+  return channel.update(newAttributes as ChannelInstanceUpdateOptions);
 };
 
 type CaptureChannelOptions = {
@@ -159,7 +169,7 @@ type CaptureChannelOptions = {
  */
 const triggerWithUserMessage = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   {
     userId,
     botName,
@@ -185,40 +195,34 @@ const triggerWithUserMessage = async (
   });
   console.log('>> triggerWithUserMessage 2');
 
-  const chatbotCallbackWebhook = await channel.webhooks().create({
+  const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
     configuration: {
       filters: ['onMessageSent'],
       method: 'POST',
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
-  });
+  };
 
-  /**
-   * "Same" as above but for Conversations. Differences to the Studio Webhook in this case:
-   * - different api
-   * - target: 'webhook'
-   * - filters: ['onMessageAdded']
-   */
-  let chatbotCallbackWebhookForConversation;
-  try {
-    chatbotCallbackWebhookForConversation = await context
-      .getTwilioClient()
-      .conversations.v1.conversations(channel.sid)
-      .webhooks.create({
-        target: 'webhook',
-        configuration: {
-          filters: ['onMessageAdded'],
-          method: 'POST',
-          url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-        },
-      });
-  } catch (error) {
-    console.log('>> Not a conversation channel');
+  const conversationWebhook: ConversationWebhookOpts = {
+    target: 'webhook',
+    configuration: {
+      filters: ['onMessageAdded'],
+      method: 'POST',
+      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+    },
+  };
+
+  let webhook;
+  if (channelOrConversation instanceof ConversationInstance) {
+    webhook = await channelOrConversation.webhooks().create(conversationWebhook);
+  } else {
+    webhook = await channelOrConversation.webhooks().create(channelWebhook);
   }
+
   console.log('>> triggerWithUserMessage 3');
 
-  await updateChannelWithCapture(context, channel, {
+  await updateChannelWithCapture(channelOrConversation, {
     userId,
     botName,
     botAlias,
@@ -227,8 +231,7 @@ const triggerWithUserMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
-    chatbotCallbackWebhookSid:
-      chatbotCallbackWebhookForConversation?.sid || chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid: webhook.sid,
   });
   console.log('>> triggerWithUserMessage 4');
 
@@ -239,12 +242,21 @@ const triggerWithUserMessage = async (
 
   const { lexResponse } = lexResult;
 
-  // Send message to trigger the recently created chatbot integration
-  await channel.messages().create({
+  const message:
+    | ConversationMessageListInstanceCreateOptions
+    | ChannelMessageListInstanceCreateOptions = {
     body: lexResponse.message,
     from: 'Bot',
+    author: 'Bot',
     xTwilioWebhookEnabled: 'true',
-  });
+  };
+
+  if (channelOrConversation instanceof ConversationInstance) {
+    channelOrConversation.messages().create(message);
+  } else {
+    channelOrConversation.messages().create(message);
+  }
+
   console.log('>> triggerWithUserMessage 5');
 };
 
@@ -253,7 +265,7 @@ const triggerWithUserMessage = async (
  */
 const triggerWithNextMessage = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   {
     userId,
     botName,
@@ -266,46 +278,45 @@ const triggerWithNextMessage = async (
     memoryAttribute,
   }: CaptureChannelOptions,
 ) => {
-  /** const messageResult = */
-  await channel.messages().create({
-    body: inputText,
-    xTwilioWebhookEnabled: 'true',
-  });
+  if (channelOrConversation instanceof ConversationInstance) {
+    await channelOrConversation.messages().create({
+      body: inputText,
+      xTwilioWebhookEnabled: 'true',
+    });
+  } else {
+    await channelOrConversation.messages().create({
+      body: inputText,
+      xTwilioWebhookEnabled: 'true',
+    });
+  }
 
-  const chatbotCallbackWebhook = await channel.webhooks().create({
+  const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
     configuration: {
       filters: ['onMessageSent'],
       method: 'POST',
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
-  });
+  };
 
-  /**
-   * "Same" as above but for Conversations. Differences to the Studio Webhook in this case:
-   * - different api
-   * - target: 'webhook'
-   * - filters: ['onMessageAdded']
-   */
-  let chatbotCallbackWebhookForConversation;
-  try {
-    chatbotCallbackWebhookForConversation = await context
-      .getTwilioClient()
-      .conversations.v1.conversations(channel.sid)
-      .webhooks.create({
-        target: 'webhook',
-        configuration: {
-          filters: ['onMessageAdded'],
-          method: 'POST',
-          url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-        },
-      });
-  } catch (error) {
-    console.log('>> Not a conversation channel');
+  const conversationWebhook: ConversationWebhookOpts = {
+    target: 'webhook',
+    configuration: {
+      filters: ['onMessageAdded'],
+      method: 'POST',
+      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+    },
+  };
+
+  let webhook;
+  if (channelOrConversation instanceof ConversationInstance) {
+    webhook = await channelOrConversation.webhooks().create(conversationWebhook);
+  } else {
+    webhook = await channelOrConversation.webhooks().create(channelWebhook);
   }
 
   // const updated =
-  await updateChannelWithCapture(context, channel, {
+  await updateChannelWithCapture(channelOrConversation, {
     userId,
     botName,
     botAlias,
@@ -315,8 +326,7 @@ const triggerWithNextMessage = async (
     releaseFlag,
     memoryAttribute,
     // How to determine which of webhooks to use?
-    chatbotCallbackWebhookSid:
-      chatbotCallbackWebhookForConversation?.sid || chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid: webhook.sid,
   });
 };
 
@@ -327,6 +337,7 @@ export type HandleChannelCaptureParams = {
   botSuffix: string;
   triggerType: TriggerTypes;
   releaseType: ReleaseTypes;
+  isConversation: string;
   studioFlowSid?: string; // The Studio Flow sid. Needed to trigger an API type execution once the channel is released. (in Studio Flow, flow.flow_sid)
   memoryAttribute?: string; // Where in the channel attributes we want to save the bot's memory (allows usage of multiple bots in same channel)
   releaseFlag?: string; // The flag we want to set true in the channel attributes when the channel is released
@@ -393,7 +404,10 @@ export const handleChannelCapture = async (
     releaseFlag,
     additionControlTaskAttributes,
     controlTaskTTL,
+    isConversation: isConversationString,
   } = params as HandleChannelCaptureParams;
+
+  const isConversation = isConversationString === 'true';
 
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
@@ -401,35 +415,37 @@ export const handleChannelCapture = async (
 
   const [, , controlTask] = await Promise.all([
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-    context
-      .getTwilioClient()
-      .chat.services(context.CHAT_SERVICE_SID)
-      .channels(channelSid)
-      .webhooks.list()
-      .then((channelWebhooks) =>
-        channelWebhooks.map(async (w) => {
-          if (w.type === 'studio') {
-            await w.remove();
-          }
-        }),
-      ),
+    !isConversation &&
+      context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .webhooks.list()
+        .then((channelWebhooks) =>
+          channelWebhooks.map(async (w) => {
+            if (w.type === 'studio') {
+              await w.remove();
+            }
+          }),
+        ),
 
     /*
      * Doing the "same" as above but for Conversations. Differences to the Studio Webhook in this case:
      * - It's NOT found under the channel webhooks, but under the conversation webhooks
      * - It uses the property 'target' instead of 'type'
      */
-    context
-      .getTwilioClient()
-      .conversations.v1.conversations(channelSid)
-      .webhooks.list()
-      .then((channelWebhooks) =>
-        channelWebhooks.map(async (w) => {
-          if (w.target === 'studio') {
-            await w.remove();
-          }
-        }),
-      ),
+    isConversation &&
+      context
+        .getTwilioClient()
+        .conversations.v1.conversations(channelSid)
+        .webhooks.list()
+        .then((channelWebhooks) =>
+          channelWebhooks.map(async (w) => {
+            if (w.target === 'studio') {
+              await w.remove();
+            }
+          }),
+        ),
 
     // Create control task to prevent channel going stale
     context
@@ -457,12 +473,19 @@ export const handleChannelCapture = async (
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
-  // TODO: Should use conversation here instead of channel?
-  const channel = await context
-    .getTwilioClient()
-    .chat.v2.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .fetch();
+  const channelOrConversation: ChannelInstance | ConversationInstance = isConversation
+    ? await context.getTwilioClient().conversations.v1.conversations(channelSid).fetch()
+    : await context
+        .getTwilioClient()
+        .chat.v2.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .fetch();
+
+  // const channel = await context
+  //   .getTwilioClient()
+  //   .chat.v2.services(context.CHAT_SERVICE_SID)
+  //   .channels(channelSid)
+  //   .fetch();
 
   const options: CaptureChannelOptions = {
     botName,
@@ -472,17 +495,17 @@ export const handleChannelCapture = async (
     memoryAttribute,
     releaseFlag,
     inputText: message,
-    userId: channel.sid,
+    userId: channelOrConversation.sid,
     controlTaskSid: controlTask.sid,
   };
 
   console.log({ message, triggerType });
   if (triggerType === 'withUserMessage') {
-    await triggerWithUserMessage(context, channel, options);
+    await triggerWithUserMessage(context, channelOrConversation, options);
   }
 
   if (triggerType === 'withNextMessage') {
-    await triggerWithNextMessage(context, channel, options);
+    await triggerWithNextMessage(context, channelOrConversation, options);
   }
 
   return { status: 'success' } as const;
