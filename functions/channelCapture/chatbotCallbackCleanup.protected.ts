@@ -64,6 +64,7 @@ export const chatbotCallbackCleanup = async ({
   lexClient: LexClient;
 }) => {
   const memory = lexMemory || {};
+  const { isConversation } = channelAttributes;
 
   const capturedChannelAttributes =
     channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
@@ -85,12 +86,12 @@ export const chatbotCallbackCleanup = async ({
   const updateChannelOrConversationAttributes = (attributesObj: any) => {
     const attributes = JSON.stringify(attributesObj);
 
-    if (channelOrConversation instanceof ConversationInstance) {
-      channelOrConversation.update({
+    if (isConversation) {
+      (channelOrConversation as ConversationInstance).update({
         attributes,
       });
     } else {
-      channelOrConversation.update({
+      (channelOrConversation as ChannelInstance).update({
         attributes,
       });
     }
