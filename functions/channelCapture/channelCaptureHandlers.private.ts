@@ -140,6 +140,7 @@ const updateChannelWithCapture = async (
         controlTaskSid,
         chatbotCallbackWebhookSid,
         releaseType,
+        isConversation,
         ...(studioFlowSid && { studioFlowSid }),
         ...(releaseFlag && { releaseFlag }),
         ...(memoryAttribute && { memoryAttribute }),
@@ -544,8 +545,10 @@ const createStudioFlowTrigger = async (
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
   controlTask.remove();
   const { isConversation } = capturedChannelAttributes;
+  console.log('>> isConversation', isConversation);
 
   if (isConversation) {
+    console.log('>> create conversation webhook');
     return (channelOrConversation as ConversationInstance).webhooks().create({
       target: 'studio',
       configuration: {
@@ -554,6 +557,7 @@ const createStudioFlowTrigger = async (
     });
   }
 
+  console.log('>> create channel webhook');
   return (channelOrConversation as ChannelInstance).webhooks().create({
     type: 'studio',
     configuration: {

@@ -84,18 +84,20 @@ export const chatbotCallbackCleanup = async ({
     'channelCapture/channelCaptureHandlers'
   ].path) as ChannelCaptureHandlers;
 
-  const updateChannelOrConversationAttributes = (attributesObj: any) => {
+  const updateChannelOrConversationAttributes = async (attributesObj: any) => {
+    console.log('>> Updating channel attributes');
     const attributes = JSON.stringify(attributesObj);
 
     if (isConversation) {
-      (channelOrConversation as ConversationInstance).update({
+      await (channelOrConversation as ConversationInstance).update({
         attributes,
       });
     } else {
-      (channelOrConversation as ChannelInstance).update({
+      await (channelOrConversation as ChannelInstance).update({
         attributes,
       });
     }
+    console.log('>> Finished updating channel attributes');
   };
 
   const removeWebhookFromChannelOrConversation = async () => {
@@ -111,6 +113,7 @@ export const chatbotCallbackCleanup = async ({
         .webhooks()
         .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
         .remove();
+      console.log('>> Finished removing webhook from conversation');
     } else {
       console.log('>> Removing webhook from programmable chat');
       await (channelOrConversation as ChannelInstance)
