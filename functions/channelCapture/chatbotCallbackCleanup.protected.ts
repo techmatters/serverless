@@ -27,6 +27,7 @@ import {
   responseWithCors,
   success,
 } from '@tech-matters/serverless-helpers';
+import { ConversationInstance } from 'twilio/lib/rest/conversations/v1/conversation';
 import type { AWSCredentials, LexClient } from './lexClient.private';
 import type {
   CapturedChannelAttributes,
@@ -51,13 +52,13 @@ export type Body = {
 
 export const chatbotCallbackCleanup = async ({
   context,
-  channel,
+  channelOrConversation,
   channelAttributes,
   memory: lexMemory,
   lexClient,
 }: {
   context: Context<EnvVars>;
-  channel: ChannelInstance;
+  channelOrConversation: ChannelInstance | ConversationInstance;
   channelAttributes: { [k: string]: any };
   memory?: { [key: string]: string };
   lexClient: LexClient;
@@ -81,6 +82,20 @@ export const chatbotCallbackCleanup = async ({
     'channelCapture/channelCaptureHandlers'
   ].path) as ChannelCaptureHandlers;
 
+  const updateChannelOrConversationAttributes = (attributesObj: any) => {
+    const attributes = JSON.stringify(attributesObj);
+
+    if (channelOrConversation instanceof ConversationInstance) {
+      channelOrConversation.update({
+        attributes,
+      });
+    } else {
+      channelOrConversation.update({
+        attributes,
+      });
+    }
+  };
+
   await Promise.all([
     // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
     capturedChannelAttributes?.botName &&
@@ -88,20 +103,21 @@ export const chatbotCallbackCleanup = async ({
       lexClient.deleteSession(context, {
         botName: capturedChannelAttributes.botName,
         botAlias: capturedChannelAttributes.botAlias,
-        userId: channel.sid,
+        userId: channelOrConversation.sid,
       }),
     // Update channel attributes (remove channelCapturedByBot and add memory)
-    channel.update({
-      attributes: JSON.stringify(releasedChannelAttributes),
-    }),
+    updateChannelOrConversationAttributes(releasedChannelAttributes),
     // Remove this webhook from the channel
     capturedChannelAttributes?.chatbotCallbackWebhookSid &&
-      channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove(),
+      channelOrConversation
+        .webhooks()
+        .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
+        .remove(),
     // Trigger the next step once the channel is released
     capturedChannelAttributes &&
       channelCaptureHandlers.handleChannelRelease(
         context,
-        channel,
+        channelOrConversation,
         capturedChannelAttributes,
         memory,
       ),
@@ -128,18 +144,21 @@ export const handler = async (
     }
 
     const client = context.getTwilioClient();
+    const conversation = await client.conversations.v1.conversations(channelSid).fetch();
     const channel = await client.chat
       .services(context.CHAT_SERVICE_SID)
       .channels(channelSid)
       .fetch();
 
-    const channelAttributes = JSON.parse(channel.attributes);
+    const channelOrConversation = conversation || channel;
+
+    const channelAttributes = JSON.parse(channelOrConversation.attributes);
 
     const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient'].path) as LexClient;
 
     await chatbotCallbackCleanup({
       context,
-      channel,
+      channelOrConversation,
       channelAttributes,
       lexClient,
     });

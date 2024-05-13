@@ -517,14 +517,23 @@ export const handleChannelCapture = async (
  */
 
 const createStudioFlowTrigger = async (
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   capturedChannelAttributes: CapturedChannelAttributes,
   controlTask: TaskInstance,
 ) => {
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
   controlTask.remove();
 
-  return channel.webhooks().create({
+  if (channelOrConversation instanceof ConversationInstance) {
+    return channelOrConversation.webhooks().create({
+      target: 'studio',
+      configuration: {
+        flowSid: capturedChannelAttributes.studioFlowSid,
+      },
+    });
+  }
+
+  return channelOrConversation.webhooks().create({
     type: 'studio',
     configuration: {
       flowSid: capturedChannelAttributes.studioFlowSid,
@@ -636,7 +645,7 @@ const handlePostSurveyComplete = async (
 
 export const handleChannelRelease = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   capturedChannelAttributes: CapturedChannelAttributes,
   memory: LexMemory,
 ) => {
@@ -648,7 +657,7 @@ export const handleChannelRelease = async (
     .fetch();
 
   if (capturedChannelAttributes.releaseType === 'triggerStudioFlow') {
-    await createStudioFlowTrigger(channel, capturedChannelAttributes, controlTask);
+    await createStudioFlowTrigger(channelOrConversation, capturedChannelAttributes, controlTask);
   }
 
   if (capturedChannelAttributes.releaseType === 'postSurveyComplete') {

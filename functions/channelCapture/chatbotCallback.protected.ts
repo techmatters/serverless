@@ -83,11 +83,13 @@ export const handler = async (
       .channels(ChannelSid || String(ConversationSid))
       .fetch();
 
-    // const conversation = await client.conversations.v1
-    //   .conversations(String(ConversationSid))
-    //   .fetch();
+    const conversation = await client.conversations.v1
+      .conversations(String(ConversationSid))
+      .fetch();
 
-    const channelAttributes = JSON.parse(channel.attributes);
+    const channelOrConversation = conversation || channel;
+
+    const channelAttributes = JSON.parse(channelOrConversation.attributes);
     console.log('>> Before send message');
     console.log(JSON.stringify(channelAttributes));
     console.log(
@@ -141,20 +143,28 @@ export const handler = async (
         console.log('>> Chatbot callback cleanup');
         await chatbotCallbackCleanup({
           context,
-          channel,
+          channelOrConversation,
           channelAttributes,
           memory: lexResponse.slots,
           lexClient,
         });
       }
 
-      // TODO: should send through conversation API?
       console.log('>> Send message to Flex');
-      await channel.messages().create({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
+
+      if (conversation) {
+        await conversation.messages().create({
+          body: lexResponse.message,
+          author: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+      } else {
+        await channel.messages().create({
+          body: lexResponse.message,
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+      }
 
       resolve(success('All messages sent :)'));
       return;
