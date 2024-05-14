@@ -71,26 +71,37 @@ const getContactValueFromWebchat = (trigger: ChatTrigger) => {
   return preEngagementData.contactIdentifier;
 };
 
-export const getIdentifier = (trigger: Event['trigger']) => {
+const trimSpaces = (s: string) => s.replace(' ', '');
+
+type TransformIdentifierFunction = (c: string) => string;
+const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
+  voice: [trimSpaces],
+  sms: [trimSpaces],
+  whatsapp: [(s) => s.replace('whatsapp:', ''), trimSpaces],
+  modica: [(s) => s.replace('modica:', ''), trimSpaces],
+  facebook: [(s) => s.replace('messenger:', '')],
+  instagram: [],
+  line: [],
+  twitter: [],
+  web: [],
+};
+
+export const getIdentifier = (trigger: Event['trigger']): string => {
   if (isVoiceTrigger(trigger)) {
-    return trigger.call.From;
+    return channelTransformations.voice.reduce((accum, f) => f(accum), trigger.call.From);
   }
 
   if (isChatTrigger(trigger)) {
-    if (trigger.message.ChannelAttributes.channel_type === 'facebook') {
-      return trigger.message.ChannelAttributes.from.replace('messenger:', '');
-    }
-    if (trigger.message.ChannelAttributes.channel_type === 'whatsapp') {
-      return trigger.message.ChannelAttributes.from.replace('whatsapp:', '');
-    }
-    if (trigger.message.ChannelAttributes.channel_type === 'modica') {
-      return trigger.message.ChannelAttributes.from.replace('modica:', '');
-    }
+    // webchat is a special case since it does not only depends on channel but in the task attributes too
     if (trigger.message.ChannelAttributes.channel_type === 'web') {
       return getContactValueFromWebchat(trigger);
     }
 
-    return trigger.message.ChannelAttributes.from;
+    // otherwise, return the "defaultFrom" with the transformations on the identifier corresponding to each channel
+    return channelTransformations[trigger.message.ChannelAttributes.channel_type].reduce(
+      (accum, f) => f(accum),
+      trigger.message.ChannelAttributes.from,
+    );
   }
 
   throw new Error('Trigger is none VoiceTrigger nor ChatTrigger');
