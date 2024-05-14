@@ -78,24 +78,37 @@ export const handler = async (
     }
 
     const client = context.getTwilioClient();
-    const channel = await client.chat
-      .services(context.CHAT_SERVICE_SID)
-      .channels(ChannelSid || String(ConversationSid))
-      .fetch();
 
-    const conversation = await client.conversations.v1
-      .conversations(String(ConversationSid))
-      .fetch();
+    let channel;
+    try {
+      channel = await client.chat
+        .services(context.CHAT_SERVICE_SID)
+        .channels(ChannelSid || String(ConversationSid))
+        .fetch();
+    } catch (err) {
+      console.log(`Could not fetch channel with sid ${ChannelSid}`);
+    }
 
+    let conversation;
+    try {
+      conversation = await client.conversations.v1.conversations(String(ConversationSid)).fetch();
+    } catch (err) {
+      console.log(`Could not fetch conversation with sid ${ConversationSid}`);
+    }
+
+    // Priority to conversation
     const channelOrConversation = conversation || channel;
 
-    const channelAttributes1 = JSON.parse(channel?.attributes);
-    const channelAttributes2 = JSON.parse(conversation?.attributes);
+    if (channelOrConversation === undefined) {
+      console.error(
+        `Could not fetch channel or conversation with sid ${ChannelSid} or ${String(
+          ConversationSid,
+        )}`,
+      );
+      return;
+    }
 
-    console.log('>> channelAttributes1', JSON.stringify(channelAttributes1));
-    console.log('>> channelAttributes2', JSON.stringify(channelAttributes2));
-
-    const channelAttributes = JSON.parse(channelOrConversation.attributes);
+    const channelAttributes = JSON.parse(channelOrConversation?.attributes || '{}');
     console.log('>> Before send message');
     console.log(JSON.stringify(channelAttributes));
     console.log(
@@ -165,7 +178,7 @@ export const handler = async (
           xTwilioWebhookEnabled: 'true',
         });
       } else {
-        await channel.messages().create({
+        await channel?.messages().create({
           body: lexResponse.message,
           from: 'Bot',
           xTwilioWebhookEnabled: 'true',
