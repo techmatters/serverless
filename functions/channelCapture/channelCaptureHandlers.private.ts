@@ -129,6 +129,8 @@ const updateChannelWithCapture = async (
     channelAttributes,
   );
 
+  console.log('>> final channelType: ', channelType);
+
   const newAttributes = {
     attributes: JSON.stringify({
       ...channelAttributes,
@@ -195,6 +197,7 @@ const triggerWithUserMessage = async (
   }: CaptureChannelOptions,
 ) => {
   console.log('>> triggerWithUserMessage 1');
+  console.log('>> channelType: ', channelType);
   const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
   const lexClient = require(handlerPath) as LexClient;
 
