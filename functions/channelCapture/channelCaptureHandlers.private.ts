@@ -64,6 +64,7 @@ export type CapturedChannelAttributes = {
   releaseFlag?: string;
   chatbotCallbackWebhookSid: string;
   isConversation: boolean;
+  channelType: string;
 };
 
 export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?: boolean }) =>
@@ -118,6 +119,7 @@ const updateChannelWithCapture = async (
     memoryAttribute,
     releaseFlag,
     isConversation,
+    channelType,
   } = attributes;
 
   const channelAttributes = JSON.parse(channel.attributes);
@@ -130,6 +132,7 @@ const updateChannelWithCapture = async (
   const newAttributes = {
     attributes: JSON.stringify({
       ...channelAttributes,
+      channel_type: channelType,
       serviceUserIdentity: userIdentityOrParticipantId,
       participantSid: userIdentityOrParticipantId,
       // All of this can be passed as url params to the webhook instead
@@ -168,6 +171,7 @@ type CaptureChannelOptions = {
   memoryAttribute?: string; // where in the task attributes we want to save the bot's memory (allows compatibility for multiple bots)
   releaseFlag?: string; // the flag we want to set true when the channel is released
   isConversation: boolean;
+  channelType: string;
 };
 
 /**
@@ -187,6 +191,7 @@ const triggerWithUserMessage = async (
     releaseFlag,
     memoryAttribute,
     isConversation,
+    channelType,
   }: CaptureChannelOptions,
 ) => {
   console.log('>> triggerWithUserMessage 1');
@@ -246,6 +251,7 @@ const triggerWithUserMessage = async (
     memoryAttribute,
     chatbotCallbackWebhookSid: webhook.sid,
     isConversation,
+    channelType,
   });
   console.log('>> triggerWithUserMessage 4');
 
@@ -298,6 +304,7 @@ const triggerWithNextMessage = async (
     releaseFlag,
     memoryAttribute,
     isConversation,
+    channelType,
   }: CaptureChannelOptions,
 ) => {
   if (isConversation) {
@@ -353,6 +360,7 @@ const triggerWithNextMessage = async (
     memoryAttribute,
     chatbotCallbackWebhookSid: webhook.sid,
     isConversation,
+    channelType,
   });
 };
 
@@ -369,6 +377,7 @@ export type HandleChannelCaptureParams = {
   additionControlTaskAttributes?: string; // Optional attributes to include in the control task, in the string representation of a JSON
   controlTaskTTL?: number;
   isConversation: boolean;
+  channelType: string;
 };
 
 type ValidationResult = { status: 'valid' } | { status: 'invalid'; error: string };
@@ -431,9 +440,11 @@ export const handleChannelCapture = async (
     additionControlTaskAttributes,
     controlTaskTTL,
     isConversation,
+    channelType,
   } = params as HandleChannelCaptureParams;
 
   console.log('>> isConversation', isConversation);
+  console.log('>> channelType', channelType);
 
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
@@ -518,6 +529,7 @@ export const handleChannelCapture = async (
     userId: channelOrConversation.sid,
     controlTaskSid: controlTask.sid,
     isConversation,
+    channelType,
   };
 
   console.log({ message, triggerType, isConversation });

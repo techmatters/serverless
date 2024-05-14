@@ -66,10 +66,12 @@ export const handler = async (
       memoryAttribute,
       releaseFlag,
       isConversation: isConversationString,
+      channelType,
     } = event;
 
     const isConversation = isConversationString === 'true';
     console.log('>> isConversation', isConversation);
+    console.log('>> channelType', channelType);
 
     const handlerPath = Runtime.getFunctions()['channelCapture/channelCaptureHandlers'].path;
     const channelCaptureHandlers = require(handlerPath) as ChannelCaptureHandlers;
