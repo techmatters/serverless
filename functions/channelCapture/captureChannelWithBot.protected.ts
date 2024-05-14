@@ -89,6 +89,7 @@ export const handler = async (
       additionControlTaskAttributes,
       controlTaskTTL,
       isConversation,
+      channelType,
     });
 
     if (result.status === 'failure' && result.validationResult.status === 'invalid') {
