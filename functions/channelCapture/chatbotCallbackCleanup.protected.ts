@@ -124,7 +124,7 @@ export const chatbotCallbackCleanup = async ({
   };
 
   console.log('>> Before Promise.all');
-  await Promise.all([
+  await Promise.allSettled([
     // Delete Lex session. This is not really needed as the session will expire, but that depends on the config of Lex.
     capturedChannelAttributes?.botName &&
       capturedChannelAttributes?.botAlias &&
