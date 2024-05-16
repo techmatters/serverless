@@ -54,15 +54,17 @@ const sendLineMessage =
         },
       ],
     };
-
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
+      Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
+    };
     try {
-      return await axios.post(LINE_SEND_MESSAGE_URL, {
+      return await axios({
+        method: 'post',
+        url: LINE_SEND_MESSAGE_URL,
         data: JSON.stringify(payload),
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
-          Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
-        },
+        headers,
       });
     } catch (error) {
       const axiosError = error as AxiosError;
