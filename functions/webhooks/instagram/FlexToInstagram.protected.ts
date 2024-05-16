@@ -51,16 +51,15 @@ const sendInstagramMessage =
         text: messageText,
       },
     };
-
-    const response = await axios.post(
-      `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-      {
-        data: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
+    const response = await axios.request({
+      url: `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+      method: 'post',
+      data: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+    });
 
     return response.data;
   };

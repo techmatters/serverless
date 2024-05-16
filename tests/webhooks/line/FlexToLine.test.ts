@@ -22,10 +22,10 @@ import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToLine } from '../../../functions/webhooks/line/FlexToLine.protected';
 
 jest.mock('axios', () => ({
-  post: jest.fn(),
+  request: jest.fn(),
 }));
 
-const mockAxiosPost = axios.post as jest.MockedFunction<typeof axios.post>;
+const mockAxiosRequest = axios.request as jest.MockedFunction<typeof axios.request>;
 
 const channels: { [x: string]: any } = {
   CHANNEL_SID: {
@@ -130,8 +130,7 @@ describe('FlexToLine', () => {
       expectedStatus,
       expectedMessage,
     }) => {
-      // @ts-ignore
-      mockAxiosPost.mockImplementation(endpointImpl);
+      mockAxiosRequest.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -186,10 +185,9 @@ describe('FlexToLine', () => {
   ]).test(
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
-      // @ts-ignore
-      mockAxiosPost.mockClear();
+      mockAxiosRequest.mockClear();
 
-      mockAxiosPost.mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockAxiosRequest.mockImplementation(async () => ({ status: 200, data: 'OK' }));
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -197,11 +195,12 @@ describe('FlexToLine', () => {
       await FlexToLine(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(mockAxiosPost).not.toBeCalled();
+        expect(mockAxiosRequest).not.toBeCalled();
       } else {
-        expect(mockAxiosPost).toBeCalledWith(
-          'https://api.line.me/v2/bot/message/push',
+        expect(mockAxiosRequest).toBeCalledWith(
           expect.objectContaining({
+            url: 'https://api.line.me/v2/bot/message/push',
+            method: 'post',
             data: JSON.stringify({
               to: event.recipientId,
               messages: [

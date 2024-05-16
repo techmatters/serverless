@@ -16,7 +16,7 @@
 
 /* eslint-disable global-require */
 /* eslint-disable import/no-dynamic-require */
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { v4 as uuidV4 } from 'uuid';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
@@ -54,15 +54,31 @@ const sendLineMessage =
         },
       ],
     };
-
-    return axios.post(LINE_SEND_MESSAGE_URL, {
-      data: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
-        Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
-      },
-    });
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
+      Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
+    };
+    try {
+      // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
+      return await axios.request({
+        method: 'post',
+        url: LINE_SEND_MESSAGE_URL,
+        data: JSON.stringify(payload),
+        headers,
+      });
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const { data, status } = axiosError.response;
+        throw new Error(
+          `Line API error: status: ${status}, body: ${
+            typeof data === 'object' ? JSON.stringify(data) : data
+          }`,
+        );
+      }
+      throw error;
+    }
   };
 
 export const handler = async (
