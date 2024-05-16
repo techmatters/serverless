@@ -71,7 +71,9 @@ const sendLineMessage =
         throw new Error(
           `Line API error: status: ${status}, body: ${
             typeof data === 'object' ? JSON.stringify(data) : data
-          }`,
+          }, requestHeaders: ${JSON.stringify(
+            axiosError.request.headers,
+          )}, context: ${JSON.stringify(context)}`,
         );
       }
       throw error;
