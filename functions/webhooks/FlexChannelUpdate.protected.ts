@@ -26,12 +26,14 @@ import {
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
+  CONVERSATION_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
 };
 
 export type Body = {
   Source?: string;
-  ChannelSid?: string;
+  ChannelSid?: string; // Remove once we've fully migrated to conversations
+  ConversationSid?: string;
   Attributes?: string; // channel attributes (e.g. "{\"from\":\"pgian\",\"channel_type\":\"custom\",\"status\":\"INACTIVE\",\"long_lived\":false}")
   UniqueName?: string;
   FriendlyName?: string;
@@ -55,13 +57,11 @@ function timeout(ms: number) {
 
 async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {
   try {
-    const removed = await context
+    return await context
       .getTwilioClient()
       .sync.services(context.SYNC_SERVICE_SID)
       .documents(from)
       .remove();
-
-    return removed;
   } catch (err) {
     if (err instanceof Error) {
       // If the error is that the doc was already cleaned, don't throw further
@@ -100,6 +100,31 @@ export const handler = async (
       const { status, from } = JSON.parse(channel.attributes);
 
       if (status === 'INACTIVE') {
+        await timeout(1000); // set small timeout just in case some cleanup is still going on
+
+        const removed = await cleanupUserChannelMap(context, from);
+
+        resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
+        return;
+      }
+    }
+
+    if (event.EventType === 'onConversationUpdate') {
+      const { ConversationSid } = event;
+
+      if (ConversationSid === undefined) {
+        resolve(error400('ConversationSid'));
+        return;
+      }
+
+      const conversations = await client.conversations
+        .services(context.CONVERSATION_SERVICE_SID)
+        .conversations(ConversationSid)
+        .fetch();
+
+      const { from } = JSON.parse(conversations.attributes);
+
+      if (conversations.state === 'inactive') {
         await timeout(1000); // set small timeout just in case some cleanup is still going on
 
         const removed = await cleanupUserChannelMap(context, from);
