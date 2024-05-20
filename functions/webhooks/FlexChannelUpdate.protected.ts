@@ -26,7 +26,6 @@ import {
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
-  CONVERSATION_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
 };
 
@@ -118,7 +117,7 @@ export const handler = async (
       }
 
       const conversations = await client.conversations
-        .services(context.CONVERSATION_SERVICE_SID)
+        .services(context.CHAT_SERVICE_SID)
         .conversations(ConversationSid)
         .fetch();
 

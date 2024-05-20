@@ -34,6 +34,7 @@ type EnvVars = {
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;
   LINE_CHANNEL_SECRET: string;
+  LINE_TWILIO_MESSAGING_MODE?: 'conversations' | 'programmable-chat' | '';
 };
 
 type LineMessage = {
@@ -125,6 +126,7 @@ export const handler = async (
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
+    const useConversations = context.LINE_TWILIO_MESSAGING_MODE === 'conversations';
 
     const responses = [];
     for (let i = 0; i < messageEvents.length; i += 1) {
@@ -137,22 +139,39 @@ export const handler = async (
       const uniqueUserName = `${channelType}:${senderExternalId}`;
       const senderScreenName = 'child'; // TODO: how to fetch user Profile Name given its ID (found at 'destination' property)
       const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/line/FlexToLine?recipientId=${senderExternalId}`;
-
-      // eslint-disable-next-line no-await-in-loop
-      const result = await channelToFlex.sendMessageToFlex(context, {
-        flexFlowSid: context.LINE_FLEX_FLOW_SID,
-        chatServiceSid: context.CHAT_SERVICE_SID,
-        syncServiceSid: context.SYNC_SERVICE_SID,
-        channelType,
-        twilioNumber,
-        chatFriendlyName,
-        uniqueUserName,
-        senderScreenName,
-        onMessageSentWebhookUrl,
-        messageText,
-        senderExternalId,
-        subscribedExternalId,
-      });
+      let result: Awaited<ReturnType<typeof channelToFlex.sendConversationMessageToFlex>>;
+      if (useConversations) {
+        // eslint-disable-next-line no-await-in-loop
+        result = await channelToFlex.sendConversationMessageToFlex(context, {
+          flexFlowSid: context.LINE_FLEX_FLOW_SID,
+          conversationServiceSid: context.CHAT_SERVICE_SID,
+          syncServiceSid: context.SYNC_SERVICE_SID,
+          channelType,
+          twilioNumber,
+          uniqueUserName,
+          senderScreenName,
+          onMessageSentWebhookUrl,
+          messageText,
+          senderExternalId,
+          subscribedExternalId,
+        });
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        result = await channelToFlex.sendMessageToFlex(context, {
+          flexFlowSid: context.LINE_FLEX_FLOW_SID,
+          chatServiceSid: context.CHAT_SERVICE_SID,
+          syncServiceSid: context.SYNC_SERVICE_SID,
+          channelType,
+          twilioNumber,
+          chatFriendlyName,
+          uniqueUserName,
+          senderScreenName,
+          onMessageSentWebhookUrl,
+          messageText,
+          senderExternalId,
+          subscribedExternalId,
+        });
+      }
 
       switch (result.status) {
         case 'sent':

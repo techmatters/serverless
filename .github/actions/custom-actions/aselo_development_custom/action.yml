@@ -99,7 +99,7 @@ runs:
     - name: Set helpline Line Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/line/messaging_mode"
+        ssm_parameter: "/development/line/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "LINE_TWILIO_MESSAGING_MODE"
     # Modica environment variables
     - name: Set Modica App Name
