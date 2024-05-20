@@ -88,12 +88,12 @@ runs:
     - name: Set Line Channel Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "DEV_LINE_AS_CHANNEL_SECRET"
+        ssm_parameter: "/development/line/${{inputs.account-sid}}/channel_secret"
         env_variable_name: "LINE_CHANNEL_SECRET"
     - name: Set Line Channel Access Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "DEV_LINE_AS_CHANNEL_ACCESS_TOKEN"
+        ssm_parameter: "/development/line/${{inputs.account-sid}}/channel_access_token"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
     # Line environment variables
     - name: Set helpline Line Flex Messaging Mode (Programmable Chat or Conversations)

@@ -12,12 +12,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-name: 'Aselo Production release custom action'
-description: 'Sets up environment variables related to non-standard additional features in use in the prodcution environment'
-inputs:
-  account-sid:
-    description: 'The Twilio Account SID for this account'
-    required: true
+name: 'Childline Thailand Staging release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the thailand production environment'
 runs:
   using: "composite"
   steps:
@@ -25,7 +21,7 @@ runs:
     - name: Set helpline Line Flex Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "PROD_TWILIO_AS_LINE_FLEX_FLOW_SID"
+        ssm_parameter: "PROD_TWILIO_TH_LINE_FLEX_FLOW_SID"
         env_variable_name: "LINE_FLEX_FLOW_SID"
     - name: Set Line Channel Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
@@ -37,7 +33,23 @@ runs:
       with:
         ssm_parameter: "/production/line/${{inputs.account-sid}}/channel_access_token"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
-    # Append environment variables
+    # Set Instagram variables
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_100136349533502_Childline-TH-Staging"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+   # Append LINE environment variables
     - name: Add LINE_FLEX_FLOW_SID
       run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
       shell: bash
@@ -46,4 +58,14 @@ runs:
       shell: bash
     - name: Add LINE_CHANNEL_ACCESS_TOKEN
       run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    # Append INSTAGRAM environment variables
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
       shell: bash
