@@ -82,7 +82,11 @@ export const handler = TokenValidator(
         validateStatus: () => true,
       };
 
-      const report = await axios.post(context.IWF_API_CASE_URL, config);
+      const report = await axios.request({
+        method: 'post',
+        url: context.IWF_API_CASE_URL,
+        ...config,
+      });
 
       const data = report.data as IWFResponse;
 

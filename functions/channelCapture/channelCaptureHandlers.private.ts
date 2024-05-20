@@ -456,8 +456,10 @@ const saveSurveyInHRM = async (
     taskId: controlTask.sid,
     data,
   };
-
-  await axios.post(`${hrmBaseUrl}/postSurveys`, {
+  // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
+  await axios.request({
+    method: 'post',
+    url: `${hrmBaseUrl}/postSurveys`,
     data: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',

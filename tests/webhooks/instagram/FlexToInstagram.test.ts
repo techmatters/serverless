@@ -21,7 +21,7 @@ import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToInstagram } from '../../../functions/webhooks/instagram/FlexToInstagram.protected';
 
 jest.mock('axios', () => ({
-  post: jest.fn(),
+  request: jest.fn(),
 }));
 
 const channels: { [x: string]: any } = {
@@ -57,7 +57,7 @@ const validEvent = ({ recipientId = 'recipientId', From = 'senderId', Source = '
   From,
 });
 
-const mockAxiosPost = axios.post as jest.MockedFunction<typeof axios.post>;
+const mockAxiosRequest = axios.request as jest.MockedFunction<typeof axios.request>;
 
 describe('FlexToInstagram', () => {
   beforeAll(() => {
@@ -140,8 +140,7 @@ describe('FlexToInstagram', () => {
       expectedStatus,
       expectedMessage,
     }) => {
-      // @ts-ignore
-      mockAxiosPost.mockImplementation(endpointImpl);
+      mockAxiosRequest.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -186,10 +185,9 @@ describe('FlexToInstagram', () => {
   ]).test(
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
-      // @ts-ignore
-      mockAxiosPost.mockClear();
+      mockAxiosRequest.mockClear();
 
-      mockAxiosPost.mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockAxiosRequest.mockImplementation(async () => ({ status: 200, data: 'OK' }));
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -197,11 +195,12 @@ describe('FlexToInstagram', () => {
       await FlexToInstagram(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(axios.post).not.toBeCalled();
+        expect(axios.request).not.toBeCalled();
       } else {
-        expect(axios.post).toBeCalledWith(
-          `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+        expect(axios.request).toBeCalledWith(
           expect.objectContaining({
+            url: `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+            method: 'post',
             data: JSON.stringify({
               recipient: {
                 id: event.recipientId,

@@ -51,8 +51,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TWILIO_SSM_PREFIX: ${{matrix.environment_code}}_TWILIO_${{matrix.helpline_code}}
-      TWILIO_ACCOUNT_SID_SECRET_NAME: ${{matrix.helpline_code}}_${{matrix.environment_code}}_ACCOUNT_SID
-      TWILIO_AUTH_TOKEN_SECRET_NAME: ${{matrix.helpline_code}}_${{matrix.environment_code}}_AUTH_TOKEN
       FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'PROD' && 'production' || matrix.environment_code == 'STG' && 'staging' || 'development'}}
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +66,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       # Get AWS parameters to setup environment variables for Serverless function
+      # Get AWS parameters to setup environment variables for Serverless function
+      - name: Set Twilio Account SID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/twilio/${{matrix.helpline_code}}/account_sid
+          env_variable_name: TWILIO_ACCOUNT_SID
       - name: Set Twilio Sync API key
         uses: marvinpinto/action-inject-ssm-secrets@latest
         with:
@@ -139,7 +143,7 @@ jobs:
         uses: marvinpinto/action-inject-ssm-secrets@latest
         continue-on-error: true
         with:
-          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/aws/${{ secrets[env.TWILIO_ACCOUNT_SID_SECRET_NAME] }}/region
+          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/aws/${{ env.TWILIO_ACCOUNT_SID }}/region
           env_variable_name: HELPLINE_AWS_REGION
 
       - name: Set HELPLINE_AWS_REGION to default
@@ -212,7 +216,7 @@ jobs:
 
       - name: Slack Aselo channel
         id: slack
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@v1.26.0
         with:
           channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
           slack-message: '`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:.'

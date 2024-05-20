@@ -60,7 +60,8 @@ const sendLineMessage =
       Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
     };
     try {
-      return await axios({
+      // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
+      return await axios.request({
         method: 'post',
         url: LINE_SEND_MESSAGE_URL,
         data: JSON.stringify(payload),
@@ -73,9 +74,7 @@ const sendLineMessage =
         throw new Error(
           `Line API error: status: ${status}, body: ${
             typeof data === 'object' ? JSON.stringify(data) : data
-          }, requestHeaders: ${JSON.stringify(
-            axiosError.request.headers,
-          )}, context: ${JSON.stringify(context)}`,
+          }`,
         );
       }
       throw error;
