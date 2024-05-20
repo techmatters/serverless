@@ -43,11 +43,8 @@ runs:
       uses: ./.github/actions/custom-actions/aselo_development_custom
       with:
         account-sid: ${{ inputs.account-sid }}
-    - name: Aselo Beta release custom action
-      if: inputs.helpline-name == format('AS_STG')
-      uses: ./.github/actions/custom-actions/aselo_beta_custom
     - name: Aselo Production release custom action
-      if: inputs.helpline-name == format('AS_PRD')
+      if: inputs.helpline-name == format('AS_PROD')
       uses: ./.github/actions/custom-actions/aselo_production_custom
     - name: SafeSpot Staging release custom action
       if: inputs.helpline-name == format('JM_STG')

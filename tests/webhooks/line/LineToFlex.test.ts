@@ -252,8 +252,13 @@ describe('LineToFlex', () => {
       conditionDescription: 'sending multiple events',
       event: aggregateEvents(validEvent({}), validEvent({})),
       expectedStatus: 200,
-      expectedMessage:
-        'Message sent in channel line:sender_id.,Message sent in channel line:sender_id.',
+      expectedMessage: `${JSON.stringify({
+        status: 'sent',
+        response: 'Message sent in channel line:sender_id.',
+      })},${JSON.stringify({
+        status: 'sent',
+        response: 'Message sent in channel line:sender_id.',
+      })}`,
     },
     {
       conditionDescription: 'sending emoji',
