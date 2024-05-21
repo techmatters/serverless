@@ -302,7 +302,7 @@ const createFlexConversationInteraction = async (
 
   const interactionInstance = await client.flexApi.interaction.create({
     channel: {
-      type: channelType,
+      type: 'chat',
       initiated_by: 'api',
       properties: {
         channel_type: channelType,
