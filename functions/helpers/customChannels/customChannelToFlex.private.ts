@@ -304,11 +304,15 @@ const createFlexConversationInteraction = async (
     channel: {
       type: channelType,
       initiated_by: 'api',
-      attributes: {
+      properties: {
         channel_type: channelType,
-        senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
-        twilioNumber,
       },
+      participants: [
+        {
+          identity: uniqueUserName,
+          name: senderScreenName,
+        },
+      ],
     },
     routing: {
       properties: {
@@ -346,6 +350,15 @@ const createFlexConversationInteraction = async (
       twilioNumber,
     }),
   });
+
+  /* const onMessageAdded =
+  await conversationContext.webhooks.create({
+    target: 'studio',
+    configuration: {
+      flowSid: flexFlowSid,
+      filters: ['onMessageAdded'],
+    },
+  }); */
 
   /* const onMessageSent = */
   await conversationContext.webhooks.create({
