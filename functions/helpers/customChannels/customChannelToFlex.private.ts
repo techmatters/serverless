@@ -283,7 +283,7 @@ const createFlexChannel = async (
  * Creates a new Flex conversation in the provided Flex Flow and subscribes webhooks to it's events.
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
-const createFlexInteraction = async (
+const createFlexConversationInteraction = async (
   context: Context,
   {
     flexFlowSid,
@@ -514,7 +514,7 @@ export const sendConversationMessageToFlex = async (
     })) as ConversationSid;
 
     if (!conversationSid) {
-      conversationSid = await createFlexInteraction(context, {
+      conversationSid = await createFlexConversationInteraction(context, {
         flexFlowSid,
         conversationServiceSid,
         channelType,
