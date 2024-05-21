@@ -107,11 +107,12 @@ export const handler = async (
     const channelAttributes = JSON.parse(channelOrConversation?.attributes || '{}');
 
     // Send message to bot only if it's from child
-    if (
-      (EventType === 'onMessageSent' || EventType === 'onMessageAdded') &&
-      (channelAttributes.serviceUserIdentity === From ||
-        channelAttributes.participantSid === ParticipantSid)
-    ) {
+    const eventTypeCheck = EventType === 'onMessageSent' || EventType === 'onMessageAdded';
+    const userIdentityCheck =
+      (From && channelAttributes.serviceUserIdentity === From) ||
+      (ParticipantSid && channelAttributes.participantSid === ParticipantSid);
+
+    if (eventTypeCheck && userIdentityCheck) {
       const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient']
         .path) as LexClient;
 
