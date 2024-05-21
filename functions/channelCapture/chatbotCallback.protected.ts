@@ -55,11 +55,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid, request, ...rest } =
-      event as Body & { request: any };
-    console.log('>> ParticipantSid', ParticipantSid);
-    console.log('>> EventType', EventType);
-    console.log('>> rest', JSON.stringify(rest));
+    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid } = event;
     if (!Body) {
       resolve(error400('Body'));
       return;
@@ -109,11 +105,6 @@ export const handler = async (
     }
 
     const channelAttributes = JSON.parse(channelOrConversation?.attributes || '{}');
-    console.log('>> Before send message');
-    console.log(JSON.stringify(channelAttributes));
-    console.log(
-      JSON.stringify({ EventType, serviceUserIdentity: channelAttributes.serviceUserIdentity }),
-    );
 
     // Send message to bot only if it's from child
     if (
@@ -127,18 +118,14 @@ export const handler = async (
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
-      console.log('>> Post to Lex');
-      console.log(JSON.stringify(capturedChannelAttributes));
       const lexResult = await lexClient.postText(context, {
         botName: capturedChannelAttributes.botName,
         botAlias: capturedChannelAttributes.botAlias,
         userId: capturedChannelAttributes.userId,
         inputText: Body,
       });
-      console.log(JSON.stringify(lexResult));
 
       if (lexResult.status === 'failure') {
-        console.log(lexResult.error.message);
         if (
           lexResult.error.message.includes(
             'Concurrent Client Requests: Encountered resource conflict while saving session data',
@@ -159,7 +146,6 @@ export const handler = async (
           'channelCapture/chatbotCallbackCleanup'
         ].path) as ChatbotCallbackCleanupModule;
 
-        console.log('>> Chatbot callback cleanup');
         await chatbotCallbackCleanup({
           context,
           channelOrConversation,
@@ -168,8 +154,6 @@ export const handler = async (
           lexClient,
         });
       }
-
-      console.log('>> Send message to Flex');
 
       if (conversation) {
         await conversation.messages().create({
@@ -188,8 +172,6 @@ export const handler = async (
       resolve(success('All messages sent :)'));
       return;
     }
-
-    console.log('>> After send message');
 
     resolve(success('Event ignored'));
   } catch (err) {

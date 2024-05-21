@@ -81,7 +81,6 @@ const getServiceUserIdentityOrParticipantId = async (
 ): Promise<MemberInstance['identity']> => {
   if (channel instanceof ConversationInstance) {
     if (!channelAttributes.participantSid) {
-      console.log('Setting participantSid');
       const conversation = channel;
       const participants = await conversation.participants().list();
       const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
@@ -93,11 +92,8 @@ const getServiceUserIdentityOrParticipantId = async (
 
   // If there's no service user, find which is the first one and add it channel attributes (only occurs on first capture)
   if (!channelAttributes.serviceUserIdentity) {
-    console.log('Setting serviceUserIdentity');
     const members = await channel.members().list();
-    console.log('members: ', JSON.stringify(members));
     const firstMember = members.sort((a, b) => (a.dateCreated > b.dateCreated ? 1 : -1))[0];
-    console.log('firstMember: ', JSON.stringify(firstMember));
     return firstMember.identity;
   }
 
@@ -128,8 +124,6 @@ const updateChannelWithCapture = async (
     channel,
     channelAttributes,
   );
-
-  console.log('>> final channelType: ', channelType);
 
   const newAttributes = {
     attributes: JSON.stringify({
@@ -196,8 +190,6 @@ const triggerWithUserMessage = async (
     channelType,
   }: CaptureChannelOptions,
 ) => {
-  console.log('>> triggerWithUserMessage 1');
-  console.log('>> channelType: ', channelType);
   const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
   const lexClient = require(handlerPath) as LexClient;
 
@@ -208,7 +200,6 @@ const triggerWithUserMessage = async (
     userId,
     inputText,
   });
-  console.log('>> triggerWithUserMessage 2');
 
   const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
@@ -233,15 +224,9 @@ const triggerWithUserMessage = async (
     webhook = await (channelOrConversation as ConversationInstance)
       .webhooks()
       .create(conversationWebhook);
-    console.log('>> created conversation webhook: ');
   } else {
     webhook = await (channelOrConversation as ChannelInstance).webhooks().create(channelWebhook);
-    console.log('>> created programmable chat webhook: ');
   }
-
-  console.log(JSON.stringify(webhook));
-
-  console.log('>> triggerWithUserMessage 3');
 
   await updateChannelWithCapture(channelOrConversation, {
     userId,
@@ -256,7 +241,6 @@ const triggerWithUserMessage = async (
     isConversation,
     channelType,
   });
-  console.log('>> triggerWithUserMessage 4');
 
   // Bubble exception after the channel is updated because capture attributes are needed for the cleanup
   if (lexResult.status === 'failure') {
@@ -278,16 +262,10 @@ const triggerWithUserMessage = async (
   };
 
   if (isConversation) {
-    console.log('>> is Conversation');
-    console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
     await (channelOrConversation as ConversationInstance).messages().create(conversationMessage);
   } else {
-    console.log('>> is Programmable Chat');
-    console.log({ lexMessage: lexResponse.message, conversation: channelOrConversation.sid });
     await (channelOrConversation as ChannelInstance).messages().create(channelMessage);
   }
-
-  console.log('>> triggerWithUserMessage 5');
 };
 
 /**
@@ -315,13 +293,11 @@ const triggerWithNextMessage = async (
       body: inputText,
       xTwilioWebhookEnabled: 'true',
     });
-    console.log('Sending conversation message: ', inputText);
   } else {
     await (channelOrConversation as ChannelInstance).messages().create({
       body: inputText,
       xTwilioWebhookEnabled: 'true',
     });
-    console.log('Sending programmable chat message: ', inputText);
   }
 
   const channelWebhook: ChannelWebhookOpts = {
@@ -446,9 +422,6 @@ export const handleChannelCapture = async (
     channelType,
   } = params as HandleChannelCaptureParams;
 
-  console.log('>> isConversation', isConversation);
-  console.log('>> channelType', channelType);
-
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
     : {};
@@ -535,7 +508,6 @@ export const handleChannelCapture = async (
     channelType,
   };
 
-  console.log({ message, triggerType, isConversation });
   if (triggerType === 'withUserMessage') {
     await triggerWithUserMessage(context, channelOrConversation, options);
   }
@@ -560,10 +532,8 @@ const createStudioFlowTrigger = async (
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
   controlTask.remove();
   const { isConversation } = capturedChannelAttributes;
-  console.log('>> isConversation', isConversation);
 
   if (isConversation) {
-    console.log('>> create conversation webhook');
     return (channelOrConversation as ConversationInstance).webhooks().create({
       target: 'studio',
       configuration: {
@@ -572,7 +542,6 @@ const createStudioFlowTrigger = async (
     });
   }
 
-  console.log('>> create channel webhook');
   return (channelOrConversation as ChannelInstance).webhooks().create({
     type: 'studio',
     configuration: {
