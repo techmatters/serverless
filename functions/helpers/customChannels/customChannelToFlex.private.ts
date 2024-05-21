@@ -303,7 +303,7 @@ const createFlexConversationInteraction = async (
   const interactionInstance = await client.flexApi.interaction.create({
     channel: {
       type: channelType,
-      initiated_by: 'api',
+      initiatedBy: 'api',
       attributes: {
         channel_type: channelType,
         senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
