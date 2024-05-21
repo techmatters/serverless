@@ -283,7 +283,7 @@ const createFlexChannel = async (
  * Creates a new Flex conversation in the provided Flex Flow and subscribes webhooks to it's events.
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
-const createFlexConversation = async (
+const createFlexInteraction = async (
   context: Context,
   {
     flexFlowSid,
@@ -303,6 +303,7 @@ const createFlexConversation = async (
   const interactionInstance = await client.flexApi.interaction.create({
     channel: {
       type: channelType,
+      initiated_by: 'api',
       attributes: {
         channel_type: channelType,
         senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
@@ -513,7 +514,7 @@ export const sendConversationMessageToFlex = async (
     })) as ConversationSid;
 
     if (!conversationSid) {
-      conversationSid = await createFlexConversation(context, {
+      conversationSid = await createFlexInteraction(context, {
         flexFlowSid,
         conversationServiceSid,
         channelType,
