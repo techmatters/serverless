@@ -303,7 +303,7 @@ const createFlexConversationInteraction = async (
   const interactionInstance = await client.flexApi.interaction.create({
     channel: {
       type: channelType,
-      initiatedBy: 'api',
+      initiated_by: 'api',
       attributes: {
         channel_type: channelType,
         senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
@@ -539,7 +539,7 @@ export const sendConversationMessageToFlex = async (
     // Propagate the error
     if (err instanceof Error) {
       throw new Error(
-        `Error while creating the new channel ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
+        `Error while creating the new interaction ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
       );
     }
 
