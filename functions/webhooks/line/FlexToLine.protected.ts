@@ -96,6 +96,11 @@ export const handler = async (
 ) => {
   console.log('==== FlexToLine handler ====');
   console.log('Received event:', lineEvent);
+  const eventProperties = Object.entries(lineEvent);
+  eventProperties.forEach(([key, value]) => {
+    console.log(`${key}: ${JSON.stringify(value)}`);
+  });
+
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
