@@ -94,6 +94,8 @@ export const handler = async (
   lineEvent: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== FlexToLine handler ====');
+  console.log('Received event:', lineEvent);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 

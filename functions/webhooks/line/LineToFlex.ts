@@ -104,6 +104,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== FlexToLine handler ====');
+  console.log('Received event:', event);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -115,6 +117,7 @@ export const handler = async (
   try {
     const { destination, events } = event;
 
+    console.log('Received events:', events);
     const messageEvents = events.filter((e) => e.type === 'message');
 
     if (messageEvents.length === 0) {
