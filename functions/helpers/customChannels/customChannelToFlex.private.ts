@@ -189,7 +189,7 @@ type CreateFlexChannelParams = {
 };
 
 type CreateFlexConversationParams = {
-  flexFlowSid: string;
+  studioFlowSid: string;
   conversationServiceSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
   twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
@@ -197,6 +197,7 @@ type CreateFlexConversationParams = {
   senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   onConversationUpdateWebhookUrl?: string; // The url that must be used as the onChannelUpdated event webhook. If not present, it defaults to https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate
+  conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
 };
 
 /**
@@ -286,7 +287,7 @@ const createFlexChannel = async (
 const createFlexConversationInteraction = async (
   context: Context,
   {
-    flexFlowSid,
+    conversationFriendlyName,
     conversationServiceSid,
     channelType,
     twilioNumber,
@@ -294,13 +295,19 @@ const createFlexConversationInteraction = async (
     senderScreenName,
     onMessageSentWebhookUrl,
     onConversationUpdateWebhookUrl,
+    studioFlowSid,
   }: CreateFlexConversationParams,
 ): Promise<ConversationSid> => {
   // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
 
   const client = context.getTwilioClient();
 
-  const interactionInstance = await client.flexApi.interaction.create({
+  const conversationInstance = await client.conversations.v1.conversations.create({
+    friendlyName: conversationFriendlyName,
+    uniqueName: uniqueUserName,
+  });
+
+  /* flexApi.interaction.create({
     channel: {
       type: 'chat',
       initiated_by: 'api',
@@ -316,6 +323,7 @@ const createFlexConversationInteraction = async (
     },
     routing: {
       properties: {
+        task_channel_unique_name: channelType,
         workflow_sid: flexFlowSid,
         attributes: {
           from: senderScreenName,
@@ -324,10 +332,13 @@ const createFlexConversationInteraction = async (
         },
       },
     },
+  }); */
+
+  const conversationSid = conversationInstance.sid as ConversationSid;
+  const conversationContext = await client.conversations.v1.conversations(conversationSid);
+  conversationContext.participants.create({
+    identity: uniqueUserName,
   });
-
-  const { conversationSid } = interactionInstance.routing.properties;
-
   const channelAttributes = JSON.parse(
     (
       await client.conversations
@@ -338,9 +349,6 @@ const createFlexConversationInteraction = async (
   );
 
   console.log('channelAttributes prior to update', channelAttributes);
-  const conversationContext = client.conversations
-    .services(conversationServiceSid)
-    .conversations(conversationSid);
 
   await conversationContext.update({
     attributes: JSON.stringify({
@@ -351,22 +359,21 @@ const createFlexConversationInteraction = async (
     }),
   });
 
-  /* const onMessageAdded =
   await conversationContext.webhooks.create({
     target: 'studio',
     configuration: {
-      flowSid: flexFlowSid,
+      flowSid: studioFlowSid,
       filters: ['onMessageAdded'],
     },
-  }); */
+  });
 
-  /* const onMessageSent = */
+  /* const onMessageAdded = */
   await conversationContext.webhooks.create({
     target: 'webhook',
     configuration: {
       method: 'POST',
       url: onMessageSentWebhookUrl,
-      filters: ['onMessageSent'],
+      filters: ['onMessageAdded'],
     },
   });
 
@@ -378,7 +385,7 @@ const createFlexConversationInteraction = async (
         url:
           onConversationUpdateWebhookUrl ||
           `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-        filters: ['onConversationUpdate'],
+        filters: ['onConversationUpdated'],
       },
     });
   }
@@ -498,7 +505,7 @@ export const sendMessageToFlex = async (
 export const sendConversationMessageToFlex = async (
   context: Context,
   {
-    flexFlowSid,
+    studioFlowSid,
     conversationServiceSid,
     channelType,
     twilioNumber,
@@ -511,6 +518,7 @@ export const sendConversationMessageToFlex = async (
     messageAttributes = undefined,
     senderExternalId,
     subscribedExternalId,
+    conversationFriendlyName,
   }: SendConversationMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
@@ -528,7 +536,7 @@ export const sendConversationMessageToFlex = async (
 
     if (!conversationSid) {
       conversationSid = await createFlexConversationInteraction(context, {
-        flexFlowSid,
+        studioFlowSid,
         conversationServiceSid,
         channelType,
         twilioNumber,
@@ -536,6 +544,7 @@ export const sendConversationMessageToFlex = async (
         senderScreenName,
         onMessageSentWebhookUrl,
         onConversationUpdateWebhookUrl,
+        conversationFriendlyName,
       });
 
       await createUserChannelMap(context, {
@@ -545,18 +554,12 @@ export const sendConversationMessageToFlex = async (
       });
     }
   } catch (err) {
-    const removedStaleChannel = conversationSid
-      ? await removeConversation(context, { conversationServiceSid, conversationSid })
-      : false;
-
-    // Propagate the error
-    if (err instanceof Error) {
-      throw new Error(
-        `Error while creating the new interaction ${err.message}. Removed stale channel: ${removedStaleChannel}.`,
-      );
+    const error = err as Error;
+    if (conversationSid) {
+      await removeConversation(context, { conversationServiceSid, conversationSid });
+      error.message = `Error while creating the new conversation ${error.message}. Removed stale conversation: ${conversationSid}.`;
     }
-
-    throw err;
+    throw error;
   }
 
   const response = await sendConversationMessage(context, {

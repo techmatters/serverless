@@ -127,3 +127,6 @@ tech-matters-serverless-helpers/lib/
 .twiliodeployinfo
 
 assets/blocklist.private.json
+
+# Some local tests in here with hardcoded creds :-/
+/tests/helpers/customChannels/

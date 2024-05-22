@@ -16,26 +16,41 @@
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
-export type WebhookEvent = {
+export type ProgrammableChatWebhookEvent = {
   Body: string;
   From: string;
-  ParticipantSid?: string;
   ChannelSid: string;
-  ConversationSid?: string;
   EventType: string;
   Source: string;
 };
 
-type Params = {
-  event: WebhookEvent;
+export type ConversationWebhookEvent = {
+  Body: string;
+  From: string;
+  ParticipantSid?: string;
+  ConversationSid: string;
+  EventType: string;
+  Source: string;
+};
+
+export type WebhookEvent = ConversationWebhookEvent | ProgrammableChatWebhookEvent;
+
+type Params<T extends WebhookEvent> = {
+  event: T;
   recipientId: string;
   sendExternalMessage: (recipientId: string, messageText: string) => Promise<any>;
 };
 
+export const isConversationWebhookEvent = (
+  event: WebhookEvent,
+): event is ConversationWebhookEvent => 'ConversationSid' in event;
+
+export type RedirectResult = { status: 'ignored' } | { status: 'sent'; response: any };
+
 export const redirectMessageToExternalChat = async (
   context: Context<{ CHAT_SERVICE_SID: string }>,
-  { event, recipientId, sendExternalMessage }: Params,
-): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
+  { event, recipientId, sendExternalMessage }: Params<ProgrammableChatWebhookEvent>,
+): Promise<RedirectResult> => {
   const { Body, ChannelSid, EventType, From, Source } = event;
 
   if (Source === 'SDK') {
@@ -63,6 +78,35 @@ export const redirectMessageToExternalChat = async (
   return { status: 'ignored' };
 };
 
+export const redirectConversationMessageToExternalChat = async (
+  context: Context<{ CHAT_SERVICE_SID: string }>,
+  { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent>,
+): Promise<RedirectResult> => {
+  const { Body, ConversationSid, EventType, From, Source } = event;
+
+  if (Source === 'SDK') {
+    const response = await sendExternalMessage(recipientId, Body);
+    return { status: 'sent', response };
+  }
+
+  if (Source === 'API' && EventType === 'onMessageSent') {
+    const client = context.getTwilioClient();
+    const { attributes } = await client.conversations.v1.conversations(ConversationSid).fetch();
+
+    const conversationAttributes = JSON.parse(attributes);
+
+    // Redirect bot, system or third participant, but not self
+    if (conversationAttributes.from !== From) {
+      const response = await sendExternalMessage(recipientId, Body);
+      return { status: 'sent', response };
+    }
+  }
+
+  // This ignores self messages and not supported sources
+  return { status: 'ignored' };
+};
+
 export type FlexToCustomChannel = {
   redirectMessageToExternalChat: typeof redirectMessageToExternalChat;
+  redirectConversationMessageToExternalChat: typeof redirectConversationMessageToExternalChat;
 };

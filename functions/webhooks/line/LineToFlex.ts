@@ -24,6 +24,7 @@ import {
   error500,
   error403,
   success,
+  error400,
 } from '@tech-matters/serverless-helpers';
 import crypto from 'crypto';
 
@@ -33,6 +34,7 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;
+  LINE_STUDIO_FLOW_SID: string;
   LINE_CHANNEL_SECRET: string;
   LINE_TWILIO_MESSAGING_MODE?: 'conversations' | 'programmable-chat' | '';
 };
@@ -121,7 +123,7 @@ export const handler = async (
     }
 
     if (!destination) {
-      throw new Error('Missing destination property');
+      resolve(error400('destination'));
     }
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
@@ -143,9 +145,10 @@ export const handler = async (
       if (useConversations) {
         // eslint-disable-next-line no-await-in-loop
         result = await channelToFlex.sendConversationMessageToFlex(context, {
-          flexFlowSid: context.LINE_FLEX_FLOW_SID,
+          studioFlowSid: context.LINE_STUDIO_FLOW_SID,
           conversationServiceSid: context.CHAT_SERVICE_SID,
           syncServiceSid: context.SYNC_SERVICE_SID,
+          conversationFriendlyName: chatFriendlyName,
           channelType,
           twilioNumber,
           uniqueUserName,
@@ -181,7 +184,7 @@ export const handler = async (
           responses.push('Ignored event.');
           break;
         default:
-          throw new Error('Reached unexpected default case');
+          resolve(error500(new Error(`Unexpected result status: ${(result as any).status}`)));
       }
     }
 
