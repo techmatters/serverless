@@ -284,7 +284,7 @@ const createFlexChannel = async (
  * Creates a new Flex conversation in the provided Flex Flow and subscribes webhooks to it's events.
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
-const createFlexConversationInteraction = async (
+const createConversation = async (
   context: Context,
   {
     conversationFriendlyName,
@@ -297,100 +297,77 @@ const createFlexConversationInteraction = async (
     onConversationUpdateWebhookUrl,
     studioFlowSid,
   }: CreateFlexConversationParams,
-): Promise<ConversationSid> => {
+): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
   // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
 
   const client = context.getTwilioClient();
 
   const conversationInstance = await client.conversations.v1.conversations.create({
     friendlyName: conversationFriendlyName,
-    uniqueName: uniqueUserName,
+    uniqueName: `${channelType}/${uniqueUserName}/${Date.now()}`,
   });
-
-  /* flexApi.interaction.create({
-    channel: {
-      type: 'chat',
-      initiated_by: 'api',
-      properties: {
-        channel_type: channelType,
-      },
-      participants: [
-        {
-          identity: uniqueUserName,
-          name: senderScreenName,
-        },
-      ],
-    },
-    routing: {
-      properties: {
-        task_channel_unique_name: channelType,
-        workflow_sid: flexFlowSid,
-        attributes: {
-          from: senderScreenName,
-          customerName: senderScreenName,
-          customerAddress: uniqueUserName,
-        },
-      },
-    },
-  }); */
-
   const conversationSid = conversationInstance.sid as ConversationSid;
-  const conversationContext = await client.conversations.v1.conversations(conversationSid);
-  conversationContext.participants.create({
-    identity: uniqueUserName,
-  });
-  const channelAttributes = JSON.parse(
-    (
-      await client.conversations
-        .services(conversationServiceSid)
-        .conversations(conversationSid)
-        .fetch()
-    ).attributes,
-  );
 
-  console.log('channelAttributes prior to update', channelAttributes);
+  try {
+    const conversationContext = await client.conversations.v1.conversations(conversationSid);
+    conversationContext.participants.create({
+      identity: uniqueUserName,
+    });
+    const channelAttributes = JSON.parse(
+      (
+        await client.conversations
+          .services(conversationServiceSid)
+          .conversations(conversationSid)
+          .fetch()
+      ).attributes,
+    );
 
-  await conversationContext.update({
-    attributes: JSON.stringify({
-      ...channelAttributes,
-      channel_type: channelType,
-      senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
-      twilioNumber,
-    }),
-  });
+    console.log('channelAttributes prior to update', channelAttributes);
 
-  await conversationContext.webhooks.create({
-    target: 'studio',
-    configuration: {
-      flowSid: studioFlowSid,
-      filters: ['onMessageAdded'],
-    },
-  });
+    await conversationContext.update({
+      attributes: JSON.stringify({
+        ...channelAttributes,
+        channel_type: channelType,
+        senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
+        twilioNumber,
+      }),
+    });
 
-  /* const onMessageAdded = */
-  await conversationContext.webhooks.create({
-    target: 'webhook',
-    configuration: {
-      method: 'POST',
-      url: onMessageSentWebhookUrl,
-      filters: ['onMessageAdded'],
-    },
-  });
+    await conversationContext.webhooks.create({
+      target: 'studio',
+      configuration: {
+        flowSid: studioFlowSid,
+        filters: ['onMessageAdded'],
+      },
+    });
 
-  if (onConversationUpdateWebhookUrl) {
+    /* const onMessageAdded = */
     await conversationContext.webhooks.create({
       target: 'webhook',
       configuration: {
         method: 'POST',
-        url:
-          onConversationUpdateWebhookUrl ||
-          `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-        filters: ['onConversationUpdated'],
+        url: onMessageSentWebhookUrl,
+        filters: ['onMessageAdded'],
       },
     });
+
+    if (onConversationUpdateWebhookUrl) {
+      await conversationContext.webhooks.create({
+        target: 'webhook',
+        configuration: {
+          method: 'POST',
+          url:
+            onConversationUpdateWebhookUrl ||
+            `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
+          filters: ['onConversationUpdated'],
+        },
+      });
+    }
+  } catch (err) {
+    return { conversationSid, error: err as Error };
   }
 
-  return conversationSid;
+  return { conversationSid };
 };
 
 type SendMessageToFlexParams = CreateFlexChannelParams & {
@@ -526,40 +503,39 @@ export const sendConversationMessageToFlex = async (
     return { status: 'ignored' };
   }
 
-  let conversationSid: ConversationSid | undefined;
+  let conversationSid = (await retrieveChannelFromUserChannelMap(context, {
+    syncServiceSid,
+    uniqueUserName,
+  })) as ConversationSid;
 
-  try {
-    conversationSid = (await retrieveChannelFromUserChannelMap(context, {
+  if (!conversationSid) {
+    const { conversationSid: newConversationSid, error } = await createConversation(context, {
+      studioFlowSid,
+      conversationServiceSid,
+      channelType,
+      twilioNumber,
+      uniqueUserName,
+      senderScreenName,
+      onMessageSentWebhookUrl,
+      onConversationUpdateWebhookUrl,
+      conversationFriendlyName,
+    });
+
+    if (error) {
+      await removeConversation(context, {
+        conversationServiceSid,
+        conversationSid: newConversationSid,
+      });
+      throw error;
+    }
+
+    await createUserChannelMap(context, {
       syncServiceSid,
       uniqueUserName,
-    })) as ConversationSid;
+      channelSid: newConversationSid,
+    });
 
-    if (!conversationSid) {
-      conversationSid = await createFlexConversationInteraction(context, {
-        studioFlowSid,
-        conversationServiceSid,
-        channelType,
-        twilioNumber,
-        uniqueUserName,
-        senderScreenName,
-        onMessageSentWebhookUrl,
-        onConversationUpdateWebhookUrl,
-        conversationFriendlyName,
-      });
-
-      await createUserChannelMap(context, {
-        syncServiceSid,
-        uniqueUserName,
-        channelSid: conversationSid,
-      });
-    }
-  } catch (err) {
-    const error = err as Error;
-    if (conversationSid) {
-      await removeConversation(context, { conversationServiceSid, conversationSid });
-      error.message = `Error while creating the new conversation ${error.message}. Removed stale conversation: ${conversationSid}.`;
-    }
-    throw error;
+    conversationSid = newConversationSid;
   }
 
   const response = await sendConversationMessage(context, {
