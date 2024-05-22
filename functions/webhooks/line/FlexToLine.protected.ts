@@ -113,7 +113,7 @@ export const handler = async (
       const requiredProperties: (keyof ConversationWebhookEvent)[] = [
         'ConversationSid',
         'Body',
-        'From',
+        'Author',
         'EventType',
         'Source',
       ];
