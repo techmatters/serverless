@@ -82,7 +82,7 @@ const validateProperties = (
 ): boolean => {
   for (const prop of requiredProperties) {
     if (event[prop] === undefined) {
-      resolveFunc(error400('recipientId'));
+      resolveFunc(error400(prop));
       return false;
     }
   }
@@ -105,7 +105,6 @@ export const handler = async (
     if (flexToCustomChannel.isConversationWebhookEvent(lineEvent)) {
       const requiredProperties: (keyof ConversationWebhookEvent)[] = [
         'ConversationSid',
-        'ParticipantSid',
         'Body',
         'From',
         'EventType',
