@@ -97,7 +97,7 @@ export const redirectConversationMessageToExternalChat = async (
     const conversationAttributes = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (conversationAttributes.from !== Author) {
+    if (conversationAttributes.twilioNumber !== Author) {
       const response = await sendExternalMessage(recipientId, Body);
       return { status: 'sent', response };
     }
