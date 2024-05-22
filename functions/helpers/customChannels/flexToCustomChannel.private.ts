@@ -26,7 +26,7 @@ export type ProgrammableChatWebhookEvent = {
 
 export type ConversationWebhookEvent = {
   Body: string;
-  From: string;
+  Author: string;
   ParticipantSid?: string;
   ConversationSid: string;
   EventType: string;
@@ -82,21 +82,22 @@ export const redirectConversationMessageToExternalChat = async (
   context: Context<{ CHAT_SERVICE_SID: string }>,
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent>,
 ): Promise<RedirectResult> => {
-  const { Body, ConversationSid, EventType, From, Source } = event;
+  const { Body, ConversationSid, EventType, Author, Source } = event;
 
   if (Source === 'SDK') {
     const response = await sendExternalMessage(recipientId, Body);
     return { status: 'sent', response };
   }
 
-  if (Source === 'API' && EventType === 'onMessageSent') {
+  if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
     const { attributes } = await client.conversations.v1.conversations(ConversationSid).fetch();
+    console.log('conversationAttributes', attributes);
 
     const conversationAttributes = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (conversationAttributes.from !== From) {
+    if (conversationAttributes.from !== Author) {
       const response = await sendExternalMessage(recipientId, Body);
       return { status: 'sent', response };
     }
