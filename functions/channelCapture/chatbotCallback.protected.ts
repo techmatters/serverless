@@ -55,17 +55,17 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { Body, From, ChannelSid, EventType } = event;
+    const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid } = event;
     if (!Body) {
       resolve(error400('Body'));
       return;
     }
-    if (!From) {
-      resolve(error400('From'));
+    if (!From && !ParticipantSid) {
+      resolve(error400('From or ParticipantSid'));
       return;
     }
-    if (!ChannelSid) {
-      resolve(error400('ChannelSid'));
+    if (!ChannelSid && !ConversationSid) {
+      resolve(error400('ChannelSid or ConversationSid'));
       return;
     }
     if (!EventType) {
@@ -74,15 +74,45 @@ export const handler = async (
     }
 
     const client = context.getTwilioClient();
-    const channel = await client.chat
-      .services(context.CHAT_SERVICE_SID)
-      .channels(ChannelSid)
-      .fetch();
 
-    const channelAttributes = JSON.parse(channel.attributes);
+    let channel;
+    try {
+      channel = await client.chat
+        .services(context.CHAT_SERVICE_SID)
+        .channels(ChannelSid || String(ConversationSid))
+        .fetch();
+    } catch (err) {
+      console.log(`Could not fetch channel with sid ${ChannelSid}`);
+    }
+
+    let conversation;
+    try {
+      conversation = await client.conversations.v1.conversations(String(ConversationSid)).fetch();
+    } catch (err) {
+      console.log(`Could not fetch conversation with sid ${ConversationSid}`);
+    }
+
+    // Priority to conversation
+    const channelOrConversation = conversation || channel;
+
+    if (channelOrConversation === undefined) {
+      console.error(
+        `Could not fetch channel or conversation with sid ${ChannelSid} or ${String(
+          ConversationSid,
+        )}`,
+      );
+      return;
+    }
+
+    const channelAttributes = JSON.parse(channelOrConversation?.attributes || '{}');
 
     // Send message to bot only if it's from child
-    if (EventType === 'onMessageSent' && channelAttributes.serviceUserIdentity === From) {
+    const eventTypeCheck = EventType === 'onMessageSent' || EventType === 'onMessageAdded';
+    const userIdentityCheck =
+      (From && channelAttributes.serviceUserIdentity === From) ||
+      (ParticipantSid && channelAttributes.participantSid === ParticipantSid);
+
+    if (eventTypeCheck && userIdentityCheck) {
       const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient']
         .path) as LexClient;
 
@@ -97,7 +127,6 @@ export const handler = async (
       });
 
       if (lexResult.status === 'failure') {
-        console.log(lexResult.error.message);
         if (
           lexResult.error.message.includes(
             'Concurrent Client Requests: Encountered resource conflict while saving session data',
@@ -120,18 +149,26 @@ export const handler = async (
 
         await chatbotCallbackCleanup({
           context,
-          channel,
+          channelOrConversation,
           channelAttributes,
           memory: lexResponse.slots,
           lexClient,
         });
       }
 
-      await channel.messages().create({
-        body: lexResponse.message,
-        from: 'Bot',
-        xTwilioWebhookEnabled: 'true',
-      });
+      if (conversation) {
+        await conversation.messages().create({
+          body: lexResponse.message,
+          author: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+      } else {
+        await channel?.messages().create({
+          body: lexResponse.message,
+          from: 'Bot',
+          xTwilioWebhookEnabled: 'true',
+        });
+      }
 
       resolve(success('All messages sent :)'));
       return;
