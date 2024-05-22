@@ -27,8 +27,8 @@ import {
 } from '@tech-matters/serverless-helpers';
 import axios from 'axios';
 import {
-  WebhookEvent,
   FlexToCustomChannel,
+  ProgrammableChatWebhookEvent,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
@@ -37,7 +37,7 @@ type EnvVars = {
   FACEBOOK_PAGE_ACCESS_TOKEN: string;
 };
 
-export type Body = Partial<WebhookEvent> & {
+export type Body = Partial<ProgrammableChatWebhookEvent> & {
   recipientId?: string; // The IGSID of the user that started the conversation. Provided as query parameter
 };
 

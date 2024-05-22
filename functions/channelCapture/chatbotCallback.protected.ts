@@ -25,7 +25,10 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
+import type {
+  ConversationWebhookEvent,
+  ProgrammableChatWebhookEvent,
+} from '../helpers/customChannels/flexToCustomChannel.private';
 import type { AWSCredentials, LexClient } from './lexClient.private';
 import type { CapturedChannelAttributes } from './channelCaptureHandlers.private';
 import type { ChatbotCallbackCleanupModule } from './chatbotCallbackCleanup.protected';
@@ -42,7 +45,7 @@ type EnvVars = AWSCredentials & {
   SURVEY_WORKFLOW_SID: string;
 };
 
-export type Body = Partial<WebhookEvent> & {};
+export type Body = Partial<ConversationWebhookEvent & ProgrammableChatWebhookEvent> & {};
 
 export const handler = async (
   context: Context<EnvVars>,

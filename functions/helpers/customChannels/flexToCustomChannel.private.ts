@@ -109,4 +109,5 @@ export const redirectConversationMessageToExternalChat = async (
 export type FlexToCustomChannel = {
   redirectMessageToExternalChat: typeof redirectMessageToExternalChat;
   redirectConversationMessageToExternalChat: typeof redirectConversationMessageToExternalChat;
+  isConversationWebhookEvent: typeof isConversationWebhookEvent;
 };

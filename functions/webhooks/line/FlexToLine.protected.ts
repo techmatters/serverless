@@ -29,7 +29,6 @@ import {
 import {
   WebhookEvent,
   FlexToCustomChannel,
-  isConversationWebhookEvent,
   RedirectResult,
   ConversationWebhookEvent,
   ProgrammableChatWebhookEvent,
@@ -103,7 +102,7 @@ export const handler = async (
     // eslint-disable-next-line global-require,import/no-dynamic-require
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
     let result: RedirectResult;
-    if (isConversationWebhookEvent(lineEvent)) {
+    if (flexToCustomChannel.isConversationWebhookEvent(lineEvent)) {
       const requiredProperties: (keyof ConversationWebhookEvent)[] = [
         'ConversationSid',
         'ParticipantSid',
