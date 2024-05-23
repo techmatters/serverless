@@ -24,10 +24,17 @@
 
 // eslint-disable-next-line prettier/prettier
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
+import { ChatChannelSid, ConversationSid } from './customChannels/customChannelToFlex.private';
 
-export interface Event {
-  channelSid: string;
-}
+export type Event =
+  | {
+      channelSid?: ChatChannelSid;
+      conversationSid: ConversationSid;
+    }
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    };
 
 export type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -61,7 +68,7 @@ const deleteProxySession = async (context: Context<EnvVars>, proxySession: strin
 const deactivateChannel = async (
   context: Context<EnvVars>,
   serviceSid: string,
-  channelSid: string,
+  channelSid: ChatChannelSid,
 ) => {
   const client = context.getTwilioClient();
 
@@ -86,10 +93,45 @@ const deactivateChannel = async (
   return { message: 'Channel already INACTIVE, event ignored' };
 };
 
-export const chatChannelJanitor = async (context: Context<EnvVars>, event: Event) => {
-  const result = await deactivateChannel(context, context.CHAT_SERVICE_SID, event.channelSid);
+const deactivateConversation = async (
+  context: Context<EnvVars>,
+  conversationSid: ConversationSid,
+) => {
+  const client = context.getTwilioClient();
 
-  return { message: `Deactivation attempted for channel ${event.channelSid}`, result };
+  const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
+
+  const attributes = JSON.parse(conversation.attributes);
+
+  if (attributes.status !== 'INACTIVE') {
+    if (attributes.proxySession) {
+      await deleteProxySession(context, attributes.proxySession);
+    }
+
+    const newAttributes = { ...attributes, status: 'INACTIVE' };
+    const updated = await conversation.update({
+      attributes: JSON.stringify(newAttributes),
+      xTwilioWebhookEnabled: 'true',
+    });
+
+    return { message: 'Conversation deactivated', updated };
+  }
+
+  return { message: 'Channel already INACTIVE, event ignored' };
+};
+
+export const chatChannelJanitor = async (
+  context: Context<EnvVars>,
+  { channelSid, conversationSid }: Event,
+) => {
+  if (conversationSid) {
+    const result = await deactivateConversation(context, conversationSid);
+
+    return { message: `Deactivation attempted for conversation ${conversationSid}`, result };
+  }
+  const result = await deactivateChannel(context, context.CHAT_SERVICE_SID, channelSid);
+
+  return { message: `Deactivation attempted for channel ${channelSid}`, result };
 };
 
 export type ChatChannelJanitor = typeof chatChannelJanitor;

@@ -195,7 +195,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
         const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor']
           .path).chatChannelJanitor as ChatChannelJanitor;
-        await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+        await chatChannelJanitor(context, {
+          channelSid: taskAttributes.channelSid,
+          conversationSid: taskAttributes.conversationSid,
+        });
 
         console.log('Finished DeactivateConversationOrchestration.');
         return;
