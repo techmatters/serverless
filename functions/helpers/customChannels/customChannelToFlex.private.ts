@@ -17,7 +17,7 @@
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
 export type ConversationSid = `CH${string}`;
-export type ChatSid = `CH${string}`;
+export type ChatChannelSid = `CH${string}`;
 
 /**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
