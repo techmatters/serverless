@@ -104,14 +104,13 @@ const deactivateConversation = async (
 
   console.log('conversation attributes', ...Object.entries(attributes));
 
-  if (attributes.status !== 'INACTIVE') {
+  if (conversation.state !== 'inactive') {
     if (attributes.proxySession) {
       await deleteProxySession(context, attributes.proxySession);
     }
 
-    const newAttributes = { ...attributes, status: 'INACTIVE' };
     const updated = await conversation.update({
-      attributes: JSON.stringify(newAttributes),
+      state: 'inactive',
       xTwilioWebhookEnabled: 'true',
     });
 
