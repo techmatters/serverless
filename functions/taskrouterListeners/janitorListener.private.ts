@@ -79,10 +79,10 @@ const isHandledByOtherListener = (
     return true;
   }
 
-  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
+  const transferHelpers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
 
-  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+  if (!transferHelpers.hasTaskControl(taskSid, taskAttributes)) {
     return true;
   }
 

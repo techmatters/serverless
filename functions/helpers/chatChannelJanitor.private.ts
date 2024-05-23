@@ -100,8 +100,9 @@ const deactivateConversation = async (
   const client = context.getTwilioClient();
 
   const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
-
   const attributes = JSON.parse(conversation.attributes);
+
+  console.log('conversation attributes', ...Object.entries(attributes));
 
   if (attributes.status !== 'INACTIVE') {
     if (attributes.proxySession) {
