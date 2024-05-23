@@ -40,7 +40,26 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
     .tasks(TaskSid)
     .fetch();
 
-  const { channelSid } = JSON.parse(task.attributes);
+  const { channelSid, conversationSid } = JSON.parse(task.attributes);
+
+  if (conversationSid) {
+    // Fetch channel to update with a taskId
+    const conversation = await client.conversations.conversations(conversationSid).fetch();
+
+    const conversationAttributes = JSON.parse(conversation.attributes);
+
+    const updatedConversation = await conversation.update({
+      attributes: JSON.stringify({
+        ...conversationAttributes,
+        tasksSids:
+          conversationAttributes.tasksSids && Array.isArray(conversationAttributes.tasksSids)
+            ? [...conversationAttributes.tasksSids, task.sid]
+            : [task.sid],
+      }),
+    });
+
+    return { message: 'Channel is updated', updatedConversation };
+  }
 
   // Fetch channel to update with a taskId
   const channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
