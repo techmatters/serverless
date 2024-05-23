@@ -109,13 +109,11 @@ export const sendChatMessage = async (
 export const sendConversationMessage = async (
   context: Context,
   {
-    conversationServiceSid,
     conversationSid,
     author,
     messageText,
     messageAttributes,
   }: {
-    conversationServiceSid: string;
     conversationSid: ConversationSid;
     author: string;
     messageText: string;
@@ -124,8 +122,7 @@ export const sendConversationMessage = async (
 ) =>
   context
     .getTwilioClient()
-    .conversations.services(conversationServiceSid)
-    .conversations(conversationSid)
+    .conversations.v1.conversations(conversationSid)
     .messages.create({
       body: messageText,
       author,
@@ -153,18 +150,11 @@ export const removeChatChannel = async (
 export const removeConversation = async (
   context: Context,
   {
-    conversationServiceSid,
     conversationSid,
   }: {
-    conversationServiceSid: string;
     conversationSid: ConversationSid;
   },
-) =>
-  context
-    .getTwilioClient()
-    .conversations.services(conversationServiceSid)
-    .conversations(conversationSid)
-    .remove();
+) => context.getTwilioClient().conversations.v1.conversations(conversationSid).remove();
 
 export enum AseloCustomChannels {
   Twitter = 'twitter',
@@ -190,7 +180,6 @@ type CreateFlexChannelParams = {
 
 type CreateFlexConversationParams = {
   studioFlowSid: string;
-  conversationServiceSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
   twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
   uniqueUserName: string; // Unique identifier for this user
@@ -288,7 +277,6 @@ const createConversation = async (
   context: Context,
   {
     conversationFriendlyName,
-    conversationServiceSid,
     channelType,
     twilioNumber,
     uniqueUserName,
@@ -313,14 +301,7 @@ const createConversation = async (
     conversationContext.participants.create({
       identity: uniqueUserName,
     });
-    const channelAttributes = JSON.parse(
-      (
-        await client.conversations
-          .services(conversationServiceSid)
-          .conversations(conversationSid)
-          .fetch()
-      ).attributes,
-    );
+    const channelAttributes = JSON.parse((await conversationContext.fetch()).attributes);
 
     console.log('channelAttributes prior to update', channelAttributes);
 
@@ -328,6 +309,7 @@ const createConversation = async (
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
+        channelType,
         senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
         twilioNumber,
       }),
@@ -483,7 +465,6 @@ export const sendConversationMessageToFlex = async (
   context: Context,
   {
     studioFlowSid,
-    conversationServiceSid,
     channelType,
     twilioNumber,
     uniqueUserName,
@@ -511,7 +492,6 @@ export const sendConversationMessageToFlex = async (
   if (!conversationSid) {
     const { conversationSid: newConversationSid, error } = await createConversation(context, {
       studioFlowSid,
-      conversationServiceSid,
       channelType,
       twilioNumber,
       uniqueUserName,
@@ -523,7 +503,6 @@ export const sendConversationMessageToFlex = async (
 
     if (error) {
       await removeConversation(context, {
-        conversationServiceSid,
         conversationSid: newConversationSid,
       });
       throw error;
@@ -539,7 +518,6 @@ export const sendConversationMessageToFlex = async (
   }
 
   const response = await sendConversationMessage(context, {
-    conversationServiceSid,
     conversationSid,
     author: uniqueUserName,
     messageText,

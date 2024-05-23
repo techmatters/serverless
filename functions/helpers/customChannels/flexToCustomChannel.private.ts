@@ -82,7 +82,7 @@ export const redirectConversationMessageToExternalChat = async (
   context: Context<{ CHAT_SERVICE_SID: string }>,
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent>,
 ): Promise<RedirectResult> => {
-  const { Body, ConversationSid, EventType, Author, Source } = event;
+  const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
 
   if (Source === 'SDK') {
     const response = await sendExternalMessage(recipientId, Body);
@@ -97,7 +97,7 @@ export const redirectConversationMessageToExternalChat = async (
     const conversationAttributes = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (conversationAttributes.twilioNumber !== Author) {
+    if (conversationAttributes.participantSid !== ParticipantSid) {
       const response = await sendExternalMessage(recipientId, Body);
       return { status: 'sent', response };
     }
