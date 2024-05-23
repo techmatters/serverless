@@ -333,18 +333,16 @@ const createConversation = async (
       },
     });
 
-    if (onConversationUpdateWebhookUrl) {
-      await conversationContext.webhooks.create({
-        target: 'webhook',
-        configuration: {
-          method: 'POST',
-          url:
-            onConversationUpdateWebhookUrl ||
-            `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-          filters: ['onConversationStateUpdated'],
-        },
-      });
-    }
+    await conversationContext.webhooks.create({
+      target: 'webhook',
+      configuration: {
+        method: 'POST',
+        url:
+          onConversationUpdateWebhookUrl ||
+          `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
+        filters: ['onConversationStateUpdated'],
+      },
+    });
   } catch (err) {
     return { conversationSid, error: err as Error };
   }
