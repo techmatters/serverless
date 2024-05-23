@@ -30,6 +30,10 @@ import axios from 'axios';
 
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { ChatChannelJanitor } from './helpers/chatChannelJanitor.private';
+import {
+  ChatChannelSid,
+  ConversationSid,
+} from './helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -38,7 +42,8 @@ type EnvVars = {
 };
 
 export type Body = {
-  channelSid?: string;
+  channelSid?: ChatChannelSid;
+  conversationSid?: ConversationSid;
   language?: string;
   request: { cookies: {}; headers: {} };
 };
@@ -164,10 +169,10 @@ export const handler = TokenValidator(
     try {
       const client = context.getTwilioClient();
 
-      const { channelSid, language } = event;
+      const { conversationSid, channelSid, language } = event;
 
-      if (channelSid === undefined) {
-        resolve(error400('ChannelSid parameter is missing'));
+      if (channelSid === undefined && conversationSid === undefined) {
+        resolve(error400('Either a ChannelSid or ConversationSid parameter is required'));
         return;
       }
       if (language === undefined) {
@@ -175,35 +180,54 @@ export const handler = TokenValidator(
         return;
       }
 
-      // Use the channelSid to fetch task that needs to be closed
-      const channel = await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .fetch();
-      const channelAttributes = JSON.parse(channel.attributes);
+      let channelCleanupRequired = false;
 
-      const channelCleanupRequired = await endContactOrPostSurvey(
-        channelAttributes,
-        context,
-        event,
-      );
+      if (conversationSid) {
+        const { attributes, participants } = await client.conversations
+          .conversations(conversationSid)
+          .fetch();
+        const conversationAttributes = JSON.parse(attributes);
+        channelCleanupRequired = await endContactOrPostSurvey(
+          conversationAttributes,
+          context,
+          event,
+        );
+        const participantsList = await participants().list();
+        await Promise.all(
+          participantsList.map(async (p): Promise<boolean> => {
+            if (JSON.parse(p.attributes).member_type !== 'guest') {
+              return p.remove();
+            }
+            return false;
+          }),
+        );
+      } else {
+        const { members, attributes } = await client.chat
+          .services(context.CHAT_SERVICE_SID)
+          .channels(channelSid!)
+          .fetch();
+        // Use the channelSid to fetch task that needs to be closed
+        const channelAttributes = JSON.parse(attributes);
 
-      const members = await channel.members().list();
-      await Promise.all(
-        members.map((m) => {
-          if (JSON.parse(m.attributes).member_type !== 'guest') {
-            return m.remove();
-          }
+        channelCleanupRequired = await endContactOrPostSurvey(channelAttributes, context, event);
 
-          return Promise.resolve();
-        }),
-      );
+        const channelMembers = await members().list();
+        await Promise.all(
+          channelMembers.map((m) => {
+            if (JSON.parse(m.attributes).member_type !== 'guest') {
+              return m.remove();
+            }
+
+            return Promise.resolve();
+          }),
+        );
+      }
 
       if (channelCleanupRequired) {
         // Deactivate channel and proxy
         const handlerPath = Runtime.getFunctions()['helpers/chatChannelJanitor'].path;
         const chatChannelJanitor = require(handlerPath).chatChannelJanitor as ChatChannelJanitor;
-        await chatChannelJanitor(context, { channelSid });
+        await chatChannelJanitor(context, { channelSid, conversationSid: conversationSid! });
       }
 
       resolve(success(JSON.stringify({ message: 'End Chat OK!' })));
