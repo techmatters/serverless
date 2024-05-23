@@ -104,7 +104,7 @@ const deactivateConversation = async (
 
   console.log('conversation attributes', ...Object.entries(attributes));
 
-  if (conversation.state !== 'inactive') {
+  if (conversation.state === 'active') {
     if (attributes.proxySession) {
       await deleteProxySession(context, attributes.proxySession);
     }

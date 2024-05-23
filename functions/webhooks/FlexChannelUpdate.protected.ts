@@ -23,22 +23,30 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+import { ConversationState } from 'twilio/lib/rest/conversations/v1/conversation';
+import { ConversationSid } from '../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
 };
 
-export type Body = {
+type ConversationStateUpdatedBody = {
+  EventType: 'onConversationStateUpdated';
+  StateFrom: ConversationState;
+  StateTo: ConversationState;
+  ConversationSid: ConversationSid;
+};
+
+type ChannelUpdatedBody = {
   Source?: string;
   ChannelSid?: string; // Remove once we've fully migrated to conversations
-  ConversationSid?: string;
   Attributes?: string; // channel attributes (e.g. "{\"from\":\"pgian\",\"channel_type\":\"custom\",\"status\":\"INACTIVE\",\"long_lived\":false}")
   UniqueName?: string;
   FriendlyName?: string;
   ClientIdentity?: string; // client firing the channel update
   CreatedBy?: string;
-  EventType?: string;
+  EventType: 'onChannelUpdated';
   InstanceSid?: string;
   DateCreated?: string;
   DateUpdated?: string;
@@ -48,6 +56,8 @@ export type Body = {
   ChannelType?: string;
   WebhookSid?: string;
 };
+
+export type Body = ChannelUpdatedBody | ConversationStateUpdatedBody;
 
 function timeout(ms: number) {
   // eslint-disable-next-line no-promise-executor-return
@@ -108,27 +118,28 @@ export const handler = async (
       }
     }
 
-    if (event.EventType === 'onConversationUpdated') {
-      const { ConversationSid } = event;
+    if (event.EventType === 'onConversationStateUpdated') {
+      const { ConversationSid: conversationSid, StateFrom, StateTo } = event;
 
-      if (ConversationSid === undefined) {
+      if (conversationSid === undefined) {
         resolve(error400('ConversationSid'));
         return;
       }
 
-      const conversations = await client.conversations
-        .services(context.CHAT_SERVICE_SID)
-        .conversations(ConversationSid)
-        .fetch();
+      const conversations = await client.conversations.conversations(conversationSid).fetch();
 
-      const { from } = JSON.parse(conversations.attributes);
+      const { twilioNumber } = JSON.parse(conversations.attributes);
 
-      if (conversations.state === 'inactive') {
+      if (StateTo !== 'active') {
         await timeout(1000); // set small timeout just in case some cleanup is still going on
 
-        const removed = await cleanupUserChannelMap(context, from);
+        const removed = await cleanupUserChannelMap(context, twilioNumber);
 
-        resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
+        resolve(
+          success(
+            `State changing from ${StateFrom} to ${StateTo} triggered map removal for ${twilioNumber}, removed ${removed}`,
+          ),
+        );
         return;
       }
     }

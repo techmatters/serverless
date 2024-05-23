@@ -341,7 +341,7 @@ const createConversation = async (
           url:
             onConversationUpdateWebhookUrl ||
             `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-          filters: ['onConversationUpdated'],
+          filters: ['onConversationStateUpdated'],
         },
       });
     }
@@ -488,16 +488,6 @@ export const sendConversationMessageToFlex = async (
     syncServiceSid,
     uniqueUserName,
   });
-  const twilioClient = context.getTwilioClient();
-
-  if (conversationSid) {
-    // Check if the conversation is active
-    const conversation = await twilioClient.conversations.conversations(conversationSid).fetch();
-    if (conversation.state !== 'active') {
-      await twilioClient.sync.services(syncServiceSid).documents(uniqueUserName).remove();
-      conversationSid = undefined;
-    }
-  }
 
   if (!conversationSid) {
     const { conversationSid: newConversationSid, error } = await createConversation(context, {
