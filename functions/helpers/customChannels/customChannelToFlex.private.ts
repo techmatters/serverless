@@ -31,7 +31,7 @@ export const retrieveChannelFromUserChannelMap = async (
     syncServiceSid: string;
     uniqueUserName: string;
   },
-): Promise<string | undefined> => {
+): Promise<ConversationSid | undefined> => {
   try {
     const userChannelMap = await context
       .getTwilioClient()
@@ -484,10 +484,20 @@ export const sendConversationMessageToFlex = async (
     return { status: 'ignored' };
   }
 
-  let conversationSid = (await retrieveChannelFromUserChannelMap(context, {
+  let conversationSid = await retrieveChannelFromUserChannelMap(context, {
     syncServiceSid,
     uniqueUserName,
-  })) as ConversationSid;
+  });
+  const twilioClient = context.getTwilioClient();
+
+  if (conversationSid) {
+    // Check if the conversation is active
+    const conversation = await twilioClient.conversations.conversations(conversationSid).fetch();
+    if (conversation.state !== 'active') {
+      await twilioClient.sync.services(syncServiceSid).documents(uniqueUserName).remove();
+      conversationSid = undefined;
+    }
+  }
 
   if (!conversationSid) {
     const { conversationSid: newConversationSid, error } = await createConversation(context, {

@@ -108,7 +108,7 @@ export const handler = async (
       }
     }
 
-    if (event.EventType === 'onConversationUpdate') {
+    if (event.EventType === 'onConversationUpdated') {
       const { ConversationSid } = event;
 
       if (ConversationSid === undefined) {
