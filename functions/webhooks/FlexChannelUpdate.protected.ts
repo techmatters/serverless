@@ -120,6 +120,9 @@ export const handler = async (
 
     if (event.EventType === 'onConversationStateUpdated') {
       const { ConversationSid: conversationSid, StateFrom, StateTo } = event;
+      console.log(
+        `State changing from ${StateFrom} to ${StateTo} attempting map removal for ${conversationSid}`,
+      );
 
       if (conversationSid === undefined) {
         resolve(error400('ConversationSid'));
@@ -139,6 +142,9 @@ export const handler = async (
           success(
             `State changing from ${StateFrom} to ${StateTo} triggered map removal for ${twilioNumber}, removed ${removed}`,
           ),
+        );
+        console.log(
+          `State changing from ${StateFrom} to ${StateTo} completed map removal for ${conversationSid} (${twilioNumber} - ${removed})`,
         );
         return;
       }
