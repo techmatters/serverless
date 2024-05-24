@@ -55,6 +55,7 @@ export const handler = async (
   callback: ServerlessCallback,
 ) => {
   console.log('===== chatbotCallback handler =====');
+  Object.entries(event).forEach(([k, v]) => console.log(`${k}: ${v}`));
 
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
