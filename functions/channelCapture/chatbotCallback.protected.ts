@@ -112,6 +112,8 @@ export const handler = async (
       return;
     }
 
+    console.log('conversation / channel attributes:', attributesJson);
+
     const channelAttributes = JSON.parse(attributesJson || '{}');
 
     // Send message to bot only if it's from child
