@@ -50,21 +50,25 @@ export type Body = {
   channelSid: string;
 };
 
-export const chatbotCallbackCleanup = async ({
-  context,
-  channelOrConversation,
-  channelAttributes,
-  memory: lexMemory,
-  lexClient,
-}: {
+type ChatbotCallbackCleanupParams = {
+  channel?: ChannelInstance;
+  conversation?: ConversationInstance;
+
   context: Context<EnvVars>;
-  channelOrConversation: ChannelInstance | ConversationInstance;
   channelAttributes: { [k: string]: any };
   memory?: { [key: string]: string };
   lexClient: LexClient;
-}) => {
+};
+
+export const chatbotCallbackCleanup = async ({
+  context,
+  channel,
+  conversation,
+  channelAttributes,
+  memory: lexMemory,
+  lexClient,
+}: ChatbotCallbackCleanupParams) => {
   const memory = lexMemory || {};
-  const { isConversation } = channelAttributes;
 
   const capturedChannelAttributes =
     channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
@@ -86,12 +90,12 @@ export const chatbotCallbackCleanup = async ({
   const updateChannelOrConversationAttributes = async (attributesObj: any) => {
     const attributes = JSON.stringify(attributesObj);
 
-    if (isConversation) {
-      await (channelOrConversation as ConversationInstance).update({
+    if (conversation) {
+      await conversation.update({
         attributes,
       });
     } else {
-      await (channelOrConversation as ChannelInstance).update({
+      await channel!.update({
         attributes,
       });
     }
@@ -100,16 +104,13 @@ export const chatbotCallbackCleanup = async ({
   const removeWebhookFromChannelOrConversation = async () => {
     if (!capturedChannelAttributes.chatbotCallbackWebhookSid) return;
 
-    if (capturedChannelAttributes.chatbotCallbackWebhookSid) {
-      await (channelOrConversation as ConversationInstance)
+    if (conversation) {
+      await conversation
         .webhooks()
         .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
         .remove();
-    } else {
-      await (channelOrConversation as ChannelInstance)
-        .webhooks()
-        .get(capturedChannelAttributes.chatbotCallbackWebhookSid)
-        .remove();
+    } else if (channel) {
+      await channel.webhooks().get(capturedChannelAttributes.chatbotCallbackWebhookSid).remove();
     }
   };
 
@@ -120,7 +121,7 @@ export const chatbotCallbackCleanup = async ({
       lexClient.deleteSession(context, {
         botName: capturedChannelAttributes.botName,
         botAlias: capturedChannelAttributes.botAlias,
-        userId: channelOrConversation.sid,
+        userId: (conversation ?? channel!).sid,
       }),
     // Update channel attributes (remove channelCapturedByBot and add memory)
     updateChannelOrConversationAttributes(releasedChannelAttributes),
@@ -130,7 +131,7 @@ export const chatbotCallbackCleanup = async ({
     capturedChannelAttributes &&
       channelCaptureHandlers.handleChannelRelease(
         context,
-        channelOrConversation,
+        conversation ?? channel!,
         capturedChannelAttributes,
         memory,
       ),
@@ -155,21 +156,21 @@ export const handler = async (
     }
 
     const client = context.getTwilioClient();
+    let channel: ChannelInstance | undefined;
     const conversation = await client.conversations.v1.conversations(channelSid).fetch();
-    const channel = await client.chat
-      .services(context.CHAT_SERVICE_SID)
-      .channels(channelSid)
-      .fetch();
 
-    const channelOrConversation = conversation || channel;
+    if (!conversation) {
+      channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
+    }
 
-    const channelAttributes = JSON.parse(channelOrConversation.attributes);
+    const channelAttributes = JSON.parse((conversation || channel).attributes);
 
     const lexClient = require(Runtime.getFunctions()['channelCapture/lexClient'].path) as LexClient;
 
     await chatbotCallbackCleanup({
       context,
-      channelOrConversation,
+      channel,
+      conversation,
       channelAttributes,
       lexClient,
     });

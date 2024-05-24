@@ -159,7 +159,8 @@ export const handler = async (
 
         await chatbotCallbackCleanup({
           context,
-          channelOrConversation: conversation || channel!,
+          conversation,
+          channel,
           channelAttributes,
           memory: lexResponse.slots,
           lexClient,
