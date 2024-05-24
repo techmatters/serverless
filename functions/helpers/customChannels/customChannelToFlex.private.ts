@@ -298,7 +298,7 @@ const createConversation = async (
 
   try {
     const conversationContext = await client.conversations.v1.conversations(conversationSid);
-    conversationContext.participants.create({
+    await conversationContext.participants.create({
       identity: uniqueUserName,
     });
     const channelAttributes = JSON.parse((await conversationContext.fetch()).attributes);
@@ -343,11 +343,10 @@ const createConversation = async (
         filters: ['onConversationStateUpdated'],
       },
     });
-    console.log(
-      'onConversationStateUpdated Webhook added',
-      stateWebhook.conversationSid,
-      stateWebhook.url,
-    );
+    console.log('onConversationStateUpdated Webhook added');
+    Object.entries(stateWebhook).forEach(([key, value]) => {
+      console.log(key, value);
+    });
   } catch (err) {
     return { conversationSid, error: err as Error };
   }
