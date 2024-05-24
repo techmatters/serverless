@@ -102,7 +102,7 @@ const deactivateConversation = async (
   const webhooks = await conversationContext.webhooks.list();
   console.log('webhooks');
   webhooks.forEach((wh) => {
-    console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filter);
+    console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filters);
   });
   const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
   const attributes = JSON.parse(conversation.attributes);
