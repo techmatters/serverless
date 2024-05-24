@@ -333,7 +333,7 @@ const createConversation = async (
       },
     });
 
-    await conversationContext.webhooks.create({
+    const stateWebhook = await conversationContext.webhooks.create({
       target: 'webhook',
       configuration: {
         method: 'POST',
@@ -343,6 +343,11 @@ const createConversation = async (
         filters: ['onConversationStateUpdated'],
       },
     });
+    console.log(
+      'onConversationStateUpdated Webhook added',
+      stateWebhook.conversationSid,
+      stateWebhook.url,
+    );
   } catch (err) {
     return { conversationSid, error: err as Error };
   }
