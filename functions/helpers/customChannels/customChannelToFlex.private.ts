@@ -306,6 +306,7 @@ const createConversation = async (
     console.log('channelAttributes prior to update', channelAttributes);
 
     await conversationContext.update({
+      state: 'active',
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
