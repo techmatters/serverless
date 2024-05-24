@@ -32,7 +32,11 @@ type EnvVars = {
 };
 
 type ConversationEventBody = {
-  EventType: 'onConversationStateUpdated' | 'conversationUpdated' | 'onMessageAdded';
+  EventType:
+    | 'onConversationStateUpdated'
+    | 'conversationUpdated'
+    | 'conversationRemoved'
+    | 'onMessageAdded';
   ConversationSid: ConversationSid;
 };
 
