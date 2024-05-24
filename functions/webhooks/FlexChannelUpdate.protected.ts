@@ -87,6 +87,10 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('=== FlexChannelUpdate.protected ===');
+  Object.entries(event).forEach(([key, value]) => {
+    console.log(`${key}: ${value}`);
+  });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 

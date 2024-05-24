@@ -94,10 +94,10 @@ export const redirectConversationMessageToExternalChat = async (
     const { attributes } = await client.conversations.v1.conversations(ConversationSid).fetch();
     console.log('conversationAttributes', attributes);
 
-    const conversationAttributes = JSON.parse(attributes);
+    const { participantSid } = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (conversationAttributes.participantSid !== ParticipantSid) {
+    if (participantSid && participantSid !== ParticipantSid) {
       const response = await sendExternalMessage(recipientId, Body);
       return { status: 'sent', response };
     }
