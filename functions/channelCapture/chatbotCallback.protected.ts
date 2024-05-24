@@ -80,9 +80,9 @@ export const handler = async (
 
     const client = context.getTwilioClient();
 
-    let attributesJson: string | undefined;
     let conversation: ConversationInstance | undefined;
     let channel: ChannelInstance | undefined;
+    let attributesJson: string | undefined;
 
     if (ConversationSid) {
       try {
@@ -102,7 +102,7 @@ export const handler = async (
       }
     }
 
-    if (!attributesJson) {
+    if (!channel && !conversation) {
       console.error(
         `Could not fetch channel or conversation with sid ${ChannelSid} or ${String(
           ConversationSid,
@@ -156,7 +156,7 @@ export const handler = async (
 
         await chatbotCallbackCleanup({
           context,
-          channelOrConversation,
+          channelOrConversation: conversation || channel!,
           channelAttributes,
           memory: lexResponse.slots,
           lexClient,
