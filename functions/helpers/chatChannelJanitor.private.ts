@@ -107,6 +107,7 @@ const deactivateConversation = async (
   const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
   const attributes = JSON.parse(conversation.attributes);
 
+  console.log('conversation properties', ...Object.entries(conversation));
   console.log('conversation attributes', ...Object.entries(attributes));
 
   if (conversation.state !== 'closed') {
