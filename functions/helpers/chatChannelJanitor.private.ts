@@ -98,19 +98,24 @@ const deactivateConversation = async (
   conversationSid: ConversationSid,
 ) => {
   const client = context.getTwilioClient();
-
+  const conversationContext = client.conversations.v1.conversations(conversationSid);
+  const webhooks = await conversationContext.webhooks.list();
+  console.log('webhooks');
+  webhooks.forEach((wh) => {
+    console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filter);
+  });
   const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
   const attributes = JSON.parse(conversation.attributes);
 
   console.log('conversation attributes', ...Object.entries(attributes));
 
-  if (conversation.state === 'active') {
+  if (conversation.state !== 'closed') {
     if (attributes.proxySession) {
       await deleteProxySession(context, attributes.proxySession);
     }
-
+    console.log('Attempting to deactivate active conversation', conversationSid);
     const updated = await conversation.update({
-      state: 'inactive',
+      state: 'closed',
       xTwilioWebhookEnabled: 'true',
     });
 
