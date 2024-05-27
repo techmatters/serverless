@@ -166,6 +166,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
+    Object.entries(taskAttributes).forEach(([key, value]) => {
+      console.log('Task attribute:', key, value);
+    });
 
     /**
      * If a chat transfer gets accepted, it should:
