@@ -20,6 +20,43 @@ export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
 /**
+ * Cleans up the user channel map in Sync Service if the conversation is closed
+ * This is a workaround because the ConversationStateUpdated webhook is not triggered when a conversation is closed
+ * @param context
+ * @param syncServiceSid
+ * @param uniqueUserName
+ * @param conversationSid
+ */
+async function cleanUpConversationInUserChannelMapIfClosed(
+  context: Context,
+  syncServiceSid: string,
+  uniqueUserName: string,
+  conversationSid: ConversationSid,
+): Promise<boolean> {
+  const twilioClient = context.getTwilioClient();
+  // Check if the conversation is closed
+  const conversation = await twilioClient.conversations.conversations(conversationSid).fetch();
+  if (conversation.state === 'closed') {
+    console.log(
+      `Conversation ${conversationSid} is closed. It should have been removed from the map on closure. Removing it from the user channel map.`,
+    );
+    try {
+      await twilioClient.sync.services(syncServiceSid).documents(uniqueUserName).remove();
+    } catch (err) {
+      if (err instanceof Error) {
+        // If the error is that the doc was already cleaned, don't throw further
+        const alreadyCleanedExpectedError = `The requested resource /Services/${syncServiceSid}/Documents/${uniqueUserName} was not found`;
+        if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+      }
+
+      throw err;
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
 export const retrieveChannelFromUserChannelMap = async (
@@ -497,6 +534,17 @@ export const sendConversationMessageToFlex = async (
     syncServiceSid,
     uniqueUserName,
   });
+
+  if (conversationSid) {
+    conversationSid = (await cleanUpConversationInUserChannelMapIfClosed(
+      context,
+      syncServiceSid,
+      uniqueUserName,
+      conversationSid,
+    ))
+      ? undefined
+      : conversationSid;
+  }
 
   if (!conversationSid) {
     const { conversationSid: newConversationSid, error } = await createConversation(context, {
