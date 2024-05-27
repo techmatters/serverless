@@ -233,7 +233,6 @@ const createFlexChannel = async (
     .update({
       attributes: JSON.stringify({
         ...channelAttributes,
-        xTwilioWebhookEnabled: 'true',
         channel_type: channelType,
         senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
         twilioNumber,
@@ -292,6 +291,7 @@ const createConversation = async (
   const client = context.getTwilioClient();
 
   const conversationInstance = await client.conversations.v1.conversations.create({
+    xTwilioWebhookEnabled: 'true',
     friendlyName: conversationFriendlyName,
     uniqueName: `${channelType}/${uniqueUserName}/${Date.now()}`,
   });
