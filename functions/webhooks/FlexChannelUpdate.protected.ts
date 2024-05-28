@@ -33,11 +33,7 @@ type EnvVars = {
 };
 
 type ConversationEventBody = {
-  EventType:
-    | 'onConversationStateUpdated'
-    | 'conversationUpdated'
-    | 'conversationRemoved'
-    | 'onMessageAdded';
+  EventType: 'onConversationStateUpdated' | 'onConversationUpdated';
   ConversationSid: ConversationSid;
 };
 
@@ -104,7 +100,7 @@ export const handler = async (
         .channels(ChannelSid)
         .fetch();
 
-      const { status, from } = JSON.parse(channel.attributes);
+      const { status, from } = JSON.parse(channel.attributes || '{}');
 
       if (status === 'INACTIVE') {
         await timeout(1000); // set small timeout just in case some cleanup is still going on
@@ -114,7 +110,10 @@ export const handler = async (
         resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
         return;
       }
-    } else {
+    } else if (
+      event.EventType === 'onConversationStateUpdated' ||
+      event.EventType === 'onConversationUpdated'
+    ) {
       const { ConversationSid: conversationSid } = event;
       console.log(
         `Checking if map removal for ${conversationSid} is required (${event.EventType})}`,

@@ -110,12 +110,13 @@ export const handler = async (
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
     let result: RedirectResult;
     if (flexToCustomChannel.isConversationWebhookEvent(lineEvent)) {
-      const requiredProperties: (keyof ConversationWebhookEvent)[] = [
+      const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
         'ConversationSid',
         'Body',
         'Author',
         'EventType',
         'Source',
+        'recipientId',
       ];
       if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
       const { recipientId, ...event } = lineEvent;
@@ -125,12 +126,13 @@ export const handler = async (
         sendExternalMessage: sendLineMessage(context),
       });
     } else {
-      const requiredProperties: (keyof ProgrammableChatWebhookEvent)[] = [
+      const requiredProperties: (keyof ProgrammableChatWebhookEvent | 'recipientId')[] = [
         'ChannelSid',
         'Body',
         'From',
         'EventType',
         'Source',
+        'recipientId',
       ];
       if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
 

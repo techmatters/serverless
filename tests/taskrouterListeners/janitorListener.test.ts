@@ -75,6 +75,7 @@ const context = {
   }),
   CHAT_SERVICE_SID: 'CHxxx',
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
+  SYNC_SERVICE_SID: 'xxx',
 };
 
 beforeAll(() => {

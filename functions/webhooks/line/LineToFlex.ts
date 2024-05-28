@@ -127,6 +127,7 @@ export const handler = async (
 
     if (!destination) {
       resolve(error400('destination'));
+      return;
     }
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;

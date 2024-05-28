@@ -76,7 +76,13 @@ const baseContext = {
 
 describe('FlexChannelUpdate', () => {
   beforeAll(() => {
-    helpers.setup({});
+    const runtime = new helpers.MockRuntime(baseContext);
+    // eslint-disable-next-line no-underscore-dangle
+    runtime._addFunction(
+      'helpers/chatChannelJanitor',
+      'functions/helpers/chatChannelJanitor.private',
+    );
+    helpers.setup({}, runtime);
   });
   afterAll(() => {
     helpers.teardown();
@@ -140,7 +146,7 @@ describe('FlexChannelUpdate', () => {
 
   test('Should return status 200 (ignore events)', async () => {
     const event1: Body = {
-      EventType: 'someOtherEvent',
+      EventType: 'someOtherEvent' as 'onChannelUpdated',
       ChannelSid: 'inactiveChannel',
     };
 
