@@ -58,7 +58,7 @@ export const addTaskSidToChannelAttributes = async (context: Context<EnvVars>, e
       }),
     });
 
-    return { message: 'Channel is updated', updatedConversation };
+    return { message: 'Conversation is updated', updatedConversation };
   }
 
   // Fetch channel to update with a taskId
