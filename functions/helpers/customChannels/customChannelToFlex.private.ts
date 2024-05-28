@@ -379,12 +379,7 @@ const createConversation = async (
         url:
           onConversationUpdateWebhookUrl ||
           `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-        filters: [
-          'onConversationStateUpdated',
-          'onConversationUpdated',
-          'onConversationRemoved',
-          'onMessageAdded',
-        ],
+        filters: ['onConversationUpdated'],
       },
     });
     console.log('onConversationStateUpdated Webhook added');

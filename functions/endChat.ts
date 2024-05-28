@@ -39,6 +39,7 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
 };
 
 export type Body = {

@@ -25,6 +25,7 @@ import {
 } from '@tech-matters/serverless-helpers';
 import { ConversationState } from 'twilio/lib/rest/conversations/v1/conversation';
 import { ConversationSid } from '../helpers/customChannels/customChannelToFlex.private';
+import { CleanupUserChannelMap } from '../helpers/chatChannelJanitor.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
@@ -72,24 +73,6 @@ function timeout(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {
-  try {
-    return await context
-      .getTwilioClient()
-      .sync.services(context.SYNC_SERVICE_SID)
-      .documents(from)
-      .remove();
-  } catch (err) {
-    if (err instanceof Error) {
-      // If the error is that the doc was already cleaned, don't throw further
-      const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
-      if (err.toString().includes(alreadyCleanedExpectedError)) return false;
-    }
-
-    throw err;
-  }
-}
-
 export const handler = async (
   context: Context<EnvVars>,
   event: Body,
@@ -101,6 +84,9 @@ export const handler = async (
   });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
+  // eslint-disable-next-line global-require,import/no-dynamic-require
+  const cleanupUserChannelMap = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
+    .cleanupUserChannelMap as CleanupUserChannelMap;
 
   try {
     const client = context.getTwilioClient();

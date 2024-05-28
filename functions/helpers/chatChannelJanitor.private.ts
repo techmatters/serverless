@@ -39,6 +39,29 @@ export type Event =
 export type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
+};
+
+export const cleanupUserChannelMap = async function cleanupUserChannelMap(
+  context: Context<{ SYNC_SERVICE_SID: string }>,
+  from: string,
+) {
+  console.log('Cleaning up user channel map entry', from);
+  try {
+    return await context
+      .getTwilioClient()
+      .sync.services(context.SYNC_SERVICE_SID)
+      .documents(from)
+      .remove();
+  } catch (err) {
+    if (err instanceof Error) {
+      // If the error is that the doc was already cleaned, don't throw further
+      const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
+      if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+    }
+
+    throw err;
+  }
 };
 
 const deleteProxySession = async (context: Context<EnvVars>, proxySession: string) => {
@@ -98,13 +121,13 @@ const deactivateConversation = async (
   conversationSid: ConversationSid,
 ) => {
   const client = context.getTwilioClient();
-  const conversationContext = client.conversations.v1.conversations(conversationSid);
+  const conversationContext = client.conversations.conversations(conversationSid);
   const webhooks = await conversationContext.webhooks.list();
   console.log('webhooks');
   webhooks.forEach((wh) => {
     console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filters);
   });
-  const conversation = await client.conversations.v1.conversations(conversationSid).fetch();
+  const conversation = await client.conversations.conversations(conversationSid).fetch();
   const attributes = JSON.parse(conversation.attributes);
 
   console.log('conversation properties', ...Object.entries(conversation));
@@ -122,8 +145,16 @@ const deactivateConversation = async (
 
     return { message: 'Conversation deactivated', updated };
   }
+  // This should be triggered by a 'Conversation closed' webhook.
+  // However, if a conversation is closed as part of task completion, the webhook is not triggered.
+  // This workaround should be removed if the above bug is fixed.
+  await new Promise((resolve) => {
+    setTimeout(resolve, 1000);
+  });
+  const { twilioNumber } = attributes;
+  await cleanupUserChannelMap(context, twilioNumber);
 
-  return { message: 'Channel already INACTIVE, event ignored' };
+  return { message: 'Conversation already INACTIVE, event ignored' };
 };
 
 export const chatChannelJanitor = async (
@@ -141,3 +172,4 @@ export const chatChannelJanitor = async (
 };
 
 export type ChatChannelJanitor = typeof chatChannelJanitor;
+export type CleanupUserChannelMap = typeof cleanupUserChannelMap;
