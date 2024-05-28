@@ -159,7 +159,7 @@ export const sendConversationMessage = async (
 ) =>
   context
     .getTwilioClient()
-    .conversations.v1.conversations(conversationSid)
+    .conversations.conversations(conversationSid)
     .messages.create({
       body: messageText,
       author,
@@ -191,7 +191,7 @@ export const removeConversation = async (
   }: {
     conversationSid: ConversationSid;
   },
-) => context.getTwilioClient().conversations.v1.conversations(conversationSid).remove();
+) => context.getTwilioClient().conversations.conversations(conversationSid).remove();
 
 export enum AseloCustomChannels {
   Twitter = 'twitter',
@@ -327,7 +327,7 @@ const createConversation = async (
 
   const client = context.getTwilioClient();
 
-  const conversationInstance = await client.conversations.v1.conversations.create({
+  const conversationInstance = await client.conversations.conversations.create({
     xTwilioWebhookEnabled: 'true',
     friendlyName: conversationFriendlyName,
     uniqueName: `${channelType}/${uniqueUserName}/${Date.now()}`,
@@ -335,7 +335,7 @@ const createConversation = async (
   const conversationSid = conversationInstance.sid as ConversationSid;
 
   try {
-    const conversationContext = await client.conversations.v1.conversations(conversationSid);
+    const conversationContext = await client.conversations.conversations(conversationSid);
     await conversationContext.participants.create({
       identity: uniqueUserName,
     });

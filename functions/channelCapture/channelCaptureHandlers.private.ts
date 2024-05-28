@@ -81,8 +81,7 @@ const getServiceUserIdentityOrParticipantId = async (
 ): Promise<MemberInstance['identity']> => {
   if (channel instanceof ConversationInstance) {
     if (!channelAttributes.participantSid) {
-      const conversation = channel;
-      const participants = await conversation.participants().list();
+      const participants = await channel.participants().list();
       const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
       const firstParticipant = participants.sort(sortByDateCreated)[0];
       return firstParticipant.sid;
@@ -450,7 +449,7 @@ export const handleChannelCapture = async (
     isConversation &&
       context
         .getTwilioClient()
-        .conversations.v1.conversations(channelSid)
+        .conversations.conversations(channelSid)
         .webhooks.list()
         .then((channelWebhooks) =>
           channelWebhooks.map(async (w) => {
@@ -487,10 +486,10 @@ export const handleChannelCapture = async (
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
   const channelOrConversation: ChannelInstance | ConversationInstance = isConversation
-    ? await context.getTwilioClient().conversations.v1.conversations(channelSid).fetch()
+    ? await context.getTwilioClient().conversations.conversations(channelSid).fetch()
     : await context
         .getTwilioClient()
-        .chat.v2.services(context.CHAT_SERVICE_SID)
+        .chat.services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .fetch();
 

@@ -100,7 +100,7 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
 
     const messageResult = await context
       .getTwilioClient()
-      .conversations.v1.conversations(conversationSidToMessage)
+      .conversations.conversations(conversationSidToMessage)
       .messages.create({
         body: message,
         author: from,

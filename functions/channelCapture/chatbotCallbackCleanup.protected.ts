@@ -157,7 +157,7 @@ export const handler = async (
 
     const client = context.getTwilioClient();
     let channel: ChannelInstance | undefined;
-    const conversation = await client.conversations.v1.conversations(channelSid).fetch();
+    const conversation = await client.conversations.conversations(channelSid).fetch();
 
     if (!conversation) {
       channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
