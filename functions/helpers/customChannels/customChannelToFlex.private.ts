@@ -20,43 +20,8 @@ export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
 /**
- * Cleans up the user channel map in Sync Service if the conversation is closed
- * This is a workaround because the ConversationStateUpdated webhook is not triggered when a conversation is closed
- * @param context
- * @param syncServiceSid
- * @param uniqueUserName
- * @param conversationSid
- */
-async function cleanUpConversationInUserChannelMapIfClosed(
-  context: Context,
-  syncServiceSid: string,
-  uniqueUserName: string,
-  conversationSid: ConversationSid,
-): Promise<boolean> {
-  const twilioClient = context.getTwilioClient();
-  // Check if the conversation is closed
-  const conversation = await twilioClient.conversations.conversations(conversationSid).fetch();
-  if (conversation.state === 'closed') {
-    console.log(
-      `Conversation ${conversationSid} is closed. It should have been removed from the map on closure. Removing it from the user channel map.`,
-    );
-    try {
-      await twilioClient.sync.services(syncServiceSid).documents(uniqueUserName).remove();
-    } catch (err) {
-      if (err instanceof Error) {
-        // If the error is that the doc was already cleaned, don't throw further
-        const alreadyCleanedExpectedError = `The requested resource /Services/${syncServiceSid}/Documents/${uniqueUserName} was not found`;
-        if (err.toString().includes(alreadyCleanedExpectedError)) return false;
-      }
-
-      throw err;
-    }
-    return true;
-  }
-  return false;
-}
-
-/**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
 export const retrieveChannelFromUserChannelMap = async (
@@ -82,7 +47,22 @@ export const retrieveChannelFromUserChannelMap = async (
   }
 };
 
+export const findExistingConversation = async (
+  context: Context,
+  identity: string,
+): Promise<ConversationSid | undefined> => {
+  const conversations = await context
+    .getTwilioClient()
+    .conversations.participantConversations.list({ identity });
+  const existing = conversations.find(
+    (conversation) => conversation.conversationState !== 'closed',
+  );
+  return existing !== undefined ? (existing.conversationSid as ConversationSid) : undefined;
+};
+
 /**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
  * Creates a user channel map in Sync Service to contain the sid of the new channel assigned for a user
  */
 export const createUserChannelMap = async (
@@ -222,7 +202,6 @@ type CreateFlexConversationParams = {
   uniqueUserName: string; // Unique identifier for this user
   senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
-  onConversationUpdateWebhookUrl?: string; // The url that must be used as the onChannelUpdated event webhook. If not present, it defaults to https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate
   conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
 };
 
@@ -319,7 +298,6 @@ const createConversation = async (
     uniqueUserName,
     senderScreenName,
     onMessageSentWebhookUrl,
-    onConversationUpdateWebhookUrl,
     studioFlowSid,
   }: CreateFlexConversationParams,
 ): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
@@ -370,21 +348,6 @@ const createConversation = async (
         url: onMessageSentWebhookUrl,
         filters: ['onMessageAdded'],
       },
-    });
-
-    const stateWebhook = await conversationContext.webhooks.create({
-      target: 'webhook',
-      configuration: {
-        method: 'POST',
-        url:
-          onConversationUpdateWebhookUrl ||
-          `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-        filters: ['onConversationUpdated'],
-      },
-    });
-    console.log('onConversationStateUpdated Webhook added');
-    Object.entries(stateWebhook).forEach(([key, value]) => {
-      console.log(key, value);
     });
   } catch (err) {
     return { conversationSid, error: err as Error };
@@ -511,8 +474,6 @@ export const sendConversationMessageToFlex = async (
     uniqueUserName,
     senderScreenName,
     onMessageSentWebhookUrl,
-    onConversationUpdateWebhookUrl,
-    syncServiceSid,
     messageText,
     messageAttributes = undefined,
     senderExternalId,
@@ -525,21 +486,7 @@ export const sendConversationMessageToFlex = async (
     return { status: 'ignored' };
   }
 
-  let conversationSid = await retrieveChannelFromUserChannelMap(context, {
-    syncServiceSid,
-    uniqueUserName,
-  });
-
-  if (conversationSid) {
-    conversationSid = (await cleanUpConversationInUserChannelMapIfClosed(
-      context,
-      syncServiceSid,
-      uniqueUserName,
-      conversationSid,
-    ))
-      ? undefined
-      : conversationSid;
-  }
+  let conversationSid = await findExistingConversation(context, uniqueUserName);
 
   if (!conversationSid) {
     const { conversationSid: newConversationSid, error } = await createConversation(context, {
@@ -549,7 +496,6 @@ export const sendConversationMessageToFlex = async (
       uniqueUserName,
       senderScreenName,
       onMessageSentWebhookUrl,
-      onConversationUpdateWebhookUrl,
       conversationFriendlyName,
     });
 
@@ -559,12 +505,6 @@ export const sendConversationMessageToFlex = async (
       });
       throw error;
     }
-
-    await createUserChannelMap(context, {
-      syncServiceSid,
-      uniqueUserName,
-      channelSid: newConversationSid,
-    });
 
     conversationSid = newConversationSid;
   }

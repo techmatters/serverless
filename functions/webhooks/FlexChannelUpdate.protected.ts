@@ -23,24 +23,11 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import { ConversationState } from 'twilio/lib/rest/conversations/v1/conversation';
-import { ConversationSid } from '../helpers/customChannels/customChannelToFlex.private';
 import { CleanupUserChannelMap } from '../helpers/chatChannelJanitor.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
-};
-
-type ConversationEventBody = {
-  EventType: 'onConversationStateUpdated' | 'onConversationUpdated';
-  ConversationSid: ConversationSid;
-};
-
-type ConversationStateUpdatedBody = ConversationEventBody & {
-  EventType: 'onConversationStateUpdated';
-  StateFrom: ConversationState;
-  StateTo: ConversationState;
 };
 
 type ChannelUpdatedBody = {
@@ -62,7 +49,7 @@ type ChannelUpdatedBody = {
   WebhookSid?: string;
 };
 
-export type Body = ChannelUpdatedBody | ConversationEventBody;
+export type Body = ChannelUpdatedBody;
 
 function timeout(ms: number) {
   // eslint-disable-next-line no-promise-executor-return
@@ -108,48 +95,6 @@ export const handler = async (
         const removed = await cleanupUserChannelMap(context, from);
 
         resolve(success(`INACTIVE channel triggered map removal for ${from}, removed ${removed}`));
-        return;
-      }
-    } else if (
-      event.EventType === 'onConversationStateUpdated' ||
-      event.EventType === 'onConversationUpdated'
-    ) {
-      const { ConversationSid: conversationSid } = event;
-      console.log(
-        `Checking if map removal for ${conversationSid} is required (${event.EventType})}`,
-      );
-      let StateFrom: ConversationState | 'UNKNOWN' = 'UNKNOWN';
-      if (event.EventType === 'onConversationStateUpdated') {
-        ({ StateFrom } = event as ConversationStateUpdatedBody);
-      }
-
-      if (conversationSid === undefined) {
-        resolve(error400('ConversationSid'));
-        return;
-      }
-
-      const conversation = await client.conversations.conversations(conversationSid).fetch();
-
-      const { twilioNumber } = JSON.parse(conversation.attributes);
-
-      if (conversation.state !== 'active') {
-        console.log(
-          `State changed from ${StateFrom} to ${conversation.state}, attempting map removal for ${twilioNumber}`,
-        );
-        await timeout(1000); // set small timeout just in case some cleanup is still going on
-
-        const removed = await cleanupUserChannelMap(context, twilioNumber);
-        console.log(
-          `State changed from ${StateFrom} to ${conversation.state} for ${twilioNumber}, successfully removed ${removed}`,
-        );
-        resolve(
-          success(
-            `State changed from ${StateFrom} to ${conversation.state} triggered map removal for ${twilioNumber}, removed ${removed}`,
-          ),
-        );
-        console.log(
-          `State changed from ${StateFrom} to ${conversation.state} completed map removal for ${conversationSid} (${twilioNumber} - ${removed})`,
-        );
         return;
       }
     }

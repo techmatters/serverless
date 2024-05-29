@@ -41,7 +41,10 @@ export type EnvVars = {
   FLEX_PROXY_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
 };
-
+/**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
+ */
 export const cleanupUserChannelMap = async function cleanupUserChannelMap(
   context: Context<{ SYNC_SERVICE_SID: string }>,
   from: string,
@@ -145,14 +148,6 @@ const deactivateConversation = async (
 
     return { message: 'Conversation deactivated', updated };
   }
-  // This should be triggered by a 'Conversation closed' webhook.
-  // However, if a conversation is closed as part of task completion, the webhook is not triggered.
-  // This workaround should be removed if the above bug is fixed.
-  await new Promise((resolve) => {
-    setTimeout(resolve, 1000);
-  });
-  const { twilioNumber } = attributes;
-  await cleanupUserChannelMap(context, twilioNumber);
 
   return { message: 'Conversation already INACTIVE, event ignored' };
 };
