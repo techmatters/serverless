@@ -54,8 +54,8 @@ export const findExistingConversation = async (
   const conversations = await context
     .getTwilioClient()
     .conversations.participantConversations.list({ identity });
-  const existing = conversations.find(
-    (conversation) => conversation.conversationState !== 'closed',
+  const existing = conversations.find((conversation) =>
+    ['active', 'inactive'].includes(conversation.conversationState),
   );
   return existing !== undefined ? (existing.conversationSid as ConversationSid) : undefined;
 };
