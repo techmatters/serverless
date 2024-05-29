@@ -401,6 +401,7 @@ export const sendMessageToFlex = async (
     subscribedExternalId,
   }: SendMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
+  console.log('=== sendMessageToFlex ===');
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
   if (senderExternalId === subscribedExternalId) {
     return { status: 'ignored' };
@@ -482,6 +483,7 @@ export const sendConversationMessageToFlex = async (
   }: SendConversationMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
+  console.log('=== sendConversationMessageToFlex ===');
   if (senderExternalId === subscribedExternalId) {
     return { status: 'ignored' };
   }
