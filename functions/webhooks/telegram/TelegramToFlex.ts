@@ -61,7 +61,7 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
-  console.log('==== FlexToTelegram handler ====');
+  console.log('==== TelegramToFlex handler ====');
   console.log('Received event:');
   Object.entries(event).forEach(([key, value]) => {
     console.log(`${key}: ${JSON.stringify(value)}`);
