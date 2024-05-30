@@ -145,7 +145,6 @@ runs:
       with:
         ssm_parameter: "/development/serverless/${{inputs.account-sid}}/base_url"
         env_variable_name: "SERVERLESS_BASE_URL"
-        /development/serverless/ACd8a2e89748318adf6ddff7df6948deaf/base_url
     - name: Set Telegram flex bot webhook
       shell: bash
       run: |
