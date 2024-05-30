@@ -102,6 +102,7 @@ const baseContext = {
   SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
   LINE_FLEX_FLOW_SID: 'LINE_FLEX_FLOW_SID',
+  LINE_STUDIO_FLOW_SID: 'LINE_STUDIO_FLOW_SID',
   PATH: '',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
@@ -213,8 +214,8 @@ describe('LineToFlex', () => {
     {
       conditionDescription: 'the event has no destination property',
       event: { ...validEvent(), destination: undefined },
-      expectedStatus: 500,
-      expectedMessage: 'Missing destination property',
+      expectedStatus: 400,
+      expectedMessage: 'destination',
     },
     {
       conditionDescription: 'the flex flow identified in the LINE_FLEX_FLOW_SID does not exist',

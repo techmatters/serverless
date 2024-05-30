@@ -24,6 +24,7 @@ import {
   error500,
   error403,
   success,
+  error400,
 } from '@tech-matters/serverless-helpers';
 import crypto from 'crypto';
 
@@ -33,7 +34,9 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;
+  LINE_STUDIO_FLOW_SID: string;
   LINE_CHANNEL_SECRET: string;
+  LINE_TWILIO_MESSAGING_MODE?: 'conversations' | 'programmable-chat' | '';
 };
 
 type LineMessage = {
@@ -101,6 +104,8 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== LineToFlex handler ====');
+  console.log('Received event:', event);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -112,6 +117,7 @@ export const handler = async (
   try {
     const { destination, events } = event;
 
+    console.log('Received events:', events);
     const messageEvents = events.filter((e) => e.type === 'message');
 
     if (messageEvents.length === 0) {
@@ -120,11 +126,13 @@ export const handler = async (
     }
 
     if (!destination) {
-      throw new Error('Missing destination property');
+      resolve(error400('destination'));
+      return;
     }
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
+    const useConversations = context.LINE_TWILIO_MESSAGING_MODE === 'conversations';
 
     const responses = [];
     for (let i = 0; i < messageEvents.length; i += 1) {
@@ -137,22 +145,39 @@ export const handler = async (
       const uniqueUserName = `${channelType}:${senderExternalId}`;
       const senderScreenName = 'child'; // TODO: how to fetch user Profile Name given its ID (found at 'destination' property)
       const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/line/FlexToLine?recipientId=${senderExternalId}`;
-
-      // eslint-disable-next-line no-await-in-loop
-      const result = await channelToFlex.sendMessageToFlex(context, {
-        flexFlowSid: context.LINE_FLEX_FLOW_SID,
-        chatServiceSid: context.CHAT_SERVICE_SID,
-        syncServiceSid: context.SYNC_SERVICE_SID,
-        channelType,
-        twilioNumber,
-        chatFriendlyName,
-        uniqueUserName,
-        senderScreenName,
-        onMessageSentWebhookUrl,
-        messageText,
-        senderExternalId,
-        subscribedExternalId,
-      });
+      let result: Awaited<ReturnType<typeof channelToFlex.sendConversationMessageToFlex>>;
+      if (useConversations) {
+        // eslint-disable-next-line no-await-in-loop
+        result = await channelToFlex.sendConversationMessageToFlex(context, {
+          studioFlowSid: context.LINE_STUDIO_FLOW_SID,
+          syncServiceSid: context.SYNC_SERVICE_SID,
+          conversationFriendlyName: chatFriendlyName,
+          channelType,
+          twilioNumber,
+          uniqueUserName,
+          senderScreenName,
+          onMessageSentWebhookUrl,
+          messageText,
+          senderExternalId,
+          subscribedExternalId,
+        });
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        result = await channelToFlex.sendMessageToFlex(context, {
+          flexFlowSid: context.LINE_FLEX_FLOW_SID,
+          chatServiceSid: context.CHAT_SERVICE_SID,
+          syncServiceSid: context.SYNC_SERVICE_SID,
+          channelType,
+          twilioNumber,
+          chatFriendlyName,
+          uniqueUserName,
+          senderScreenName,
+          onMessageSentWebhookUrl,
+          messageText,
+          senderExternalId,
+          subscribedExternalId,
+        });
+      }
 
       switch (result.status) {
         case 'sent':
@@ -162,7 +187,7 @@ export const handler = async (
           responses.push('Ignored event.');
           break;
         default:
-          throw new Error('Reached unexpected default case');
+          resolve(error500(new Error(`Unexpected result status: ${(result as any).status}`)));
       }
     }
 

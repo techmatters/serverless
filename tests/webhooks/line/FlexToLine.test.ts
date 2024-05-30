@@ -14,18 +14,15 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-import axios from 'axios';
 import each from 'jest-each';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 
 import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToLine } from '../../../functions/webhooks/line/FlexToLine.protected';
 
-jest.mock('axios', () => ({
-  request: jest.fn(),
-}));
+global.fetch = jest.fn();
 
-const mockAxiosRequest = axios.request as jest.MockedFunction<typeof axios.request>;
+const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
 const channels: { [x: string]: any } = {
   CHANNEL_SID: {
@@ -126,11 +123,11 @@ describe('FlexToLine', () => {
     async ({
       event,
       sid = 'CHAT_SERVICE_SID',
-      endpointImpl = async () => ({ status: 200, data: 'OK' }),
+      endpointImpl = async () => ({ status: 200, json: () => Promise.resolve({}) }),
       expectedStatus,
       expectedMessage,
     }) => {
-      mockAxiosRequest.mockImplementation(endpointImpl);
+      mockFetch.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -185,9 +182,11 @@ describe('FlexToLine', () => {
   ]).test(
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
-      mockAxiosRequest.mockClear();
+      mockFetch.mockClear();
 
-      mockAxiosRequest.mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockFetch.mockImplementation(
+        async () => ({ status: 200, json: () => Promise.resolve({}), headers: {} } as Response),
+      );
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -195,13 +194,13 @@ describe('FlexToLine', () => {
       await FlexToLine(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(mockAxiosRequest).not.toBeCalled();
+        expect(mockFetch).not.toBeCalled();
       } else {
-        expect(mockAxiosRequest).toBeCalledWith(
+        expect(mockFetch).toBeCalledWith(
+          'https://api.line.me/v2/bot/message/push',
           expect.objectContaining({
-            url: 'https://api.line.me/v2/bot/message/push',
             method: 'post',
-            data: JSON.stringify({
+            body: JSON.stringify({
               to: event.recipientId,
               messages: [
                 {

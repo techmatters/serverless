@@ -46,6 +46,7 @@ export const eventTypes: EventType[] = [
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
 };
 
 // This applies to both pre-survey(isChatCaptureControl) and post-survey
@@ -79,10 +80,10 @@ const isHandledByOtherListener = (
     return true;
   }
 
-  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
+  const transferHelpers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
 
-  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+  if (!transferHelpers.hasTaskControl(taskSid, taskAttributes)) {
     return true;
   }
 
@@ -159,14 +160,15 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
-    const taskAttributes = JSON.parse(taskAttributesString);
+    const taskAttributes = JSON.parse(taskAttributesString || '{}');
+    const { channelSid, conversationSid } = taskAttributes;
 
     if (isCleanupBotCapture(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
       const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
         .chatChannelJanitor as ChatChannelJanitor;
-      await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+      await chatChannelJanitor(context, { channelSid, conversationSid });
 
       console.log('Finished handling clean up.');
 
@@ -195,7 +197,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
         const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor']
           .path).chatChannelJanitor as ChatChannelJanitor;
-        await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+        await chatChannelJanitor(context, {
+          channelSid,
+          conversationSid,
+        });
 
         console.log('Finished DeactivateConversationOrchestration.');
         return;

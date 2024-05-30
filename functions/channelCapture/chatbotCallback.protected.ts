@@ -25,7 +25,12 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
-import type { WebhookEvent } from '../helpers/customChannels/flexToCustomChannel.private';
+import { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
+import { ConversationInstance } from 'twilio/lib/rest/conversations/v1/conversation';
+import type {
+  ConversationWebhookEvent,
+  ProgrammableChatWebhookEvent,
+} from '../helpers/customChannels/flexToCustomChannel.private';
 import type { AWSCredentials, LexClient } from './lexClient.private';
 import type { CapturedChannelAttributes } from './channelCaptureHandlers.private';
 import type { ChatbotCallbackCleanupModule } from './chatbotCallbackCleanup.protected';
@@ -42,7 +47,7 @@ type EnvVars = AWSCredentials & {
   SURVEY_WORKFLOW_SID: string;
 };
 
-export type Body = Partial<WebhookEvent> & {};
+export type Body = Partial<ConversationWebhookEvent & ProgrammableChatWebhookEvent> & {};
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -50,6 +55,7 @@ export const handler = async (
   callback: ServerlessCallback,
 ) => {
   console.log('===== chatbotCallback handler =====');
+  Object.entries(event).forEach(([k, v]) => console.log(`${k}: ${v}`));
 
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
@@ -60,8 +66,8 @@ export const handler = async (
       resolve(error400('Body'));
       return;
     }
-    if (!From && !ParticipantSid) {
-      resolve(error400('From or ParticipantSid'));
+    if (!From && !ConversationSid) {
+      resolve(error400('From'));
       return;
     }
     if (!ChannelSid && !ConversationSid) {
@@ -75,27 +81,29 @@ export const handler = async (
 
     const client = context.getTwilioClient();
 
-    let channel;
-    try {
-      channel = await client.chat
-        .services(context.CHAT_SERVICE_SID)
-        .channels(ChannelSid || String(ConversationSid))
-        .fetch();
-    } catch (err) {
-      console.log(`Could not fetch channel with sid ${ChannelSid}`);
+    let conversation: ConversationInstance | undefined;
+    let channel: ChannelInstance | undefined;
+    let attributesJson: string | undefined;
+
+    if (ConversationSid) {
+      try {
+        conversation = await client.conversations.conversations(String(ConversationSid)).fetch();
+        attributesJson = conversation.attributes;
+      } catch (err) {
+        console.log(`Could not fetch conversation with sid ${ConversationSid}`);
+      }
     }
 
-    let conversation;
-    try {
-      conversation = await client.conversations.v1.conversations(String(ConversationSid)).fetch();
-    } catch (err) {
-      console.log(`Could not fetch conversation with sid ${ConversationSid}`);
+    if (ChannelSid) {
+      try {
+        channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(ChannelSid).fetch();
+        attributesJson = channel.attributes;
+      } catch (err) {
+        console.log(`Could not fetch channel with sid ${ChannelSid}`);
+      }
     }
 
-    // Priority to conversation
-    const channelOrConversation = conversation || channel;
-
-    if (channelOrConversation === undefined) {
+    if (!channel && !conversation) {
       console.error(
         `Could not fetch channel or conversation with sid ${ChannelSid} or ${String(
           ConversationSid,
@@ -104,7 +112,9 @@ export const handler = async (
       return;
     }
 
-    const channelAttributes = JSON.parse(channelOrConversation?.attributes || '{}');
+    console.log('conversation / channel attributes:', attributesJson);
+
+    const channelAttributes = JSON.parse(attributesJson || '{}');
 
     // Send message to bot only if it's from child
     const eventTypeCheck = EventType === 'onMessageSent' || EventType === 'onMessageAdded';
@@ -149,7 +159,8 @@ export const handler = async (
 
         await chatbotCallbackCleanup({
           context,
-          channelOrConversation,
+          conversation,
+          channel,
           channelAttributes,
           memory: lexResponse.slots,
           lexClient,

@@ -24,14 +24,47 @@
 
 // eslint-disable-next-line prettier/prettier
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
+import { ChatChannelSid, ConversationSid } from './customChannels/customChannelToFlex.private';
 
-export interface Event {
-  channelSid: string;
-}
+export type Event =
+  | {
+      channelSid?: ChatChannelSid;
+      conversationSid: ConversationSid;
+    }
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    };
 
 export type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
+};
+/**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
+ */
+export const cleanupUserChannelMap = async function cleanupUserChannelMap(
+  context: Context<{ SYNC_SERVICE_SID: string }>,
+  from: string,
+) {
+  console.log('Cleaning up user channel map entry', from);
+  try {
+    return await context
+      .getTwilioClient()
+      .sync.services(context.SYNC_SERVICE_SID)
+      .documents(from)
+      .remove();
+  } catch (err) {
+    if (err instanceof Error) {
+      // If the error is that the doc was already cleaned, don't throw further
+      const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
+      if (err.toString().includes(alreadyCleanedExpectedError)) return false;
+    }
+
+    throw err;
+  }
 };
 
 const deleteProxySession = async (context: Context<EnvVars>, proxySession: string) => {
@@ -61,7 +94,7 @@ const deleteProxySession = async (context: Context<EnvVars>, proxySession: strin
 const deactivateChannel = async (
   context: Context<EnvVars>,
   serviceSid: string,
-  channelSid: string,
+  channelSid: ChatChannelSid,
 ) => {
   const client = context.getTwilioClient();
 
@@ -86,10 +119,52 @@ const deactivateChannel = async (
   return { message: 'Channel already INACTIVE, event ignored' };
 };
 
-export const chatChannelJanitor = async (context: Context<EnvVars>, event: Event) => {
-  const result = await deactivateChannel(context, context.CHAT_SERVICE_SID, event.channelSid);
+const deactivateConversation = async (
+  context: Context<EnvVars>,
+  conversationSid: ConversationSid,
+) => {
+  const client = context.getTwilioClient();
+  const conversationContext = client.conversations.conversations(conversationSid);
+  const webhooks = await conversationContext.webhooks.list();
+  console.log('webhooks');
+  webhooks.forEach((wh) => {
+    console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filters);
+  });
+  const conversation = await client.conversations.conversations(conversationSid).fetch();
+  const attributes = JSON.parse(conversation.attributes);
 
-  return { message: `Deactivation attempted for channel ${event.channelSid}`, result };
+  console.log('conversation properties', ...Object.entries(conversation));
+  console.log('conversation attributes', ...Object.entries(attributes));
+
+  if (conversation.state !== 'closed') {
+    if (attributes.proxySession) {
+      await deleteProxySession(context, attributes.proxySession);
+    }
+    console.log('Attempting to deactivate active conversation', conversationSid);
+    const updated = await conversation.update({
+      state: 'closed',
+      xTwilioWebhookEnabled: 'true',
+    });
+
+    return { message: 'Conversation deactivated', updated };
+  }
+
+  return { message: 'Conversation already INACTIVE, event ignored' };
+};
+
+export const chatChannelJanitor = async (
+  context: Context<EnvVars>,
+  { channelSid, conversationSid }: Event,
+) => {
+  if (conversationSid) {
+    const result = await deactivateConversation(context, conversationSid);
+
+    return { message: `Deactivation attempted for conversation ${conversationSid}`, result };
+  }
+  const result = await deactivateChannel(context, context.CHAT_SERVICE_SID, channelSid);
+
+  return { message: `Deactivation attempted for channel ${channelSid}`, result };
 };
 
 export type ChatChannelJanitor = typeof chatChannelJanitor;
+export type CleanupUserChannelMap = typeof cleanupUserChannelMap;
