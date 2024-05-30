@@ -52,12 +52,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
 
     console.log(`===== Executing CreateContactListener for event: ${eventType} =====`);
-
     const taskAttributes = JSON.parse(taskAttributesString);
-
-    Object.entries(taskAttributes).forEach(([key, value]) => {
-      console.log('Task attribute:', key, value);
-    });
 
     if (isCreateContactTask(eventType, taskAttributes)) {
       console.log('Handling create contact...');
