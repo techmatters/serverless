@@ -102,7 +102,12 @@ export const chatbotCallbackCleanup = async ({
   };
 
   const removeWebhookFromChannelOrConversation = async () => {
-    if (!capturedChannelAttributes.chatbotCallbackWebhookSid) return;
+    if (!capturedChannelAttributes?.chatbotCallbackWebhookSid) {
+      console.warn(
+        'No chatbotCallbackWebhookSid found in capturedChannelAttributes for this conversation - looks like something went wrong setting up the chatbot.',
+      );
+      return;
+    }
 
     if (conversation) {
       await conversation
