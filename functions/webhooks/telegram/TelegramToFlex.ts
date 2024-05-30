@@ -58,7 +58,10 @@ export const handler = async (
   callback: ServerlessCallback,
 ) => {
   console.log('==== FlexToTelegram handler ====');
-  console.log('Received event:', event);
+  console.log('Received event:');
+  Object.entries(event).forEach(([key, value]) => {
+    console.log(`${key}: ${JSON.stringify(value)}`);
+  });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
