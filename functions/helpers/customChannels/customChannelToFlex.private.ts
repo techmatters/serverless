@@ -19,6 +19,8 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
+const CONVERSATION_CLOSE_TIMEOUT = 'PT3D';
+
 /**
  * @deprecated
  * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
@@ -324,6 +326,9 @@ const createConversation = async (
 
     await conversationContext.update({
       state: 'active',
+      timers: {
+        closed: CONVERSATION_CLOSE_TIMEOUT,
+      },
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
