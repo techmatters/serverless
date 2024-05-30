@@ -46,11 +46,15 @@ export type Body = {
   };
 };
 
+const TELEGRAM_BOT_API_SECRET_TOKEN_HEADER = 'X-Telegram-Bot-Api-Secret-Token'.toLowerCase();
+
 /**
  * TODO: Implement your own validation logic
  */
 const isValidTelegramPayload = (event: Body, helplineBotApiSecretToken: string): boolean =>
-  Boolean(event.request.headers['X-Telegram-Bot-Api-Secret-Token'] && helplineBotApiSecretToken);
+  Boolean(
+    helplineBotApiSecretToken === event.request.headers[TELEGRAM_BOT_API_SECRET_TOKEN_HEADER],
+  );
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -64,6 +68,12 @@ export const handler = async (
   });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
+
+  if (!context.TELEGRAM_BOT_API_SECRET_TOKEN) {
+    const msg = 'TELEGRAM_BOT_API_SECRET_TOKEN is not defined, cannot validate the request';
+    console.error(msg);
+    resolve(error500(new Error(msg)));
+  }
 
   if (!isValidTelegramPayload(event, context.TELEGRAM_BOT_API_SECRET_TOKEN)) {
     resolve(error403('Forbidden'));
