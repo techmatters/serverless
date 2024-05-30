@@ -181,6 +181,7 @@ export enum AseloCustomChannels {
   Instagram = 'instagram',
   Line = 'line',
   Modica = 'modica',
+  Telegram = 'telegram',
 }
 
 export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
@@ -371,7 +372,6 @@ type SendMessageToFlexParams = CreateFlexChannelParams & {
 };
 
 type SendConversationMessageToFlexParams = CreateFlexConversationParams & {
-  syncServiceSid: string; // The Sync Service sid where user channel maps are stored
   messageText: string; // The body of the message to send
   messageAttributes?: string; // [optional] The message attributes
   senderExternalId: string; // The id in the external chat system of the user sending the message

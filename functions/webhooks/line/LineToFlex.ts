@@ -150,7 +150,6 @@ export const handler = async (
         // eslint-disable-next-line no-await-in-loop
         result = await channelToFlex.sendConversationMessageToFlex(context, {
           studioFlowSid: context.LINE_STUDIO_FLOW_SID,
-          syncServiceSid: context.SYNC_SERVICE_SID,
           conversationFriendlyName: chatFriendlyName,
           channelType,
           twilioNumber,

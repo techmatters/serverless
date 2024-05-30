@@ -79,7 +79,7 @@ export const redirectMessageToExternalChat = async (
 };
 
 export const redirectConversationMessageToExternalChat = async (
-  context: Context<{ CHAT_SERVICE_SID: string }>,
+  context: Context,
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent>,
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
