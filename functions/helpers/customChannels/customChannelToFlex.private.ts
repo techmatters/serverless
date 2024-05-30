@@ -57,6 +57,7 @@ export const findExistingConversation = async (
   const existing = conversations.find((conversation) =>
     ['active', 'inactive'].includes(conversation.conversationState),
   );
+  console.log(`Found existing conversation for ${identity}`, existing?.conversationSid, existing);
   return existing !== undefined ? (existing.conversationSid as ConversationSid) : undefined;
 };
 
