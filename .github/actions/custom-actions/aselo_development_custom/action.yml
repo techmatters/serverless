@@ -127,12 +127,12 @@ runs:
     - name: Set Telegram Flex Bot Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/development/line/${{inputs.account-sid}}/flex_bot_token"
+        ssm_parameter: "/development/telegram/${{inputs.account-sid}}/flex_bot_token"
         env_variable_name: "TELEGRAM_FLEX_BOT_TOKEN"
     - name: Set Telegram Bot Api Secret Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/development/line/${{inputs.account-sid}}/bot_api_secret_token"
+        ssm_parameter: "/development/telegram/${{inputs.account-sid}}/bot_api_secret_token"
         env_variable_name: "TELEGRAM_BOT_API_SECRET_TOKEN"
     - name: Set helpline Telegram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
