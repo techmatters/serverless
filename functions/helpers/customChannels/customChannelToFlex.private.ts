@@ -19,7 +19,7 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
-const CONVERSATION_CLOSE_TIMEOUT = 'P3D';
+const CONVERSATION_CLOSE_TIMEOUT = 'P3D'; // ISO 8601 duration format https://en.wikipedia.org/wiki/ISO_8601
 
 /**
  * @deprecated
