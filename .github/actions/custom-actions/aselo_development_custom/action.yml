@@ -149,11 +149,9 @@ runs:
       shell: bash
       run: |
         curl --request POST \
+        --header "Content-Type: application/json" \
         --url "https://api.telegram.org/bot${{ env.TELEGRAM_FLEX_BOT_TOKEN }}/setWebhook" \
-        --data '{
-          "url": "${{ env.SERVERLESS_BASE_URL }}/webhooks/telegram/TelegramToFlex",
-          "secret_token": "${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}"
-          }'
+        --data '{ "url": "${{ env.SERVERLESS_BASE_URL }}/webhooks/telegram/TelegramToFlex", "secret_token": "${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" }'
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
