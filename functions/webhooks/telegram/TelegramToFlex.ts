@@ -92,7 +92,7 @@ export const handler = async (
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = 'child'; // TODO: how to fetch user Profile Name given its ID (found at 'destination' property)
-    const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/line/FlexToTelegram?recipientId=${senderExternalId}`;
+    const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/telegram/FlexToTelegram?recipientId=${senderExternalId}`;
     const result = await channelToFlex.sendConversationMessageToFlex(context, {
       studioFlowSid: context.TELEGRAM_STUDIO_FLOW_SID,
       conversationFriendlyName: chatFriendlyName,
