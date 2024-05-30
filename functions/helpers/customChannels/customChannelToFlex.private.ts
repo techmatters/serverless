@@ -19,7 +19,7 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
-const CONVERSATION_CLOSE_TIMEOUT = 'PT3D';
+const CONVERSATION_CLOSE_TIMEOUT = 'P3D';
 
 /**
  * @deprecated
