@@ -364,7 +364,7 @@ const createConversation = async (
     console.log('conversation webhooks:');
     (await conversationContext.webhooks.list()).forEach((wh) => {
       Object.entries(wh).forEach(([key, value]) => {
-        console.log(key, JSON.stringify(value));
+        console.log(`${key}:`, value);
       });
     });
   } catch (err) {
@@ -540,7 +540,7 @@ export const sendConversationMessageToFlex = async (
 
   console.log('sendConversationMessageToFlex response:');
   Object.entries(response).forEach(([key, value]) => {
-    console.log(`${key}: ${value}`);
+    console.log(`${key}:`, value);
   });
 
   return { status: 'sent', response };
