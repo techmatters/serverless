@@ -53,7 +53,7 @@ const sendTelegramMessage =
     const response = await fetch(telegramSendMessageUrl, {
       method: 'post',
       body: JSON.stringify(payload),
-      // headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     return {
