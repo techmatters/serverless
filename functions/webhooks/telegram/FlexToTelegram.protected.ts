@@ -30,6 +30,7 @@ import {
   FlexToCustomChannel,
   RedirectResult,
   ConversationWebhookEvent,
+  ExternalSendResult,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
@@ -42,7 +43,7 @@ export type Body = WebhookEvent & {
 
 const sendTelegramMessage =
   ({ TELEGRAM_FLEX_BOT_TOKEN }: Context<EnvVars>) =>
-  async (recipientId: string, messageText: string) => {
+  async (recipientId: string, messageText: string): Promise<ExternalSendResult> => {
     const telegramSendMessageUrl = `https://api.telegram.org/bot${TELEGRAM_FLEX_BOT_TOKEN}/sendMessage`;
 
     const payload = {
@@ -52,12 +53,14 @@ const sendTelegramMessage =
     const response = await fetch(telegramSendMessageUrl, {
       method: 'post',
       body: JSON.stringify(payload),
+      // headers: { 'Content-Type': 'application/json' },
     });
 
     return {
-      status: response.status,
+      ok: response.ok,
+      resultCode: response.status,
       body: await response.json(),
-      headers: Object.fromEntries(Object.entries(response.headers)),
+      meta: Object.fromEntries(Object.entries(response.headers)),
     };
   };
 

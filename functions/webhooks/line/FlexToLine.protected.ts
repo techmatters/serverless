@@ -69,9 +69,10 @@ const sendLineMessage =
     });
 
     return {
-      status: response.status,
+      ok: response.ok,
+      resultCode: response.status,
       body: await response.json(),
-      headers: Object.fromEntries(Object.entries(response.headers)),
+      meta: Object.fromEntries(Object.entries(response.headers)),
     };
   };
 
