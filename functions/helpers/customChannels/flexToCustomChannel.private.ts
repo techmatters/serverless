@@ -93,11 +93,6 @@ export const redirectConversationMessageToExternalChat = async (
     const client = context.getTwilioClient();
     const conversation = await client.conversations.conversations(ConversationSid).fetch();
     const { attributes } = conversation;
-    console.log('conversation properties');
-    Object.entries(conversation).forEach(([key, value]) => {
-      console.log(key, value);
-    });
-
     const { participantSid } = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
