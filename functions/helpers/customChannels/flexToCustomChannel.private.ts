@@ -90,29 +90,26 @@ export const redirectConversationMessageToExternalChat = async (
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent, ExternalSendResult>,
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
-
+  let shouldSend = false;
   if (Source === 'SDK') {
-    const response = await sendExternalMessage(recipientId, Body);
-    return { status: 'sent', response };
-  }
-
-  if (Source === 'API' && EventType === 'onMessageAdded') {
+    shouldSend = true;
+  } else if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
     const conversation = await client.conversations.conversations(ConversationSid).fetch();
     const { attributes } = conversation;
     const { participantSid } = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (participantSid && participantSid !== ParticipantSid) {
-      const response = await sendExternalMessage(recipientId, Body);
-      if (response.ok) {
-        return { status: 'sent', response };
-      }
-      console.log(`Failed to send message: ${response.resultCode}`, response.body, response.meta);
-      throw new Error(`Failed to send message: ${response.resultCode}`);
-    }
+    shouldSend = participantSid && participantSid !== ParticipantSid;
   }
-
+  if (shouldSend) {
+    const response = await sendExternalMessage(recipientId, Body);
+    if (response.ok) {
+      return { status: 'sent', response };
+    }
+    console.log(`Failed to send message: ${response.resultCode}`, response.body, response.meta);
+    throw new Error(`Failed to send message: ${response.resultCode}`);
+  }
   // This ignores self messages and not supported sources
   return { status: 'ignored' };
 };
