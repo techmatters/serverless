@@ -540,7 +540,7 @@ export const sendConversationMessageToFlex = async (
 
   console.log('sendConversationMessageToFlex response:');
   Object.entries(response).forEach(([key, value]) => {
-    console.log(`${key}: ${JSON.stringify(value)}`);
+    console.log(`${key}: ${value}`);
   });
 
   return { status: 'sent', response };
