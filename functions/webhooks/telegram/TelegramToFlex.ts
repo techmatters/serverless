@@ -34,11 +34,12 @@ type EnvVars = {
   TELEGRAM_STUDIO_FLOW_SID: string;
   TELEGRAM_BOT_API_SECRET_TOKEN: string;
   TELEGRAM_FLEX_BOT_TOKEN: string;
+  ACCOUNT_SID: string;
 };
 
 export type Body = {
   message: {
-    chat: { id: string };
+    chat: { id: string; first_name: string; username: string };
     text: string;
   };
   request: {
@@ -66,6 +67,12 @@ export const handler = async (
   Object.entries(event).forEach(([key, value]) => {
     console.log(`${key}: ${JSON.stringify(value)}`);
   });
+  if (event.message) {
+    console.log('Received message:');
+    Object.entries(event.message).forEach(([key, value]) => {
+      console.log(`${key}: ${JSON.stringify(value)}`);
+    });
+  }
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -84,26 +91,22 @@ export const handler = async (
     const channelToFlex = require(handlerPath) as ChannelToFlex;
     const {
       text: messageText,
-      chat: { id: senderExternalId },
+      chat: { id: senderExternalId, username, first_name: firstName },
     } = event.message;
     const channelType = channelToFlex.AseloCustomChannels.Telegram;
-    const subscribedExternalId = ''; // This is AseloChat ID on line
-    const twilioNumber = `${channelType}:${subscribedExternalId}`;
-    const chatFriendlyName = `${channelType}:${senderExternalId}`;
+    const chatFriendlyName = username || `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
-    const senderScreenName = 'child'; // TODO: how to fetch user Profile Name given its ID (found at 'destination' property)
+    const senderScreenName = firstName || username || 'child'; // TODO: how to fetch user Profile Name given its ID (found at 'destination' property)
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/telegram/FlexToTelegram?recipientId=${senderExternalId}`;
     const result = await channelToFlex.sendConversationMessageToFlex(context, {
       studioFlowSid: context.TELEGRAM_STUDIO_FLOW_SID,
       conversationFriendlyName: chatFriendlyName,
       channelType,
-      twilioNumber,
       uniqueUserName,
       senderScreenName,
       onMessageSentWebhookUrl,
       messageText,
       senderExternalId,
-      subscribedExternalId,
     });
 
     switch (result.status) {
