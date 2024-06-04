@@ -215,11 +215,24 @@ export const handler = TokenValidator(
         return;
       }
 
+      /**
+       * Conversations comes with attributes.conversations filled in.
+       * The code below can be simplified after all channels are moved to conversations.
+       */
+      const originalConversations = originalAttributes.conversations;
+      let conversations;
+
+      if (originalConversations) {
+        conversations = originalConversations;
+      } else if (originalAttributes.conversation) {
+        conversations = originalAttributes.conversation;
+      } else {
+        conversations = { conversation_id: taskSid };
+      }
+
       const newAttributes = {
         ...originalAttributes,
-        conversations: originalAttributes.conversation // set up attributes of the new task to link them to the original task in Flex Insights
-          ? originalAttributes.conversation
-          : { conversation_id: taskSid },
+        conversations, // set up attributes of the new task to link them to the original task in Flex Insights
         ignoreAgent, // update task attributes to ignore the agent who transferred the task
         targetSid, // update task attributes to include the required targetSid on the task (workerSid or a queueSid)
         transferTargetType,
