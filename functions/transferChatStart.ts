@@ -239,12 +239,24 @@ export const handler = TokenValidator(
       };
 
       // create New task
-      const newTask = await client.taskrouter
+      // const newTask = await client.taskrouter.v1
+      //   .workspaces(context.TWILIO_WORKSPACE_SID)
+      //   .tasks.create({
+      //     workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+      //     taskChannel: originalTask.taskChannelUniqueName,
+      //     attributes: JSON.stringify(newAttributes),
+      //     priority: 100,
+      //   });
+
+      const client2 = require('twilio')(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
+
+      const newTask = await client2.taskrouter.v1
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks.create({
           workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
           taskChannel: originalTask.taskChannelUniqueName,
           attributes: JSON.stringify(newAttributes),
+          routingTarget: targetSid, // This is using the new API
           priority: 100,
         });
 
