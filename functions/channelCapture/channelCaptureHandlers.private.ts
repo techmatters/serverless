@@ -37,6 +37,10 @@ import type {
   BuildSurveyInsightsData,
   OneToManyConfigSpec,
 } from '../helpers/insightsService.private';
+import {
+  ChatChannelSid,
+  ConversationSid,
+} from '../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = AWSCredentials & {
   TWILIO_WORKSPACE_SID: string;
@@ -342,8 +346,13 @@ const triggerWithNextMessage = async (
   });
 };
 
-export type HandleChannelCaptureParams = {
-  channelSid: string; // The channel to capture (in Studio Flow, flow.channel.address)
+export type HandleChannelCaptureParams = (
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    }
+  | { conversationSid: ConversationSid; channelSid?: ChatChannelSid }
+) & {
   message: string; // The triggering message (in Studio Flow, trigger.message.Body)
   language: string; // (in Studio Flow, {{trigger.message.ChannelAttributes.pre_engagement_data.language | default: 'en-US'}} )
   botSuffix: string;
@@ -354,7 +363,6 @@ export type HandleChannelCaptureParams = {
   releaseFlag?: string; // The flag we want to set true in the channel attributes when the channel is released
   additionControlTaskAttributes?: string; // Optional attributes to include in the control task, in the string representation of a JSON
   controlTaskTTL?: number;
-  isConversation: boolean;
   channelType: string;
 };
 
@@ -398,7 +406,7 @@ const validateHandleChannelCaptureParams = (params: Partial<HandleChannelCapture
 
 export const handleChannelCapture = async (
   context: Context<EnvVars>,
-  params: Partial<HandleChannelCaptureParams>,
+  params: HandleChannelCaptureParams,
 ) => {
   const validationResult = validateHandleChannelCaptureParams(params);
   if (validationResult.status === 'invalid') {
@@ -407,6 +415,7 @@ export const handleChannelCapture = async (
 
   const {
     channelSid,
+    conversationSid,
     message,
     language,
     botSuffix,
@@ -417,7 +426,6 @@ export const handleChannelCapture = async (
     releaseFlag,
     additionControlTaskAttributes,
     controlTaskTTL,
-    isConversation,
     channelType,
   } = params as HandleChannelCaptureParams;
 
@@ -427,7 +435,7 @@ export const handleChannelCapture = async (
 
   const [, , controlTask] = await Promise.all([
     // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-    !isConversation &&
+    !conversationSid &&
       context
         .getTwilioClient()
         .chat.services(context.CHAT_SERVICE_SID)
@@ -446,10 +454,10 @@ export const handleChannelCapture = async (
      * - It's NOT found under the channel webhooks, but under the conversation webhooks
      * - It uses the property 'target' instead of 'type'
      */
-    isConversation &&
+    conversationSid &&
       context
         .getTwilioClient()
-        .conversations.conversations(channelSid)
+        .conversations.conversations(conversationSid)
         .webhooks.list()
         .then((channelWebhooks) =>
           channelWebhooks.map(async (w) => {
@@ -485,8 +493,8 @@ export const handleChannelCapture = async (
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
-  const channelOrConversation: ChannelInstance | ConversationInstance = isConversation
-    ? await context.getTwilioClient().conversations.conversations(channelSid).fetch()
+  const channelOrConversation: ChannelInstance | ConversationInstance = conversationSid
+    ? await context.getTwilioClient().conversations.conversations(conversationSid).fetch()
     : await context
         .getTwilioClient()
         .chat.services(context.CHAT_SERVICE_SID)
@@ -503,7 +511,7 @@ export const handleChannelCapture = async (
     inputText: message,
     userId: channelOrConversation.sid,
     controlTaskSid: controlTask.sid,
-    isConversation,
+    isConversation: Boolean(conversationSid),
     channelType,
   };
 

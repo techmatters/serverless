@@ -41,7 +41,7 @@ type EnvVars = {
   HRM_STATIC_KEY: string;
 } & AWSCredentials;
 
-export type Body = Partial<HandleChannelCaptureParams> & { isConversation: string };
+export type Body = HandleChannelCaptureParams & { isConversation: string };
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -74,7 +74,12 @@ export const handler = async (
     const handlerPath = Runtime.getFunctions()['channelCapture/channelCaptureHandlers'].path;
     const channelCaptureHandlers = require(handlerPath) as ChannelCaptureHandlers;
 
+    if (!channelSid) {
+      resolve(error400('channelSid is required'));
+      return;
+    }
     const result = await channelCaptureHandlers.handleChannelCapture(context, {
+      ...(isConversation ? { conversationSid: channelSid } : { channelSid }),
       channelSid,
       message,
       language,
@@ -86,7 +91,6 @@ export const handler = async (
       releaseFlag,
       additionControlTaskAttributes,
       controlTaskTTL,
-      isConversation,
       channelType,
     });
 

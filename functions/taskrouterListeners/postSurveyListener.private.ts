@@ -52,7 +52,6 @@ const isTriggerPostSurvey = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: {
-    channelType?: string;
     transferMeta?: TransferMeta;
     isChatCaptureControl?: boolean;
   },
@@ -101,7 +100,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
       if (featureFlags.enable_post_survey) {
-        const { channelSid } = taskAttributes;
+        const { channelSid, conversationSid } = taskAttributes;
 
         const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
@@ -109,7 +108,12 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         const postSurveyInitHandler = require(handlerPath)
           .postSurveyInitHandler as PostSurveyInitHandler;
 
-        await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
+        await postSurveyInitHandler(context, {
+          channelSid,
+          conversationSid,
+          taskSid,
+          taskLanguage,
+        });
 
         console.log('Finished handling post survey trigger.');
       }
