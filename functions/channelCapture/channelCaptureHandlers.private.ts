@@ -371,8 +371,8 @@ type ValidationResult = { status: 'valid' } | { status: 'invalid'; error: string
 const createValidationError = (error: string): ValidationResult => ({ status: 'invalid', error });
 
 const validateHandleChannelCaptureParams = (params: Partial<HandleChannelCaptureParams>) => {
-  if (!params.channelSid) {
-    return createValidationError('Missing channelSid');
+  if (!params.channelSid && !params.conversationSid) {
+    return createValidationError('No channelSid or conversationSid provided');
   }
   if (!params.message) {
     return createValidationError('Missing message');
@@ -411,6 +411,7 @@ export const handleChannelCapture = async (
   console.log('handleChannelCapture', params);
   const validationResult = validateHandleChannelCaptureParams(params);
   if (validationResult.status === 'invalid') {
+    console.error('Invalid params', validationResult.error);
     return { status: 'failure', validationResult } as const;
   }
 
