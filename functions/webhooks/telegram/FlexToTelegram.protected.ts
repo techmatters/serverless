@@ -38,7 +38,7 @@ type EnvVars = {
 };
 
 export type Body = WebhookEvent & {
-  recipientId: string; // The Line id of the user that started the conversation. Provided as query parameter
+  recipientId: string; // The Telegram id of the user that started the conversation. Provided as query parameter
 };
 
 const sendTelegramMessage =
