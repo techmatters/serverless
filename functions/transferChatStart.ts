@@ -261,6 +261,7 @@ export const handler = TokenValidator(
           taskChannel: originalTask.taskChannelUniqueName,
           attributes: JSON.stringify(newAttributes),
           routingTarget: targetSid, // This is using the new API
+          taskQueueSid: 'WQb4a3a7e8808c61d11d344e5b28fa53ef',
           priority: 100,
         });
 
