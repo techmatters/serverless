@@ -17,6 +17,7 @@
 /* eslint-disable global-require */
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
+import twilio from 'twilio';
 import { omit } from 'lodash';
 import type { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
@@ -160,12 +161,15 @@ export const handler = async (
       return;
     }
 
-    const client = context.getTwilioClient();
+    const client2 = twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
     let channel: ChannelInstance | undefined;
-    const conversation = await client.conversations.conversations(channelSid).fetch();
+    const conversation = await client2.conversations.conversations(channelSid).fetch();
 
     if (!conversation) {
-      channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
+      channel = await client2.chat.v2
+        .services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .fetch();
     }
 
     const channelAttributes = JSON.parse((conversation || channel).attributes);

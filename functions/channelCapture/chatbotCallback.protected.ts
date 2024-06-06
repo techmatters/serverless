@@ -17,6 +17,7 @@
 /* eslint-disable global-require */
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
+import twilio from 'twilio';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
@@ -79,7 +80,7 @@ export const handler = async (
       return;
     }
 
-    const client = context.getTwilioClient();
+    const client2 = twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
 
     let conversation: ConversationInstance | undefined;
     let channel: ChannelInstance | undefined;
@@ -87,7 +88,7 @@ export const handler = async (
 
     if (ConversationSid) {
       try {
-        conversation = await client.conversations.conversations(String(ConversationSid)).fetch();
+        conversation = await client2.conversations.conversations(String(ConversationSid)).fetch();
         attributesJson = conversation.attributes;
       } catch (err) {
         console.log(`Could not fetch conversation with sid ${ConversationSid}`);
@@ -96,7 +97,10 @@ export const handler = async (
 
     if (ChannelSid) {
       try {
-        channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(ChannelSid).fetch();
+        channel = await client2.chat.v2
+          .services(context.CHAT_SERVICE_SID)
+          .channels(ChannelSid)
+          .fetch();
         attributesJson = channel.attributes;
       } catch (err) {
         console.log(`Could not fetch channel with sid ${ChannelSid}`);
