@@ -33,12 +33,19 @@ export type ConversationWebhookEvent = {
   Source: string;
 };
 
+export type ExternalSendResult = {
+  ok: boolean;
+  meta: Record<string, string>;
+  body: any;
+  resultCode: number;
+};
+
 export type WebhookEvent = ConversationWebhookEvent | ProgrammableChatWebhookEvent;
 
-type Params<T extends WebhookEvent> = {
+type Params<T extends WebhookEvent, TResponse = any> = {
   event: T;
   recipientId: string;
-  sendExternalMessage: (recipientId: string, messageText: string) => Promise<any>;
+  sendExternalMessage: (recipientId: string, messageText: string) => Promise<TResponse>;
 };
 
 export const isConversationWebhookEvent = (
@@ -79,34 +86,30 @@ export const redirectMessageToExternalChat = async (
 };
 
 export const redirectConversationMessageToExternalChat = async (
-  context: Context<{ CHAT_SERVICE_SID: string }>,
-  { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent>,
+  context: Context,
+  { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent, ExternalSendResult>,
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
-
+  let shouldSend = false;
   if (Source === 'SDK') {
-    const response = await sendExternalMessage(recipientId, Body);
-    return { status: 'sent', response };
-  }
-
-  if (Source === 'API' && EventType === 'onMessageAdded') {
+    shouldSend = true;
+  } else if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
     const conversation = await client.conversations.conversations(ConversationSid).fetch();
     const { attributes } = conversation;
-    console.log('conversation properties');
-    Object.entries(conversation).forEach(([key, value]) => {
-      console.log(key, value);
-    });
-
     const { participantSid } = JSON.parse(attributes);
 
     // Redirect bot, system or third participant, but not self
-    if (participantSid && participantSid !== ParticipantSid) {
-      const response = await sendExternalMessage(recipientId, Body);
+    shouldSend = participantSid && participantSid !== ParticipantSid;
+  }
+  if (shouldSend) {
+    const response = await sendExternalMessage(recipientId, Body);
+    if (response.ok) {
       return { status: 'sent', response };
     }
+    console.log(`Failed to send message: ${response.resultCode}`, response.body, response.meta);
+    throw new Error(`Failed to send message: ${response.resultCode}`);
   }
-
   // This ignores self messages and not supported sources
   return { status: 'ignored' };
 };
