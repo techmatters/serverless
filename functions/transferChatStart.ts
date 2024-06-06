@@ -17,6 +17,7 @@
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
 import '@twilio-labs/serverless-runtime-types';
+import twilio from 'twilio';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
@@ -248,8 +249,11 @@ export const handler = TokenValidator(
       //     priority: 100,
       //   });
 
-      const client2 = require('twilio')(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
+      // await client.conversations.v1
+      //   .conversations(newAttributes.conversationSid)
+      //   .participants.create({ identity: '<Chat User Identity>' });
 
+      const client2 = twilio(process.env.ACCOUNT_SID, process.env.AUTH_TOKEN);
       const newTask = await client2.taskrouter.v1
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks.create({
