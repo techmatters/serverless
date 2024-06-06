@@ -94,6 +94,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     if (isTriggerPostSurvey(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling post survey trigger...');
       const client = context.getTwilioClient();
+      console.log('taskAttributes', taskAttributes);
 
       // This task is a candidate to trigger post survey. Check feature flags for the account.
       const serviceConfig = await client.flexApi.configuration.get().fetch();
@@ -107,7 +108,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         const handlerPath = Runtime.getFunctions().postSurveyInit.path;
         const postSurveyInitHandler = require(handlerPath)
           .postSurveyInitHandler as PostSurveyInitHandler;
-
         await postSurveyInitHandler(context, {
           channelSid,
           conversationSid,
@@ -116,6 +116,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         });
 
         console.log('Finished handling post survey trigger.');
+      } else {
+        console.log('Bypassing post survey trigger - they are disabled');
       }
     }
     console.log('===== PostSurveyListener finished successfully =====');

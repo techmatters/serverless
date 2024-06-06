@@ -408,6 +408,7 @@ export const handleChannelCapture = async (
   context: Context<EnvVars>,
   params: HandleChannelCaptureParams,
 ) => {
+  console.log('handleChannelCapture', params);
   const validationResult = validateHandleChannelCaptureParams(params);
   if (validationResult.status === 'invalid') {
     return { status: 'failure', validationResult } as const;
