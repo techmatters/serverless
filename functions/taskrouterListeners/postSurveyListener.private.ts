@@ -32,6 +32,8 @@ import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHan
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
 
+const GLOBAL_DEFAULT_LANGUAGE = 'en-US';
+
 export type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
@@ -45,7 +47,7 @@ export type EnvVars = AWSCredentials & {
 // TODO: unify this code with Flex codebase
 
 const getTaskLanguage = (helplineLanguage: string) => (taskAttributes: { language?: string }) =>
-  taskAttributes.language || helplineLanguage;
+  taskAttributes.language || helplineLanguage || GLOBAL_DEFAULT_LANGUAGE;
 // ================== //
 
 const isTriggerPostSurvey = (
@@ -101,7 +103,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
       if (featureFlags.enable_post_survey) {
-        const { channelSid, conversationSid } = taskAttributes;
+        const { channelSid, conversationSid, channelType, customChannelType } = taskAttributes;
 
         const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
@@ -113,6 +115,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           conversationSid,
           taskSid,
           taskLanguage,
+          channelType: customChannelType || channelType,
         });
 
         console.log('Finished handling post survey trigger.');

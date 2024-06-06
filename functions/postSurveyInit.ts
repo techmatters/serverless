@@ -53,6 +53,7 @@ export type Body = (
 ) & {
   taskSid: string;
   taskLanguage: string;
+  channelType: string;
   request: { cookies: {}; headers: {} };
 };
 
