@@ -434,43 +434,14 @@ export const handleChannelCapture = async (
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
     : {};
-
-  const [, , controlTask] = await Promise.all([
-    // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-    !conversationSid &&
-      context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .webhooks.list()
-        .then((channelWebhooks) =>
-          channelWebhooks.map(async (w) => {
-            if (w.type === 'studio') {
-              await w.remove();
-            }
-          }),
-        ),
-
-    /*
-     * Doing the "same" as above but for Conversations. Differences to the Studio Webhook in this case:
-     * - It's NOT found under the channel webhooks, but under the conversation webhooks
-     * - It uses the property 'target' instead of 'type'
-     */
-    conversationSid &&
-      context
-        .getTwilioClient()
-        .conversations.conversations(conversationSid)
-        .webhooks.list()
-        .then((channelWebhooks) =>
-          channelWebhooks.map(async (w) => {
-            if (w.target === 'studio') {
-              await w.remove();
-            }
-          }),
-        ),
-
+  let controlTask: TaskInstance;
+  if (conversationSid) {
+    const conversationContext = await context
+      .getTwilioClient()
+      .conversations.conversations(conversationSid);
+    console.log('conversation state:', (await conversationContext.fetch()).state);
     // Create control task to prevent channel going stale
-    context
+    controlTask = await context
       .getTwilioClient()
       .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks.create({
@@ -478,12 +449,51 @@ export const handleChannelCapture = async (
         taskChannel: 'survey',
         attributes: JSON.stringify({
           isChatCaptureControl: true,
-          channelSid,
+          conversationSid,
           ...parsedAdditionalControlTaskAttributes,
         }),
         timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
-      }),
-  ]);
+      });
+    const webhooks = await conversationContext.webhooks.list();
+    for (const webhook of webhooks) {
+      if (webhook.target === 'studio') {
+        // eslint-disable-next-line no-await-in-loop
+        await webhook.remove();
+      }
+    }
+  } else {
+    [, controlTask] = await Promise.all([
+      // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+      context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .webhooks.list()
+        .then((webhooks) =>
+          webhooks.map(async (w) => {
+            if (w.type === 'studio') {
+              await w.remove();
+            }
+          }),
+        ),
+
+      // Create control task to prevent channel going stale
+      context
+        .getTwilioClient()
+        .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks.create({
+          workflowSid: context.SURVEY_WORKFLOW_SID,
+          taskChannel: 'survey',
+          attributes: JSON.stringify({
+            isChatCaptureControl: true,
+            channelSid,
+            conversationSid,
+            ...parsedAdditionalControlTaskAttributes,
+          }),
+          timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+        }),
+    ]);
+  }
 
   const { ENVIRONMENT, HELPLINE_CODE } = context;
   let languageSanitized = language.replace('-', '_'); // Lex doesn't accept '-'
