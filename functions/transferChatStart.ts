@@ -239,14 +239,22 @@ export const handler = TokenValidator(
       };
 
       // create New task
-      const newTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks.create({
-          workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
-          taskChannel: originalTask.taskChannelUniqueName,
-          attributes: JSON.stringify(newAttributes),
-          priority: 100,
-        });
+      // const newTask = await client.taskrouter
+      //   .workspaces(context.TWILIO_WORKSPACE_SID)
+      //   .tasks.create({
+      //     workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+      //     taskChannel: originalTask.taskChannelUniqueName,
+      //     attributes: JSON.stringify(newAttributes),
+      //     priority: 100,
+      //   });
+
+      const invite = await client.flexApi.v1
+        .interaction(originalAttributes.flexInteractionSid)
+        .channels(originalAttributes.flexInteractionChannelSid)
+        .invites.create({ routing: { properties: { routing_target: targetSid } } });
+
+      console.log('>> invite');
+      console.log(JSON.stringify(invite, null, 2));
 
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
