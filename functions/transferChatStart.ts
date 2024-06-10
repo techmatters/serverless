@@ -254,9 +254,13 @@ export const handler = TokenValidator(
         .invites.create({
           routing: {
             properties: {
-              task_sid: taskSid,
+              // task_sid: taskSid,
+              // worker_sid: targetSid,
+              // reservation_sid: originalAttributes.transferMeta.originalReservation,
+              queue_sid: 'WQb4a3a7e8808c61d11d344e5b28fa53ef',
               worker_sid: targetSid,
-              reservation_sid: originalAttributes.transferMeta.originalReservation,
+              workflow_sid: 'WW2f5ccb24935e01e5bece464f419497dc',
+              workspace_sid: 'WSc92e431ee05a5d0ac322f6c886c4aee2',
             },
           },
         });
