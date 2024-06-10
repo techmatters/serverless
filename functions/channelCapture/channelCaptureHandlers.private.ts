@@ -549,7 +549,7 @@ const createStudioFlowTrigger = async (
   controlTask: TaskInstance,
 ) => {
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
-  controlTask.remove();
+  await controlTask.remove();
   const { isConversation } = capturedChannelAttributes;
 
   if (isConversation) {

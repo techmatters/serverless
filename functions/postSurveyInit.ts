@@ -85,7 +85,26 @@ export const postSurveyInitHandler = async (
   context: Context<EnvVars>,
   event: Omit<Body, 'request'>,
 ) => {
-  const { channelSid, conversationSid, taskSid, taskLanguage } = event;
+  const { channelSid, conversationSid, taskSid, taskLanguage, channelType } = event;
+  const client = context.getTwilioClient();
+  const task = await client.taskrouter
+    .workspaces(context.TWILIO_WORKSPACE_SID)
+    .tasks(taskSid)
+    .fetch();
+  const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
+  const interactionParticipantContext = client.flexApi.v1
+    .interaction(flexInteractionSid)
+    .channels(flexInteractionChannelSid).participants;
+  const interactionAgentParticipants = (await interactionParticipantContext.list()).filter(
+    (p) => p.type === 'agent',
+  );
+
+  // Should only be 1, but just in case
+  await Promise.all(
+    interactionAgentParticipants.map((p) =>
+      interactionParticipantContext(p.sid).update({ status: 'wrapup' }),
+    ),
+  );
 
   const triggerMessage = await getTriggerMessage(event, context);
 
@@ -109,7 +128,7 @@ export const postSurveyInitHandler = async (
       language: taskLanguage, // if there's a task language, attach it to the post survey task
     }),
     controlTaskTTL: 3600,
-    channelType: '',
+    channelType,
   } as const;
   if (conversationSid) {
     return channelCaptureHandlers.handleChannelCapture(context, {
@@ -140,7 +159,7 @@ export const handler = TokenValidator(
     try {
       const { channelSid, taskSid, taskLanguage, conversationSid } = event;
 
-      if (!channelSid && !conversationSid) return resolve(error400('channelSid'));
+      if (!channelSid && !conversationSid) return resolve(error400('channelSid / conversationSid'));
       if (!taskSid) return resolve(error400('taskSid'));
       if (!taskLanguage) return resolve(error400('taskLanguage'));
 
