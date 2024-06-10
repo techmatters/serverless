@@ -267,7 +267,8 @@ export const handler = TokenValidator(
         }),
       ]);
 
-      resolve(success({ taskSid: newTask.sid }));
+      resolve(success({ taskSid }));
+      // resolve(success({ taskSid: newTask.sid }));
     } catch (err: any) {
       resolve(error500(err));
     }
