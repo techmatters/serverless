@@ -251,7 +251,15 @@ export const handler = TokenValidator(
       const invite = await client.flexApi.v1
         .interaction(originalAttributes.flexInteractionSid)
         .channels(originalAttributes.flexInteractionChannelSid)
-        .invites.create({ routing: { properties: { worker_sid: targetSid } } });
+        .invites.create({
+          routing: {
+            properties: {
+              task_sid: taskSid,
+              worker_sid: targetSid,
+              reservation_sid: originalAttributes.transferMeta.originalReservation,
+            },
+          },
+        });
 
       console.log('>> invite');
       console.log(JSON.stringify(invite, null, 2));
