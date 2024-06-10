@@ -248,6 +248,14 @@ export const handler = TokenValidator(
       //     priority: 100,
       //   });
 
+      const participants = await client.flexApi.v1
+        .interaction(originalAttributes.flexInteractionSid)
+        .channels(originalAttributes.flexInteractionChannelSid)
+        .participants.list();
+
+      const originalParticipant = participants[0].sid;
+
+      // Create invite to target worker
       const invite = await client.flexApi.v1
         .interaction(originalAttributes.flexInteractionSid)
         .channels(originalAttributes.flexInteractionChannelSid)
@@ -264,9 +272,15 @@ export const handler = TokenValidator(
             },
           },
         });
-
       console.log('>> invite');
       console.log(JSON.stringify(invite, null, 2));
+
+      // Remove original Worker participant
+      await client.flexApi.v1
+        .interaction(originalAttributes.flexInteractionSid)
+        .channels(originalAttributes.flexInteractionChannelSid)
+        .participants(originalParticipant)
+        .update({ status: 'close' });
 
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
