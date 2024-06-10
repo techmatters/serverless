@@ -280,7 +280,7 @@ export const handler = TokenValidator(
         .interaction(originalAttributes.flexInteractionSid)
         .channels(originalAttributes.flexInteractionChannelSid)
         .participants(originalParticipant)
-        .update({ status: 'close' });
+        .update({ status: 'closed' });
 
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
