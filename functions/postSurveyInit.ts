@@ -86,25 +86,6 @@ export const postSurveyInitHandler = async (
   event: Omit<Body, 'request'>,
 ) => {
   const { channelSid, conversationSid, taskSid, taskLanguage, channelType } = event;
-  const client = context.getTwilioClient();
-  const task = await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks(taskSid)
-    .fetch();
-  const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
-  const interactionParticipantContext = client.flexApi.v1
-    .interaction(flexInteractionSid)
-    .channels(flexInteractionChannelSid).participants;
-  const interactionAgentParticipants = (await interactionParticipantContext.list()).filter(
-    (p) => p.type === 'agent',
-  );
-
-  // Should only be 1, but just in case
-  await Promise.all(
-    interactionAgentParticipants.map((p) =>
-      interactionParticipantContext(p.sid).update({ status: 'wrapup' }),
-    ),
-  );
 
   const triggerMessage = await getTriggerMessage(event, context);
 
