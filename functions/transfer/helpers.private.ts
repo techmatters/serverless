@@ -28,9 +28,24 @@ export type ChatTransferTaskAttributes = {
 const hasTransferStarted = (taskAttributes: ChatTransferTaskAttributes) =>
   Boolean(taskAttributes && taskAttributes.transferMeta);
 
-export const hasTaskControl = (taskSid: string, taskAttributes: ChatTransferTaskAttributes) =>
-  !hasTransferStarted(taskAttributes) ||
-  taskAttributes.transferMeta?.sidWithTaskControl === taskSid;
+export const hasTaskControl = (taskSid: string, taskAttributes: ChatTransferTaskAttributes) => {
+  console.log('>>>>>>>>>>>');
+  console.log(
+    'taskAttributes.transferMeta?.sidWithTaskControl',
+    taskAttributes.transferMeta?.sidWithTaskControl,
+    'taskSid',
+    taskSid,
+  );
+  console.log(
+    'hasTaskControl',
+    !hasTransferStarted(taskAttributes) ||
+      taskAttributes.transferMeta?.sidWithTaskControl === taskSid,
+  );
+  return (
+    !hasTransferStarted(taskAttributes) ||
+    taskAttributes.transferMeta?.sidWithTaskControl === taskSid
+  );
+};
 
 export type TransferHelpers = {
   hasTaskControl: typeof hasTaskControl;
