@@ -160,17 +160,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
-    const taskAttributes = JSON.parse(taskAttributesString || '{}');
-    const { channelSid, conversationSid } = taskAttributes;
-
-    if (taskChannelUniqueName === 'survey' && (!conversationSid || eventType !== TASK_CANCELED)) {
+    if (taskChannelUniqueName === 'survey' && eventType !== TASK_CANCELED) {
       console.log(
-        'Survey tasks are only handled by the channel janitor if they are cancelled events for conversations tasks - skipping this one.',
+        'Survey tasks are only handled by the channel janitor on task cancelled events skipping this one.',
         eventType,
-        conversationSid,
       );
       return;
     }
+
+    const taskAttributes = JSON.parse(taskAttributesString || '{}');
+    const { channelSid, conversationSid } = taskAttributes;
 
     if (isCleanupBotCapture(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
