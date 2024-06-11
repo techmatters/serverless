@@ -34,6 +34,12 @@ type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+/**
+ * This function looks up a Flex interaction & interaction channel using the attributes of the provided Task.
+ * It will then transition any participants in the interaction channel of type 'agent' to the pspecified state.
+ * This will automatically wrap up or complete the task in question WITHOUT closing the attached conversation - allowing post wrapup activity like post surveys to be performed
+ * This approach is required because the default WrapupTask / CompleteTask Flex Actions will close the conversation, and the ChatOrchestrator cannot be used to prevent this behaviour like it could with Programmable Chat tasks.
+ */
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     console.log('==== transitionAgentParticipants ====');
@@ -50,6 +56,18 @@ export const handler = TokenValidator(
       .tasks(taskSid)
       .fetch();
     const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
+
+    if (!flexInteractionSid || !flexInteractionChannelSid) {
+      console.warn(
+        "transitionAgentParticipants called with a task without a flexInteractionSid or flexInteractionChannelSid set in it's attributes - is it being called with a Programmable Chat task?",
+        task.attributes,
+      );
+      return resolve(
+        error400(
+          "Task specified must have a flexInteractionSid and flexInteractionChannelSid set in it's attributes",
+        ),
+      );
+    }
     const interactionParticipantContext = client.flexApi.v1
       .interaction(flexInteractionSid)
       .channels(flexInteractionChannelSid).participants;
