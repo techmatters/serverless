@@ -81,6 +81,17 @@ const isChatTransferToQueueComplete = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'queue';
 
+const isChatTransferToQueueRejected = (
+  eventType: EventType,
+  taskChannelUniqueName: string,
+  taskAttributes: ChatTransferTaskAttributes,
+) =>
+  (eventType === RESERVATION_REJECTED ||
+    eventType === RESERVATION_TIMEOUT ||
+    eventType === TASK_CANCELED) &&
+  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+  taskAttributes.transferTargetType === 'queue';
+
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
@@ -200,6 +211,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
+      const originalTask = await client.taskrouter
+        .workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(originalTaskSid)
+        .fetch();
+
+      console.log(
+        'originalTask',
+        Object.entries(originalTask).forEach(([k, v]) => console.log(k, v)),
+      );
+
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
@@ -208,7 +229,14 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           reason: 'task transferred into queue',
         });
 
-      console.log('Finished handling chat queue transfer.');
+      console.log('Finished handling chat queue transfer initiated.');
+      return;
+    }
+
+    if (isChatTransferToQueueRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+      console.log('Handling chat transfer to queue rejected...');
+      // Do nothing, just stop event propagation
+      console.log('Finished handling chat transfer to queue rejected.');
       return;
     }
 
@@ -222,7 +250,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
      * 3) Cancel rejected task
      */
     if (isChatTransferToWorkerRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling chat transfer rejected...');
+      console.log('Handling chat transfer to worker rejected...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
@@ -269,7 +297,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         reason: 'task transferred rejected',
       });
 
-      console.log('Finished handling chat transfer rejected.');
+      console.log('Finished handling chat transfer to worker rejected.');
       return;
     }
 
