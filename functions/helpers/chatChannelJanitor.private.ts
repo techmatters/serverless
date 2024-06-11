@@ -131,8 +131,13 @@ const deactivateConversation = async (
     if (attributes.proxySession) {
       await deleteProxySession(context, attributes.proxySession);
     }
+    console.log('Attempting to deactivate active conversation', conversationSid);
+    const updated = await conversation.update({
+      state: 'closed',
+      xTwilioWebhookEnabled: 'true',
+    });
 
-    return { message: 'Conversation deactivated', conversation };
+    return { message: 'Conversation deactivated', updated };
   }
 
   return { message: 'Conversation already closed, event ignored' };
