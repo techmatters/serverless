@@ -81,16 +81,16 @@ const isChatTransferToQueueComplete = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'queue';
 
-const isChatTransferToQueueRejected = (
-  eventType: EventType,
-  taskChannelUniqueName: string,
-  taskAttributes: ChatTransferTaskAttributes,
-) =>
-  (eventType === RESERVATION_REJECTED ||
-    eventType === RESERVATION_TIMEOUT ||
-    eventType === TASK_CANCELED) &&
-  isChatTransfer(taskChannelUniqueName, taskAttributes) &&
-  taskAttributes.transferTargetType === 'queue';
+// const isChatTransferToQueueRejected = (
+//   eventType: EventType,
+//   taskChannelUniqueName: string,
+//   taskAttributes: ChatTransferTaskAttributes,
+// ) =>
+//   (eventType === RESERVATION_REJECTED ||
+//     eventType === RESERVATION_TIMEOUT ||
+//     eventType === TASK_CANCELED) &&
+//   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
+//   taskAttributes.transferTargetType === 'queue';
 
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
@@ -211,15 +211,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      const originalTask = await client.taskrouter
+      await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
         .fetch();
-
-      console.log(
-        'originalTask',
-        Object.entries(originalTask).forEach(([k, v]) => console.log(k, v)),
-      );
 
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -233,12 +228,12 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    if (isChatTransferToQueueRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling chat transfer to queue rejected...');
-      // Do nothing, just stop event propagation
-      console.log('Finished handling chat transfer to queue rejected.');
-      return;
-    }
+    // if (isChatTransferToQueueRejected(eventType, taskChannelUniqueName, taskAttributes)) {
+    //   console.log('Handling chat transfer to queue rejected...');
+    //   // Do nothing, just stop event propagation
+    //   console.log('Finished handling chat transfer to queue rejected.');
+    //   return;
+    // }
 
     /**
      * If a chat transfer gets rejected, it should:
