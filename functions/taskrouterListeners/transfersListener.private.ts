@@ -214,11 +214,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
-        .fetch();
-
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
           reason: 'task transferred into queue',
