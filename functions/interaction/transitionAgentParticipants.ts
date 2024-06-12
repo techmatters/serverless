@@ -51,9 +51,9 @@ export const handler = TokenValidator(
     if (!targetStatus) return resolve(error400('targetStatus'));
 
     const client = context.getTwilioClient();
-    const task = await client.taskrouter
-      .workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks(taskSid)
+    const task = await client.taskrouter.workspaces
+      .get(context.TWILIO_WORKSPACE_SID)
+      .tasks.get(taskSid)
       .fetch();
     const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
 
@@ -68,9 +68,9 @@ export const handler = TokenValidator(
         ),
       );
     }
-    const interactionParticipantContext = client.flexApi.v1
-      .interaction(flexInteractionSid)
-      .channels(flexInteractionChannelSid).participants;
+    const interactionParticipantContext = client.flexApi.v1.interaction
+      .get(flexInteractionSid)
+      .channels.get(flexInteractionChannelSid).participants;
     const interactionAgentParticipants = (await interactionParticipantContext.list()).filter(
       (p) => p.type === 'agent',
     );
@@ -83,7 +83,7 @@ export const handler = TokenValidator(
           p.interactionSid,
           p.channelSid,
         );
-        return interactionParticipantContext(p.sid).update({ status: targetStatus });
+        return p.update({ status: targetStatus });
       }),
     );
     return resolve(success({ message: 'Transitioned agent participants' }));
