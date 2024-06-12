@@ -81,17 +81,6 @@ const isChatTransferToQueueComplete = (
   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
   taskAttributes.transferTargetType === 'queue';
 
-// const isChatTransferToQueueRejected = (
-//   eventType: EventType,
-//   taskChannelUniqueName: string,
-//   taskAttributes: ChatTransferTaskAttributes,
-// ) =>
-//   (eventType === RESERVATION_REJECTED ||
-//     eventType === RESERVATION_TIMEOUT ||
-//     eventType === TASK_CANCELED) &&
-//   isChatTransfer(taskChannelUniqueName, taskAttributes) &&
-//   taskAttributes.transferTargetType === 'queue';
-
 const isWarmVoiceTransferRejected = (
   eventType: EventType,
   taskChannelUniqueName: string,
@@ -222,13 +211,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       console.log('Finished handling chat queue transfer initiated.');
       return;
     }
-
-    // if (isChatTransferToQueueRejected(eventType, taskChannelUniqueName, taskAttributes)) {
-    //   console.log('Handling chat transfer to queue rejected...');
-    //   // Do nothing, just stop event propagation
-    //   console.log('Finished handling chat transfer to queue rejected.');
-    //   return;
-    // }
 
     /**
      * If a chat transfer gets rejected, it should:
