@@ -238,50 +238,59 @@ export const handler = TokenValidator(
         transferTargetType,
       };
 
-      // create New task
-      // const newTask = await client.taskrouter
-      //   .workspaces(context.TWILIO_WORKSPACE_SID)
-      //   .tasks.create({
-      //     workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
-      //     taskChannel: originalTask.taskChannelUniqueName,
-      //     attributes: JSON.stringify(newAttributes),
-      //     priority: 100,
-      //   });
+      /**
+       * Check if is transfering a conversation.
+       * It might be better to accept an `isConversation` parameter.
+       * But for now, we can check if a conversation exists given a conversationId.
+       */
 
-      const participants = await client.flexApi.v1
-        .interaction(originalAttributes.flexInteractionSid)
-        .channels(originalAttributes.flexInteractionChannelSid)
-        .participants.list();
+      let isConversation = true;
+      try {
+        await client.conversations.conversations(originalAttributes.conversationSid).fetch();
+      } catch (err) {
+        isConversation = false;
+      }
 
-      const originalParticipant = participants[0].sid;
+      let newTaskSid;
+      if (isConversation) {
+        // Get task queue
+        const taskQueues = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .taskQueues.list({ workerSid: targetSid });
 
-      // Create invite to target worker
-      const invite = await client.flexApi.v1
-        .interaction(originalAttributes.flexInteractionSid)
-        .channels(originalAttributes.flexInteractionChannelSid)
-        .invites.create({
-          routing: {
-            properties: {
-              // task_sid: taskSid,
-              // worker_sid: targetSid,
-              // reservation_sid: originalAttributes.transferMeta.originalReservation,
-              queue_sid: 'WQb4a3a7e8808c61d11d344e5b28fa53ef',
-              worker_sid: targetSid,
-              workflow_sid: 'WW2f5ccb24935e01e5bece464f419497dc',
-              workspace_sid: 'WSc92e431ee05a5d0ac322f6c886c4aee2',
-              attributes: newAttributes,
+        const taskQueueSid = taskQueues[0].sid;
+
+        // Create invite to target worker
+        const invite = await client.flexApi.v1
+          .interaction(originalAttributes.flexInteractionSid)
+          .channels(originalAttributes.flexInteractionChannelSid)
+          .invites.create({
+            routing: {
+              properties: {
+                queue_sid: taskQueueSid,
+                worker_sid: targetSid,
+                workflow_sid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+                workspace_sid: context.TWILIO_WORKSPACE_SID,
+                attributes: newAttributes,
+                task_channel_unique_name: originalTask.taskChannelUniqueName,
+              },
             },
-          },
-        });
-      console.log('>> invite');
-      console.log(JSON.stringify(invite, null, 2));
+          });
 
-      // Remove original Worker participant
-      await client.flexApi.v1
-        .interaction(originalAttributes.flexInteractionSid)
-        .channels(originalAttributes.flexInteractionChannelSid)
-        .participants(originalParticipant)
-        .update({ status: 'closed' });
+        newTaskSid = invite.routing.properties.sid;
+      } else {
+        // create New task
+        const newTask = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks.create({
+            workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+            taskChannel: originalTask.taskChannelUniqueName,
+            attributes: JSON.stringify(newAttributes),
+            priority: 100,
+          });
+
+        newTaskSid = newTask.sid;
+      }
 
       // Final actions that might not happen (conditions specified inside of each)
       await Promise.all([
@@ -294,8 +303,7 @@ export const handler = TokenValidator(
         }),
       ]);
 
-      resolve(success({ taskSid }));
-      // resolve(success({ taskSid: newTask.sid }));
+      resolve(success({ taskSid: newTaskSid }));
     } catch (err: any) {
       resolve(error500(err));
     }
