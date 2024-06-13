@@ -95,7 +95,11 @@ runs:
       with:
         ssm_parameter: "/development/line/${{inputs.account-sid}}/channel_access_token"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
-    # Line environment variables
+    - name: Set helpline Line Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/line_studio_flow_sid"
+        env_variable_name: "LINE_STUDIO_FLOW_SID"
     - name: Set helpline Line Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -117,6 +121,37 @@ runs:
       with:
         ssm_parameter: "/development/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
         env_variable_name: "MODICA_FLEX_FLOW_SID"
+
+
+    # Telegram environment variables
+    - name: Set Telegram Flex Bot Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/telegram/${{inputs.account-sid}}/flex_bot_token"
+        env_variable_name: "TELEGRAM_FLEX_BOT_TOKEN"
+    - name: Set Telegram Bot Api Secret Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/telegram/${{inputs.account-sid}}/bot_api_secret_token"
+        env_variable_name: "TELEGRAM_BOT_API_SECRET_TOKEN"
+    - name: Set helpline Telegram Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/telegram_studio_flow_sid"
+        env_variable_name: "TELEGRAM_STUDIO_FLOW_SID"
+
+    - name: Set helpline serverless URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/serverless/${{inputs.account-sid}}/base_url"
+        env_variable_name: "SERVERLESS_BASE_URL"
+    - name: Set Telegram flex bot webhook
+      shell: bash
+      run: |
+        curl --request POST \
+        --header "Content-Type: application/json" \
+        --url "https://api.telegram.org/bot${{ env.TELEGRAM_FLEX_BOT_TOKEN }}/setWebhook" \
+        --data '{ "url": "${{ env.SERVERLESS_BASE_URL }}/webhooks/telegram/TelegramToFlex", "secret_token": "${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" }'
     # Append environment variables
     - name: Add IWF_API_USERNAME
       run: echo "IWF_API_USERNAME=${{ env.IWF_API_USERNAME }}" >> .env
@@ -155,6 +190,9 @@ runs:
     - name: Add LINE_CHANNEL_ACCESS_TOKEN
       run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
       shell: bash
+    - name: Add LINE_STUDIO_FLOW_SID
+      run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
     - name: Add LINE_TWILIO_MESSAGING_MODE
       run: echo "LINE_TWILIO_MESSAGING_MODE=${{ env.LINE_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash
@@ -166,4 +204,13 @@ runs:
       shell: bash
     - name: Add MODICA_FLEX_FLOW_SID
       run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add TELEGRAM_FLEX_BOT_TOKEN
+      run: echo "TELEGRAM_FLEX_BOT_TOKEN=${{ env.TELEGRAM_FLEX_BOT_TOKEN }}" >> .env
+      shell: bash
+    - name: Add TELEGRAM_BOT_API_SECRET_TOKEN
+      run: echo "TELEGRAM_BOT_API_SECRET_TOKEN=${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" >> .env
+      shell: bash
+    - name: Add TELEGRAM_STUDIO_FLOW_SID
+      run: echo "TELEGRAM_STUDIO_FLOW_SID=${{ env.TELEGRAM_STUDIO_FLOW_SID }}" >> .env
       shell: bash

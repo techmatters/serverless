@@ -14,7 +14,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-import { v4 as uuidV4 } from 'uuid';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
@@ -31,41 +30,30 @@ import {
   FlexToCustomChannel,
   RedirectResult,
   ConversationWebhookEvent,
-  ProgrammableChatWebhookEvent,
+  ExternalSendResult,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
-const LINE_SEND_MESSAGE_URL = 'https://api.line.me/v2/bot/message/push';
-
 type EnvVars = {
-  LINE_CHANNEL_ACCESS_TOKEN: string;
-  CHAT_SERVICE_SID: string;
+  TELEGRAM_FLEX_BOT_TOKEN: string;
 };
 
 export type Body = WebhookEvent & {
-  recipientId: string; // The Line id of the user that started the conversation. Provided as query parameter
+  recipientId: string; // The Telegram id of the user that started the conversation. Provided as query parameter
 };
 
-const sendLineMessage =
-  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
-    const payload = {
-      to: recipientId,
-      messages: [
-        {
-          type: 'text',
-          text: messageText,
-        },
-      ],
-    };
+const sendTelegramMessage =
+  ({ TELEGRAM_FLEX_BOT_TOKEN }: Context<EnvVars>) =>
+  async (recipientId: string, messageText: string): Promise<ExternalSendResult> => {
+    const telegramSendMessageUrl = `https://api.telegram.org/bot${TELEGRAM_FLEX_BOT_TOKEN}/sendMessage`;
 
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
-      Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
+    const payload = {
+      chat_id: recipientId,
+      text: messageText,
     };
-    const response = await fetch(LINE_SEND_MESSAGE_URL, {
+    const response = await fetch(telegramSendMessageUrl, {
       method: 'post',
       body: JSON.stringify(payload),
-      headers,
+      headers: { 'Content-Type': 'application/json' },
     });
 
     return {
@@ -92,15 +80,11 @@ const validateProperties = (
 
 export const handler = async (
   context: Context<EnvVars>,
-  lineEvent: Body,
+  telegramEvent: ConversationWebhookEvent & { recipientId: string },
   callback: ServerlessCallback,
 ) => {
-  console.log('==== FlexToLine handler ====');
-  console.log('Received event:', lineEvent);
-  const eventProperties = Object.entries(lineEvent);
-  eventProperties.forEach(([key, value]) => {
-    console.log(`${key}: ${JSON.stringify(value)}`);
-  });
+  console.log('==== FlexToTelegram handler ====');
+  console.log('Received event:', telegramEvent);
 
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
@@ -109,48 +93,31 @@ export const handler = async (
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     // eslint-disable-next-line global-require,import/no-dynamic-require
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
-    let result: RedirectResult;
-    if (flexToCustomChannel.isConversationWebhookEvent(lineEvent)) {
-      const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
-        'ConversationSid',
-        'Body',
-        'Author',
-        'EventType',
-        'Source',
-        'recipientId',
-      ];
-      if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
-      const { recipientId, ...event } = lineEvent;
-      result = await flexToCustomChannel.redirectConversationMessageToExternalChat(context, {
+    const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
+      'ConversationSid',
+      'Body',
+      'Author',
+      'EventType',
+      'Source',
+      'recipientId',
+    ];
+    if (!validateProperties(telegramEvent, resolve, requiredProperties)) return;
+    const { recipientId, ...event } = telegramEvent;
+    const result: RedirectResult =
+      await flexToCustomChannel.redirectConversationMessageToExternalChat(context, {
         event,
         recipientId,
-        sendExternalMessage: sendLineMessage(context),
+        sendExternalMessage: sendTelegramMessage(context),
       });
-    } else {
-      const requiredProperties: (keyof ProgrammableChatWebhookEvent | 'recipientId')[] = [
-        'ChannelSid',
-        'Body',
-        'From',
-        'EventType',
-        'Source',
-        'recipientId',
-      ];
-      if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
-
-      const { recipientId, ...event } = lineEvent;
-
-      result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
-        event,
-        recipientId,
-        sendExternalMessage: sendLineMessage(context),
-      });
-    }
 
     switch (result.status) {
       case 'sent':
+        console.log('Result:', result.status, result.response);
+        console.log(result.response);
         resolve(success(result.response));
         return;
       case 'ignored':
+        console.log('Result:', 'Ignored event.');
         resolve(success('Ignored event.'));
         return;
       default:

@@ -59,8 +59,12 @@ export const findExistingConversation = async (
   const existing = conversations.find((conversation) =>
     ['active', 'inactive'].includes(conversation.conversationState),
   );
-  console.log(`Found existing conversation for ${identity}`, existing?.conversationSid, existing);
-  return existing !== undefined ? (existing.conversationSid as ConversationSid) : undefined;
+  if (existing) {
+    console.log(`Found existing conversation for ${identity}`, existing.conversationSid, existing);
+    return existing.conversationSid as ConversationSid;
+  }
+  console.log(`No existing conversation found for ${identity}`);
+  return undefined;
 };
 
 /**
@@ -181,6 +185,7 @@ export enum AseloCustomChannels {
   Instagram = 'instagram',
   Line = 'line',
   Modica = 'modica',
+  Telegram = 'telegram',
 }
 
 export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
@@ -201,11 +206,11 @@ type CreateFlexChannelParams = {
 type CreateFlexConversationParams = {
   studioFlowSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
-  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
   uniqueUserName: string; // Unique identifier for this user
   senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
+  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
 };
 
 /**
@@ -333,7 +338,7 @@ const createConversation = async (
         ...channelAttributes,
         channel_type: channelType,
         channelType,
-        senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
+        senderScreenName,
         twilioNumber,
       }),
     });
@@ -355,6 +360,13 @@ const createConversation = async (
         filters: ['onMessageAdded'],
       },
     });
+
+    console.log('conversation webhooks:');
+    (await conversationContext.webhooks.list()).forEach((wh) => {
+      Object.entries(wh).forEach(([key, value]) => {
+        console.log(`${key}:`, value);
+      });
+    });
   } catch (err) {
     return { conversationSid, error: err as Error };
   }
@@ -370,12 +382,12 @@ type SendMessageToFlexParams = CreateFlexChannelParams & {
   subscribedExternalId: string; // The id in the external chat system of the user that is subscribed to the webhook
 };
 
-type SendConversationMessageToFlexParams = CreateFlexConversationParams & {
-  syncServiceSid: string; // The Sync Service sid where user channel maps are stored
+type SendConversationMessageToFlexParams = Omit<CreateFlexConversationParams, 'twilioNumber'> & {
   messageText: string; // The body of the message to send
+  senderExternalId: string; // The id in the external chat system of the user sending the message - accountSid if not provided
   messageAttributes?: string; // [optional] The message attributes
-  senderExternalId: string; // The id in the external chat system of the user sending the message
-  subscribedExternalId: string; // The id in the external chat system of the user that is subscribed to the webhook
+  customSubscribedExternalId?: string; // The id in the external chat system of the user that is subscribed to the webhook
+  customTwilioNumber?: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567) - will be <channnel>:<accountSid> if not provided
 };
 
 /**
@@ -473,21 +485,23 @@ export const sendMessageToFlex = async (
  *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
  */
 export const sendConversationMessageToFlex = async (
-  context: Context,
+  context: Context<{ ACCOUNT_SID: string }>,
   {
     studioFlowSid,
     channelType,
-    twilioNumber,
+    customTwilioNumber,
     uniqueUserName,
     senderScreenName,
     onMessageSentWebhookUrl,
     messageText,
     messageAttributes = undefined,
     senderExternalId,
-    subscribedExternalId,
+    customSubscribedExternalId,
     conversationFriendlyName,
   }: SendConversationMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
+  const subscribedExternalId = customSubscribedExternalId || context.ACCOUNT_SID;
+  const twilioNumber = customTwilioNumber || `${channelType}:${subscribedExternalId}`;
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
   console.log('=== sendConversationMessageToFlex ===');
   if (senderExternalId === subscribedExternalId) {
@@ -522,6 +536,11 @@ export const sendConversationMessageToFlex = async (
     author: uniqueUserName,
     messageText,
     messageAttributes,
+  });
+
+  console.log('sendConversationMessageToFlex response:');
+  Object.entries(response).forEach(([key, value]) => {
+    console.log(`${key}:`, value);
   });
 
   return { status: 'sent', response };

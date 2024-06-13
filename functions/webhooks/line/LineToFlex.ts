@@ -31,6 +31,7 @@ import crypto from 'crypto';
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
+  ACCOUNT_SID: string;
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;
@@ -150,16 +151,14 @@ export const handler = async (
         // eslint-disable-next-line no-await-in-loop
         result = await channelToFlex.sendConversationMessageToFlex(context, {
           studioFlowSid: context.LINE_STUDIO_FLOW_SID,
-          syncServiceSid: context.SYNC_SERVICE_SID,
           conversationFriendlyName: chatFriendlyName,
           channelType,
-          twilioNumber,
           uniqueUserName,
           senderScreenName,
           onMessageSentWebhookUrl,
           messageText,
           senderExternalId,
-          subscribedExternalId,
+          customSubscribedExternalId: subscribedExternalId,
         });
       } else {
         // eslint-disable-next-line no-await-in-loop
