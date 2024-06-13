@@ -129,10 +129,12 @@ export const handler = async (
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
+      console.log('capturedChannelAttributes is here', capturedChannelAttributes);
+
       const lexResult = await lexClient.postText(context, {
-        botName: capturedChannelAttributes.botName,
-        botAlias: capturedChannelAttributes.botAlias,
-        userId: capturedChannelAttributes.userId,
+        botName: capturedChannelAttributes?.botName,
+        botAlias: capturedChannelAttributes?.botAlias,
+        userId: capturedChannelAttributes?.userId,
         inputText: Body,
       });
 
