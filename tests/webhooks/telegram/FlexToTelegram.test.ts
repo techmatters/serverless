@@ -66,7 +66,9 @@ beforeAll(() => {
   mockFetch.mockResolvedValue({
     ok: true,
     status: 200,
-    headers: new Headers({ 'Content-Type': 'application/json' }),
+    headers: {
+      forEach: (fn) => fn('application/json', 'content-type', {} as any), // Cannot use a real Headers object because fetch on node is still a shitshow
+    },
     json: async () => ({ ok: true }),
   } as Response);
 
