@@ -124,17 +124,8 @@ const deactivateConversation = async (
   conversationSid: ConversationSid,
 ) => {
   const client = context.getTwilioClient();
-  const conversationContext = client.conversations.conversations(conversationSid);
-  const webhooks = await conversationContext.webhooks.list();
-  console.log('webhooks');
-  webhooks.forEach((wh) => {
-    console.log(wh.sid, wh.configuration.method, wh.configuration.url, wh.configuration.filters);
-  });
   const conversation = await client.conversations.conversations(conversationSid).fetch();
   const attributes = JSON.parse(conversation.attributes);
-
-  console.log('conversation properties', ...Object.entries(conversation));
-  console.log('conversation attributes', ...Object.entries(attributes));
 
   if (conversation.state !== 'closed') {
     if (attributes.proxySession) {
@@ -149,7 +140,7 @@ const deactivateConversation = async (
     return { message: 'Conversation deactivated', updated };
   }
 
-  return { message: 'Conversation already INACTIVE, event ignored' };
+  return { message: 'Conversation already closed, event ignored' };
 };
 
 export const chatChannelJanitor = async (
