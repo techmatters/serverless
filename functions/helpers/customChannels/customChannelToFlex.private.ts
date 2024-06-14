@@ -146,7 +146,7 @@ export const sendConversationMessage = async (
 ) =>
   context
     .getTwilioClient()
-    .conversations.conversations(conversationSid)
+    .conversations.conversations.get(conversationSid)
     .messages.create({
       body: messageText,
       author,

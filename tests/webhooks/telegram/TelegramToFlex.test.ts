@@ -29,63 +29,22 @@ import {
   TELEGRAM_BOT_API_SECRET_TOKEN_HEADER,
 } from '../../../functions/webhooks/telegram/TelegramToFlex';
 
-const conversations: { [x: string]: RecursivePartial<ConversationContext> } = {
-  'telegram:sender_id': {
-    fetch: async () => ({
-      attributes: '{}',
-      sid: 'CH_TELEGRAM_CONVERSATION_SID',
-    }),
-    messages: {
-      create: async () => 'Message sent in channel line:sender_id.',
-    },
-    webhooks: {
-      create: async () => {},
-    },
-    update: async () => {},
-  },
-  'line:other_id': {
-    fetch: async () => ({
-      attributes: '{}',
-      sid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
-    }),
-    webhooks: {
-      create: async () => {},
-    },
-    update: async () => {},
-  },
-};
+const CH_NEW_TELEGRAM_CONVERSATION_SID = 'CH_NEW_TELEGRAM_CONVERSATION_SID';
+const CH_EXISTING_TELEGRAM_CONVERSATION_SID = 'CH_EXISTING_TELEGRAM_CONVERSATION_SID';
+let conversations: { [x: string]: RecursivePartial<ConversationContext> };
 
-const baseContext: Context<EnvVars> = {
-  getTwilioClient: ((): RecursivePartial<Twilio> => ({
-    conversations: {
-      conversations: {
-        get: (conversationSid: ConversationSid) => {
-          if (!conversations[conversationSid]) throw new Error('Conversation does not exists.');
+let baseContext: Context<EnvVars> = {} as Context<EnvVars>;
 
-          return conversations[conversationSid];
-        },
-        create(item: ConversationInstance): Promise<ConversationInstance> {
-          return Promise.resolve(item);
-        },
-      },
-    },
-  })) as () => Twilio,
-  DOMAIN_NAME: 'serverless',
-  ACCOUNT_SID: 'ACCOUNT_SID',
-  TELEGRAM_STUDIO_FLOW_SID: 'TELEGRAM_STUDIO_FLOW_SID',
-  TELEGRAM_BOT_API_SECRET_TOKEN: 'TELEGRAM_BOT_API_SECRET_TOKEN',
-  TELEGRAM_FLEX_BOT_TOKEN: 'TELEGRAM_FLEX_BOT_TOKEN',
-  PATH: '',
-  SERVICE_SID: undefined,
-  ENVIRONMENT_SID: undefined,
-};
+let baseTwilioClient: RecursivePartial<Twilio> = {};
+
+let baseEvent: Body;
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(baseContext);
   // eslint-disable-next-line no-underscore-dangle
   runtime._addFunction(
-    'helpers/customChannels/flexToCustomChannel',
-    'functions/helpers/customChannels/flexToCustomChannel.private',
+    'helpers/customChannels/customChannelToFlex',
+    'functions/helpers/customChannels/customChannelToFlex.private',
   );
   helpers.setup({}, runtime);
 });
@@ -94,25 +53,156 @@ afterAll(() => {
   helpers.teardown();
 });
 
-const BASELINE_EVENT: Body = {
-  message: {
-    chat: {
-      id: 'telegram_message_id',
-      first_name: 'Tilly',
-      username: 'tilly_grams',
+beforeEach(() => {
+  jest.clearAllMocks();
+  conversations = {
+    CH_NEW_TELEGRAM_CONVERSATION_SID: {
+      fetch: async () => ({
+        attributes: '{}',
+        sid: CH_NEW_TELEGRAM_CONVERSATION_SID,
+      }),
+      messages: {
+        create: jest.fn().mockImplementation(async () => ({ response: 'property' })),
+      },
+      webhooks: {
+        create: jest.fn(),
+      },
+      update: jest.fn(),
+      participants: {
+        create: jest.fn(),
+      },
     },
-    text: 'Telegram message text',
-  },
-  request: {
-    headers: {
-      [TELEGRAM_BOT_API_SECRET_TOKEN_HEADER]: baseContext.TELEGRAM_BOT_API_SECRET_TOKEN,
+    CH_EXISTING_TELEGRAM_CONVERSATION_SID: {
+      fetch: async () => ({
+        attributes: '{}',
+        sid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+      }),
+      messages: {
+        create: jest.fn().mockImplementation(async () => ({ response: 'property' })),
+      },
     },
-  },
+    CH_OTHER_TELEGRAM_CONVERSATION_SID: {
+      fetch: async () => ({
+        attributes: '{}',
+        sid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+      }),
+    },
+  };
+
+  baseTwilioClient = {
+    conversations: {
+      conversations: {
+        get: (conversationSid: ConversationSid) => {
+          if (!conversations[conversationSid]) throw new Error('Conversation does not exists.');
+
+          return conversations[conversationSid];
+        },
+        create: jest.fn().mockImplementation((item) =>
+          Promise.resolve({
+            ...item,
+            sid: CH_NEW_TELEGRAM_CONVERSATION_SID,
+          } as ConversationInstance),
+        ),
+      },
+      participantConversations: {
+        list: async () =>
+          Promise.resolve([
+            {
+              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+              conversationState: 'active',
+            },
+          ]),
+      },
+    },
+  };
+
+  baseContext = {
+    getTwilioClient: ((): RecursivePartial<Twilio> => baseTwilioClient) as () => Twilio,
+    DOMAIN_NAME: 'serverless',
+    ACCOUNT_SID: 'ACCOUNT_SID',
+    TELEGRAM_STUDIO_FLOW_SID: 'TELEGRAM_STUDIO_FLOW_SID',
+    TELEGRAM_BOT_API_SECRET_TOKEN: 'TELEGRAM_BOT_API_SECRET_TOKEN',
+    TELEGRAM_FLEX_BOT_TOKEN: 'TELEGRAM_FLEX_BOT_TOKEN',
+    PATH: '',
+    SERVICE_SID: undefined,
+    ENVIRONMENT_SID: undefined,
+  };
+
+  baseEvent = {
+    message: {
+      chat: {
+        id: 'telegram_message_id',
+        first_name: 'Tilly',
+        username: 'tilly_grams',
+      },
+      text: 'Telegram message text',
+    },
+    request: {
+      headers: {
+        [TELEGRAM_BOT_API_SECRET_TOKEN_HEADER]: baseContext.TELEGRAM_BOT_API_SECRET_TOKEN,
+      },
+    },
+  };
+});
+
+const verifyConversationCreation = () => {
+  const mockTwilioClient = baseTwilioClient as Twilio;
+  expect(mockTwilioClient.conversations.conversations.create as jest.Mock).toHaveBeenCalledWith({
+    xTwilioWebhookEnabled: 'true',
+    friendlyName: baseEvent.message.chat.username,
+    uniqueName: expect.stringMatching(`telegram/telegram:${baseEvent.message.chat.id}/[0-9]+`),
+  });
+  const conversation = conversations.CH_NEW_TELEGRAM_CONVERSATION_SID! as ConversationContext;
+
+  expect(conversation.participants.create).toHaveBeenCalledWith({
+    identity: `telegram:${baseEvent.message.chat.id}`,
+  });
+
+  expect(conversation.update).toHaveBeenCalledWith({
+    state: 'active',
+    timers: {
+      closed: expect.any(String),
+    },
+    attributes: JSON.stringify({
+      channel_type: 'telegram',
+      channelType: 'telegram',
+      senderScreenName: baseEvent.message.chat.first_name,
+      twilioNumber: `telegram:${baseContext.ACCOUNT_SID}`,
+    }),
+  });
+
+  expect(conversation.webhooks.create).toHaveBeenCalledTimes(2);
+  const { calls } = (conversation.webhooks.create as jest.Mock).mock;
+
+  expect(calls[0][0]).toStrictEqual({
+    target: 'studio',
+    configuration: {
+      flowSid: baseContext.TELEGRAM_STUDIO_FLOW_SID,
+      filters: ['onMessageAdded'],
+    },
+  });
+  expect(calls[1][0]).toStrictEqual({
+    target: 'webhook',
+    configuration: {
+      method: 'POST',
+      url: 'https://serverless/webhooks/telegram/FlexToTelegram?recipientId=telegram_message_id',
+      filters: ['onMessageAdded'],
+    },
+  });
+};
+
+const verifyMessageCreation = (conversationSid: ConversationSid) => {
+  const conversation = conversations[conversationSid] as ConversationContext;
+  expect(conversation.messages.create).toHaveBeenCalledWith({
+    body: 'Telegram message text',
+    author: `telegram:${baseEvent.message.chat.id}`,
+    xTwilioWebhookEnabled: 'true',
+  });
 };
 
 test('The secret token header is not set - 403', async () => {
   const event: Body = {
-    ...BASELINE_EVENT,
+    ...baseEvent,
     request: { headers: {} },
   };
   const callback = jest.fn();
@@ -120,4 +210,98 @@ test('The secret token header is not set - 403', async () => {
 
   const response: MockedResponse = callback.mock.calls[0][1];
   expect(response.getStatus()).toBe(403);
+});
+
+test('The secret token header is set incorrectly - 403', async () => {
+  const event: Body = {
+    ...baseEvent,
+    request: {
+      headers: {
+        [TELEGRAM_BOT_API_SECRET_TOKEN_HEADER]: 'wrongness',
+      },
+    },
+  };
+  const callback = jest.fn();
+  await handler(baseContext, event, callback);
+
+  const response: MockedResponse = callback.mock.calls[0][1];
+  expect(response.getStatus()).toBe(403);
+});
+
+test('No existing conversation found - creates one before sending a message to it', async () => {
+  baseTwilioClient = {
+    ...baseTwilioClient,
+    conversations: {
+      ...baseTwilioClient.conversations,
+      participantConversations: {
+        list: async () => Promise.resolve([]),
+      },
+    },
+  };
+
+  const callback = jest.fn();
+  await handler(baseContext, baseEvent, callback);
+  verifyConversationCreation();
+  verifyMessageCreation(CH_NEW_TELEGRAM_CONVERSATION_SID);
+  const response: MockedResponse = callback.mock.calls[0][1];
+  expect(response.getStatus()).toBe(200);
+});
+
+test('Existing conversation closed found - creates a new one before sending a message to it', async () => {
+  baseTwilioClient = {
+    ...baseTwilioClient,
+    conversations: {
+      ...baseTwilioClient.conversations,
+      participantConversations: {
+        list: async () =>
+          Promise.resolve([
+            {
+              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+              conversationState: 'closed',
+            },
+            {
+              conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+              conversationState: 'closed',
+            },
+          ]),
+      },
+    },
+  };
+
+  const callback = jest.fn();
+  await handler(baseContext, baseEvent, callback);
+  verifyConversationCreation();
+  verifyMessageCreation(CH_NEW_TELEGRAM_CONVERSATION_SID);
+  const response: MockedResponse = callback.mock.calls[0][1];
+  expect(response.getStatus()).toBe(200);
+});
+
+test('Existing active conversation found - sends a message to it', async () => {
+  baseTwilioClient = {
+    ...baseTwilioClient,
+    conversations: {
+      ...baseTwilioClient.conversations,
+      participantConversations: {
+        list: async () =>
+          Promise.resolve([
+            {
+              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+              conversationState: 'active',
+            },
+            {
+              conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+              conversationState: 'closed',
+            },
+          ]),
+      },
+    },
+  };
+
+  const callback = jest.fn();
+  await handler(baseContext, baseEvent, callback);
+  const mockTwilioClient = baseTwilioClient as Twilio;
+  expect(mockTwilioClient.conversations.conversations.create).not.toHaveBeenCalled();
+  verifyMessageCreation(CH_EXISTING_TELEGRAM_CONVERSATION_SID);
+  const response: MockedResponse = callback.mock.calls[0][1];
+  expect(response.getStatus()).toBe(200);
 });
