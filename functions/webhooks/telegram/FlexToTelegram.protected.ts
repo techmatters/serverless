@@ -26,7 +26,6 @@ import {
 } from '@tech-matters/serverless-helpers';
 
 import {
-  WebhookEvent,
   FlexToCustomChannel,
   RedirectResult,
   ConversationWebhookEvent,
@@ -37,7 +36,7 @@ type EnvVars = {
   TELEGRAM_FLEX_BOT_TOKEN: string;
 };
 
-export type Body = WebhookEvent & {
+export type Body = ConversationWebhookEvent & {
   recipientId: string; // The Telegram id of the user that started the conversation. Provided as query parameter
 };
 
@@ -55,12 +54,15 @@ const sendTelegramMessage =
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },
     });
-
+    const meta: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      meta[key] = value;
+    });
     return {
       ok: response.ok,
       resultCode: response.status,
       body: await response.json(),
-      meta: Object.fromEntries(Object.entries(response.headers)),
+      meta,
     };
   };
 
@@ -96,7 +98,6 @@ export const handler = async (
     const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
       'ConversationSid',
       'Body',
-      'Author',
       'EventType',
       'Source',
       'recipientId',
