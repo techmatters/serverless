@@ -28,9 +28,7 @@ import {
 
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
-type EnvVars = {
-  CHAT_SERVICE_SID: string;
-  SYNC_SERVICE_SID: string;
+export type EnvVars = {
   TELEGRAM_STUDIO_FLOW_SID: string;
   TELEGRAM_BOT_API_SECRET_TOKEN: string;
   TELEGRAM_FLEX_BOT_TOKEN: string;
@@ -47,7 +45,7 @@ export type Body = {
   };
 };
 
-const TELEGRAM_BOT_API_SECRET_TOKEN_HEADER = 'X-Telegram-Bot-Api-Secret-Token'.toLowerCase();
+export const TELEGRAM_BOT_API_SECRET_TOKEN_HEADER = 'X-Telegram-Bot-Api-Secret-Token'.toLowerCase();
 
 /**
  * TODO: Implement your own validation logic

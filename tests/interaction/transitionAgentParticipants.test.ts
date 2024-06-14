@@ -23,20 +23,14 @@ import {
   InteractionChannelParticipantContext,
   InteractionChannelParticipantInstance,
 } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
-import MockedFunction = jest.MockedFunction;
 import { handler } from '../../functions/interaction/transitionAgentParticipants';
-import helpers from '../helpers';
+import helpers, { RecursivePartial } from '../helpers';
+import MockedFunction = jest.MockedFunction;
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
-
-type RecursivePartial<T> = T extends object
-  ? {
-      [P in keyof T]?: RecursivePartial<T[P]>;
-    }
-  : T;
 
 const TASKROUTER_WORKSPACE_SID = 'WS123';
 const FLEX_INTERACTION_SID = 'KD123';
