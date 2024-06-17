@@ -112,9 +112,9 @@ export const handler = async (
       return;
     }
 
-    console.log('conversation / channel attributes:', attributesJson);
-
     const channelAttributes = JSON.parse(attributesJson || '{}');
+
+    console.log('conversation / channel attributes:', channelAttributes);
 
     // Send message to bot only if it's from child
     const eventTypeCheck = EventType === 'onMessageSent' || EventType === 'onMessageAdded';
@@ -132,9 +132,9 @@ export const handler = async (
       console.log('capturedChannelAttributes is here', capturedChannelAttributes);
 
       const lexResult = await lexClient.postText(context, {
-        botName: capturedChannelAttributes?.botName,
-        botAlias: capturedChannelAttributes?.botAlias,
-        userId: capturedChannelAttributes?.userId,
+        botName: capturedChannelAttributes.botName,
+        botAlias: capturedChannelAttributes.botAlias,
+        userId: capturedChannelAttributes.userId,
         inputText: Body,
       });
 
