@@ -63,7 +63,7 @@ export const handler = async (
   try {
     const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid } = event;
 
-    console.log('This is event', event);
+    console.log('This is event', event.ConversationSid, event.ChannelSid, event.EventType);
 
     if (!Body) {
       resolve(error400('Body'));
