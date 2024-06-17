@@ -62,6 +62,9 @@ export const handler = async (
 
   try {
     const { Body, From, ChannelSid, EventType, ParticipantSid, ConversationSid } = event;
+
+    console.log('This is event', event);
+
     if (!Body) {
       resolve(error400('Body'));
       return;
@@ -114,7 +117,7 @@ export const handler = async (
 
     const channelAttributes = JSON.parse(attributesJson || '{}');
 
-    console.log('conversation / channel attributes:', channelAttributes);
+    console.log('conversation / channel attributes:', channelAttributes, client);
 
     // Send message to bot only if it's from child
     const eventTypeCheck = EventType === 'onMessageSent' || EventType === 'onMessageAdded';
