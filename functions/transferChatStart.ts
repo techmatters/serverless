@@ -27,12 +27,15 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import twilio from 'twilio';
 import type { AdjustChatCapacityType } from './adjustChatCapacity';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
   CHAT_SERVICE_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 export type Body = {
@@ -44,6 +47,7 @@ export type Body = {
 };
 
 async function setDummyChannelToTask(
+  client: twilio.Twilio,
   context: Context<EnvVars>,
   sid: string,
   taskToCloseAttributes: any,
@@ -55,42 +59,33 @@ async function setDummyChannelToTask(
     proxySessionSID: 'KC00000000000000000000000000000000',
   };
 
-  const client = context.getTwilioClient();
-
-  const updatedTask = await client.taskrouter
+  return client.taskrouter.v1
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(sid)
     .update({ attributes: JSON.stringify(attributesWithDummyChannel) });
-
-  return updatedTask;
 }
 
 async function setDummyChannel(
+  client: twilio.Twilio,
   context: Context<EnvVars>,
   body: Required<Pick<Body, 'taskSid' | 'targetSid' | 'ignoreAgent' | 'mode'>>,
 ) {
   if (body.mode !== 'COLD') return null;
 
-  const client = context.getTwilioClient();
-
   // retrieve attributes of the task to close
-  const taskToClose = await client.taskrouter
+  const taskToClose = await client.taskrouter.v1
     .workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(body.taskSid)
     .fetch();
 
   const taskToCloseAttributes = JSON.parse(taskToClose.attributes);
 
-  const taskWithDummyChannel = await setDummyChannelToTask(
-    context,
-    body.taskSid,
-    taskToCloseAttributes,
-  );
-  return taskWithDummyChannel;
+  return setDummyChannelToTask(client, context, body.taskSid, taskToCloseAttributes);
 }
 
 // if transfer targets a worker, validates that it can be effectively transferred, and if the worker's chat capacity needs to increase
 async function validateChannelIfWorker(
+  client: twilio.Twilio,
   context: Context<EnvVars>,
   targetSid: string,
   transferTargetType: string,
@@ -99,11 +94,9 @@ async function validateChannelIfWorker(
 ) {
   if (transferTargetType === 'queue') return { type: 'queue' } as const;
 
-  const client = context.getTwilioClient();
-
   const [worker, workerChannel] = await Promise.all([
-    client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).workers(targetSid).fetch(),
-    client.taskrouter
+    client.taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID).workers(targetSid).fetch(),
+    client.taskrouter.v1
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .workers(targetSid)
       .workerChannels(taskChannelUniqueName)
@@ -166,7 +159,7 @@ async function increaseChatCapacity(
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
-    const client = context.getTwilioClient();
+    const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
 
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
@@ -192,7 +185,7 @@ export const handler = TokenValidator(
       }
 
       // retrieve attributes of the original task
-      const originalTask = await client.taskrouter
+      const originalTask = await client.taskrouter.v1
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(taskSid)
         .fetch();
@@ -202,6 +195,7 @@ export const handler = TokenValidator(
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
 
       const validationResult = await validateChannelIfWorker(
+        client,
         context,
         targetSid,
         transferTargetType,
@@ -226,7 +220,7 @@ export const handler = TokenValidator(
       };
 
       // Edit channel attributes so that original task won't cause issues with the transferred one
-      await setDummyChannel(context, {
+      await setDummyChannel(client, context, {
         mode,
         ignoreAgent,
         targetSid,
@@ -234,13 +228,14 @@ export const handler = TokenValidator(
       });
 
       // Create New task
-      const newTask = await client.taskrouter
+      const newTask = await client.taskrouter.v1
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks.create({
           workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
           taskChannel: originalTask.taskChannelUniqueName,
           attributes: JSON.stringify(newAttributes),
           priority: 100,
+          virtualStartTime: new Date(0),
         });
 
       // Increse the chat capacity for the target worker (if needed)

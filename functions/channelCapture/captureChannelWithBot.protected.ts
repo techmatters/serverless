@@ -39,6 +39,8 @@ type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
   HRM_STATIC_KEY: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 } & AWSCredentials;
 
 export type Body = HandleChannelCaptureParams & { isConversation: string };

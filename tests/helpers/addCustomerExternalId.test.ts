@@ -14,9 +14,14 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
+import twilio from 'twilio';
 import { addCustomerExternalId, Body } from '../../functions/helpers/addCustomerExternalId.private';
 
 import helpers from '../helpers';
+
+jest.mock('twilio', () => jest.fn());
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 let tasks: any[] = [
   {
@@ -53,20 +58,14 @@ const workspaces: { [x: string]: any } = {
 };
 
 const baseContext = {
-  getTwilioClient: (): any => ({
-    taskrouter: {
-      workspaces: (workspaceSID: string) => {
-        if (workspaces[workspaceSID]) return workspaces[workspaceSID];
-
-        throw new Error('Workspace does not exists');
-      },
-    },
-  }),
+  getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
+  ACCOUNT_SID: 'ACxxx',
+  AUTH_TOKEN: 'AUTH_TOKEN',
 };
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
@@ -82,6 +81,19 @@ afterAll(() => {
 });
 afterEach(() => {
   logSpy.mockClear();
+});
+beforeEach(() => {
+  mockTwilio.mockReturnValue({
+    taskrouter: {
+      v1: {
+        workspaces: (workspaceSID: string) => {
+          if (workspaces[workspaceSID]) return workspaces[workspaceSID];
+
+          throw new Error('Workspace does not exists');
+        },
+      },
+    },
+  } as ReturnType<typeof twilio>);
 });
 
 test("Should log and return error (can't fetch task)", async () => {

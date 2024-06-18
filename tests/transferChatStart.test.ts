@@ -15,6 +15,7 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import twilio from 'twilio';
 import { handler as transferChatStart, Body } from '../functions/transferChatStart';
 
 import helpers, { MockedResponse } from './helpers';
@@ -23,6 +24,10 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
+
+jest.mock('twilio', () => jest.fn());
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 let tasks: any[] = [
   {
@@ -150,47 +155,7 @@ workspaces.WSxxx.tasks.create = async (options: any) => {
 };
 
 const baseContext = {
-  getTwilioClient: (): any => ({
-    taskrouter: {
-      workspaces: (workspaceSID: string) => {
-        if (workspaces[workspaceSID]) return workspaces[workspaceSID];
-
-        throw new Error('Workspace does not exists');
-      },
-    },
-    chat: {
-      services: (serviceSid: string) => {
-        if (serviceSid === baseContext.CHAT_SERVICE_SID) {
-          return {
-            channels: (channelSid: string) => {
-              if (channels[channelSid]) {
-                return {
-                  members: (memberSid: string) => {
-                    if (channels[channelSid].includes(memberSid)) {
-                      return {
-                        remove: async () => {
-                          channels[channelSid] = channels[channelSid].filter(
-                            (v) => v !== memberSid,
-                          );
-                          return true;
-                        },
-                      };
-                    }
-
-                    throw new Error('Member is not participant');
-                  },
-                };
-              }
-
-              throw new Error('Error retrieving chat channel');
-            },
-          };
-        }
-
-        throw new Error('Error retrieving chat service');
-      },
-    },
-  }),
+  getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
@@ -198,6 +163,8 @@ const baseContext = {
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
+  ACCOUNT_SID: 'ACxxx',
+  AUTH_TOKEN: 'AUTH_TOKEN',
 };
 
 beforeAll(() => {
@@ -209,6 +176,51 @@ afterAll(() => {
 
 beforeEach(() => {
   channels.channel = ['worker1'];
+  mockTwilio.mockReturnValue({
+    taskrouter: {
+      v1: {
+        workspaces: (workspaceSID: string) => {
+          if (workspaces[workspaceSID]) return workspaces[workspaceSID];
+
+          throw new Error('Workspace does not exists');
+        },
+      },
+    },
+    chat: {
+      v2: {
+        services: (serviceSid: string) => {
+          if (serviceSid === baseContext.CHAT_SERVICE_SID) {
+            return {
+              channels: (channelSid: string) => {
+                if (channels[channelSid]) {
+                  return {
+                    members: (memberSid: string) => {
+                      if (channels[channelSid].includes(memberSid)) {
+                        return {
+                          remove: async () => {
+                            channels[channelSid] = channels[channelSid].filter(
+                              (v) => v !== memberSid,
+                            );
+                            return true;
+                          },
+                        };
+                      }
+
+                      throw new Error('Member is not participant');
+                    },
+                  };
+                }
+
+                throw new Error('Error retrieving chat channel');
+              },
+            };
+          }
+
+          throw new Error('Error retrieving chat service');
+        },
+      },
+    },
+  } as ReturnType<typeof twilio>);
 });
 
 afterEach(() => {

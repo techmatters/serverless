@@ -15,6 +15,7 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 import each from 'jest-each';
+import twilio from 'twilio';
 import {
   handler as chatbotCallback,
   Body,
@@ -23,6 +24,9 @@ import helpers, { MockedResponse } from '../helpers';
 import * as lexClient from '../../functions/channelCapture/lexClient.private';
 import * as channelCaptureHandlers from '../../functions/channelCapture/channelCaptureHandlers.private';
 
+jest.mock('twilio', () => jest.fn());
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 const mockCreateMessage = jest.fn();
 const mockRemoveWebhook = jest.fn();
 
@@ -62,24 +66,6 @@ const defaultChannel = {
 };
 
 const context = {
-  getTwilioClient: () => ({
-    chat: {
-      services: () => ({
-        channels: () => ({
-          fetch: () => mockedChannel,
-        }),
-      }),
-    },
-    taskrouter: {
-      v1: {
-        workspaces: () => ({
-          tasks: () => ({
-            update: jest.fn(),
-          }),
-        }),
-      },
-    },
-  }),
   DOMAIN_NAME: 'DOMAIN_NAME',
   PATH: 'PATH',
   SERVICE_SID: 'SERVICE_SID',
@@ -93,7 +79,28 @@ const context = {
   HELPLINE_CODE: 'HELPLINE_CODE',
   ENVIRONMENT: 'ENVIRONMENT',
   SURVEY_WORKFLOW_SID: 'SURVEY_WORKFLOW_SID',
+  ACCOUNT_SID: 'ACCOUNT_SID',
+  AUTH_TOKEN: 'AUTH_TOKEN',
 };
+
+mockTwilio.mockReturnValue({
+  chat: {
+    services: () => ({
+      channels: () => ({
+        fetch: () => mockedChannel,
+      }),
+    }),
+  },
+  taskrouter: {
+    v1: {
+      workspaces: () => ({
+        tasks: () => ({
+          update: jest.fn(),
+        }),
+      }),
+    },
+  },
+} as any);
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(context);

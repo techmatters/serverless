@@ -27,6 +27,7 @@ import {
 } from '@tech-matters/serverless-helpers';
 import { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
 import { ConversationInstance } from 'twilio/lib/rest/conversations/v1/conversation';
+import twilio from 'twilio';
 import type {
   ConversationWebhookEvent,
   ProgrammableChatWebhookEvent,
@@ -45,6 +46,8 @@ type EnvVars = AWSCredentials & {
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
   SURVEY_WORKFLOW_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 export type Body = Partial<ConversationWebhookEvent & ProgrammableChatWebhookEvent> & {};
@@ -79,7 +82,7 @@ export const handler = async (
       return;
     }
 
-    const client = context.getTwilioClient();
+    const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
 
     let conversation: ConversationInstance | undefined;
     let channel: ChannelInstance | undefined;

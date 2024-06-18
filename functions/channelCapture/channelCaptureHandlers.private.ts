@@ -17,20 +17,15 @@
  */
 import axios from 'axios';
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
-import type {
-  ChannelInstance,
-  ChannelInstanceUpdateOptions,
-} from 'twilio/lib/rest/chat/v2/service/channel';
-import {
-  ConversationInstance,
-  ConversationInstanceUpdateOptions,
-} from 'twilio/lib/rest/conversations/v1/conversation';
+import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
+import { ConversationInstance } from 'twilio/lib/rest/conversations/v1/conversation';
 import type { WebhookListInstanceCreateOptions as ChannelWebhookOpts } from 'twilio/lib/rest/chat/v2/service/channel/webhook';
 import type { WebhookListInstanceCreateOptions as ConversationWebhookOpts } from 'twilio/lib/rest/conversations/v1/conversation/webhook';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
 import { MessageListInstanceCreateOptions as ConversationMessageListInstanceCreateOptions } from 'twilio/lib/rest/conversations/v1/conversation/message';
 import { MessageListInstanceCreateOptions as ChannelMessageListInstanceCreateOptions } from 'twilio/lib/rest/chat/v2/service/channel/message';
+import twilio from 'twilio';
 import type { AWSCredentials, LexClient, LexMemory } from './lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
@@ -49,6 +44,8 @@ type EnvVars = AWSCredentials & {
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
   SURVEY_WORKFLOW_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 const triggerTypes = ['withUserMessage', 'withNextMessage'] as const;
@@ -151,12 +148,10 @@ const updateChannelWithCapture = async (
   };
 
   if (isConversation) {
-    return (channel as ConversationInstance).update(
-      newAttributes as ConversationInstanceUpdateOptions,
-    );
+    return (channel as ConversationInstance).update(newAttributes);
   }
 
-  return (channel as ChannelInstance).update(newAttributes as ChannelInstanceUpdateOptions);
+  return (channel as ChannelInstance).update(newAttributes);
 };
 
 type CaptureChannelOptions = {
@@ -206,20 +201,16 @@ const triggerWithUserMessage = async (
 
   const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
-    configuration: {
-      filters: ['onMessageSent'],
-      method: 'POST',
-      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-    },
+    'configuration.filters': ['onMessageSent'],
+    'configuration.method': 'POST',
+    'configuration.url': `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
   };
 
   const conversationWebhook: ConversationWebhookOpts = {
     target: 'webhook',
-    configuration: {
-      filters: ['onMessageAdded'],
-      method: 'POST',
-      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-    },
+    'configuration.filters': ['onMessageAdded'],
+    'configuration.method': 'POST',
+    'configuration.url': `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
   };
 
   let webhook;
@@ -305,20 +296,16 @@ const triggerWithNextMessage = async (
 
   const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
-    configuration: {
-      filters: ['onMessageSent'],
-      method: 'POST',
-      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-    },
+    'configuration.filters': ['onMessageSent'],
+    'configuration.method': 'POST',
+    'configuration.url': `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
   };
 
   const conversationWebhook: ConversationWebhookOpts = {
     target: 'webhook',
-    configuration: {
-      filters: ['onMessageAdded'],
-      method: 'POST',
-      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
-    },
+    'configuration.filters': ['onMessageAdded'],
+    'configuration.method': 'POST',
+    'configuration.url': `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
   };
 
   let webhook;
@@ -435,25 +422,21 @@ export const handleChannelCapture = async (
     ? JSON.parse(additionControlTaskAttributes)
     : {};
   let controlTask: TaskInstance;
+  const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
   if (conversationSid) {
-    const conversationContext = await context
-      .getTwilioClient()
-      .conversations.conversations(conversationSid);
+    const conversationContext = await client.conversations.v1.conversations(conversationSid);
     console.log('conversation state:', (await conversationContext.fetch()).state);
     // Create control task to prevent channel going stale
-    controlTask = await context
-      .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks.create({
-        workflowSid: context.SURVEY_WORKFLOW_SID,
-        taskChannel: 'survey',
-        attributes: JSON.stringify({
-          isChatCaptureControl: true,
-          conversationSid,
-          ...parsedAdditionalControlTaskAttributes,
-        }),
-        timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
-      });
+    controlTask = await client.taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
+      workflowSid: context.SURVEY_WORKFLOW_SID,
+      taskChannel: 'survey',
+      attributes: JSON.stringify({
+        isChatCaptureControl: true,
+        conversationSid,
+        ...parsedAdditionalControlTaskAttributes,
+      }),
+      timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+    });
     const webhooks = await conversationContext.webhooks.list();
     for (const webhook of webhooks) {
       if (webhook.target === 'studio') {
@@ -464,9 +447,8 @@ export const handleChannelCapture = async (
   } else {
     [, controlTask] = await Promise.all([
       // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-      context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
+      client.chat.v2
+        .services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .webhooks.list()
         .then((webhooks) =>
@@ -478,20 +460,17 @@ export const handleChannelCapture = async (
         ),
 
       // Create control task to prevent channel going stale
-      context
-        .getTwilioClient()
-        .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks.create({
-          workflowSid: context.SURVEY_WORKFLOW_SID,
-          taskChannel: 'survey',
-          attributes: JSON.stringify({
-            isChatCaptureControl: true,
-            channelSid,
-            conversationSid,
-            ...parsedAdditionalControlTaskAttributes,
-          }),
-          timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+      client.taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
+        workflowSid: context.SURVEY_WORKFLOW_SID,
+        taskChannel: 'survey',
+        attributes: JSON.stringify({
+          isChatCaptureControl: true,
+          channelSid,
+          conversationSid,
+          ...parsedAdditionalControlTaskAttributes,
         }),
+        timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+      }),
     ]);
   }
 
@@ -506,12 +485,8 @@ export const handleChannelCapture = async (
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
   const channelOrConversation: ChannelInstance | ConversationInstance = conversationSid
-    ? await context.getTwilioClient().conversations.conversations(conversationSid).fetch()
-    : await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .fetch();
+    ? await client.conversations.v1.conversations(conversationSid).fetch()
+    : await client.chat.v2.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
 
   const options: CaptureChannelOptions = {
     botName,
@@ -555,17 +530,13 @@ const createStudioFlowTrigger = async (
   if (isConversation) {
     return (channelOrConversation as ConversationInstance).webhooks().create({
       target: 'studio',
-      configuration: {
-        flowSid: capturedChannelAttributes.studioFlowSid,
-      },
+      'configuration.flowSid': capturedChannelAttributes.studioFlowSid,
     });
   }
 
   return (channelOrConversation as ChannelInstance).webhooks().create({
     type: 'studio',
-    configuration: {
-      flowSid: capturedChannelAttributes.studioFlowSid,
-    },
+    'configuration.flowSid': capturedChannelAttributes.studioFlowSid,
   });
 };
 
@@ -680,9 +651,8 @@ export const handleChannelRelease = async (
   memory: LexMemory,
 ) => {
   // get the control task
-  const controlTask = await context
-    .getTwilioClient()
-    .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+  const controlTask = await twilio(context.ACCOUNT_SID, context.AUTH_TOKEN)
+    .taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID)
     .tasks(capturedChannelAttributes.controlTaskSid)
     .fetch();
 

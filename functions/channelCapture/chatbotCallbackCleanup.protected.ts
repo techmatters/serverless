@@ -28,6 +28,7 @@ import {
   success,
 } from '@tech-matters/serverless-helpers';
 import { ConversationInstance } from 'twilio/lib/rest/conversations/v1/conversation';
+import twilio from 'twilio';
 import type { AWSCredentials, LexClient } from './lexClient.private';
 import type {
   CapturedChannelAttributes,
@@ -44,6 +45,8 @@ type EnvVars = AWSCredentials & {
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
   SURVEY_WORKFLOW_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 export type Body = {
@@ -160,12 +163,15 @@ export const handler = async (
       return;
     }
 
-    const client = context.getTwilioClient();
+    const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
     let channel: ChannelInstance | undefined;
-    const conversation = await client.conversations.conversations(channelSid).fetch();
+    const conversation = await client.conversations.v1.conversations(channelSid).fetch();
 
     if (!conversation) {
-      channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
+      channel = await client.chat.v2
+        .services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .fetch();
     }
 
     const channelAttributes = JSON.parse((conversation || channel).attributes);

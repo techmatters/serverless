@@ -17,6 +17,7 @@
 // eslint-disable-next-line prettier/prettier
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
+import twilio from 'twilio';
 
 export type Body = {
   EventType: string;
@@ -25,6 +26,8 @@ export type Body = {
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 type Response = {
@@ -64,9 +67,8 @@ export const addCustomerExternalId = async (
   let task: TaskInstance;
 
   try {
-    task = await context
-      .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+    task = await twilio(context.ACCOUNT_SID, context.AUTH_TOKEN)
+      .taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(event.TaskSid)
       .fetch();
   } catch (err) {
@@ -84,9 +86,8 @@ export const addCustomerExternalId = async (
   };
 
   try {
-    const updatedTask = await context
-      .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+    const updatedTask = await twilio(context.ACCOUNT_SID, context.AUTH_TOKEN)
+      .taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(event.TaskSid)
       .update({ attributes: JSON.stringify(newAttributes) });
 

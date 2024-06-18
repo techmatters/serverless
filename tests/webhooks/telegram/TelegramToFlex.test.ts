@@ -117,7 +117,9 @@ beforeEach(() => {
   };
 
   baseContext = {
-    getTwilioClient: ((): RecursivePartial<Twilio> => baseTwilioClient) as () => Twilio,
+    getTwilioClient: ((): RecursivePartial<Twilio> => baseTwilioClient) as () => ReturnType<
+      Context['getTwilioClient']
+    >,
     DOMAIN_NAME: 'serverless',
     ACCOUNT_SID: 'ACCOUNT_SID',
     TELEGRAM_STUDIO_FLOW_SID: 'TELEGRAM_STUDIO_FLOW_SID',

@@ -41,6 +41,8 @@ export type EnvVars = AWSCredentials & {
   HRM_STATIC_KEY: string;
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 // ================== //
