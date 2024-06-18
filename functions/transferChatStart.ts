@@ -245,14 +245,22 @@ export const handler = TokenValidator(
        */
 
       let isConversation = true;
+      let originalParticipantSid;
       try {
-        await client.conversations.conversations(originalAttributes.conversationSid).fetch();
+        const conversation = await client.conversations
+          .conversations(originalAttributes.conversationSid)
+          .fetch();
+        const participants = await conversation.participants().list();
+        originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
+        newAttributes.originalParticipantSid = originalParticipantSid;
+        console.log('>> new attributes:');
+        console.log(JSON.stringify(newAttributes, null, 2));
       } catch (err) {
         isConversation = false;
       }
 
       let newTaskSid;
-      if (isConversation) {
+      if (isConversation && transferTargetType === 'worker') {
         // Get task queue
         const taskQueues = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -271,6 +279,27 @@ export const handler = TokenValidator(
                 worker_sid: targetSid,
                 workflow_sid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
                 workspace_sid: context.TWILIO_WORKSPACE_SID,
+                attributes: newAttributes,
+                task_channel_unique_name: originalTask.taskChannelUniqueName,
+              },
+            },
+          });
+
+        newTaskSid = invite.routing.properties.sid;
+      } else if (isConversation && transferTargetType === 'queue') {
+        const invite = await client.flexApi.v1
+          .interaction(originalAttributes.flexInteractionSid)
+          .channels(originalAttributes.flexInteractionChannelSid)
+          .invites.create({
+            routing: {
+              properties: {
+                // queue_sid: targetSid,
+                workflow_sid: 'WWf66dac1edaa57ded19c3bf8f1aa209a9',
+                workspace_sid: context.TWILIO_WORKSPACE_SID,
+                // attributes: {
+                //   transferTargetType,
+                //   taskQueue: targetSid,
+                // },
                 attributes: newAttributes,
                 task_channel_unique_name: originalTask.taskChannelUniqueName,
               },
