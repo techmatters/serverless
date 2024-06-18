@@ -308,6 +308,14 @@ export const handler = TokenValidator(
 
         newTaskSid = invite.routing.properties.sid;
       } else {
+        // Edit channel attributes so that original task won't cause issues with the transferred one
+        await setDummyChannel(context, {
+          mode,
+          ignoreAgent,
+          targetSid,
+          taskSid,
+        });
+
         // create New task
         const newTask = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -321,16 +329,8 @@ export const handler = TokenValidator(
         newTaskSid = newTask.sid;
       }
 
-      // Final actions that might not happen (conditions specified inside of each)
-      await Promise.all([
-        increaseChatCapacity(context, validationResult),
-        setDummyChannel(context, {
-          mode,
-          ignoreAgent,
-          targetSid,
-          taskSid,
-        }),
-      ]);
+      // Increse the chat capacity for the target worker (if needed)
+      await increaseChatCapacity(context, validationResult);
 
       resolve(success({ taskSid: newTaskSid }));
     } catch (err: any) {

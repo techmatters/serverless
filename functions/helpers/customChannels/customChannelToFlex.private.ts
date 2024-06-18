@@ -146,7 +146,7 @@ export const sendConversationMessage = async (
 ) =>
   context
     .getTwilioClient()
-    .conversations.conversations(conversationSid)
+    .conversations.conversations.get(conversationSid)
     .messages.create({
       body: messageText,
       author,
@@ -321,7 +321,7 @@ const createConversation = async (
   const conversationSid = conversationInstance.sid as ConversationSid;
 
   try {
-    const conversationContext = await client.conversations.conversations(conversationSid);
+    const conversationContext = await client.conversations.conversations.get(conversationSid);
     await conversationContext.participants.create({
       identity: uniqueUserName,
     });
@@ -359,13 +359,6 @@ const createConversation = async (
         url: onMessageSentWebhookUrl,
         filters: ['onMessageAdded'],
       },
-    });
-
-    console.log('conversation webhooks:');
-    (await conversationContext.webhooks.list()).forEach((wh) => {
-      Object.entries(wh).forEach(([key, value]) => {
-        console.log(`${key}:`, value);
-      });
     });
   } catch (err) {
     return { conversationSid, error: err as Error };

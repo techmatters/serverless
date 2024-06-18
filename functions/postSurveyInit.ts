@@ -27,6 +27,10 @@ import {
 import axios from 'axios';
 import type { ChannelCaptureHandlers } from './channelCapture/channelCaptureHandlers.private';
 import type { AWSCredentials } from './channelCapture/lexClient.private';
+import {
+  ChatChannelSid,
+  ConversationSid,
+} from './helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
@@ -37,10 +41,19 @@ type EnvVars = AWSCredentials & {
   ENVIRONMENT: string;
 };
 
-export type Body = {
-  channelSid?: string;
-  taskSid?: string;
-  taskLanguage?: string;
+export type Body = (
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    }
+  | {
+      channelSid?: ChatChannelSid;
+      conversationSid: ConversationSid;
+    }
+) & {
+  taskSid: string;
+  taskLanguage: string;
+  channelType: string;
   request: { cookies: {}; headers: {} };
 };
 
@@ -70,9 +83,9 @@ const getTriggerMessage = async (
 
 export const postSurveyInitHandler = async (
   context: Context<EnvVars>,
-  event: Required<Pick<Body, 'channelSid' | 'taskSid' | 'taskLanguage'>>,
+  event: Omit<Body, 'request'>,
 ) => {
-  const { channelSid, taskSid, taskLanguage } = event;
+  const { channelSid, conversationSid, taskSid, taskLanguage, channelType } = event;
 
   const triggerMessage = await getTriggerMessage(event, context);
 
@@ -81,8 +94,7 @@ export const postSurveyInitHandler = async (
     'channelCapture/channelCaptureHandlers'
   ].path) as ChannelCaptureHandlers;
 
-  const result = await channelCaptureHandlers.handleChannelCapture(context, {
-    channelSid,
+  const commonProps = {
     message: triggerMessage,
     language: taskLanguage,
     botSuffix: 'post_survey',
@@ -97,9 +109,23 @@ export const postSurveyInitHandler = async (
       language: taskLanguage, // if there's a task language, attach it to the post survey task
     }),
     controlTaskTTL: 3600,
-  });
+    channelType,
+  } as const;
+  if (conversationSid) {
+    return channelCaptureHandlers.handleChannelCapture(context, {
+      conversationSid,
+      ...commonProps,
+    });
+  }
+  if (channelSid) {
+    return channelCaptureHandlers.handleChannelCapture(context, {
+      channelSid,
+      ...commonProps,
+    });
+  }
 
-  return result;
+  // Should never reach this point but TS struggles with the type narrowing
+  throw new Error('No channelSid or conversationSid provided');
 };
 
 export type PostSurveyInitHandler = typeof postSurveyInitHandler;
@@ -112,17 +138,13 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { channelSid, taskSid, taskLanguage } = event;
+      const { channelSid, taskSid, taskLanguage, conversationSid } = event;
 
-      if (channelSid === undefined) return resolve(error400('channelSid'));
-      if (taskSid === undefined) return resolve(error400('taskSid'));
-      if (taskLanguage === undefined) return resolve(error400('taskLanguage'));
+      if (!channelSid && !conversationSid) return resolve(error400('channelSid / conversationSid'));
+      if (!taskSid) return resolve(error400('taskSid'));
+      if (!taskLanguage) return resolve(error400('taskLanguage'));
 
-      const result = await postSurveyInitHandler(context, {
-        channelSid,
-        taskSid,
-        taskLanguage,
-      });
+      const result = await postSurveyInitHandler(context, event);
 
       if (result.status === 'failure' && result.validationResult.status === 'invalid') {
         resolve(error400(result.validationResult.error));

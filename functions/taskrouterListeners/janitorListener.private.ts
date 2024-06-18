@@ -156,9 +156,17 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     } = event;
 
     // The janitor is only be executed for chat based tasks
-    if (taskChannelUniqueName !== 'chat') return;
+    if (!['chat', 'survey'].includes(taskChannelUniqueName)) return;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
+
+    if (taskChannelUniqueName === 'survey' && eventType !== TASK_CANCELED) {
+      console.log(
+        'Survey tasks are only handled by the channel janitor on task cancelled events skipping this one.',
+        eventType,
+      );
+      return;
+    }
 
     const taskAttributes = JSON.parse(taskAttributesString || '{}');
     const { channelSid, conversationSid } = taskAttributes;
