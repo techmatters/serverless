@@ -197,7 +197,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           .participants(taskAttributes.originalParticipantSid)
           .remove();
       } catch (err) {
-        console.error(
+        console.log(
           `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
         );
       }
