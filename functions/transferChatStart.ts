@@ -253,8 +253,6 @@ export const handler = TokenValidator(
         const participants = await conversation.participants().list();
         originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
         newAttributes.originalParticipantSid = originalParticipantSid;
-        console.log('>> new attributes:');
-        console.log(JSON.stringify(newAttributes, null, 2));
       } catch (err) {
         isConversation = false;
       }
@@ -293,13 +291,8 @@ export const handler = TokenValidator(
           .invites.create({
             routing: {
               properties: {
-                // queue_sid: targetSid,
-                workflow_sid: 'WWf66dac1edaa57ded19c3bf8f1aa209a9',
+                workflow_sid: 'WWf66dac1edaa57ded19c3bf8f1aa209a9', // TODO: get from ENV
                 workspace_sid: context.TWILIO_WORKSPACE_SID,
-                // attributes: {
-                //   transferTargetType,
-                //   taskQueue: targetSid,
-                // },
                 attributes: newAttributes,
                 task_channel_unique_name: originalTask.taskChannelUniqueName,
               },
