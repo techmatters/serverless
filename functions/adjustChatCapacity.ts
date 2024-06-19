@@ -24,9 +24,12 @@ import {
   send,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import twilio from 'twilio';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 export type Body = {
@@ -39,11 +42,11 @@ export const adjustChatCapacity = async (
   context: Context<EnvVars>,
   body: Required<Pick<Body, 'adjustment' | 'workerSid'>>,
 ): Promise<{ status: number; message: string }> => {
-  const client = context.getTwilioClient();
+  const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
 
-  const worker = await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .workers(body.workerSid)
+  const worker = await client.taskrouter.v1.workspaces
+    .get(context.TWILIO_WORKSPACE_SID)
+    .workers.get(body.workerSid)
     .fetch();
 
   if (!worker) return { status: 404, message: 'Could not find worker.' };

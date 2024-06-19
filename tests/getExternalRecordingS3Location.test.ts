@@ -14,37 +14,41 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import twilio from 'twilio';
 import {
   handler as getExternalRecordingS3Location,
   Body,
 } from '../functions/getExternalRecordingS3Location';
-import helpers, { MockedResponse } from './helpers';
+import helpers, { MockedResponse, RecursivePartial } from './helpers';
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
+jest.mock('twilio', () => jest.fn());
+
 const baseContext = {
+  getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
   ACCOUNT_SID: 'AC1234567890',
+  AUTH_TOKEN: 'auth-token',
   S3_BUCKET: 'mock-s3-bucket',
 };
 
-const getBaseContext = (mockRecordings: Record<string, string>[] = []) => {
-  const mockTwilioClient = {
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
+
+const mockTwilioRecordings = (mockRecordings: Record<string, string>[] = []) => {
+  const mockTwilioClient: RecursivePartial<ReturnType<typeof twilio>> = {
     recordings: {
       list: async () => mockRecordings,
     },
   };
 
-  return {
-    ...baseContext,
-    getTwilioClient: (): any => mockTwilioClient,
-  };
+  mockTwilio.mockReturnValue(mockTwilioClient as ReturnType<typeof twilio>);
 };
 
 describe('getExternalRecordingS3Location', () => {
@@ -65,8 +69,8 @@ describe('getExternalRecordingS3Location', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(400);
     };
-
-    await getExternalRecordingS3Location(getBaseContext(), event, callback);
+    mockTwilioRecordings();
+    await getExternalRecordingS3Location(baseContext, event, callback);
   });
 
   test('Should return 404 when no recording found', async () => {
@@ -77,8 +81,8 @@ describe('getExternalRecordingS3Location', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(404);
     };
-
-    await getExternalRecordingS3Location(getBaseContext(), event, callback);
+    mockTwilioRecordings();
+    await getExternalRecordingS3Location(baseContext, event, callback);
   });
 
   test('Should return 409 when more than one recording found', async () => {
@@ -90,8 +94,8 @@ describe('getExternalRecordingS3Location', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(409);
     };
-
-    await getExternalRecordingS3Location(getBaseContext(mockRecordings), event, callback);
+    mockTwilioRecordings(mockRecordings);
+    await getExternalRecordingS3Location(baseContext, event, callback);
   });
 
   test('Should return 200 when recording found', async () => {
@@ -109,6 +113,7 @@ describe('getExternalRecordingS3Location', () => {
       });
     };
 
-    await getExternalRecordingS3Location(getBaseContext(mockRecordings), event, callback);
+    mockTwilioRecordings(mockRecordings);
+    await getExternalRecordingS3Location(baseContext, event, callback);
   });
 });

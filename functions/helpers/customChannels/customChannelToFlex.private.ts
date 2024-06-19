@@ -15,11 +15,17 @@
  */
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
+import twilio from 'twilio';
 
 export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
 const CONVERSATION_CLOSE_TIMEOUT = 'P3D'; // ISO 8601 duration format https://en.wikipedia.org/wiki/ISO_8601
+
+type EnvVars = {
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
+};
 
 /**
  * @deprecated
@@ -27,7 +33,7 @@ const CONVERSATION_CLOSE_TIMEOUT = 'P3D'; // ISO 8601 duration format https://en
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
 export const retrieveChannelFromUserChannelMap = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     syncServiceSid,
     uniqueUserName,
@@ -37,9 +43,8 @@ export const retrieveChannelFromUserChannelMap = async (
   },
 ): Promise<ConversationSid | undefined> => {
   try {
-    const userChannelMap = await context
-      .getTwilioClient()
-      .sync.services(syncServiceSid)
+    const userChannelMap = await twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+      .sync.v1.services(syncServiceSid)
       .documents(uniqueUserName)
       .fetch();
 
@@ -50,12 +55,13 @@ export const retrieveChannelFromUserChannelMap = async (
 };
 
 export const findExistingConversation = async (
-  context: Context,
+  context: Context<EnvVars>,
   identity: string,
 ): Promise<ConversationSid | undefined> => {
-  const conversations = await context
-    .getTwilioClient()
-    .conversations.participantConversations.list({ identity });
+  const conversations = await twilio(
+    context.AUTH_TOKEN,
+    context.ACCOUNT_SID,
+  ).conversations.v1.participantConversations.list({ identity });
   const existing = conversations.find((conversation) =>
     ['active', 'inactive'].includes(conversation.conversationState),
   );
@@ -73,7 +79,7 @@ export const findExistingConversation = async (
  * Creates a user channel map in Sync Service to contain the sid of the new channel assigned for a user
  */
 export const createUserChannelMap = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     syncServiceSid,
     uniqueUserName,
@@ -85,9 +91,8 @@ export const createUserChannelMap = async (
   },
 ) => {
   // const userChannelMap =
-  await context
-    .getTwilioClient()
-    .sync.services(syncServiceSid)
+  await twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+    .sync.v1.services(syncServiceSid)
     .documents.create({
       data: { activeChannelSid: channelSid },
       uniqueName: uniqueUserName,
@@ -102,7 +107,7 @@ export const createUserChannelMap = async (
  * Use sendConversationMessage instead.
  */
 export const sendChatMessage = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     chatServiceSid,
     channelSid,
@@ -117,9 +122,8 @@ export const sendChatMessage = async (
     messageAttributes?: string;
   },
 ) =>
-  context
-    .getTwilioClient()
-    .chat.services(chatServiceSid)
+  twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+    .chat.v2.services(chatServiceSid)
     .channels(channelSid)
     .messages.create({
       body: messageText,
@@ -131,7 +135,7 @@ export const sendChatMessage = async (
  * Sends a new message to the provided conversations channel
  */
 export const sendConversationMessage = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     conversationSid,
     author,
@@ -144,9 +148,8 @@ export const sendConversationMessage = async (
     messageAttributes?: string;
   },
 ) =>
-  context
-    .getTwilioClient()
-    .conversations.conversations.get(conversationSid)
+  twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+    .conversations.v1.conversations.get(conversationSid)
     .messages.create({
       body: messageText,
       author,
@@ -161,7 +164,7 @@ export const sendConversationMessage = async (
  * Use removeConversation instead.
  */
 export const removeChatChannel = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     chatServiceSid,
     channelSid,
@@ -169,16 +172,23 @@ export const removeChatChannel = async (
     chatServiceSid: string;
     channelSid: string;
   },
-) => context.getTwilioClient().chat.services(chatServiceSid).channels(channelSid).remove();
+) =>
+  twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+    .chat.v2.services(chatServiceSid)
+    .channels(channelSid)
+    .remove();
 
 export const removeConversation = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     conversationSid,
   }: {
     conversationSid: ConversationSid;
   },
-) => context.getTwilioClient().conversations.conversations(conversationSid).remove();
+) =>
+  twilio(context.AUTH_TOKEN, context.ACCOUNT_SID)
+    .conversations.v1.conversations(conversationSid)
+    .remove();
 
 export enum AseloCustomChannels {
   Twitter = 'twitter',
@@ -222,7 +232,7 @@ type CreateFlexConversationParams = {
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
 const createFlexChannel = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     flexFlowSid,
     chatServiceSid,
@@ -237,9 +247,9 @@ const createFlexChannel = async (
 ) => {
   // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
 
-  const client = context.getTwilioClient();
+  const client = twilio(context.AUTH_TOKEN, context.ACCOUNT_SID);
 
-  const channel = await client.flexApi.channel.create({
+  const channel = await client.flexApi.v1.channel.create({
     flexFlowSid,
     identity: uniqueUserName,
     target: uniqueUserName, // Twilio sets channel.attributes.from with this value
@@ -248,10 +258,10 @@ const createFlexChannel = async (
   });
 
   const channelAttributes = JSON.parse(
-    (await client.chat.services(chatServiceSid).channels(channel.sid).fetch()).attributes,
+    (await client.chat.v2.services(chatServiceSid).channels(channel.sid).fetch()).attributes,
   );
 
-  await client.chat
+  await client.chat.v2
     .services(chatServiceSid)
     .channels(channel.sid)
     .update({
@@ -264,30 +274,27 @@ const createFlexChannel = async (
     });
 
   /* const onMessageSent = */
-  await client.chat
+  await client.chat.v2
     .services(chatServiceSid)
     .channels(channel.sid)
     .webhooks.create({
       type: 'webhook',
-      configuration: {
-        method: 'POST',
-        url: onMessageSentWebhookUrl,
-        filters: ['onMessageSent'],
-      },
+      'configuration.method': 'POST',
+      'configuration.url': onMessageSentWebhookUrl,
+      'configuration.filters': ['onMessageSent'],
     });
 
   /* const onChannelUpdated = */
-  await client.chat
+  await client.chat.v2
     .services(chatServiceSid)
     .channels(channel.sid)
     .webhooks.create({
       type: 'webhook',
-      configuration: {
-        method: 'POST',
-        url:
-          onChannelUpdatedWebhookUrl || `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
-        filters: ['onChannelUpdated'],
-      },
+
+      'configuration.method': 'POST',
+      'configuration.url':
+        onChannelUpdatedWebhookUrl || `https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate`,
+      'configuration.filters': ['onChannelUpdated'],
     });
 
   return channel.sid;
@@ -298,7 +305,7 @@ const createFlexChannel = async (
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
 const createConversation = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     conversationFriendlyName,
     channelType,
@@ -311,9 +318,9 @@ const createConversation = async (
 ): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
   // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
 
-  const client = context.getTwilioClient();
+  const client = twilio(context.AUTH_TOKEN, context.ACCOUNT_SID);
 
-  const conversationInstance = await client.conversations.conversations.create({
+  const conversationInstance = await client.conversations.v1.conversations.create({
     xTwilioWebhookEnabled: 'true',
     friendlyName: conversationFriendlyName,
     uniqueName: `${channelType}/${uniqueUserName}/${Date.now()}`,
@@ -321,7 +328,7 @@ const createConversation = async (
   const conversationSid = conversationInstance.sid as ConversationSid;
 
   try {
-    const conversationContext = await client.conversations.conversations.get(conversationSid);
+    const conversationContext = await client.conversations.v1.conversations.get(conversationSid);
     await conversationContext.participants.create({
       identity: uniqueUserName,
     });
@@ -331,9 +338,7 @@ const createConversation = async (
 
     await conversationContext.update({
       state: 'active',
-      timers: {
-        closed: CONVERSATION_CLOSE_TIMEOUT,
-      },
+      'timers.closed': CONVERSATION_CLOSE_TIMEOUT,
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
@@ -345,20 +350,16 @@ const createConversation = async (
 
     await conversationContext.webhooks.create({
       target: 'studio',
-      configuration: {
-        flowSid: studioFlowSid,
-        filters: ['onMessageAdded'],
-      },
+      'configuration.flowSid': studioFlowSid,
+      'configuration.filters': ['onMessageAdded'],
     });
 
     /* const onMessageAdded = */
     await conversationContext.webhooks.create({
       target: 'webhook',
-      configuration: {
-        method: 'POST',
-        url: onMessageSentWebhookUrl,
-        filters: ['onMessageAdded'],
-      },
+      'configuration.method': 'POST',
+      'configuration.url': onMessageSentWebhookUrl,
+      'configuration.filters': ['onMessageAdded'],
     });
   } catch (err) {
     return { conversationSid, error: err as Error };
@@ -394,7 +395,7 @@ type SendConversationMessageToFlexParams = Omit<CreateFlexConversationParams, 't
  *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
  */
 export const sendMessageToFlex = async (
-  context: Context,
+  context: Context<EnvVars>,
   {
     flexFlowSid,
     chatServiceSid,
@@ -478,7 +479,7 @@ export const sendMessageToFlex = async (
  *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
  */
 export const sendConversationMessageToFlex = async (
-  context: Context<{ ACCOUNT_SID: string }>,
+  context: Context<EnvVars>,
   {
     studioFlowSid,
     channelType,

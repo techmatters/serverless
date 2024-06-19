@@ -25,9 +25,11 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import twilio from 'twilio';
 
 type EnvVars = {
   ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
   S3_BUCKET: string;
 };
 
@@ -40,7 +42,7 @@ export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
-    const { ACCOUNT_SID: accountSid, S3_BUCKET: bucket } = context;
+    const { ACCOUNT_SID: accountSid, AUTH_TOKEN: authToken, S3_BUCKET: bucket } = context;
 
     try {
       const { callSid } = event;
@@ -49,7 +51,7 @@ export const handler = TokenValidator(
         return;
       }
 
-      const client = context.getTwilioClient();
+      const client = twilio(accountSid, authToken);
       const recordings = await client.recordings.list({ callSid, limit: 20 });
       if (recordings.length === 0) {
         resolve(send(404)({ status: 404, message: 'No recording found' }));

@@ -15,76 +15,41 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import twilio from 'twilio';
+import { WorkerChannelInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/worker/workerChannel';
+import { WorkerInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/worker';
 import { handler as adjustChatCapacity, Body } from '../functions/adjustChatCapacity';
 
-import helpers, { MockedResponse } from './helpers';
+import helpers, { MockedResponse, RecursivePartial } from './helpers';
+
+jest.mock('twilio', () => jest.fn());
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 const runTestSuite = (maxMessageCapacity: number | string) => {
-  let workerChannel = {
-    taskChannelUniqueName: 'chat',
-    configuredCapacity: 1,
-    availableCapacityPercentage: 0,
-    updateCapacityPercentage: (availableCapacityPercentage: number) => {
-      workerChannel = { ...workerChannel, availableCapacityPercentage };
-    },
-    update: async ({ capacity }: { capacity: number }) => {
-      if (capacity) workerChannel = { ...workerChannel, configuredCapacity: capacity };
-    },
-  };
+  let workerChannel: WorkerChannelInstance;
 
-  const someWorker = {
-    attributes: JSON.stringify({ maxMessageCapacity }),
-    fetch: async () => someWorker,
-    workerChannels: () => ({
-      list: async () => [workerChannel],
-      fetch: async () => workerChannel,
-    }),
-  };
+  let someWorker: WorkerInstance;
 
-  const withoutChannel = {
-    attributes: JSON.stringify({ maxMessageCapacity }),
-    fetch: async () => withoutChannel,
-    workerChannels: () => ({
-      list: async () => [],
-    }),
-  };
+  let withoutChannel: WorkerInstance;
 
-  const withoutAttr = {
-    attributes: JSON.stringify({}),
-    fetch: async () => withoutAttr,
-    workerChannels: () => ({
-      list: async () => [],
-    }),
-  };
+  let withoutAttr: WorkerInstance;
+
+  let mockTwilioClient: RecursivePartial<ReturnType<typeof twilio>>;
 
   const baseContext = {
-    getTwilioClient: (): any => ({
-      taskrouter: {
-        workspaces: () => ({
-          workers: (workerSid: string) => {
-            if (workerSid === 'worker123') return someWorker;
-
-            if (workerSid === 'nonExisting') return { fetch: async () => null };
-
-            if (workerSid === 'withoutChannel') return withoutChannel;
-
-            if (workerSid === 'withoutAttr') return withoutAttr;
-
-            throw new Error('Non existing worker');
-          },
-        }),
-      },
-    }),
+    getTwilioClient: jest.fn(),
     DOMAIN_NAME: 'serverless',
     PATH: 'PATH',
     SERVICE_SID: undefined,
     ENVIRONMENT_SID: undefined,
     TWILIO_WORKSPACE_SID: 'TWILIO_WORKSPACE_SID',
+    ACCOUNT_SID: 'ACCOUNT_SID',
+    AUTH_TOKEN: 'AUTH_TOKEN',
   };
 
   describe('adjustChatCapacity', () => {
@@ -93,6 +58,70 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     });
     afterAll(() => {
       helpers.teardown();
+    });
+
+    beforeEach(() => {
+      const partialWorkerChannel: RecursivePartial<WorkerChannelInstance> = {
+        taskChannelUniqueName: 'chat',
+        configuredCapacity: 1,
+        availableCapacityPercentage: 0,
+        update: jest.fn(),
+      };
+      workerChannel = partialWorkerChannel as WorkerChannelInstance;
+
+      const partialSomeWorker: RecursivePartial<WorkerInstance> = {
+        attributes: JSON.stringify({ maxMessageCapacity }),
+        fetch: async () => someWorker,
+        workerChannels: () => ({
+          list: async () => [workerChannel],
+          fetch: async () => workerChannel,
+        }),
+      };
+      someWorker = partialSomeWorker as WorkerInstance;
+
+      const partialWithoutChannel: RecursivePartial<WorkerInstance> = {
+        attributes: JSON.stringify({ maxMessageCapacity }),
+        fetch: async () => withoutChannel,
+        workerChannels: () => ({
+          list: async () => [],
+        }),
+      };
+      withoutChannel = partialWithoutChannel as WorkerInstance;
+
+      const partialWithoutAttr: RecursivePartial<WorkerInstance> = {
+        attributes: JSON.stringify({}),
+        fetch: async () => withoutAttr,
+        workerChannels: () => ({
+          list: async () => [],
+        }),
+      };
+      withoutAttr = partialWithoutAttr as WorkerInstance;
+
+      mockTwilioClient = {
+        taskrouter: {
+          v1: {
+            workspaces: {
+              get: () => ({
+                workers: {
+                  get: (workerSid: string) => {
+                    if (workerSid === 'worker123') return someWorker;
+
+                    if (workerSid === 'nonExisting') return { fetch: async () => null };
+
+                    if (workerSid === 'withoutChannel') return withoutChannel;
+
+                    if (workerSid === 'withoutAttr') return withoutAttr;
+
+                    throw new Error('Non existing worker');
+                  },
+                },
+              }),
+            },
+          },
+        },
+      };
+
+      mockTwilio.mockReturnValue(mockTwilioClient as ReturnType<typeof twilio>);
     });
 
     test('Should return status 400', async () => {
@@ -136,19 +165,23 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         request: { cookies: {}, headers: {} },
       };
 
+      let response: MockedResponse | undefined;
+
       const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(2);
+        response = result as MockedResponse;
       };
 
       await adjustChatCapacity(baseContext, event, callback);
+      expect(response).toBeDefined();
+      if (response) {
+        expect(response.getStatus()).toBe(200);
+        expect(workerChannel.update).toHaveBeenCalledWith({ capacity: 2 });
+      }
     });
 
     test('Should return status 200 (effectively decrease)', async () => {
       // workerChannel.configuredCapacity should already be 2 cause previous test
-      expect(workerChannel.configuredCapacity).toStrictEqual(2);
+      workerChannel.configuredCapacity = 2;
 
       const event: Body = {
         workerSid: 'worker123',
@@ -156,19 +189,23 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(1);
-      };
+      let response: MockedResponse | undefined;
 
+      const callback: ServerlessCallback = (err, result) => {
+        response = result as MockedResponse;
+      };
       await adjustChatCapacity(baseContext, event, callback);
+
+      expect(response).toBeDefined();
+      if (response) {
+        expect(response.getStatus()).toBe(200);
+        expect(workerChannel.update).toHaveBeenCalledWith({ capacity: 1 });
+      }
     });
 
     test('Should return status 200 (do nothing instead of decrease)', async () => {
       // workerChannel.configuredCapacity should already be 1 cause previous test
-      expect(workerChannel.configuredCapacity).toStrictEqual(1);
+      workerChannel.configuredCapacity = 1;
 
       const event: Body = {
         workerSid: 'worker123',
@@ -176,19 +213,22 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         request: { cookies: {}, headers: {} },
       };
 
+      let response: MockedResponse | undefined;
+
       const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(1);
+        response = result as MockedResponse;
       };
 
       await adjustChatCapacity(baseContext, event, callback);
+      expect(response).toBeDefined();
+      if (response) {
+        expect(response.getStatus()).toBe(200);
+        expect(workerChannel.update).not.toHaveBeenCalled();
+      }
     });
 
     test('Should return status 412 (Still have available capacity, no need to increase)', async () => {
-      workerChannel.updateCapacityPercentage(1);
-      expect(workerChannel.availableCapacityPercentage).toStrictEqual(1);
+      workerChannel.availableCapacityPercentage = 1;
 
       const event: Body = {
         workerSid: 'worker123',
@@ -209,17 +249,14 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     });
 
     test('Should return status 412 (Reached the max capacity)', async () => {
-      workerChannel.updateCapacityPercentage(0);
-      expect(workerChannel.availableCapacityPercentage).toStrictEqual(0);
+      workerChannel.availableCapacityPercentage = 0;
+      workerChannel.configuredCapacity = 2;
 
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
         request: { cookies: {}, headers: {} },
       };
-
-      await adjustChatCapacity(baseContext, event, () => {});
-      expect(workerChannel.configuredCapacity).toStrictEqual(2);
 
       const callback: ServerlessCallback = (err, result) => {
         expect(result).toBeDefined();
@@ -232,8 +269,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     });
 
     test('Should return status 404 (Could not find worker)', async () => {
-      workerChannel.updateCapacityPercentage(0);
-      expect(workerChannel.availableCapacityPercentage).toStrictEqual(0);
+      workerChannel.availableCapacityPercentage = 0;
 
       const event: Body = {
         workerSid: 'nonExisting',
@@ -254,7 +290,7 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
     });
 
     test('Should return status 404 (Could not find chat channel)', async () => {
-      workerChannel.updateCapacityPercentage(0);
+      workerChannel.availableCapacityPercentage = 0;
 
       const event: Body = {
         workerSid: 'withoutChannel',
@@ -262,17 +298,16 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         request: { cookies: {}, headers: {} },
       };
 
-      await adjustChatCapacity(baseContext, event, () => {});
-      expect(workerChannel.configuredCapacity).toStrictEqual(2);
-
+      let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
+        response = result as MockedResponse;
+      };
+      await adjustChatCapacity(baseContext, event, callback);
+      expect(response).toBeDefined();
+      if (response) {
         expect(response.getStatus()).toBe(404);
         expect(response.getBody().message).toContain('Could not find chat channel');
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      }
     });
 
     test('Should return status 409 (Worker does not have a "maxMessageCapacity" attribute, can\'t adjust capacity.)', async () => {
@@ -282,19 +317,21 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
         request: { cookies: {}, headers: {} },
       };
 
-      await adjustChatCapacity(baseContext, event, () => {});
-      expect(workerChannel.configuredCapacity).toStrictEqual(2);
+      workerChannel.configuredCapacity = 2;
+      let response: MockedResponse | undefined;
 
       const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
+        response = result as MockedResponse;
+      };
+      await adjustChatCapacity(baseContext, event, callback);
+
+      expect(response).toBeDefined();
+      if (response) {
         expect(response.getStatus()).toBe(409);
         expect(response.getBody().message).toContain(
           `Worker ${event.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
         );
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      }
     });
   });
 };
