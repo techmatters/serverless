@@ -14,7 +14,7 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-import { Twilio } from 'twilio';
+import twilio from 'twilio';
 import { WorkspaceContext } from 'twilio/lib/rest/taskrouter/v1/workspace';
 import { TaskContext } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { InteractionContext } from 'twilio/lib/rest/flexApi/v1/interaction';
@@ -27,14 +27,20 @@ import { handler } from '../../functions/interaction/transitionAgentParticipants
 import helpers, { RecursivePartial } from '../helpers';
 import MockedFunction = jest.MockedFunction;
 
+type Twilio = twilio.Twilio;
+
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
+jest.mock('twilio', () => jest.fn());
+
 const TASKROUTER_WORKSPACE_SID = 'WS123';
 const FLEX_INTERACTION_SID = 'KD123';
 const FLEX_INTERACTION_CHANNEL_SID = 'KC123';
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 const mockTaskFetch: MockedFunction<TaskContext['fetch']> = jest.fn().mockResolvedValue({
   attributes: JSON.stringify({
@@ -92,8 +98,10 @@ const mockInteractionGet: MockedFunction<Twilio['flexApi']['v1']['interaction'][
 
 const mockTwilioClient: RecursivePartial<Twilio> = {
   taskrouter: {
-    workspaces: {
-      get: mockWorkspaceGet,
+    v1: {
+      workspaces: {
+        get: mockWorkspaceGet,
+      },
     },
   },
   flexApi: {
@@ -105,13 +113,17 @@ const mockTwilioClient: RecursivePartial<Twilio> = {
   },
 };
 
+mockTwilio.mockReturnValue(mockTwilioClient as Twilio);
+
 const baseContext = {
-  getTwilioClient: (): Twilio => mockTwilioClient as Twilio,
+  getTwilioClient: jest.fn(),
   TWILIO_WORKSPACE_SID: TASKROUTER_WORKSPACE_SID,
   DOMAIN_NAME: 'serverless',
   PATH: 'PATH',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
+  ACCOUNT_SID: 'AC123',
+  AUTH_TOKEN: 'AUTH_TOKEN',
 };
 
 beforeAll(() => {

@@ -23,9 +23,12 @@ import {
   success,
 } from '@tech-matters/serverless-helpers';
 import { InteractionChannelParticipantStatus } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
+import twilio from 'twilio';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 type Body = {
@@ -50,8 +53,8 @@ export const handler = TokenValidator(
     if (!taskSid) return resolve(error400('taskSid'));
     if (!targetStatus) return resolve(error400('targetStatus'));
 
-    const client = context.getTwilioClient();
-    const task = await client.taskrouter.workspaces
+    const client = twilio(context.ACCOUNT_SID, context.AUTH_TOKEN);
+    const task = await client.taskrouter.v1.workspaces
       .get(context.TWILIO_WORKSPACE_SID)
       .tasks.get(taskSid)
       .fetch();
