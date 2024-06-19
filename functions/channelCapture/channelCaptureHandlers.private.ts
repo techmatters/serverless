@@ -117,7 +117,11 @@ const updateChannelWithCapture = async (
     channelType,
   } = attributes;
 
+  console.log('attributes in channelCapture', attributes);
+
   const channelAttributes = JSON.parse(channel.attributes);
+
+  console.log('channelAttributes in channelCapture', channelAttributes);
 
   const userIdentityOrParticipantId = await getServiceUserIdentityOrParticipantId(
     channel,
@@ -145,6 +149,8 @@ const updateChannelWithCapture = async (
       },
     }),
   };
+
+  console.log('newAttributes in channelCapture', newAttributes);
 
   if (isConversation) {
     return (channel as ConversationInstance).update(
