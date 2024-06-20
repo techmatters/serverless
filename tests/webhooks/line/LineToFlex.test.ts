@@ -285,7 +285,7 @@ describe('LineToFlex', () => {
       event,
       expectedStatus,
       expectedMessage,
-      flexFlowSid = 'TWITTER_FLEX_FLOW_SID',
+      flexFlowSid = 'LINE_FLEX_FLOW_SID',
       chatServiceSid = 'CHAT_SERVICE_SID',
     }) => {
       let response: MockedResponse | undefined;

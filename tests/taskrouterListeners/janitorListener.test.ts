@@ -48,7 +48,7 @@ const nonPostSurveyTaskAttributes = {
 
 const customChannelTaskAttributes = {
   channelSid: 'customChannelSid',
-  channelType: 'twitter',
+  channelType: 'line',
 };
 
 const nonCustomChannelTaskAttributes = {

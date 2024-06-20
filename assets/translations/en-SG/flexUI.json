@@ -1,5 +1,4 @@
 {
-  "TaskHeaderLineTwitter": "@{{task.attributes.twitterUserHandle}}",
   "ChatWelcomeText": "Conversation started",
   "TaskHeaderEndCall": "Hang Up",
   "TaskHeaderEndChat": "End Chat",
@@ -385,7 +384,6 @@
   "PreviousContacts-PhoneNumber": "phone number",
   "PreviousContacts-WhatsappNumber": "Whatsapp number",
   "PreviousContacts-FacebookUser": "Facebook user",
-  "PreviousContacts-TwitterUser": "Twitter user",
   "PreviousContacts-InstagramUser": "Instagram user",
   "PreviousContacts-LineUser": "Line user",
   "PreviousContacts-OnlyShowRecordsFrom": "Only show records from",
