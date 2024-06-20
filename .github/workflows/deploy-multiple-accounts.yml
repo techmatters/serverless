@@ -173,6 +173,7 @@ jobs:
           auth-token: ${{ env.TWILIO_AUTH_TOKEN }}
           workspace-sid: $TWILIO_WORKSPACE_SID
           transfer-workflow-sid: $TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+          conversations-transfer-workflow-sid: $TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID
           sync-service-api-key: $SYNC_SERVICE_API_KEY
           sync-service-api-secret: $SYNC_SERVICE_API_SECRET
           sync-service-sid: $SYNC_SERVICE_SID
