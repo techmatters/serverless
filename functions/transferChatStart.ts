@@ -32,6 +32,7 @@ import type { AdjustChatCapacityType } from './adjustChatCapacity';
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
+  TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID: string;
   CHAT_SERVICE_SID: string;
 };
 
@@ -291,7 +292,7 @@ export const handler = TokenValidator(
           .invites.create({
             routing: {
               properties: {
-                workflow_sid: 'WWf66dac1edaa57ded19c3bf8f1aa209a9', // TODO: get from ENV
+                workflow_sid: context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
                 workspace_sid: context.TWILIO_WORKSPACE_SID,
                 attributes: newAttributes,
                 task_channel_unique_name: originalTask.taskChannelUniqueName,

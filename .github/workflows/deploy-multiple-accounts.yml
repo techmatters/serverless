@@ -87,6 +87,11 @@ jobs:
         with:
           ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_CHAT_WORKFLOW_SID
           env_variable_name: TWILIO_CHAT_TRANSFER_WORKFLOW_SID
+      - name: Set Twilio Conversations Chat transfer workflow ID
+        uses: marvinpinto/action-inject-ssm-secrets@latest
+        with:
+          ssm_parameter: /${{ env.FULL_ENVIRONMENT_NAME }}/twilio/${{ env.TWILIO_ACCOUNT_SID }}/conversations_chat_transfer_workflow_sid
+          env_variable_name: TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID
       - name: Set Twilio Sync API secret
         uses: marvinpinto/action-inject-ssm-secrets@latest
         with:
