@@ -32,6 +32,7 @@ import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.
 
 type EnvVars = {
   ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   LINE_FLEX_FLOW_SID: string;

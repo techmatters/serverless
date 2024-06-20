@@ -18,7 +18,7 @@ import {
   ConversationContext,
   ConversationInstance,
 } from 'twilio/lib/rest/conversations/v1/conversation';
-import { Twilio } from 'twilio';
+import twilio, { Twilio } from 'twilio';
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import helpers, { MockedResponse, RecursivePartial } from '../../helpers';
 import { ConversationSid } from '../../../functions/helpers/customChannels/customChannelToFlex.private';
@@ -29,6 +29,8 @@ import {
   TELEGRAM_BOT_API_SECRET_TOKEN_HEADER,
 } from '../../../functions/webhooks/telegram/TelegramToFlex';
 
+jest.mock('twilio', () => jest.fn());
+
 const CH_NEW_TELEGRAM_CONVERSATION_SID = 'CH_NEW_TELEGRAM_CONVERSATION_SID';
 const CH_EXISTING_TELEGRAM_CONVERSATION_SID = 'CH_EXISTING_TELEGRAM_CONVERSATION_SID';
 let conversations: { [x: string]: RecursivePartial<ConversationContext> };
@@ -38,6 +40,8 @@ let baseContext: Context<EnvVars> = {} as Context<EnvVars>;
 let baseTwilioClient: RecursivePartial<Twilio> = {};
 
 let baseEvent: Body;
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(baseContext);
@@ -91,37 +95,40 @@ beforeEach(() => {
 
   baseTwilioClient = {
     conversations: {
-      conversations: {
-        get: (conversationSid: ConversationSid) => {
-          if (!conversations[conversationSid]) throw new Error('Conversation does not exists.');
+      v1: {
+        conversations: {
+          get: (conversationSid: ConversationSid) => {
+            if (!conversations[conversationSid]) throw new Error('Conversation does not exists.');
 
-          return conversations[conversationSid];
+            return conversations[conversationSid];
+          },
+          create: jest.fn().mockImplementation((item) =>
+            Promise.resolve({
+              ...item,
+              sid: CH_NEW_TELEGRAM_CONVERSATION_SID,
+            } as ConversationInstance),
+          ),
         },
-        create: jest.fn().mockImplementation((item) =>
-          Promise.resolve({
-            ...item,
-            sid: CH_NEW_TELEGRAM_CONVERSATION_SID,
-          } as ConversationInstance),
-        ),
-      },
-      participantConversations: {
-        list: async () =>
-          Promise.resolve([
-            {
-              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
-              conversationState: 'active',
-            },
-          ]),
+        participantConversations: {
+          list: async () =>
+            Promise.resolve([
+              {
+                conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+                conversationState: 'active',
+              },
+            ]),
+        },
       },
     },
   };
 
+  mockTwilio.mockImplementation(() => baseTwilioClient as Twilio);
+
   baseContext = {
-    getTwilioClient: ((): RecursivePartial<Twilio> => baseTwilioClient) as () => ReturnType<
-      Context['getTwilioClient']
-    >,
+    getTwilioClient: jest.fn(),
     DOMAIN_NAME: 'serverless',
     ACCOUNT_SID: 'ACCOUNT_SID',
+    AUTH_TOKEN: 'AUTH_TOKEN',
     TELEGRAM_STUDIO_FLOW_SID: 'TELEGRAM_STUDIO_FLOW_SID',
     TELEGRAM_BOT_API_SECRET_TOKEN: 'TELEGRAM_BOT_API_SECRET_TOKEN',
     TELEGRAM_FLEX_BOT_TOKEN: 'TELEGRAM_FLEX_BOT_TOKEN',
@@ -149,7 +156,7 @@ beforeEach(() => {
 
 const verifyConversationCreation = () => {
   const mockTwilioClient = baseTwilioClient as Twilio;
-  expect(mockTwilioClient.conversations.conversations.create as jest.Mock).toHaveBeenCalledWith({
+  expect(mockTwilioClient.conversations.v1.conversations.create as jest.Mock).toHaveBeenCalledWith({
     xTwilioWebhookEnabled: 'true',
     friendlyName: baseEvent.message.chat.username,
     uniqueName: expect.stringMatching(`telegram/telegram:${baseEvent.message.chat.id}/[0-9]+`),
@@ -162,9 +169,7 @@ const verifyConversationCreation = () => {
 
   expect(conversation.update).toHaveBeenCalledWith({
     state: 'active',
-    timers: {
-      closed: expect.any(String),
-    },
+    'timers.closed': expect.any(String),
     attributes: JSON.stringify({
       channel_type: 'telegram',
       channelType: 'telegram',
@@ -178,18 +183,15 @@ const verifyConversationCreation = () => {
 
   expect(calls[0][0]).toStrictEqual({
     target: 'studio',
-    configuration: {
-      flowSid: baseContext.TELEGRAM_STUDIO_FLOW_SID,
-      filters: ['onMessageAdded'],
-    },
+    'configuration.flowSid': baseContext.TELEGRAM_STUDIO_FLOW_SID,
+    'configuration.filters': ['onMessageAdded'],
   });
   expect(calls[1][0]).toStrictEqual({
     target: 'webhook',
-    configuration: {
-      method: 'POST',
-      url: 'https://serverless/webhooks/telegram/FlexToTelegram?recipientId=telegram_message_id',
-      filters: ['onMessageAdded'],
-    },
+    'configuration.method': 'POST',
+    'configuration.url':
+      'https://serverless/webhooks/telegram/FlexToTelegram?recipientId=telegram_message_id',
+    'configuration.filters': ['onMessageAdded'],
   });
 };
 
@@ -234,9 +236,12 @@ test('No existing conversation found - creates one before sending a message to i
   baseTwilioClient = {
     ...baseTwilioClient,
     conversations: {
-      ...baseTwilioClient.conversations,
-      participantConversations: {
-        list: async () => Promise.resolve([]),
+      v1: {
+        ...baseTwilioClient!.conversations!.v1,
+        ...baseTwilioClient.conversations,
+        participantConversations: {
+          list: async () => Promise.resolve([]),
+        },
       },
     },
   };
@@ -253,19 +258,21 @@ test('Existing conversation closed found - creates a new one before sending a me
   baseTwilioClient = {
     ...baseTwilioClient,
     conversations: {
-      ...baseTwilioClient.conversations,
-      participantConversations: {
-        list: async () =>
-          Promise.resolve([
-            {
-              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
-              conversationState: 'closed',
-            },
-            {
-              conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
-              conversationState: 'closed',
-            },
-          ]),
+      v1: {
+        ...baseTwilioClient!.conversations!.v1,
+        participantConversations: {
+          list: async () =>
+            Promise.resolve([
+              {
+                conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+                conversationState: 'closed',
+              },
+              {
+                conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+                conversationState: 'closed',
+              },
+            ]),
+        },
       },
     },
   };
@@ -282,19 +289,21 @@ test('Existing active conversation found - sends a message to it', async () => {
   baseTwilioClient = {
     ...baseTwilioClient,
     conversations: {
-      ...baseTwilioClient.conversations,
-      participantConversations: {
-        list: async () =>
-          Promise.resolve([
-            {
-              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
-              conversationState: 'active',
-            },
-            {
-              conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
-              conversationState: 'closed',
-            },
-          ]),
+      v1: {
+        ...baseTwilioClient!.conversations!.v1,
+        participantConversations: {
+          list: async () =>
+            Promise.resolve([
+              {
+                conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+                conversationState: 'active',
+              },
+              {
+                conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+                conversationState: 'closed',
+              },
+            ]),
+        },
       },
     },
   };
@@ -302,7 +311,7 @@ test('Existing active conversation found - sends a message to it', async () => {
   const callback = jest.fn();
   await handler(baseContext, baseEvent, callback);
   const mockTwilioClient = baseTwilioClient as Twilio;
-  expect(mockTwilioClient.conversations.conversations.create).not.toHaveBeenCalled();
+  expect(mockTwilioClient.conversations.v1.conversations.create).not.toHaveBeenCalled();
   verifyMessageCreation(CH_EXISTING_TELEGRAM_CONVERSATION_SID);
   const response: MockedResponse = callback.mock.calls[0][1];
   expect(response.getStatus()).toBe(200);

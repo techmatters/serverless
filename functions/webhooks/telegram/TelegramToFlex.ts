@@ -33,6 +33,7 @@ export type EnvVars = {
   TELEGRAM_BOT_API_SECRET_TOKEN: string;
   TELEGRAM_FLEX_BOT_TOKEN: string;
   ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 export type Body = {

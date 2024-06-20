@@ -17,9 +17,13 @@
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import each from 'jest-each';
 import crypto from 'crypto';
+import twilio from 'twilio';
 import { handler as LineToFlex, Body } from '../../../functions/webhooks/line/LineToFlex';
 
 import helpers, { MockedResponse } from '../../helpers';
+
+jest.mock('twilio', () => jest.fn());
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 
 const channels: { [x: string]: any } = {
   'line:sender_id': {
@@ -64,9 +68,9 @@ documentsMock.create = async ({ data, uniqueName }: { data: any; uniqueName: str
   return documents[uniqueName];
 };
 
-const baseContext = {
-  getTwilioClient: (): any => ({
-    chat: {
+const mockTwilioClient: any = {
+  chat: {
+    v2: {
       services: (serviceSid: string) => {
         if (serviceSid === 'not-existing') throw new Error('Service does not exists.');
 
@@ -79,7 +83,9 @@ const baseContext = {
         };
       },
     },
-    flexApi: {
+  },
+  flexApi: {
+    v1: {
       channel: {
         create: async ({ flexFlowSid, identity }: { flexFlowSid: string; identity: string }) => {
           if (flexFlowSid === 'not-existing') throw new Error('Flex Flow does not exists.');
@@ -90,12 +96,20 @@ const baseContext = {
         },
       },
     },
-    sync: {
+  },
+  sync: {
+    v1: {
       services: () => ({
         documents: documentsMock,
       }),
     },
-  }),
+  },
+};
+
+mockTwilio.mockReturnValue(mockTwilioClient);
+
+const baseContext = {
+  getTwilioClient: jest.fn(),
   DOMAIN_NAME: 'serverless',
   ACCOUNT_SID: 'ACCOUNT_SID',
   AUTH_TOKEN: 'AUTH_TOKEN',

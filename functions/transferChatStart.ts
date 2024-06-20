@@ -235,7 +235,6 @@ export const handler = TokenValidator(
           taskChannel: originalTask.taskChannelUniqueName,
           attributes: JSON.stringify(newAttributes),
           priority: 100,
-          virtualStartTime: new Date(0),
         });
 
       // Increse the chat capacity for the target worker (if needed)

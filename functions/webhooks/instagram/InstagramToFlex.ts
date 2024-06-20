@@ -34,6 +34,8 @@ type EnvVars = {
   FACEBOOK_APP_SECRET: string;
   FACEBOOK_PAGE_ACCESS_TOKEN: string;
   INSTAGRAM_FLEX_FLOW_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 type InstagramMessageObject = {
@@ -103,7 +105,10 @@ const unsendMessage = async (
   }: { chatServiceSid: string; channelSid: string; messageExternalId: string },
 ) => {
   const client = context.getTwilioClient();
-  const messages = await client.chat.services(chatServiceSid).channels(channelSid).messages.list();
+  const messages = await client.chat.v2
+    .services(chatServiceSid)
+    .channels(channelSid)
+    .messages.list();
 
   const messageToUnsend = messages.find(
     (m) => JSON.parse(m.attributes).messageExternalId === messageExternalId,
@@ -243,7 +248,7 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(Error('Reached unexpected default case')));
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));

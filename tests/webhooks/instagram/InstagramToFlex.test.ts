@@ -17,12 +17,16 @@
 import each from 'jest-each';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import crypto from 'crypto';
+import twilio from 'twilio';
 import {
   handler as InstagramToFlex,
   Body,
 } from '../../../functions/webhooks/instagram/InstagramToFlex';
 import helpers, { MockedResponse } from '../../helpers';
 
+jest.mock('twilio', () => jest.fn());
+
+const mockTwilio = twilio as jest.MockedFunction<typeof twilio>;
 const MOCK_CHANNEL_TYPE = 'instagram';
 const MOCK_SENDER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:sender_id`;
 const MOCK_OTHER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:other_id`;
@@ -38,6 +42,7 @@ const newChannel = (sid: string, messages: any[] = []) => ({
     create: async () => {},
   },
   update: async () => {},
+  remove: jest.fn(),
 });
 
 const mockOneMessage = {
@@ -146,39 +151,46 @@ describe('InstagramToFlex', () => {
   beforeEach(() => {
     mockTwilioClient = {
       chat: {
-        services: (serviceSid: string) => {
-          if (serviceSid === 'not-existing') throw new Error('Service does not exists.');
+        v2: {
+          services: (serviceSid: string) => {
+            if (serviceSid === 'not-existing') throw new Error('Service does not exists.');
 
-          return {
-            channels: (channelSid: string) => {
-              if (!channels[channelSid]) throw new Error('Channel does not exists.');
+            return {
+              channels: (channelSid: string) => {
+                if (!channels[channelSid]) throw new Error('Channel does not exists.');
 
-              return { fetch: async () => channels[channelSid], ...channels[channelSid] };
-            },
-          };
+                return { fetch: async () => channels[channelSid], ...channels[channelSid] };
+              },
+            };
+          },
         },
       },
       flexApi: {
-        channel: {
-          create: jest
-            .fn()
-            .mockImplementation(
-              async ({ flexFlowSid, identity }: { flexFlowSid: string; identity: string }) => {
-                if (flexFlowSid === 'not-existing') throw new Error('Flex Flow does not exists.');
-                return channels[identity];
-              },
-            ),
+        v1: {
+          channel: {
+            create: jest
+              .fn()
+              .mockImplementation(
+                async ({ flexFlowSid, identity }: { flexFlowSid: string; identity: string }) => {
+                  if (flexFlowSid === 'not-existing') throw new Error('Flex Flow does not exists.');
+                  return channels[identity];
+                },
+              ),
+          },
         },
       },
       sync: {
-        services: () => ({
-          documents: documentsMock,
-        }),
+        v1: {
+          services: () => ({
+            documents: documentsMock,
+          }),
+        },
       },
     };
 
     Object.entries(channels).forEach(([, c]) => c.messages.create.mockClear());
     mockOneMessage.update.mockClear();
+    mockTwilio.mockReturnValue(mockTwilioClient);
   });
 
   afterAll(() => {
@@ -423,7 +435,7 @@ describe('InstagramToFlex', () => {
           });
         }
         if (expectedToCreateChannel) {
-          expect(mockTwilioClient.flexApi.channel.create).toBeCalledWith(
+          expect(mockTwilioClient.flexApi.v1.channel.create).toBeCalledWith(
             expect.objectContaining({
               flexFlowSid,
               identity: expectedToCreateChannel,
@@ -433,7 +445,7 @@ describe('InstagramToFlex', () => {
             }),
           );
         } else {
-          expect(mockTwilioClient.flexApi.channel.create).not.toBeCalled();
+          expect(mockTwilioClient.flexApi.v1.channel.create).not.toBeCalled();
         }
 
         if (expectedToDeleteMessage) expect(mockOneMessage.update).toHaveBeenCalled();
