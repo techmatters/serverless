@@ -181,7 +181,6 @@ export const removeConversation = async (
 ) => context.getTwilioClient().conversations.conversations(conversationSid).remove();
 
 export enum AseloCustomChannels {
-  Twitter = 'twitter',
   Instagram = 'instagram',
   Line = 'line',
   Modica = 'modica',
@@ -195,10 +194,10 @@ type CreateFlexChannelParams = {
   flexFlowSid: string;
   chatServiceSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
-  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
+  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567)
   chatFriendlyName: string; // A name for the Flex channel (tipcally same as uniqueUserName)
   uniqueUserName: string; // Unique identifier for this user
-  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
+  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Telegram handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   onChannelUpdatedWebhookUrl?: string; // The url that must be used as the onChannelUpdated event webhook. If not present, it defaults to https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate
 };
@@ -207,10 +206,10 @@ type CreateFlexConversationParams = {
   studioFlowSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
   uniqueUserName: string; // Unique identifier for this user
-  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
+  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Telegram handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
-  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
+  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567)
 };
 
 /**
@@ -235,8 +234,6 @@ const createFlexChannel = async (
     onChannelUpdatedWebhookUrl,
   }: CreateFlexChannelParams,
 ) => {
-  // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
-
   const client = context.getTwilioClient();
 
   const channel = await client.flexApi.channel.create({
@@ -258,7 +255,7 @@ const createFlexChannel = async (
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
-        senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
+        senderScreenName,
         twilioNumber,
       }),
     });
@@ -309,8 +306,6 @@ const createConversation = async (
     studioFlowSid,
   }: CreateFlexConversationParams,
 ): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
-  // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
-
   const client = context.getTwilioClient();
 
   const conversationInstance = await client.conversations.conversations.create({
@@ -380,7 +375,7 @@ type SendConversationMessageToFlexParams = Omit<CreateFlexConversationParams, 't
   senderExternalId: string; // The id in the external chat system of the user sending the message - accountSid if not provided
   messageAttributes?: string; // [optional] The message attributes
   customSubscribedExternalId?: string; // The id in the external chat system of the user that is subscribed to the webhook
-  customTwilioNumber?: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567) - will be <channnel>:<accountSid> if not provided
+  customTwilioNumber?: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567) - will be <channnel>:<accountSid> if not provided
 };
 
 /**
@@ -391,7 +386,7 @@ type SendConversationMessageToFlexParams = Omit<CreateFlexConversationParams, 't
  * To retrieve the channel we do a lookup on the user channel map stored in Sync Service.
  * If the channel or the map does not exists, we create it here.
  * The uniqueUserName is typacally '<channelType>:<unique identifier of the sender>'
- *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
+ *   (e.g. if the message is sent by Telegram user 1234567, the uniqueUserName will be 'telegram:1234567')
  */
 export const sendMessageToFlex = async (
   context: Context,
@@ -475,7 +470,7 @@ export const sendMessageToFlex = async (
  * To retrieve the channel we do a lookup on the user channel map stored in Sync Service.
  * If the channel or the map does not exists, we create it here.
  * The uniqueUserName is typacally '<channelType>:<unique identifier of the sender>'
- *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
+ *   (e.g. if the message is sent by Telegram user 1234567, the uniqueUserName will be 'telegram:1234567')
  */
 export const sendConversationMessageToFlex = async (
   context: Context<{ ACCOUNT_SID: string }>,
