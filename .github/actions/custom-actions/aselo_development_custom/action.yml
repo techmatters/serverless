@@ -192,10 +192,10 @@ runs:
       run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_STUDIO_FLOW_SID
-      run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
-      run: echo "LINE_TWILIO_MESSAGING_MODE=${{ env.LINE_TWILIO_MESSAGING_MODE }}" >> .env
+      run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash
     - name: Add LINE_FLEX_FLOW_SID
       run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
