@@ -85,7 +85,39 @@ let tasks: any[] = [
       return task;
     },
   },
+  {
+    sid: 'conversationTask',
+    taskChannelUniqueName: 'channel',
+    attributes: '{"conversationSid":"CHxxx", "channelSid":"CHxxx"}',
+    fetch: async () => tasks.find((t) => t.sid === 'conversationTask'),
+    update: async ({
+      attributes,
+      assignmentStatus,
+      reason,
+    }: {
+      attributes: string;
+      assignmentStatus: string;
+      reason: string;
+    }) => {
+      const task = tasks.find((t) => t.sid === 'conversationTask');
+      tasks = tasks.map((t) => {
+        if (t.sid === task.sid) {
+          return {
+            ...task,
+            attributes: attributes || task.attributes,
+            assignmentStatus: assignmentStatus || task.assignmentStatus,
+            reason: reason || task.reason,
+          };
+        }
+        return t;
+      });
+
+      return task;
+    },
+  },
 ];
+
+const originalTaskCount = tasks.length;
 
 const channels: { [x: string]: string[] } = {};
 
@@ -131,6 +163,10 @@ const workspaces: { [x: string]: any } = {
         },
       };
     },
+    taskQueues: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      list: (options: any) => [{ sid: 'TQxxx' }],
+    },
   },
 };
 
@@ -148,6 +184,14 @@ workspaces.WSxxx.tasks.create = async (options: any) => {
 
   return newTask;
 };
+
+const mockedCreateInvite = jest.fn().mockResolvedValue({
+  routing: {
+    properties: {
+      sid: 'newTaskSid',
+    },
+  },
+});
 
 const baseContext = {
   getTwilioClient: (): any => ({
@@ -190,11 +234,43 @@ const baseContext = {
         throw new Error('Error retrieving chat service');
       },
     },
+    flexApi: {
+      v1: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        interaction: (interactionSid: string) => ({
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          channels: (channelSid: string) => ({
+            invites: {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              create: mockedCreateInvite,
+            },
+          }),
+        }),
+      },
+    },
+    conversations: {
+      conversations: (conversationSid: string) => {
+        if (conversationSid) {
+          return {
+            fetch: async () =>
+              Promise.resolve({
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                participants: (participantSid: string) => ({
+                  list: async () =>
+                    Promise.resolve([{ sid: 'participantSid', identity: 'identity' }]),
+                }),
+              }),
+          };
+        }
+
+        throw new Error('Error retrieving conversation');
+      },
+    },
   }),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
-  TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
+  TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID: 'WWyyy',
   CHAT_SERVICE_SID: 'ISxxx',
   PATH: 'PATH',
   SERVICE_SID: undefined,
@@ -213,7 +289,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  if (tasks.length > 2) tasks = tasks.slice(0, 2);
+  if (tasks.length > originalTaskCount) tasks = tasks.slice(0, originalTaskCount);
 });
 
 describe('transferChatStart (with maxMessageCapacity set)', () => {
@@ -356,7 +432,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask).toStrictEqual(before[0]);
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
@@ -400,7 +476,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
       expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
@@ -484,13 +560,94 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
       expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
       expect(channels.channel).toContain('worker1'); // Counselor is not being kicked anymore
       expect(channels.channel).toContain('worker2');
+    };
+
+    await transferChatStart(baseContext, event, callback);
+  });
+});
+
+describe('Conversations', () => {
+  test('Transfer to worker', async () => {
+    const event: Body = {
+      taskSid: 'conversationTask',
+      targetSid: 'WKxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      request: { cookies: {}, headers: {} },
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
+      expect(mockedCreateInvite).toHaveBeenCalledWith({
+        routing: {
+          properties: {
+            queue_sid: 'TQxxx',
+            worker_sid: 'WKxxx',
+            workflow_sid: baseContext.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+            workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
+            attributes: {
+              channelSid: 'CHxxx',
+              conversationSid: 'CHxxx',
+              conversations: {
+                conversation_id: 'conversationTask',
+              },
+              ignoreAgent: 'worker1',
+              originalParticipantSid: 'participantSid',
+              targetSid: 'WKxxx',
+              transferTargetType: 'worker',
+            },
+            task_channel_unique_name: 'channel',
+          },
+        },
+      });
+    };
+
+    await transferChatStart(baseContext, event, callback);
+  });
+  test('Transfer to queue', async () => {
+    const event: Body = {
+      taskSid: 'conversationTask',
+      targetSid: 'WQxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      request: { cookies: {}, headers: {} },
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
+      expect(mockedCreateInvite).toHaveBeenCalledWith({
+        routing: {
+          properties: {
+            workflow_sid: baseContext.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+            workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
+            attributes: {
+              channelSid: 'CHxxx',
+              conversationSid: 'CHxxx',
+              conversations: {
+                conversation_id: 'conversationTask',
+              },
+              ignoreAgent: 'worker1',
+              originalParticipantSid: 'participantSid',
+              targetSid: 'WQxxx',
+              transferTargetType: 'queue',
+            },
+            task_channel_unique_name: 'channel',
+          },
+        },
+      });
     };
 
     await transferChatStart(baseContext, event, callback);
