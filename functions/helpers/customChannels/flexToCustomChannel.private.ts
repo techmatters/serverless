@@ -95,7 +95,7 @@ export const redirectConversationMessageToExternalChat = async (
     shouldSend = true;
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
-    const conversation = await client.conversations.conversations.get(ConversationSid).fetch();
+    const conversation = await client.conversations.v1.conversations.get(ConversationSid).fetch();
     const { attributes } = conversation;
     const { participantSid } = JSON.parse(attributes);
 

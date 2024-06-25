@@ -30,7 +30,6 @@ import {
   ChannelToFlex,
   ChatChannelSid,
   ConversationSid,
-  findExistingConversation,
 } from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
@@ -199,7 +198,10 @@ export const handler = async (
     if (useConversations) {
       // Handle message deletion for active conversations
       if (isMessageDeleted(message)) {
-        const conversationSid = await findExistingConversation(context, uniqueUserName);
+        const conversationSid = await channelToFlex.findExistingConversation(
+          context,
+          uniqueUserName,
+        );
 
         if (conversationSid) {
           // const unsentMessage =
@@ -222,7 +224,10 @@ export const handler = async (
 
       // Handle story tags for active conversations
       if (isStoryMention(message)) {
-        const conversationSid = await findExistingConversation(context, uniqueUserName);
+        const conversationSid = await channelToFlex.findExistingConversation(
+          context,
+          uniqueUserName,
+        );
 
         if (conversationSid) {
           messageText = getStoryMentionText(message);
