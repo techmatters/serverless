@@ -79,6 +79,16 @@ runs:
       with:
         ssm_parameter: "DEV_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
         env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+    - name: Set helpline Instagram Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
+    - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/instagram/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
     # Line environment variables
     - name: Set helpline Line Flex Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
@@ -180,6 +190,12 @@ runs:
       shell: bash
     - name: Add INSTAGRAM_FLEX_FLOW_SID
       run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
+      run: echo "LINE_TWILIO_MESSAGING_MODE=${{ env.LINE_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash
     - name: Add LINE_FLEX_FLOW_SID
       run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env

@@ -24,11 +24,15 @@ import {
   error400,
   error500,
   success,
+  ResolveFunction,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
+
 import {
+  ConversationWebhookEvent,
   FlexToCustomChannel,
   ProgrammableChatWebhookEvent,
+  RedirectResult,
+  WebhookEvent,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
 type EnvVars = {
@@ -37,8 +41,8 @@ type EnvVars = {
   FACEBOOK_PAGE_ACCESS_TOKEN: string;
 };
 
-export type Body = Partial<ProgrammableChatWebhookEvent> & {
-  recipientId?: string; // The IGSID of the user that started the conversation. Provided as query parameter
+export type Body = WebhookEvent & {
+  recipientId: string; // The IGSID of the user that started the conversation. Provided as query parameter
 };
 
 const sendInstagramMessage =
@@ -51,18 +55,39 @@ const sendInstagramMessage =
         text: messageText,
       },
     };
-    // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
-    const response = await axios.request({
-      url: `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-      method: 'post',
-      data: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
 
-    return response.data;
+    const response = await fetch(
+      `https://graph.facebook.com/v19.0/me/messages?access_token=${context.FACEBOOK_PAGE_ACCESS_TOKEN}`,
+      {
+        method: 'post',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return {
+      ok: response.ok,
+      resultCode: response.status,
+      body: await response.json(),
+      meta: Object.fromEntries(Object.entries(response.headers)),
+    };
   };
+
+const validateProperties = (
+  event: any,
+  resolveFunc: (f: ResolveFunction) => void,
+  requiredProperties: string[],
+): boolean => {
+  for (const prop of requiredProperties) {
+    if (event[prop] === undefined) {
+      resolveFunc(error400(prop));
+      return false;
+    }
+  }
+  return true;
+};
 
 export const handler = async (
   context: Context<EnvVars>,
@@ -73,48 +98,49 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    if (recipientId === undefined) {
-      resolve(error400('recipientId'));
-      return;
-    }
-    if (Body === undefined) {
-      resolve(error400('Body'));
-      return;
-    }
-    if (From === undefined) {
-      resolve(error400('From'));
-      return;
-    }
-    if (ChannelSid === undefined) {
-      resolve(error400('ChannelSid'));
-      return;
-    }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
-
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
+    // eslint-disable-next-line global-require,import/no-dynamic-require
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
 
-    const sanitizedEvent = {
-      Body,
-      From,
-      ChannelSid,
-      EventType,
-      Source,
-    };
+    let result: RedirectResult;
 
-    const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
-      event: sanitizedEvent,
-      recipientId,
-      sendExternalMessage: sendInstagramMessage(context),
-    });
+    if (flexToCustomChannel.isConversationWebhookEvent(event)) {
+      const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
+        'ConversationSid',
+        'Body',
+        'Author',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(event, resolve, requiredProperties)) return;
+
+      const { recipientId, ...eventToSend } = event;
+
+      result = await flexToCustomChannel.redirectConversationMessageToExternalChat(context, {
+        event: eventToSend,
+        recipientId,
+        sendExternalMessage: sendInstagramMessage(context),
+      });
+    } else {
+      const requiredProperties: (keyof ProgrammableChatWebhookEvent | 'recipientId')[] = [
+        'ChannelSid',
+        'Body',
+        'From',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(event, resolve, requiredProperties)) return;
+
+      const { recipientId, ...sanitizedEvent } = event;
+
+      result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
+        event: sanitizedEvent,
+        recipientId,
+        sendExternalMessage: sendInstagramMessage(context),
+      });
+    }
 
     switch (result.status) {
       case 'sent':
@@ -124,7 +150,7 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(new Error('Reached unexpected default case')));
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
