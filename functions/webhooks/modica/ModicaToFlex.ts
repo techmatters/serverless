@@ -13,21 +13,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
-/**
- * Copyright (C) 2021-2023 Technology Matters
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see https://www.gnu.org/licenses/.
- */
 
 /* eslint-disable import/no-dynamic-require */
 /* eslint-disable global-require */
@@ -38,9 +23,12 @@ import { responseWithCors, bindResolve, error500, success } from '@tech-matters/
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
+  ACCOUNT_SID: string;
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
   MODICA_FLEX_FLOW_SID: string;
+  MODICA_STUDIO_FLOW_SID: string;
+  MODICA_TWILIO_MESSAGING_MODE?: 'conversations' | 'programmable-chat' | '';
 };
 
 export type Event = {
@@ -54,6 +42,8 @@ export const handler = async (
   event: Event,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== ModicaToFlex handler ====');
+  console.log('Received event:', event);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
@@ -64,6 +54,7 @@ export const handler = async (
 
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
+    const useConversations = context.MODICA_TWILIO_MESSAGING_MODE === 'conversations';
 
     const messageText = content;
     const channelType = channelToFlex.AseloCustomChannels.Modica;
@@ -74,22 +65,38 @@ export const handler = async (
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = 'child'; // TODO: Should we display something else here?
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/modica/FlexToModica?recipientId=${senderExternalId}`;
+    let result: Awaited<ReturnType<typeof channelToFlex.sendConversationMessageToFlex>>;
 
-    // eslint-disable-next-line no-await-in-loop
-    const result = await channelToFlex.sendMessageToFlex(context, {
-      flexFlowSid: context.MODICA_FLEX_FLOW_SID,
-      chatServiceSid: context.CHAT_SERVICE_SID,
-      syncServiceSid: context.SYNC_SERVICE_SID,
-      channelType,
-      twilioNumber,
-      chatFriendlyName,
-      uniqueUserName,
-      senderScreenName,
-      onMessageSentWebhookUrl,
-      messageText,
-      senderExternalId,
-      subscribedExternalId,
-    });
+    if (useConversations) {
+      // eslint-disable-next-line no-await-in-loop
+      result = await channelToFlex.sendConversationMessageToFlex(context, {
+        studioFlowSid: context.MODICA_STUDIO_FLOW_SID,
+        conversationFriendlyName: chatFriendlyName,
+        channelType,
+        uniqueUserName,
+        senderScreenName,
+        onMessageSentWebhookUrl,
+        messageText,
+        senderExternalId,
+        customSubscribedExternalId: subscribedExternalId,
+      });
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      result = await channelToFlex.sendMessageToFlex(context, {
+        flexFlowSid: context.MODICA_FLEX_FLOW_SID,
+        chatServiceSid: context.CHAT_SERVICE_SID,
+        syncServiceSid: context.SYNC_SERVICE_SID,
+        channelType,
+        twilioNumber,
+        chatFriendlyName,
+        uniqueUserName,
+        senderScreenName,
+        onMessageSentWebhookUrl,
+        messageText,
+        senderExternalId,
+        subscribedExternalId,
+      });
+    }
 
     switch (result.status) {
       case 'sent':
