@@ -107,7 +107,7 @@ export const redirectConversationMessageToExternalChat = async (
 
     // Redirect bot, system or third participant, but not self
     // conversation participantSid is being set to Author in Instagram convos for some reason?
-    shouldSend = participantSid && [Author, ParticipantSid].includes(participantSid);
+    shouldSend = participantSid && ![Author, ParticipantSid].includes(participantSid);
   }
   if (shouldSend) {
     const response = await sendExternalMessage(recipientId, Body);
