@@ -97,8 +97,7 @@ export const handler = async (
   callback: ServerlessCallback,
 ) => {
   console.log('==== FlexToInstagram handler ====');
-  console.log('Received event:');
-  Object.entries(event).forEach(([k, v]) => console.log(`'${k}':`, v));
+  console.log('Received event:', event);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
