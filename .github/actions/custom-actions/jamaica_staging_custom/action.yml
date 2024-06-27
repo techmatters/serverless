@@ -36,12 +36,12 @@ runs:
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
         env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
     - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/development/instagram/${{inputs.account-sid}}/messaging_mode"
+        ssm_parameter: "/staging/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
     # Append environment variables
     - name: Add FACEBOOK_APP_SECRET
