@@ -23,6 +23,7 @@ import {
   InteractionChannelParticipantContext,
   InteractionChannelParticipantInstance,
 } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
+import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { handler } from '../../functions/interaction/transitionAgentParticipants';
 import helpers, { RecursivePartial } from '../helpers';
 import MockedFunction = jest.MockedFunction;
@@ -106,7 +107,7 @@ const mockTwilioClient: RecursivePartial<Twilio> = {
 };
 
 const baseContext = {
-  getTwilioClient: (): Twilio => mockTwilioClient as Twilio,
+  getTwilioClient: (): Twilio => mockTwilioClient as ReturnType<Context['getTwilioClient']>,
   TWILIO_WORKSPACE_SID: TASKROUTER_WORKSPACE_SID,
   DOMAIN_NAME: 'serverless',
   PATH: 'PATH',
