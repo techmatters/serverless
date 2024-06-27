@@ -49,6 +49,8 @@ runs:
     - name: Aselo Staging release custom action
       if: inputs.helpline-name == format('AS_STG')
       uses: ./.github/actions/custom-actions/aselo_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: SafeSpot Staging release custom action
       if: inputs.helpline-name == format('JM_STG')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
