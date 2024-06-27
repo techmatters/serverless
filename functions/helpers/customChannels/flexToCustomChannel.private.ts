@@ -98,10 +98,6 @@ export const redirectConversationMessageToExternalChat = async (
     const conversation = await client.conversations.v1.conversations.get(ConversationSid).fetch();
     const { attributes: attributesString } = conversation;
     const attributes = JSON.parse(attributesString);
-    console.log('Conversation attributes:');
-    Object.entries(attributes).forEach(([key, value]) => {
-      console.log(`${key}:`, value);
-    });
 
     const { participantSid } = attributes;
 
