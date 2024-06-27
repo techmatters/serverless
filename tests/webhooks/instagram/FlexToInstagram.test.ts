@@ -184,7 +184,14 @@ describe('FlexToInstagram', () => {
     async ({ event, shouldBeIgnored }) => {
       mockFetch.mockClear();
 
-      mockFetch.mockResolvedValue({ status: 200, ok: true, json: async () => ({}) } as Response);
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: async () => Promise.resolve({}),
+        headers: {
+          some: 'header',
+        } as any,
+      } as Response);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -217,7 +224,16 @@ describe('FlexToInstagram', () => {
       if (response) {
         expect({ status: response.getStatus(), body: response.getBody() }).toMatchObject({
           status: 200,
-          body: shouldBeIgnored ? expect.stringContaining('Ignored event.') : expect.anything(),
+          body: shouldBeIgnored
+            ? expect.stringContaining('Ignored event.')
+            : {
+                ok: true,
+                meta: {
+                  some: 'header',
+                },
+                resultCode: 200,
+                body: {},
+              },
         });
       }
     },

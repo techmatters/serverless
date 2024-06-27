@@ -29,6 +29,7 @@ import {
 
 import {
   ConversationWebhookEvent,
+  ExternalSendResult,
   FlexToCustomChannel,
   ProgrammableChatWebhookEvent,
   RedirectResult,
@@ -46,7 +47,8 @@ export type Body = WebhookEvent & {
 };
 
 const sendInstagramMessage =
-  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
+  (context: Context<EnvVars>) =>
+  async (recipientId: string, messageText: string): Promise<ExternalSendResult> => {
     const body = {
       recipient: {
         id: recipientId,
