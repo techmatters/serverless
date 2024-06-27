@@ -96,8 +96,7 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
-
-  console.log('==== FlexToLine handler ====');
+  console.log('==== FlexToInstagram handler ====');
   console.log('Received event:');
   Object.entries(event).forEach(([k, v]) => console.log(`'${k}':`, v));
   const response = responseWithCors();

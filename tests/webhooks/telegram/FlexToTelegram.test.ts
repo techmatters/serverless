@@ -48,8 +48,10 @@ beforeAll(() => {
 
   baseTwilioClient = {
     conversations: {
-      conversations: {
-        get: () => conversationContext,
+      v1: {
+        conversations: {
+          get: () => conversationContext,
+        },
       },
     },
   };
@@ -99,8 +101,10 @@ beforeEach(() => {
 
   baseTwilioClient = {
     conversations: {
-      conversations: {
-        get: () => conversationContext,
+      v1: {
+        conversations: {
+          get: () => conversationContext,
+        },
       },
     },
   };
