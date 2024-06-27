@@ -89,7 +89,7 @@ export const redirectConversationMessageToExternalChat = async (
   context: Context,
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent, ExternalSendResult>,
 ): Promise<RedirectResult> => {
-  const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
+  const { Body, ConversationSid, EventType, ParticipantSid, Source, Author } = event;
   let shouldSend = false;
   if (Source === 'SDK') {
     shouldSend = true;
@@ -106,7 +106,8 @@ export const redirectConversationMessageToExternalChat = async (
     const { participantSid } = attributes;
 
     // Redirect bot, system or third participant, but not self
-    shouldSend = participantSid && participantSid !== ParticipantSid;
+    // conversation participantSid is being set to Author in Instagram convos for some reason?
+    shouldSend = participantSid && [Author, ParticipantSid].includes(participantSid);
   }
   if (shouldSend) {
     const response = await sendExternalMessage(recipientId, Body);
