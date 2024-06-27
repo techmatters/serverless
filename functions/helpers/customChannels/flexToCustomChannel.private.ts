@@ -89,18 +89,21 @@ export const redirectConversationMessageToExternalChat = async (
   context: Context,
   { event, recipientId, sendExternalMessage }: Params<ConversationWebhookEvent, ExternalSendResult>,
 ): Promise<RedirectResult> => {
-  const { Body, ConversationSid, EventType, ParticipantSid, Source } = event;
+  const { Body, ConversationSid, EventType, ParticipantSid, Source, Author } = event;
   let shouldSend = false;
   if (Source === 'SDK') {
     shouldSend = true;
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
-    const conversation = await client.conversations.conversations.get(ConversationSid).fetch();
-    const { attributes } = conversation;
-    const { participantSid } = JSON.parse(attributes);
+    const conversation = await client.conversations.v1.conversations.get(ConversationSid).fetch();
+    const { attributes: attributesString } = conversation;
+    const attributes = JSON.parse(attributesString);
+
+    const { participantSid } = attributes;
 
     // Redirect bot, system or third participant, but not self
-    shouldSend = participantSid && participantSid !== ParticipantSid;
+    // conversation participantSid is being set to Author in Instagram convos for some reason?
+    shouldSend = participantSid && ![Author, ParticipantSid].includes(participantSid);
   }
   if (shouldSend) {
     const response = await sendExternalMessage(recipientId, Body);

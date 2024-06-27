@@ -55,7 +55,7 @@ export const findExistingConversation = async (
 ): Promise<ConversationSid | undefined> => {
   const conversations = await context
     .getTwilioClient()
-    .conversations.participantConversations.list({ identity });
+    .conversations.v1.participantConversations.list({ identity });
   const existing = conversations.find((conversation) =>
     ['active', 'inactive'].includes(conversation.conversationState),
   );
@@ -540,4 +540,5 @@ export type ChannelToFlex = {
   retrieveChannelFromUserChannelMap: typeof retrieveChannelFromUserChannelMap;
   AseloCustomChannels: typeof AseloCustomChannels;
   isAseloCustomChannel: typeof isAseloCustomChannel;
+  findExistingConversation: typeof findExistingConversation;
 };

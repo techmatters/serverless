@@ -104,14 +104,16 @@ beforeEach(() => {
           } as ConversationInstance),
         ),
       },
-      participantConversations: {
-        list: async () =>
-          Promise.resolve([
-            {
-              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
-              conversationState: 'active',
-            },
-          ]),
+      v1: {
+        participantConversations: {
+          list: async () =>
+            Promise.resolve([
+              {
+                conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+                conversationState: 'active',
+              },
+            ]),
+        },
       },
     },
   };
@@ -233,8 +235,11 @@ test('No existing conversation found - creates one before sending a message to i
     ...baseTwilioClient,
     conversations: {
       ...baseTwilioClient.conversations,
-      participantConversations: {
-        list: async () => Promise.resolve([]),
+      v1: {
+        ...baseTwilioClient.conversations?.v1,
+        participantConversations: {
+          list: async () => Promise.resolve([]),
+        },
       },
     },
   };
@@ -252,18 +257,21 @@ test('Existing conversation closed found - creates a new one before sending a me
     ...baseTwilioClient,
     conversations: {
       ...baseTwilioClient.conversations,
-      participantConversations: {
-        list: async () =>
-          Promise.resolve([
-            {
-              conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
-              conversationState: 'closed',
-            },
-            {
-              conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
-              conversationState: 'closed',
-            },
-          ]),
+      v1: {
+        ...baseTwilioClient.conversations?.v1,
+        participantConversations: {
+          list: async () =>
+            Promise.resolve([
+              {
+                conversationSid: CH_EXISTING_TELEGRAM_CONVERSATION_SID,
+                conversationState: 'closed',
+              },
+              {
+                conversationSid: 'CH_OTHER_TELEGRAM_CONVERSATION_SID',
+                conversationState: 'closed',
+              },
+            ]),
+        },
       },
     },
   };
