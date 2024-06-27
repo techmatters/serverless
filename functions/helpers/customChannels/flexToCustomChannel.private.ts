@@ -96,8 +96,14 @@ export const redirectConversationMessageToExternalChat = async (
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
     const client = context.getTwilioClient();
     const conversation = await client.conversations.v1.conversations.get(ConversationSid).fetch();
-    const { attributes } = conversation;
-    const { participantSid } = JSON.parse(attributes);
+    const { attributes: attributesString } = conversation;
+    const attributes = JSON.parse(attributesString);
+    console.log('Conversation attributes:');
+    Object.entries(attributes).forEach(([key, value]) => {
+      console.log(`${key}:`, value);
+    });
+
+    const { participantSid } = attributes;
 
     // Redirect bot, system or third participant, but not self
     shouldSend = participantSid && participantSid !== ParticipantSid;
