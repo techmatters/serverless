@@ -52,6 +52,8 @@ runs:
     - name: SafeSpot Staging release custom action
       if: inputs.helpline-name == format('JM_STG')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: SafeSpot Production release custom action
       if: inputs.helpline-name == format('JM_PROD')
       uses: ./.github/actions/custom-actions/jamaica_production_custom
