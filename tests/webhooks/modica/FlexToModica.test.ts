@@ -67,8 +67,10 @@ beforeAll(() => {
 
   baseTwilioClient = {
     conversations: {
-      conversations: {
-        get: () => conversationContext,
+      v1: {
+        conversations: {
+          get: () => conversationContext,
+        },
       },
     },
   };
@@ -184,8 +186,11 @@ each(testCases).test('Missing required properties in event - 400', async (prop: 
 });
 
 test('API Source and event ParticipantSid same as conversation attributes participantSid - 200', async () => {
+  console.log('>> Start');
   const callback = jest.fn();
   await handler(baseContext, { ...baseEvent, ParticipantSid: 'flex_participant_id' }, callback);
+  console.log('>> ');
+  console.log(JSON.stringify(callback.mock.calls[0]));
   const response: MockedResponse = callback.mock.calls[0][1];
   expect(mockFetch).not.toHaveBeenCalled();
   expect(response.getStatus()).toBe(200);
@@ -200,7 +205,6 @@ test('API Source and event ParticipantSid same as conversation attributes partic
 });
 
 test('API Source and event ParticipantSid different conversation attributes participantSid - sent (200)', async () => {
-  console.log('>> Start');
   const callback = jest.fn();
   await handler(baseContext, baseEvent, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
