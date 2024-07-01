@@ -15,31 +15,50 @@
  */
 
 import { Twilio } from 'twilio';
-import { Context } from '@twilio-labs/serverless-runtime-types/types';
+import fetch from 'node-fetch';
+import { Context as rawContext } from '@twilio-labs/serverless-runtime-types/types';
 import { ConversationContext } from 'twilio/lib/rest/conversations/v1/conversation';
 import each from 'jest-each';
 import helpers, { MockedResponse, RecursivePartial } from '../../helpers';
-import { Body, handler } from '../../../functions/webhooks/telegram/FlexToTelegram.protected';
+import {
+  Body as rawBody,
+  EnvVars,
+  handler,
+} from '../../../functions/webhooks/modica/FlexToModica.protected';
 
-global.fetch = jest.fn();
+/**
+ * Temporary workaround to assume it's a conversation webhook event.
+ * Because currently it can be bothe conversation or programmable chat webhook event.
+ */
+type Body = rawBody & { ConversationSid: string; Author: string };
+
+type Context = rawContext & EnvVars;
+
+jest.mock('node-fetch');
+const { Response, Headers } = jest.requireActual('node-fetch');
 
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
-const CH_TELEGRAM_CONVERSATION_SID = 'CH_TELEGRAM_CONVERSATION_SID';
+const CH_MODICA_CONVERSATION_SID = 'CH_MODICA_CONVERSATION_SID';
 
-let baseContext: Context<{ TELEGRAM_FLEX_BOT_TOKEN: string }> = {} as Context<{
-  TELEGRAM_FLEX_BOT_TOKEN: string;
-}>;
+let baseContext: Context;
 
 let baseEvent: Body;
 let baseTwilioClient: RecursivePartial<Twilio> = {};
 let conversationContext: RecursivePartial<ConversationContext>;
+let base64Credentials: string;
+
+/**
+ * There's a sanitization that prefixes '+' to the recipientId if it doesn't have it.
+ * That's why we're setting the recipientId prefixed with '+' here.
+ */
+const MODICA_RECIPIENT_ID = '+modica_recipient_id';
 
 beforeAll(() => {
   conversationContext = {
     fetch: async () => ({
       attributes: '{}',
-      sid: CH_TELEGRAM_CONVERSATION_SID,
+      sid: CH_MODICA_CONVERSATION_SID,
     }),
     messages: {
       create: jest.fn().mockImplementation(async () => ({ response: 'property' })),
@@ -56,21 +75,14 @@ beforeAll(() => {
   baseContext = {
     DOMAIN_NAME: 'serverless',
     ACCOUNT_SID: 'ACCOUNT_SID',
-    TELEGRAM_FLEX_BOT_TOKEN: 'TELEGRAM_FLEX_BOT_TOKEN',
     PATH: '',
     SERVICE_SID: undefined,
     ENVIRONMENT_SID: undefined,
+    MODICA_APP_NAME: 'MODICA_APP_NAME',
+    MODICA_APP_PASSWORD: 'MODICA_APP_PASSWORD',
+    CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
     getTwilioClient: jest.fn().mockReturnValue(baseTwilioClient),
-  } as Context<{ TELEGRAM_FLEX_BOT_TOKEN: string }>;
-
-  mockFetch.mockResolvedValue({
-    ok: true,
-    status: 200,
-    headers: {
-      forEach: (fn) => fn('application/json', 'content-type', {} as any), // Cannot use a real Headers object because fetch on node is still a shitshow
-    },
-    json: async () => ({ ok: true }),
-  } as Response);
+  } as Context;
 
   const runtime = new helpers.MockRuntime(baseContext);
   // eslint-disable-next-line no-underscore-dangle
@@ -88,12 +100,31 @@ afterAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
 
+  base64Credentials = Buffer.from(
+    `${baseContext.MODICA_APP_NAME}:${baseContext.MODICA_APP_PASSWORD}`,
+  ).toString('base64');
+
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    Authorization: `Basic ${base64Credentials}`,
+  });
+
+  const ResponseInit = {
+    status: 200,
+    statusText: 'ok',
+    headers,
+  };
+
+  const response = new Response(JSON.stringify({ data: {} }), ResponseInit);
+
+  mockFetch.mockResolvedValue(response);
+
   conversationContext = {
     fetch: async () => ({
       attributes: JSON.stringify({
         participantSid: 'flex_participant_id',
       }),
-      sid: CH_TELEGRAM_CONVERSATION_SID,
+      sid: CH_MODICA_CONVERSATION_SID,
     }),
   };
 
@@ -106,12 +137,13 @@ beforeEach(() => {
   };
 
   const partialEvent: RecursivePartial<Body> = {
-    ConversationSid: CH_TELEGRAM_CONVERSATION_SID,
-    Body: 'Flex to Telegram text',
+    ConversationSid: CH_MODICA_CONVERSATION_SID,
+    Body: 'Flex to Modica text',
+    Author: 'modica_participant_id',
     EventType: 'onMessageAdded',
     Source: 'API',
-    ParticipantSid: 'telegram_participant_id',
-    recipientId: 'telegram_recipient_id',
+    ParticipantSid: 'modica_participant_id',
+    recipientId: MODICA_RECIPIENT_ID,
   };
   baseEvent = partialEvent as Body;
 });
@@ -119,28 +151,27 @@ beforeEach(() => {
 const testCases: readonly (keyof Body)[] = [
   'ConversationSid',
   'Body',
+  'Author',
   'EventType',
   'Source',
 ] as const;
 
-const verifyTelegramMessageRequestSent = (response: MockedResponse) => {
-  expect(mockFetch).toHaveBeenCalledWith(
-    'https://api.telegram.org/botTELEGRAM_FLEX_BOT_TOKEN/sendMessage',
-    {
-      method: 'post',
-      body: JSON.stringify({
-        chat_id: 'telegram_recipient_id',
-        text: 'Flex to Telegram text',
-      }),
-      headers: { 'Content-Type': 'application/json' },
+const verifyModicaMessageRequestSent = (response: MockedResponse) => {
+  expect(mockFetch).toHaveBeenCalledWith('https://api.modicagroup.com/rest/gateway/messages', {
+    method: 'POST',
+    body: JSON.stringify({
+      destination: MODICA_RECIPIENT_ID,
+      content: 'Flex to Modica text',
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${base64Credentials}`,
     },
-  );
-  expect(response.getBody()).toStrictEqual({
-    ok: true,
-    resultCode: 200,
-    body: { ok: true },
-    meta: { 'content-type': 'application/json' },
   });
+  const { ok, resultCode, body } = response.getBody();
+  expect(ok).toBe(true);
+  expect(resultCode).toBe(200);
+  expect(body).toStrictEqual({ data: {} });
   expect(response.getStatus()).toBe(200);
 };
 
@@ -169,10 +200,11 @@ test('API Source and event ParticipantSid same as conversation attributes partic
 });
 
 test('API Source and event ParticipantSid different conversation attributes participantSid - sent (200)', async () => {
+  console.log('>> Start');
   const callback = jest.fn();
   await handler(baseContext, baseEvent, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
-  verifyTelegramMessageRequestSent(response);
+  verifyModicaMessageRequestSent(response);
   expect(response.getStatus()).toBe(200);
 });
 
@@ -184,14 +216,14 @@ test('SDK Source and event ParticipantSid same as conversation attributes partic
     callback,
   );
   const response: MockedResponse = callback.mock.calls[0][1];
-  verifyTelegramMessageRequestSent(response);
+  verifyModicaMessageRequestSent(response);
 });
 
 test('SDK Source and event ParticipantSid different conversation attributes participantSid - sent (200)', async () => {
   const callback = jest.fn();
   await handler(baseContext, { ...baseEvent, Source: 'SDK' }, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
-  verifyTelegramMessageRequestSent(response);
+  verifyModicaMessageRequestSent(response);
   expect(response.getStatus()).toBe(200);
 });
 

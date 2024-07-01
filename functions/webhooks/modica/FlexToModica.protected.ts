@@ -38,7 +38,7 @@ import {
 // This can be a candidate to be an environment variable
 const MODICA_SEND_MESSAGE_URL = 'https://api.modicagroup.com/rest/gateway/messages';
 
-type EnvVars = {
+export type EnvVars = {
   MODICA_APP_NAME: string;
   MODICA_APP_PASSWORD: string;
   CHAT_SERVICE_SID: string;
