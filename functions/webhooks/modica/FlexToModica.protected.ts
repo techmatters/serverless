@@ -25,38 +25,27 @@ import {
   error400,
   error500,
   success,
+  ResolveFunction,
 } from '@tech-matters/serverless-helpers';
 import {
+  WebhookEvent,
   FlexToCustomChannel,
+  RedirectResult,
+  ConversationWebhookEvent,
   ProgrammableChatWebhookEvent,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
-
-class ModicaError extends Error {
-  status: number;
-
-  statusText: string;
-
-  data: any;
-
-  constructor(status: number, statusText: string, json: any) {
-    super(json);
-    this.status = status;
-    this.statusText = statusText;
-    this.data = json;
-  }
-}
 
 // This can be a candidate to be an environment variable
 const MODICA_SEND_MESSAGE_URL = 'https://api.modicagroup.com/rest/gateway/messages';
 
-type EnvVars = {
+export type EnvVars = {
   MODICA_APP_NAME: string;
   MODICA_APP_PASSWORD: string;
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = Partial<ProgrammableChatWebhookEvent> & {
-  recipientId?: string; // The phone number of the user that started the conversation. Provided as query parameter
+export type Body = WebhookEvent & {
+  recipientId: string; // The phone number of the user that started the conversation. Provided as query parameter
 };
 
 /**
@@ -95,7 +84,7 @@ const sendMessageThroughModica =
      * I was struggling to make this call to work with Axios,
      * so I used node-fetch instead.
      */
-    const result = await fetch(MODICA_SEND_MESSAGE_URL, {
+    const response = await fetch(MODICA_SEND_MESSAGE_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,66 +93,82 @@ const sendMessageThroughModica =
       body: JSON.stringify(payload),
     });
 
-    if (!result.ok) {
-      /**
-       * Modica returns a json when the request fails.
-       */
-      const json = await result.json();
-      throw new ModicaError(result.status, result.statusText, json);
-    }
+    return {
+      ok: response.ok,
+      resultCode: response.status,
+      body: await response.json(),
+      meta: Object.fromEntries(Object.entries(response.headers)),
+    };
   };
+
+const validateProperties = (
+  event: any,
+  resolveFunc: (f: ResolveFunction) => void,
+  requiredProperties: string[],
+): boolean => {
+  for (const prop of requiredProperties) {
+    if (event[prop] === undefined) {
+      resolveFunc(error400(prop));
+      return false;
+    }
+  }
+  return true;
+};
 
 export const handler = async (
   context: Context<EnvVars>,
-  event: Body,
+  modicaEvent: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== FlexToModica handler ====');
+  console.log('Received event:', modicaEvent);
+  const eventProperties = Object.entries(modicaEvent);
+  eventProperties.forEach(([key, value]) => {
+    console.log(`${key}: ${JSON.stringify(value)}`);
+  });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    if (recipientId === undefined) {
-      resolve(error400('recipientId'));
-      return;
-    }
-    if (Body === undefined) {
-      resolve(error400('Body'));
-      return;
-    }
-    if (From === undefined) {
-      resolve(error400('From'));
-      return;
-    }
-    if (ChannelSid === undefined) {
-      resolve(error400('ChannelSid'));
-      return;
-    }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
-
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
+    let result: RedirectResult;
 
-    const sanitizedEvent = {
-      Body,
-      From,
-      ChannelSid,
-      EventType,
-      Source,
-    };
+    if (flexToCustomChannel.isConversationWebhookEvent(modicaEvent)) {
+      const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
+        'ConversationSid',
+        'Body',
+        'Author',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(modicaEvent, resolve, requiredProperties)) return;
+      const { recipientId, ...event } = modicaEvent;
+      result = await flexToCustomChannel.redirectConversationMessageToExternalChat(context, {
+        event,
+        recipientId,
+        sendExternalMessage: sendMessageThroughModica(context),
+      });
+    } else {
+      const requiredProperties: (keyof ProgrammableChatWebhookEvent | 'recipientId')[] = [
+        'ChannelSid',
+        'Body',
+        'From',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(modicaEvent, resolve, requiredProperties)) return;
 
-    const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
-      event: sanitizedEvent,
-      recipientId,
-      sendExternalMessage: sendMessageThroughModica(context),
-    });
+      const { recipientId, ...event } = modicaEvent;
+
+      result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
+        event,
+        recipientId,
+        sendExternalMessage: sendMessageThroughModica(context),
+      });
+    }
 
     switch (result.status) {
       case 'sent':

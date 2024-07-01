@@ -131,6 +131,16 @@ runs:
       with:
         ssm_parameter: "/development/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
         env_variable_name: "MODICA_FLEX_FLOW_SID"
+    - name: Set helpline Modica Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/modica_studio_flow_sid"
+        env_variable_name: "MODICA_STUDIO_FLOW_SID"
+    - name: Set helpline Modica Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/development/modica/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "MODICA_TWILIO_MESSAGING_MODE"
 
 
     # Telegram environment variables
@@ -220,6 +230,12 @@ runs:
       shell: bash
     - name: Add MODICA_FLEX_FLOW_SID
       run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_STUDIO_FLOW_SID
+      run: echo "MODICA_STUDIO_FLOW_SID=${{ env.MODICA_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_TWILIO_MESSAGING_MODE
+      run: echo "MODICA_TWILIO_MESSAGING_MODE=${{ env.MODICA_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash
     - name: Add TELEGRAM_FLEX_BOT_TOKEN
       run: echo "TELEGRAM_FLEX_BOT_TOKEN=${{ env.TELEGRAM_FLEX_BOT_TOKEN }}" >> .env
