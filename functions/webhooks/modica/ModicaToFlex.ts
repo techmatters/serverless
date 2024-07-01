@@ -22,7 +22,7 @@ import { responseWithCors, bindResolve, error500, success } from '@tech-matters/
 
 import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
 
-type EnvVars = {
+export type EnvVars = {
   ACCOUNT_SID: string;
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
