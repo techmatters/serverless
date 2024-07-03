@@ -52,8 +52,8 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         enable_backend_manual_pulling: enableBackendManualPulling,
       },
     } = serviceConfig.attributes;
-    // TODO: Update to actually enforce the backend manual pulling feature flag
-    if (enabledManualPulling && (enableBackendManualPulling || true)) {
+
+    if (enabledManualPulling && enableBackendManualPulling) {
       const { path } = Runtime.getFunctions().adjustChatCapacity;
 
       // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
