@@ -16,11 +16,11 @@
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import {
-  EventFields,
   EventType,
   TASK_COMPLETED,
+  EventFields,
   TaskrouterListener,
-} from '@tech-matters/serverless-helpers/lib/taskrouter';
+} from '@tech-matters/serverless-helpers/taskrouter';
 import type { AdjustChatCapacityType } from '../adjustChatCapacity';
 
 export const eventTypes: EventType[] = [TASK_COMPLETED];
