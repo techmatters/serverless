@@ -61,10 +61,6 @@ export const handler = TokenValidator(
     // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
     const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
 
-    const body = {
-      workerSid,
-      adjustment: 'increase',
-    } as const;
     const initialWorkerReservationSids = new Set(
       (
         await client.taskrouter.workspaces
@@ -74,7 +70,7 @@ export const handler = TokenValidator(
       ).map((r) => r.sid),
     );
 
-    await adjustChatCapacity(context, body);
+    await adjustChatCapacity(context, { workerSid, adjustment: 'increase' });
     const pullAttemptExpiry = Date.now() + PULL_ATTEMPT_TIMEOUT_MS;
 
     // Polling is much more self contained and less messy than event driven with the backend TaskRouter API
@@ -90,9 +86,12 @@ export const handler = TokenValidator(
         if (!initialWorkerReservationSids.has(reservation.sid)) {
           console.log('New task reserved for worker pulled:', reservation.taskSid);
           resolve(success({ taskPulled: reservation.taskSid }));
+          return undefined;
         }
       }
     }
-    return resolve(send(404)({ message: 'No task found to pull' }));
+    await adjustChatCapacity(context, { workerSid, adjustment: 'decrease' });
+    resolve(send(404)({ message: 'No task found to pull' }));
+    return undefined;
   },
 );
