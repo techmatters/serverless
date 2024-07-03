@@ -18,6 +18,7 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   bindResolve,
   error400,
+  error500,
   functionValidator as TokenValidator,
   responseWithCors,
   success,
@@ -75,8 +76,15 @@ export const handler = TokenValidator(
       (p) => p.type === 'agent',
     );
 
-    // Should only be 1, but just in case
-    await Promise.all(
+    if (interactionAgentParticipants.length === 0) {
+      resolve(
+        success({
+          message: 'No agent participants found in the interaction channel',
+        }),
+      );
+    }
+
+    const results = await Promise.allSettled(
       interactionAgentParticipants.map((p) => {
         console.log(
           `Transitioning agent participant ${p.sid} to ${targetStatus}`,
@@ -86,6 +94,24 @@ export const handler = TokenValidator(
         return p.update({ status: targetStatus });
       }),
     );
-    return resolve(success({ message: 'Transitioned agent participants' }));
+    const failures: PromiseRejectedResult[] = results.filter(
+      (r) => r.status === 'rejected',
+    ) as PromiseRejectedResult[];
+    failures.forEach((f) => console.warn(f.reason));
+
+    // This is a bit of a hack. Conversations which have been transferred between agents still have all the previous agents as participants of the interaction
+    // However they are in a state where their status cannot be transitioned, presumably because they are no longer active in the conversation.
+    // I can't see a good way to detect these in the API, so we assume if any of the agents are successfully transitioned, the 'current' agent has been transitioned and the operation can be considered successful.
+    // There are probably edge cases where this assumption isn't valid, so we should look to improve this in the future.
+    if (failures.length < interactionAgentParticipants.length) {
+      return resolve(
+        success({
+          message: `Transitioned ${interactionAgentParticipants.length - failures.length} / ${
+            interactionAgentParticipants.length
+          } agent participants (we only need one)`,
+        }),
+      );
+    }
+    return resolve(error500(failures[0].reason));
   },
 );
