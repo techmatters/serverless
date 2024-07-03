@@ -71,7 +71,7 @@ export const handler = async (
 
     const isConversation =
       (typeof isConversationValue === 'string' && isConversationValue === 'true') ||
-      Boolean(isConversationValue);
+      (typeof isConversationValue === 'boolean' && isConversationValue);
 
     const handlerPath = Runtime.getFunctions()['channelCapture/channelCaptureHandlers'].path;
     const channelCaptureHandlers = require(handlerPath) as ChannelCaptureHandlers;
