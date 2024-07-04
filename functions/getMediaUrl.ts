@@ -29,11 +29,11 @@ import {
 } from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
-  TWILIO_ACCOUNT_SID: string;
-  TWILIO_AUTH_TOKEN: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
-export type TwilioMediaPayload = {
+export type Body = {
   serviceSid: string;
   mediaSid: string;
 };
@@ -55,13 +55,13 @@ export const handler = TokenValidator(
       if (!serviceSid) return resolve(error400('serviceSid'));
       if (!mediaSid) return resolve(error400('mediaSid'));
 
-      const body: TwilioMediaPayload = {
+      const body: Body = {
         serviceSid,
         mediaSid,
       };
 
-      const username = context.TWILIO_ACCOUNT_SID;
-      const password = context.TWILIO_AUTH_TOKEN;
+      const username = context.ACCOUNT_SID;
+      const password = context.AUTH_TOKEN;
       const url = `https://mcs.us1.twilio.com/v1/Services/${body.serviceSid}/Media/${body.mediaSid}`;
 
       const hash = Buffer.from(`${username}:${password}`).toString('base64');
