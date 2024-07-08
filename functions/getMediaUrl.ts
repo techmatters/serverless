@@ -75,7 +75,7 @@ export const handler = TokenValidator(
         validateStatus: () => true, // always resolve the promise to redirect the response in case of response out of 2xx range
       });
 
-      return resolve(send(media.status)(media.data));
+      return resolve(send(media.status)(media.data.links.content_direct_temporary));
     } catch (err) {
       return resolve(error500(err as any));
     }
