@@ -39,8 +39,8 @@ export type Body = {
 };
 
 export type Event = {
-  serviceSid: string;
-  mediaSid: string;
+  serviceSid?: string;
+  mediaSid?: string;
   request: { cookies: {}; headers: {} };
 };
 
