@@ -16,7 +16,6 @@
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import axios from 'axios';
-// import { omit } from 'lodash';
 import { handler as getMediaUrl, Event } from '../functions/getMediaUrl';
 
 import helpers, { MockedResponse } from './helpers';
@@ -41,11 +40,6 @@ const baseContext = {
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
 };
-
-// const defaultPayload = {
-//   serviceSid: 'ISxxxxxxxxxxxxxxAWX',
-//   mediaSid: 'MIxxxxxxxxxxIOL',
-// };
 
 describe('getMediaUrl', () => {
   beforeAll(() => {
