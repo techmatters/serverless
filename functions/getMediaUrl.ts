@@ -18,7 +18,7 @@
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import axios from 'axios';
+// import axios from 'axios';
 import {
   bindResolve,
   error400,
@@ -64,18 +64,28 @@ export const handler = TokenValidator(
       const password = context.AUTH_TOKEN;
       const url = `https://mcs.us1.twilio.com/v1/Services/${body.serviceSid}/Media/${body.mediaSid}`;
 
-      const hash = Buffer.from(`${username}:${password}`).toString('base64');
+      // const hash = Buffer.from(`${username}:${password}`).toString('base64');
 
-      const media = await axios.request({
-        method: 'get',
-        url,
-        headers: {
-          Authorization: `Basic ${hash}`,
-        },
-        validateStatus: () => true, // always resolve the promise to redirect the response in case of response out of 2xx range
+      const headers = new Headers();
+      headers.set('Authorization', `Basic ${btoa(`${username}:${password}`)}`);
+
+      const responseData = await fetch(url, {
+        method: 'GET',
+        headers,
       });
 
-      return resolve(send(media.status)(media.data.links.content_direct_temporary));
+      const media = await responseData.json();
+
+      // const media = await axios.request({
+      //   method: 'get',
+      //   url,
+      //   headers: {
+      //     Authorization: `Basic ${hash}`,
+      //   },
+      //   validateStatus: () => true, // always resolve the promise to redirect the response in case of response out of 2xx range
+      // });
+
+      return resolve(send(media.status)(media.links.content_direct_temporary));
     } catch (err) {
       return resolve(error500(err as any));
     }
