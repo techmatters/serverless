@@ -9,6 +9,5 @@
   "include": [
     "functions",
     "tests",
-    "jest.setup.ts"
   ],
 }
