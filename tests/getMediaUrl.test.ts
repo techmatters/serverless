@@ -61,7 +61,7 @@ describe('getMediaUrl', () => {
     fetchMock.resetMocks();
   });
 
-  test('Should return status 400 if value is serviceSid or mediaSid undefined', async () => {
+  test('Should return status 400 if serviceSid or mediaSid  values are undefined', async () => {
     const event1: Event = {
       serviceSid: undefined,
       mediaSid: 'MIxxxxxxxxxxIOL',
