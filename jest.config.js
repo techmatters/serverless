@@ -30,4 +30,5 @@ module.exports = {
   testMatch: ['**/tests/**/*.test.(ts|js)'],
   testEnvironment: 'node',
   preset: 'ts-jest', // use this if you are using TypeScript
+  setupFiles: ['./jest.setup.ts'],
 };

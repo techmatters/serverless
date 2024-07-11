@@ -15,7 +15,8 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-// import axios from 'axios';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import fetchMock from 'jest-fetch-mock';
 import { handler as getMediaUrl, Event } from '../functions/getMediaUrl';
 
 import helpers, { MockedResponse } from './helpers';
@@ -25,15 +26,7 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    json: () => Promise.resolve({ test: 100 }),
-  }),
-) as jest.Mock;
-
-// const fetchMock = jest
-//   .fn()
-//   .mockImplementation(() => Promise.resolve({ json: () => Promise.resolve([]) })) as jest.Mock;
+const mockFetchRequest = fetch as jest.MockedFunction<typeof fetch>;
 
 const baseContext = {
   getTwilioClient: (): any => ({}),
@@ -59,8 +52,13 @@ describe('getMediaUrl', () => {
     jest.clearAllMocks();
   });
 
-  beforeEach(() => {
-    (fetch as jest.Mock).mockClear();
+  beforeAll(() => {
+    fetchMock.enableMocks();
+  });
+
+  // Reset mocks after each test
+  afterEach(() => {
+    fetchMock.resetMocks();
   });
 
   test('Should return status 400 if value is serviceSid or mediaSid undefined', async () => {
@@ -85,7 +83,7 @@ describe('getMediaUrl', () => {
     await getMediaUrl(baseContext, emptyEvent, callback);
   });
 
-  test('Should return status 500 if header is not defined', async () => {
+  test('Should return status 500 if JSON response body is invalid', async () => {
     const event: Event = {
       serviceSid: 'ISxxxxxxxxxxxxxxAWX',
       mediaSid: 'MIxxxxxxxxxxIOL',
@@ -96,7 +94,9 @@ describe('getMediaUrl', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(response.getBody().message).toContain('Headers is not defined');
+      expect(response.getBody().message).toContain(
+        'invalid json response body at  reason: Unexpected end of JSON input',
+      );
     };
 
     await getMediaUrl(baseContext, event, callback);
@@ -120,43 +120,19 @@ describe('getMediaUrl', () => {
     expect(result).toBeDefined();
   });
 
-  //   test('Should override default authorization headers with environment variables in GET request', async () => {
-  //     const event: Event = {
-  //       serviceSid: 'ISxxxxxxxxxxxxxxAWX',
-  //       mediaSid: 'MIxxxxxxxxxxIOL',
-  //       request: { cookies: {}, headers: {} },
-  //     };
-  //     // const url = `https://mcs.us1.twilio.com/v1/Services/${event.serviceSid}/Media/${event.mediaSid}`;
-  //     // const username = 'testUser';
-  //     // const password = 'testPass';
+  test('Should override default authorization headers with environment variables in GET request', async () => {
+    const event: Event = {
+      serviceSid: 'ISxxxxxxxxxxxxxxAWX',
+      mediaSid: 'MIxxxxxxxxxxIOL',
+      request: { cookies: {}, headers: {} },
+    };
+    const url = `https://mcs.us1.twilio.com/v1/Services/${event.serviceSid}/Media/${event.mediaSid}`;
 
-  //     const consoleSpy = jest.spyOn(console, 'log');
+    await getMediaUrl(baseContext, event, () => {});
 
-  //     await getMediaUrl(baseContext, event, () => {});
-
-  //     // expect(fetch).toHaveBeenCalledTimes(1);
-  //     expect(fetchMock).toHaveBeenCalledWith(
-  //       'https://mcs.us1.twilio.com/v1/Services/ISxxxxxxx/Media/Mxxxxxxx',
-  //       expect.objectContaining({
-  //         method: 'GET',
-  //         // headers: expect.any(Headers),
-  //       }),
-  //     );
-
-  //     // expect(fetchMock).toHaveBeenCalledWith(
-  //     //   url,
-  //     //   expect.objectContaining({
-  //     //     method: 'GET',
-  //     //     headers: {
-  //     //       Authorization: `Basic ${btoa(`${username}:${password}`)}`,
-  //     //     },
-  //     //   }),
-  //     // );
-
-  //     expect(consoleSpy).toHaveBeenCalledWith({ message: 'Success' });
-
-  //     // Check the function separately
-  //     // const actualArgs = mockFetch.mock.calls[0][0];
-  //     // expect(actualArgs.validateStatus).toBeInstanceOf(Function);
-  //   });
+    expect(mockFetchRequest).toHaveBeenCalledWith(url, {
+      method: 'GET',
+      headers: expect.any(Headers),
+    });
+  });
 });
