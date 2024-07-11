@@ -18,7 +18,7 @@
 /* eslint-disable import/no-dynamic-require */
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-// import axios from 'axios';
+import fetch from 'node-fetch';
 import {
   bindResolve,
   error400,
@@ -64,12 +64,13 @@ export const handler = TokenValidator(
       const password = context.AUTH_TOKEN;
       const url = `https://mcs.us1.twilio.com/v1/Services/${body.serviceSid}/Media/${body.mediaSid}`;
 
-      const headers = new Headers();
-      headers.set('Authorization', `Basic ${btoa(`${username}:${password}`)}`);
+      const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64');
 
       const responseData = await fetch(url, {
         method: 'GET',
-        headers,
+        headers: {
+          Authorization: `Basic ${base64Credentials}`,
+        },
       });
 
       const media = await responseData.json();

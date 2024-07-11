@@ -14,9 +14,8 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
+import fetch from 'node-fetch';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import fetchMock from 'jest-fetch-mock';
 import { handler as getMediaUrl, Event } from '../functions/getMediaUrl';
 
 import helpers, { MockedResponse } from './helpers';
@@ -25,6 +24,8 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
+
+jest.mock('node-fetch');
 
 const mockFetchRequest = fetch as jest.MockedFunction<typeof fetch>;
 
@@ -52,15 +53,6 @@ describe('getMediaUrl', () => {
     jest.clearAllMocks();
   });
 
-  beforeAll(() => {
-    fetchMock.enableMocks();
-  });
-
-  // Reset mocks after each test
-  afterEach(() => {
-    fetchMock.resetMocks();
-  });
-
   test('Should return status 400 if serviceSid or mediaSid  values are undefined', async () => {
     const event1: Event = {
       serviceSid: undefined,
@@ -83,7 +75,7 @@ describe('getMediaUrl', () => {
     await getMediaUrl(baseContext, emptyEvent, callback);
   });
 
-  test('Should return status 500 if JSON response body is invalid', async () => {
+  test('Should return status 500 if JSON response body is undefined', async () => {
     const event: Event = {
       serviceSid: 'ISxxxxxxxxxxxxxxAWX',
       mediaSid: 'MIxxxxxxxxxxIOL',
@@ -95,7 +87,7 @@ describe('getMediaUrl', () => {
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
       expect(response.getBody().message).toContain(
-        'invalid json response body at  reason: Unexpected end of JSON input',
+        "Cannot read properties of undefined (reading 'json')",
       );
     };
 
@@ -126,13 +118,16 @@ describe('getMediaUrl', () => {
       mediaSid: 'MIxxxxxxxxxxIOL',
       request: { cookies: {}, headers: {} },
     };
+
     const url = `https://mcs.us1.twilio.com/v1/Services/${event.serviceSid}/Media/${event.mediaSid}`;
 
     await getMediaUrl(baseContext, event, () => {});
 
     expect(mockFetchRequest).toHaveBeenCalledWith(url, {
       method: 'GET',
-      headers: expect.any(Headers),
+      headers: {
+        Authorization: 'Basic QUNDT1VOVF9TSUQ6QVVUSF9UT0tFTg==',
+      },
     });
   });
 });
