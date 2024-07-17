@@ -28,6 +28,8 @@ runs:
     - name: Childline Thailand Staging release custom action
       if: inputs.helpline-name == format('TH_STG')
       uses: ./.github/actions/custom-actions/thailand_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: Aarambh Staging release custom action
       if: inputs.helpline-name == format('IN_STG')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
