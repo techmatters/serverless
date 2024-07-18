@@ -1,8 +1,8 @@
 
 {
   "WelcomeMsg": "Hi, you've reached a counsellor. What would you like to talk about?",
-  "GoodbyeMsg": "Would you have 5 minutes to answer a few questions to help us improve the service? The survey is optional. We appreciate your help if you choose to participate! You can also find more information about data usage & the survey by clicking the link: https://survey.alchemer-ca.com/s3/50188874/Post-Chat-Survey",
-  "EndChatMsg": "Would you have 5 minutes to answer a few questions to help us improve the service? The survey is optional. We appreciate your help if you choose to participate! You can also find more information about data usage & the survey by clicking the link: https://survey.alchemer-ca.com/s3/50188874/Post-Chat-Survey",
+  "GoodbyeMsg": "We're glad you reached out to Kids Help Phone. Would you have 5 minutes to answer a few questions to help us improve the service? The survey is optional. We appreciate your help if you choose to participate! You can also find more information about data usage & the survey by clicking the link: https://survey.alchemer-ca.com/s3/50188874/Post-Chat-Survey",
+  "EndChatMsg": "We noticed you ended your chat. Would you have 5 minutes to answer a few questions to help us improve the service? The survey is optional. We appreciate your help if you choose to participate! You can also find more information about data usage & the survey by clicking the link: https://survey.alchemer-ca.com/s3/50188874/Post-Chat-Survey",
   "ClosedOutOfShift": "We're sorry, but Live Chat is currently closed. :( \nTo reach a Kids Help Phone counsellor, call us anytime at 1-800-668-6868. \nBe well, \nThe Kids Help Phone Team",
   "ClosedHolidays": "We're sorry, but Live Chat is currently closed. :( \nTo reach a Kids Help Phone counsellor, call us anytime at 1-800-668-6868. \nBe well, \nThe Kids Help Phone Team"
 }
