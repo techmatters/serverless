@@ -109,7 +109,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         !Body
       ) {
         const messageTime = await getTimeDifference(conversationMessage.dateCreated);
-        const messageText = `Sorry, your reaction sent ${messageTime} ago could not be delivered.`;
+        const messageText = `Sorry, your reaction sent ${messageTime} ago could not be delivered. Please send another message.`;
 
         await sendConversationMessage(context, {
           conversationSid: ConversationSid,
