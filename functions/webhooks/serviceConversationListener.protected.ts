@@ -52,7 +52,7 @@ export const sendConversationMessage = async (
 
 type ServiceConversationListenerEvent = {
   Body: string;
-  Author: string;
+  AuthorSid: string;
   ParticipantSid?: string;
   ConversationSid: string;
   EventType: string;
@@ -67,10 +67,10 @@ export const handler = async (context: Context, event: Body, callback: Serverles
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
   try {
-    const { Author, EventType, ConversationSid, MessageSid } = event;
+    const { AuthorSid, EventType, ConversationSid, MessageSid, ParticipantSid } = event;
 
     if (EventType === 'onMessageAdded') {
-      console.log('EventType is here', Author, event);
+      console.log('EventType is here', AuthorSid, event);
 
       context
         .getTwilioClient()
@@ -82,7 +82,8 @@ export const handler = async (context: Context, event: Body, callback: Serverles
           console.log('message:', message);
           console.log('Media:', message.media);
           console.log('participantSid:', message.participantSid);
-          console.log('Author:', Author);
+          console.log('AuthorSid:', AuthorSid);
+          console.log('ParticipantSid Cap:', ParticipantSid);
         })
         .catch((error) => {
           console.error('Error fetching message:', error);
