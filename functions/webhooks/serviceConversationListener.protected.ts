@@ -55,6 +55,7 @@ export const sendConversationMessage = async (
     });
 
 const getTimeDifference = async (isoString: Date): Promise<string> => {
+  const unitCheck = (count: number, unit: string) => (count > 1 ? `${unit}s` : unit);
   // Create a new Date object from the ISO string
   const givenDate = new Date(isoString);
 
@@ -69,10 +70,9 @@ const getTimeDifference = async (isoString: Date): Promise<string> => {
   const differenceInMinutes = Math.floor(differenceInSeconds / 60);
 
   // Determine whether to return the difference in seconds or minutes
-
   return differenceInSeconds < 60
-    ? `${differenceInSeconds} seconds`
-    : `${differenceInMinutes} minutes`;
+    ? `${differenceInSeconds} ${unitCheck(differenceInSeconds, 'second')}`
+    : `${differenceInMinutes} ${unitCheck(differenceInMinutes, 'minute')}`;
 };
 
 export const handler = async (context: Context, event: Body, callback: ServerlessCallback) => {
