@@ -54,20 +54,25 @@ export const sendConversationMessage = async (
       ...(messageAttributes && { attributes: messageAttributes }),
     });
 
-const getTimeFromDate = async (isoString: Date): Promise<string> => {
+const getTimeDifference = async (isoString: Date): Promise<string> => {
   // Create a new Date object from the ISO string
-  const date = new Date(isoString);
+  const givenDate = new Date(isoString);
 
-  // Extract the local hours, minutes, and seconds
-  const hours = date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+  // Get the current date and time
+  const currentDate = new Date();
 
-  // Return the time string in HH:MM:SS format
-  return hours;
+  // Calculate the difference in milliseconds
+  const differenceInMillis = currentDate.getTime() - givenDate.getTime();
+
+  // Convert the difference to seconds
+  const differenceInSeconds = Math.floor(differenceInMillis / 1000);
+  const differenceInMinutes = Math.floor(differenceInSeconds / 60);
+
+  // Determine whether to return the difference in seconds or minutes
+
+  return differenceInSeconds < 60
+    ? `${differenceInSeconds} seconds`
+    : `${differenceInMinutes} minutes`;
 };
 
 export const handler = async (context: Context, event: Body, callback: ServerlessCallback) => {
@@ -103,8 +108,8 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         !conversationMessage.media &&
         !Body
       ) {
-        const messageTime = await getTimeFromDate(conversationMessage.dateCreated);
-        const messageText = `Sorry, your reaction sent at ${messageTime} could not be delivered.`;
+        const messageTime = await getTimeDifference(conversationMessage.dateCreated);
+        const messageText = `Sorry, your reaction sent ${messageTime} could not be delivered.`;
 
         await sendConversationMessage(context, {
           conversationSid: ConversationSid,
