@@ -60,9 +60,9 @@ const getTimeFromDate = async (isoString: Date): Promise<string> => {
   const date = new Date(isoString);
 
   // Extract the hours, minutes, and seconds
-  const hours = date.getUTCHours().toString().padStart(2, '0');
-  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-  const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const seconds = date.getSeconds().toString().padStart(2, '0');
 
   // Return the time string in HH:MM:SS format
   return `${hours}:${minutes}:${seconds}`;
@@ -80,6 +80,24 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         .conversations.v1.conversations(ConversationSid)
         .messages(MessageSid)
         .fetch();
+
+      context
+        .getTwilioClient()
+        .conversations.v1.conversations(ConversationSid)
+        .participants.list()
+        .then((participants) => {
+          console.log('participants are here', participants);
+          participants.forEach((participant) => {
+            console.log('Participant:', participant);
+            console.log('Participant Identity:', participant.identity);
+            console.log('Participant Attributes:', participant.attributes);
+            console.log('Date Created:', participant.dateCreated);
+            console.log('Date Updated:', participant.dateUpdated);
+          });
+        })
+        .catch((error) => {
+          console.error('Error fetching participants:', error);
+        });
 
       if (
         ParticipantSid === conversationMessage.participantSid &&
