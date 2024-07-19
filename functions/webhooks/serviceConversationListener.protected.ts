@@ -56,7 +56,9 @@ type ServiceConversationListenerEvent = {
   ParticipantSid?: string;
   ConversationSid: string;
   EventType: string;
-  Source: string;
+  MessageSid: string;
+  Attributes: any;
+  From: string;
 };
 
 export type Body = ServiceConversationListenerEvent;
@@ -65,10 +67,26 @@ export const handler = async (context: Context, event: Body, callback: Serverles
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
   try {
-    const { Body, EventType, Source } = event;
+    const { Body, EventType, ConversationSid, MessageSid } = event;
 
     if (EventType === 'onMessageAdded') {
-      console.log('EventType is here', Body, Source, event);
+      console.log('EventType is here', Body, MessageSid, ConversationSid, event);
+
+      context
+        .getTwilioClient()
+        .conversations.v1.conversations(ConversationSid)
+        .messages(MessageSid)
+        .fetch()
+        .then((message) => {
+          console.log('Message Body:', message.body);
+          console.log('message:', message);
+          console.log('Media:', message.media);
+          console.log('Date Created:', message.dateCreated);
+          console.log('Date Updated:', message.dateUpdated);
+        })
+        .catch((error) => {
+          console.error('Error fetching message:', error);
+        });
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
