@@ -15,16 +15,21 @@
  */
 
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import {
-  responseWithCors,
-  bindResolve,
-  // error400,
-  error500,
-  // success,
-} from '@tech-matters/serverless-helpers';
+import { responseWithCors, bindResolve, error500 } from '@tech-matters/serverless-helpers';
 
 export type ConversationSid = `CH${string}`;
-export type ChatChannelSid = `CH${string}`;
+export type ParticipantSid = `MB${string}`;
+
+type ServiceConversationListenerEvent = {
+  Body: string;
+  Author: string;
+  ParticipantSid: ParticipantSid;
+  ConversationSid: ConversationSid;
+  EventType: string;
+  MessageSid: string;
+};
+
+export type Body = ServiceConversationListenerEvent;
 
 export const sendConversationMessage = async (
   context: Context,
@@ -50,44 +55,46 @@ export const sendConversationMessage = async (
       ...(messageAttributes && { attributes: messageAttributes }),
     });
 
-type ServiceConversationListenerEvent = {
-  Body: string;
-  AuthorSid: string;
-  ParticipantSid?: string;
-  ConversationSid: string;
-  EventType: string;
-  MessageSid: string;
-  Attributes: any;
-  From: string;
-};
+const getTimeFromDate = async (isoString: Date): Promise<string> => {
+  // Create a new Date object from the ISO string
+  const date = new Date(isoString);
 
-export type Body = ServiceConversationListenerEvent;
+  // Extract the hours, minutes, and seconds
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+  const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+
+  // Return the time string in HH:MM:SS format
+  return `${hours}:${minutes}:${seconds}`;
+};
 
 export const handler = async (context: Context, event: Body, callback: ServerlessCallback) => {
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
   try {
-    const { AuthorSid, EventType, ConversationSid, MessageSid, ParticipantSid } = event;
+    const { Author, EventType, ConversationSid, MessageSid, ParticipantSid, Body } = event;
 
     if (EventType === 'onMessageAdded') {
-      console.log('EventType is here', AuthorSid, event);
-
-      context
+      const conversationMessage = await context
         .getTwilioClient()
         .conversations.v1.conversations(ConversationSid)
         .messages(MessageSid)
-        .fetch()
-        .then((message) => {
-          console.log('Message Body:', message.body);
-          console.log('message:', message);
-          console.log('Media:', message.media);
-          console.log('participantSid:', message.participantSid);
-          console.log('AuthorSid:', AuthorSid);
-          console.log('ParticipantSid Cap:', ParticipantSid);
-        })
-        .catch((error) => {
-          console.error('Error fetching message:', error);
+        .fetch();
+
+      if (
+        ParticipantSid === conversationMessage.participantSid &&
+        !conversationMessage.media &&
+        !Body
+      ) {
+        const messageTime = await getTimeFromDate(conversationMessage.dateCreated);
+        const messageText = `Sorry, your reaction sent at ${messageTime} could not be delivered.`;
+
+        await sendConversationMessage(context, {
+          conversationSid: ConversationSid,
+          author: Author,
+          messageText,
         });
+      }
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
