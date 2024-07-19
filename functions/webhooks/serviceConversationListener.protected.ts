@@ -74,6 +74,8 @@ export const handler = async (context: Context, event: Body, callback: Serverles
   try {
     const { Author, EventType, ConversationSid, MessageSid, ParticipantSid, Body } = event;
 
+    let messageAuthor: string | undefined;
+
     if (EventType === 'onMessageAdded') {
       const conversationMessage = await context
         .getTwilioClient()
@@ -81,23 +83,16 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         .messages(MessageSid)
         .fetch();
 
-      context
+      const participantsList = await context
         .getTwilioClient()
         .conversations.v1.conversations(ConversationSid)
-        .participants.list()
-        .then((participants) => {
-          console.log('participants are here', participants);
-          participants.forEach((participant) => {
-            console.log('Participant:', participant);
-            console.log('Participant Identity:', participant.identity);
-            console.log('Participant Attributes:', participant.attributes);
-            console.log('Date Created:', participant.dateCreated);
-            console.log('Date Updated:', participant.dateUpdated);
-          });
-        })
-        .catch((error) => {
-          console.error('Error fetching participants:', error);
-        });
+        .participants.list();
+
+      participantsList.forEach((participant) => {
+        if (participant.sid !== conversationMessage.participantSid) {
+          messageAuthor = participant.identity;
+        }
+      });
 
       if (
         ParticipantSid === conversationMessage.participantSid &&
@@ -107,9 +102,11 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         const messageTime = await getTimeFromDate(conversationMessage.dateCreated);
         const messageText = `Sorry, your reaction sent at ${messageTime} could not be delivered.`;
 
+        console.log('Author', Author, messageAuthor);
+
         await sendConversationMessage(context, {
           conversationSid: ConversationSid,
-          author: Author,
+          author: messageAuthor ?? '',
           messageText,
         });
       }
