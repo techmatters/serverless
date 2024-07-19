@@ -22,7 +22,6 @@ export type ParticipantSid = `MB${string}`;
 
 type ServiceConversationListenerEvent = {
   Body: string;
-  Author: string;
   ParticipantSid: ParticipantSid;
   ConversationSid: ConversationSid;
   EventType: string;
@@ -59,23 +58,27 @@ const getTimeFromDate = async (isoString: Date): Promise<string> => {
   // Create a new Date object from the ISO string
   const date = new Date(isoString);
 
-  // Extract the hours, minutes, and seconds
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
+  // Extract the local hours, minutes, and seconds
+  const hours = date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
 
   // Return the time string in HH:MM:SS format
-  return `${hours}:${minutes}:${seconds}`;
+  return hours;
 };
 
 export const handler = async (context: Context, event: Body, callback: ServerlessCallback) => {
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
   try {
-    const { Author, EventType, ConversationSid, MessageSid, ParticipantSid, Body } = event;
+    const { EventType, ConversationSid, MessageSid, ParticipantSid, Body } = event;
 
     let messageAuthor: string | undefined;
 
+    // check if it's the onMessageAdded event
     if (EventType === 'onMessageAdded') {
       const conversationMessage = await context
         .getTwilioClient()
@@ -90,6 +93,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
 
       participantsList.forEach((participant) => {
         if (participant.sid !== conversationMessage.participantSid) {
+          // The message author has to be the participant receiving the message (counsellor) not the sender
           messageAuthor = participant.identity;
         }
       });
@@ -101,8 +105,6 @@ export const handler = async (context: Context, event: Body, callback: Serverles
       ) {
         const messageTime = await getTimeFromDate(conversationMessage.dateCreated);
         const messageText = `Sorry, your reaction sent at ${messageTime} could not be delivered.`;
-
-        console.log('Author', Author, messageAuthor);
 
         await sendConversationMessage(context, {
           conversationSid: ConversationSid,
