@@ -67,7 +67,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
   try {
     const { Body, EventType, Source } = event;
 
-    if (EventType === 'onMessageSent') {
+    if (EventType === 'onMessageAdded') {
       console.log('EventType is here', Body, Source, event);
     }
   } catch (err) {
