@@ -87,7 +87,7 @@ export const handler = TokenValidator(
     const results = await Promise.allSettled(
       interactionAgentParticipants.map((p) => {
         console.log(`Transitioning agent participant ${p.sid} to ${targetStatus}`);
-        Object.entries(p).forEach(([k, v]) => console.log(`${k}: ${v}`));
+        Object.entries(p).forEach(([k, v]) => console.log(`${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`));
         return p.update({ status: targetStatus });
       }),
     );
