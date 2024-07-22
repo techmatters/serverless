@@ -26,6 +26,10 @@ type ServiceConversationListenerEvent = {
   ConversationSid: ConversationSid;
   EventType: string;
   MessageSid: string;
+  Media: any;
+  DateCreated: any;
+  Participants: any;
+  ParticipantsList: any;
 };
 
 export type Body = ServiceConversationListenerEvent;
@@ -79,7 +83,30 @@ export const handler = async (context: Context, event: Body, callback: Serverles
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
   try {
-    const { EventType, ConversationSid, MessageSid, ParticipantSid, Body } = event;
+    const {
+      EventType,
+      ConversationSid,
+      MessageSid,
+      ParticipantSid,
+      Body,
+      Media,
+      DateCreated,
+      Participants,
+      ParticipantsList,
+    } = event;
+
+    console.log(
+      'Event',
+      EventType,
+      ConversationSid,
+      MessageSid,
+      ParticipantSid,
+      Body,
+      Media,
+      DateCreated,
+      Participants,
+      ParticipantsList,
+    );
 
     let messageAuthor: string | undefined;
 
