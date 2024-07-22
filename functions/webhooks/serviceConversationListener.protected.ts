@@ -16,143 +16,21 @@
 
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { responseWithCors, bindResolve, error500 } from '@tech-matters/serverless-helpers';
+import {
+  Event,
+  SendErrorMessageForUnsupportedMedia,
+} from '../helpers/sendErrorMessageForUnsupportedMedia.private';
 
-export type ConversationSid = `CH${string}`;
-export type ParticipantSid = `MB${string}`;
-
-type ServiceConversationListenerEvent = {
-  Body: string;
-  ParticipantSid: ParticipantSid;
-  ConversationSid: ConversationSid;
-  EventType: string;
-  MessageSid: string;
-  Media: any;
-  DateCreated: any;
-  Participants: any;
-  ParticipantsList: any;
-};
-
-export type Body = ServiceConversationListenerEvent;
-
-export const sendConversationMessage = async (
-  context: Context,
-  {
-    conversationSid,
-    author,
-    messageText,
-    messageAttributes,
-    participantSid,
-  }: {
-    conversationSid: ConversationSid;
-    author: string;
-    messageText: string;
-    messageAttributes?: Record<string, any>;
-    participantSid: ParticipantSid;
-  },
-) =>
-  context
-    .getTwilioClient()
-    .conversations.conversations.get(conversationSid)
-    .messages.create({
-      body: messageText,
-      author,
-      xTwilioWebhookEnabled: 'true',
-      ...(messageAttributes && {
-        attributes: JSON.stringify({
-          ...(messageAttributes || {}),
-          participantSid,
-        }),
-      }),
-    });
-
-const getTimeDifference = async (isoString: Date): Promise<string> => {
-  const unitCheck = (count: number, unit: string) => (count > 1 ? `${unit}s` : unit);
-  // Create a new Date object from the ISO string
-  const givenDate = new Date(isoString);
-
-  // Get the current date and time
-  const currentDate = new Date();
-
-  // Calculate the difference in milliseconds
-  const differenceInMillis = currentDate.getTime() - givenDate.getTime();
-
-  // Convert the difference to seconds
-  const differenceInSeconds = Math.floor(differenceInMillis / 1000);
-  const differenceInMinutes = Math.floor(differenceInSeconds / 60);
-
-  // Determine whether to return the difference in seconds or minutes
-  return differenceInSeconds < 60
-    ? `${differenceInSeconds} ${unitCheck(differenceInSeconds, 'second')}`
-    : `${differenceInMinutes} ${unitCheck(differenceInMinutes, 'minute')}`;
-};
-
-export const handler = async (context: Context, event: Body, callback: ServerlessCallback) => {
+export const handler = async (context: Context, event: Event, callback: ServerlessCallback) => {
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
+  // eslint-disable-next-line global-require,import/no-dynamic-require
+  const sendErrorMessageForUnsupportedMedia = require(Runtime.getFunctions()[
+    'helpers/sendErrorMessageForUnsupportedMedia'
+  ].path).sendErrorMessageForUnsupportedMedia as SendErrorMessageForUnsupportedMedia;
+
   try {
-    const {
-      EventType,
-      ConversationSid,
-      MessageSid,
-      ParticipantSid,
-      Body,
-      Media,
-      DateCreated,
-      Participants,
-      ParticipantsList,
-    } = event;
-
-    console.log(
-      'Event',
-      EventType,
-      ConversationSid,
-      MessageSid,
-      ParticipantSid,
-      Body,
-      Media,
-      DateCreated,
-      Participants,
-      ParticipantsList,
-    );
-
-    // let messageAuthor: string | undefined;
-
-    // check if it's the onMessageAdded event
-    if (EventType === 'onMessageAdded') {
-      const conversationMessage = await context
-        .getTwilioClient()
-        .conversations.v1.conversations(ConversationSid)
-        .messages(MessageSid)
-        .fetch();
-
-      // const participantsList = await context
-      //   .getTwilioClient()
-      //   .conversations.v1.conversations(ConversationSid)
-      //   .participants.list();
-
-      // participantsList.forEach((participant) => {
-      //   if (participant.sid !== conversationMessage.participantSid) {
-      //     // The message author has to be the participant receiving the message (counsellor) not the sender
-      //     messageAuthor = participant.identity;
-      //   }
-      // });
-
-      if (
-        ParticipantSid === conversationMessage.participantSid &&
-        !conversationMessage.media &&
-        !Body
-      ) {
-        const messageTime = await getTimeDifference(conversationMessage.dateCreated);
-        const messageText = `Sorry, your reaction sent ${messageTime} ago could not be delivered. Please send another message.`;
-
-        await sendConversationMessage(context, {
-          conversationSid: ConversationSid,
-          author: 'Bot',
-          messageText,
-          participantSid: ParticipantSid,
-        });
-      }
-    }
+    await sendErrorMessageForUnsupportedMedia(context, event);
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
     else resolve(error500(new Error(String(err))));
