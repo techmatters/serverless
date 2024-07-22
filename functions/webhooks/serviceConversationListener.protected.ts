@@ -41,11 +41,13 @@ export const sendConversationMessage = async (
     author,
     messageText,
     messageAttributes,
+    participantSid,
   }: {
     conversationSid: ConversationSid;
     author: string;
     messageText: string;
-    messageAttributes?: string;
+    messageAttributes?: Record<string, any>;
+    participantSid: ParticipantSid;
   },
 ) =>
   context
@@ -55,7 +57,12 @@ export const sendConversationMessage = async (
       body: messageText,
       author,
       xTwilioWebhookEnabled: 'true',
-      ...(messageAttributes && { attributes: messageAttributes }),
+      ...(messageAttributes && {
+        attributes: JSON.stringify({
+          ...(messageAttributes || {}),
+          participantSid,
+        }),
+      }),
     });
 
 const getTimeDifference = async (isoString: Date): Promise<string> => {
@@ -142,6 +149,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
           conversationSid: ConversationSid,
           author: 'Bot',
           messageText,
+          participantSid: ParticipantSid,
         });
       }
     }
