@@ -26,12 +26,12 @@ runs:
     - name: Set Line Channel Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "STG_LINE_TH_CHANNEL_SECRET"
+        ssm_parameter: "/staging/line/${{inputs.account-sid}}/channel_secret"
         env_variable_name: "LINE_CHANNEL_SECRET"
     - name: Set Line Channel Access Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "STG_LINE_TH_CHANNEL_ACCESS_TOKEN"
+        ssm_parameter: "/staging/line/${{inputs.account-sid}}/channel_access_token"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
     # Set Instagram variables
     - name: Set Aselo Facebook App Secret

@@ -48,7 +48,7 @@ const nonPostSurveyTaskAttributes = {
 
 const customChannelTaskAttributes = {
   channelSid: 'customChannelSid',
-  channelType: 'twitter',
+  channelType: 'line',
 };
 
 const nonCustomChannelTaskAttributes = {
@@ -75,6 +75,7 @@ const context = {
   }),
   CHAT_SERVICE_SID: 'CHxxx',
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
+  SYNC_SERVICE_SID: 'xxx',
 };
 
 beforeAll(() => {

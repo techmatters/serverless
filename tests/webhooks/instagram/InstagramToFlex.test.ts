@@ -16,7 +16,7 @@
 
 import each from 'jest-each';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import {
   handler as InstagramToFlex,
   Body,
@@ -382,6 +382,7 @@ describe('InstagramToFlex', () => {
       expectedStatus,
       expectedMessage,
       flexFlowSid = 'INSTAGRAM_FLEX_FLOW_SID',
+      studioFlowSid = 'INSTAGRAM_STUDIO_FLOW_SID',
       chatServiceSid = 'CHAT_SERVICE_SID',
       expectedToBeSentOnChannel,
       expectedToCreateChannel,
@@ -394,7 +395,12 @@ describe('InstagramToFlex', () => {
         response = result as MockedResponse | undefined;
       };
       await InstagramToFlex(
-        { ...baseContext, INSTAGRAM_FLEX_FLOW_SID: flexFlowSid, CHAT_SERVICE_SID: chatServiceSid },
+        {
+          ...baseContext,
+          INSTAGRAM_FLEX_FLOW_SID: flexFlowSid,
+          INSTAGRAM_STUDIO_FLOW_SID: studioFlowSid,
+          CHAT_SERVICE_SID: chatServiceSid,
+        },
         event,
         callback,
       );

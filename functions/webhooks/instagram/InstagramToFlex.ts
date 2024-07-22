@@ -26,7 +26,11 @@ import {
   success,
 } from '@tech-matters/serverless-helpers';
 import crypto from 'crypto';
-import { ChannelToFlex } from '../../helpers/customChannels/customChannelToFlex.private';
+import {
+  ChannelToFlex,
+  ChatChannelSid,
+  ConversationSid,
+} from '../../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = {
   SYNC_SERVICE_SID: string;
@@ -34,6 +38,9 @@ type EnvVars = {
   FACEBOOK_APP_SECRET: string;
   FACEBOOK_PAGE_ACCESS_TOKEN: string;
   INSTAGRAM_FLEX_FLOW_SID: string;
+  INSTAGRAM_STUDIO_FLOW_SID: string;
+  INSTAGRAM_TWILIO_MESSAGING_MODE?: 'conversations' | 'programmable-chat' | '';
+  ACCOUNT_SID: string;
 };
 
 type InstagramMessageObject = {
@@ -100,10 +107,27 @@ const unsendMessage = async (
     chatServiceSid,
     channelSid,
     messageExternalId,
-  }: { chatServiceSid: string; channelSid: string; messageExternalId: string },
+  }: { chatServiceSid: string; channelSid: ChatChannelSid; messageExternalId: string },
 ) => {
   const client = context.getTwilioClient();
   const messages = await client.chat.services(chatServiceSid).channels(channelSid).messages.list();
+
+  const messageToUnsend = messages.find(
+    (m) => JSON.parse(m.attributes).messageExternalId === messageExternalId,
+  );
+
+  return messageToUnsend?.update({ body: 'The user has unsent this message' });
+};
+
+const unsendConversationMessage = async (
+  context: Context,
+  {
+    conversationSid,
+    messageExternalId,
+  }: { conversationSid: ConversationSid; messageExternalId: string },
+) => {
+  const client = context.getTwilioClient();
+  const messages = await client.conversations.v1.conversations(conversationSid).messages.list();
 
   const messageToUnsend = messages.find(
     (m) => JSON.parse(m.attributes).messageExternalId === messageExternalId,
@@ -151,90 +175,153 @@ export const handler = async (
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/customChannelToFlex'].path;
     const channelToFlex = require(handlerPath) as ChannelToFlex;
     const { message, sender } = event.entry[0].messaging[0];
+    const useConversations = context.INSTAGRAM_TWILIO_MESSAGING_MODE === 'conversations';
 
     let messageText = '';
     const senderExternalId = sender.id;
     const messageExternalId = message.mid;
     const subscribedExternalId = event.entry[0].id;
     const channelType = channelToFlex.AseloCustomChannels.Instagram;
-    const twilioNumber = `${channelType}:${subscribedExternalId}`;
     const chatFriendlyName = `${channelType}:${senderExternalId}`;
     const uniqueUserName = `${channelType}:${senderExternalId}`;
     const senderScreenName = uniqueUserName; // TODO: see if we can use ig handle somehow
     const messageAttributes = JSON.stringify({ messageExternalId });
     const onMessageSentWebhookUrl = `https://${context.DOMAIN_NAME}/webhooks/instagram/FlexToInstagram?recipientId=${senderExternalId}`;
     const chatServiceSid = context.CHAT_SERVICE_SID;
+    const studioFlowSid = context.INSTAGRAM_STUDIO_FLOW_SID;
     const syncServiceSid = context.SYNC_SERVICE_SID;
-
+    let result;
     if (isInstagramStoryReply(message)) {
       resolve(success('Ignored story reply.'));
       return;
     }
-    // Handle message deletion for active conversations
-    if (isMessageDeleted(message)) {
-      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
-        syncServiceSid,
-        uniqueUserName,
-      });
+    if (useConversations) {
+      // Handle message deletion for active conversations
+      if (isMessageDeleted(message)) {
+        const conversationSid = await channelToFlex.findExistingConversation(
+          context,
+          uniqueUserName,
+        );
 
-      if (channelSid) {
-        // const unsentMessage =
-        await unsendMessage(context, {
-          channelSid,
-          chatServiceSid,
-          messageExternalId,
-        });
+        if (conversationSid) {
+          // const unsentMessage =
+          await unsendConversationMessage(context, {
+            conversationSid,
+            messageExternalId,
+          });
 
-        resolve(success(`Message with external id ${messageExternalId} unsent.`));
-        return;
-      }
+          resolve(success(`Message with external id ${messageExternalId} unsent.`));
+          return;
+        }
 
-      resolve(
-        success(
-          `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
-        ),
-      );
-      return;
-    }
-
-    // Handle story tags for active conversations
-    if (isStoryMention(message)) {
-      const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
-        syncServiceSid,
-        uniqueUserName,
-      });
-
-      if (channelSid) {
-        messageText = getStoryMentionText(message);
-      } else {
         resolve(
           success(
-            `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
+            `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
           ),
         );
         return;
       }
+
+      // Handle story tags for active conversations
+      if (isStoryMention(message)) {
+        const conversationSid = await channelToFlex.findExistingConversation(
+          context,
+          uniqueUserName,
+        );
+
+        if (conversationSid) {
+          messageText = getStoryMentionText(message);
+        } else {
+          resolve(
+            success(
+              `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
+            ),
+          );
+          return;
+        }
+      }
+
+      // If messageText is empty at this point, handle as a "regular Instagram message"
+      messageText = messageText || message.text || '';
+
+      result = await channelToFlex.sendConversationMessageToFlex(context, {
+        studioFlowSid,
+        channelType,
+        uniqueUserName,
+        senderScreenName,
+        onMessageSentWebhookUrl,
+        messageText,
+        messageAttributes,
+        senderExternalId,
+        customSubscribedExternalId: subscribedExternalId,
+        conversationFriendlyName: chatFriendlyName,
+      });
+    } else {
+      // Handle message deletion for active conversations
+      if (isMessageDeleted(message)) {
+        const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+          syncServiceSid,
+          uniqueUserName,
+        });
+
+        if (channelSid) {
+          // const unsentMessage =
+          await unsendMessage(context, {
+            channelSid,
+            chatServiceSid,
+            messageExternalId,
+          });
+
+          resolve(success(`Message with external id ${messageExternalId} unsent.`));
+          return;
+        }
+
+        resolve(
+          success(
+            `Message unsent with external id ${messageExternalId} is not part of an active conversation.`,
+          ),
+        );
+        return;
+      }
+
+      // Handle story tags for active conversations
+      if (isStoryMention(message)) {
+        const channelSid = await channelToFlex.retrieveChannelFromUserChannelMap(context, {
+          syncServiceSid,
+          uniqueUserName,
+        });
+
+        if (channelSid) {
+          messageText = getStoryMentionText(message);
+        } else {
+          resolve(
+            success(
+              `Story mention with external id ${messageExternalId} is not part of an active conversation.`,
+            ),
+          );
+          return;
+        }
+      }
+
+      // If messageText is empty at this point, handle as a "regular Instagram message"
+      messageText = messageText || message.text || '';
+
+      result = await channelToFlex.sendMessageToFlex(context, {
+        flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
+        chatServiceSid,
+        syncServiceSid,
+        channelType,
+        twilioNumber: `${channelType}:${subscribedExternalId}`,
+        chatFriendlyName,
+        uniqueUserName,
+        senderScreenName,
+        onMessageSentWebhookUrl,
+        messageText,
+        messageAttributes,
+        senderExternalId,
+        subscribedExternalId,
+      });
     }
-
-    // If messageText is empty at this point, handle as a "regular Instagram message"
-    messageText = messageText || message.text || '';
-
-    const result = await channelToFlex.sendMessageToFlex(context, {
-      flexFlowSid: context.INSTAGRAM_FLEX_FLOW_SID,
-      chatServiceSid,
-      syncServiceSid,
-      channelType,
-      twilioNumber,
-      chatFriendlyName,
-      uniqueUserName,
-      senderScreenName,
-      onMessageSentWebhookUrl,
-      messageText,
-      messageAttributes,
-      senderExternalId,
-      subscribedExternalId,
-    });
-
     switch (result.status) {
       case 'sent':
         resolve(success(result.response));
@@ -243,7 +330,7 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(new Error('Reached unexpected default case')));
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
