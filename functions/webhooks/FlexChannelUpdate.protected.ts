@@ -23,21 +23,22 @@ import {
   error500,
   success,
 } from '@tech-matters/serverless-helpers';
+import { CleanupUserChannelMap } from '../helpers/chatChannelJanitor.private';
 
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
 };
 
-export type Body = {
+type ChannelUpdatedBody = {
   Source?: string;
-  ChannelSid?: string;
+  ChannelSid?: string; // Remove once we've fully migrated to conversations
   Attributes?: string; // channel attributes (e.g. "{\"from\":\"pgian\",\"channel_type\":\"custom\",\"status\":\"INACTIVE\",\"long_lived\":false}")
   UniqueName?: string;
   FriendlyName?: string;
   ClientIdentity?: string; // client firing the channel update
   CreatedBy?: string;
-  EventType?: string;
+  EventType: 'onChannelUpdated';
   InstanceSid?: string;
   DateCreated?: string;
   DateUpdated?: string;
@@ -48,29 +49,11 @@ export type Body = {
   WebhookSid?: string;
 };
 
+export type Body = ChannelUpdatedBody;
+
 function timeout(ms: number) {
   // eslint-disable-next-line no-promise-executor-return
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function cleanupUserChannelMap(context: Context<EnvVars>, from: string) {
-  try {
-    const removed = await context
-      .getTwilioClient()
-      .sync.services(context.SYNC_SERVICE_SID)
-      .documents(from)
-      .remove();
-
-    return removed;
-  } catch (err) {
-    if (err instanceof Error) {
-      // If the error is that the doc was already cleaned, don't throw further
-      const alreadyCleanedExpectedError = `The requested resource /Services/${context.SYNC_SERVICE_SID}/Documents/${from} was not found`;
-      if (err.toString().includes(alreadyCleanedExpectedError)) return false;
-    }
-
-    throw err;
-  }
 }
 
 export const handler = async (
@@ -78,8 +61,15 @@ export const handler = async (
   event: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('=== FlexChannelUpdate.protected ===');
+  Object.entries(event).forEach(([key, value]) => {
+    console.log(`${key}: ${value}`);
+  });
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
+  // eslint-disable-next-line global-require,import/no-dynamic-require
+  const cleanupUserChannelMap = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
+    .cleanupUserChannelMap as CleanupUserChannelMap;
 
   try {
     const client = context.getTwilioClient();
@@ -97,7 +87,7 @@ export const handler = async (
         .channels(ChannelSid)
         .fetch();
 
-      const { status, from } = JSON.parse(channel.attributes);
+      const { status, from } = JSON.parse(channel.attributes || '{}');
 
       if (status === 'INACTIVE') {
         await timeout(1000); // set small timeout just in case some cleanup is still going on

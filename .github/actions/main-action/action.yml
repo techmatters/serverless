@@ -28,6 +28,9 @@ inputs:
   transfer-workflow-sid:
     description: 'Chat Transfer Workflow SID'
     required: true
+  conversations-transfer-workflow-sid:
+    description: 'Conversations Chat Transfer Workflow SID'
+    required: true
   sync-service-api-key:
     description: 'Sync Service API Key'
     required: true
@@ -110,6 +113,7 @@ runs:
         ENVIRONMENT=${{ inputs.environment }}
         TWILIO_WORKSPACE_SID=${{ inputs.workspace-sid }}
         TWILIO_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.transfer-workflow-sid }}
+        TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID=${{ inputs.conversations-transfer-workflow-sid }}
         SYNC_SERVICE_API_KEY=${{ inputs.sync-service-api-key }}
         SYNC_SERVICE_API_SECRET=${{ inputs.sync-service-api-secret }}
         SYNC_SERVICE_SID=${{ inputs.sync-service-sid }}

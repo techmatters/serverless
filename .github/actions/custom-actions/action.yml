@@ -28,6 +28,8 @@ runs:
     - name: Childline Thailand Staging release custom action
       if: inputs.helpline-name == format('TH_STG')
       uses: ./.github/actions/custom-actions/thailand_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: Aarambh Staging release custom action
       if: inputs.helpline-name == format('IN_STG')
       uses: ./.github/actions/custom-actions/aarambh_staging_custom
@@ -43,15 +45,19 @@ runs:
       uses: ./.github/actions/custom-actions/aselo_development_custom
       with:
         account-sid: ${{ inputs.account-sid }}
-    - name: Aselo Beta release custom action
-      if: inputs.helpline-name == format('AS_STG')
-      uses: ./.github/actions/custom-actions/aselo_beta_custom
     - name: Aselo Production release custom action
-      if: inputs.helpline-name == format('AS_PRD')
+      if: inputs.helpline-name == format('AS_PROD')
       uses: ./.github/actions/custom-actions/aselo_production_custom
+    - name: Aselo Staging release custom action
+      if: inputs.helpline-name == format('AS_STG')
+      uses: ./.github/actions/custom-actions/aselo_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: SafeSpot Staging release custom action
       if: inputs.helpline-name == format('JM_STG')
       uses: ./.github/actions/custom-actions/jamaica_staging_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
     - name: SafeSpot Production release custom action
       if: inputs.helpline-name == format('JM_PROD')
       uses: ./.github/actions/custom-actions/jamaica_production_custom
@@ -88,5 +94,10 @@ runs:
     - name: Youthline Production release custom action
       if: inputs.helpline-name == format('NZ_PROD')
       uses: ./.github/actions/custom-actions/youthline_production_custom
+      with:
+        account-sid: ${{ inputs.account-sid }}
+    - name: Youthline Staging release custom action
+      if: inputs.helpline-name == format('NZ_STG')
+      uses: ./.github/actions/custom-actions/youthline_staging_custom
       with:
         account-sid: ${{ inputs.account-sid }}

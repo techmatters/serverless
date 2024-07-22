@@ -166,6 +166,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
     const taskAttributes = JSON.parse(taskAttributesString);
+    Object.entries(taskAttributes).forEach(([key, value]) => {
+      console.log('Task attribute:', key, value);
+    });
 
     /**
      * If a chat transfer gets accepted, it should:
@@ -184,6 +187,20 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           assignmentStatus: 'completed',
           reason: 'task transferred accepted',
         });
+
+      /**
+       * If conversation, remove original participant from conversation.
+       */
+      try {
+        await client.conversations.v1
+          .conversations(taskAttributes.conversationSid)
+          .participants(taskAttributes.originalParticipantSid)
+          .remove();
+      } catch (err) {
+        console.log(
+          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
+        );
+      }
 
       console.log('Finished handling chat transfer accepted.');
       return;
@@ -207,6 +224,20 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           assignmentStatus: 'completed',
           reason: 'task transferred into queue',
         });
+
+      /**
+       * If conversation, remove original participant from conversation.
+       */
+      try {
+        await client.conversations.v1
+          .conversations(taskAttributes.conversationSid)
+          .participants(taskAttributes.originalParticipantSid)
+          .remove();
+      } catch (err) {
+        console.error(
+          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
+        );
+      }
 
       console.log('Finished handling chat queue transfer initiated.');
       return;

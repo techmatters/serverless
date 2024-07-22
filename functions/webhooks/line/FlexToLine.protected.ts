@@ -14,9 +14,6 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-/* eslint-disable global-require */
-/* eslint-disable import/no-dynamic-require */
-import axios, { AxiosError } from 'axios';
 import { v4 as uuidV4 } from 'uuid';
 import '@twilio-labs/serverless-runtime-types';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
@@ -26,10 +23,15 @@ import {
   error400,
   error500,
   success,
+  ResolveFunction,
 } from '@tech-matters/serverless-helpers';
+
 import {
   WebhookEvent,
   FlexToCustomChannel,
+  RedirectResult,
+  ConversationWebhookEvent,
+  ProgrammableChatWebhookEvent,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
 const LINE_SEND_MESSAGE_URL = 'https://api.line.me/v2/bot/message/push';
@@ -39,8 +41,8 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-export type Body = Partial<WebhookEvent> & {
-  recipientId?: string; // The Line id of the user that started the conversation. Provided as query parameter
+export type Body = WebhookEvent & {
+  recipientId: string; // The Line id of the user that started the conversation. Provided as query parameter
 };
 
 const sendLineMessage =
@@ -54,84 +56,95 @@ const sendLineMessage =
         },
       ],
     };
+
     const headers = {
       'Content-Type': 'application/json',
       'X-Line-Retry-Key': uuidV4(), // Generate a new uuid for each sent message
       Authorization: `Bearer ${context.LINE_CHANNEL_ACCESS_TOKEN}`,
     };
-    try {
-      // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
-      return await axios.request({
-        method: 'post',
-        url: LINE_SEND_MESSAGE_URL,
-        data: JSON.stringify(payload),
-        headers,
-      });
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response) {
-        const { data, status } = axiosError.response;
-        throw new Error(
-          `Line API error: status: ${status}, body: ${
-            typeof data === 'object' ? JSON.stringify(data) : data
-          }`,
-        );
-      }
-      throw error;
-    }
+    const response = await fetch(LINE_SEND_MESSAGE_URL, {
+      method: 'post',
+      body: JSON.stringify(payload),
+      headers,
+    });
+
+    return {
+      ok: response.ok,
+      resultCode: response.status,
+      body: await response.json(),
+      meta: Object.fromEntries(Object.entries(response.headers)),
+    };
   };
+
+const validateProperties = (
+  event: any,
+  resolveFunc: (f: ResolveFunction) => void,
+  requiredProperties: string[],
+): boolean => {
+  for (const prop of requiredProperties) {
+    if (event[prop] === undefined) {
+      resolveFunc(error400(prop));
+      return false;
+    }
+  }
+  return true;
+};
 
 export const handler = async (
   context: Context<EnvVars>,
-  event: Body,
+  lineEvent: Body,
   callback: ServerlessCallback,
 ) => {
+  console.log('==== FlexToLine handler ====');
+  console.log('Received event:', lineEvent);
+  const eventProperties = Object.entries(lineEvent);
+  eventProperties.forEach(([key, value]) => {
+    console.log(`${key}: ${JSON.stringify(value)}`);
+  });
+
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { recipientId, Body, From, ChannelSid, EventType, Source } = event;
-    if (recipientId === undefined) {
-      resolve(error400('recipientId'));
-      return;
-    }
-    if (Body === undefined) {
-      resolve(error400('Body'));
-      return;
-    }
-    if (From === undefined) {
-      resolve(error400('From'));
-      return;
-    }
-    if (ChannelSid === undefined) {
-      resolve(error400('ChannelSid'));
-      return;
-    }
-    if (EventType === undefined) {
-      resolve(error400('EventType'));
-      return;
-    }
-    if (Source === undefined) {
-      resolve(error400('Source'));
-      return;
-    }
-
     const handlerPath = Runtime.getFunctions()['helpers/customChannels/flexToCustomChannel'].path;
+    // eslint-disable-next-line global-require,import/no-dynamic-require
     const flexToCustomChannel = require(handlerPath) as FlexToCustomChannel;
+    let result: RedirectResult;
+    if (flexToCustomChannel.isConversationWebhookEvent(lineEvent)) {
+      const requiredProperties: (keyof ConversationWebhookEvent | 'recipientId')[] = [
+        'ConversationSid',
+        'Body',
+        'Author',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
+      const { recipientId, ...event } = lineEvent;
+      result = await flexToCustomChannel.redirectConversationMessageToExternalChat(context, {
+        event,
+        recipientId,
+        sendExternalMessage: sendLineMessage(context),
+      });
+    } else {
+      const requiredProperties: (keyof ProgrammableChatWebhookEvent | 'recipientId')[] = [
+        'ChannelSid',
+        'Body',
+        'From',
+        'EventType',
+        'Source',
+        'recipientId',
+      ];
+      if (!validateProperties(lineEvent, resolve, requiredProperties)) return;
 
-    const sanitizedEvent = {
-      Body,
-      From,
-      ChannelSid,
-      EventType,
-      Source,
-    };
+      const { recipientId, ...event } = lineEvent;
 
-    const result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
-      event: sanitizedEvent,
-      recipientId,
-      sendExternalMessage: sendLineMessage(context),
-    });
+      result = await flexToCustomChannel.redirectMessageToExternalChat(context, {
+        event,
+        recipientId,
+        sendExternalMessage: sendLineMessage(context),
+      });
+    }
 
     switch (result.status) {
       case 'sent':
@@ -141,7 +154,7 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(new Error('Reached unexpected default case')));
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));

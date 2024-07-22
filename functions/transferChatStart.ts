@@ -32,6 +32,7 @@ import type { AdjustChatCapacityType } from './adjustChatCapacity';
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: string;
+  TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID: string;
   CHAT_SERVICE_SID: string;
 };
 
@@ -215,38 +216,117 @@ export const handler = TokenValidator(
         return;
       }
 
+      /**
+       * Conversations comes with attributes.conversations filled in.
+       * The code below can be simplified after all channels are moved to conversations.
+       */
+      const originalConversations = originalAttributes.conversations;
+      let conversations;
+
+      if (originalConversations) {
+        conversations = originalConversations;
+      } else if (originalAttributes.conversation) {
+        conversations = originalAttributes.conversation;
+      } else {
+        conversations = { conversation_id: taskSid };
+      }
+
       const newAttributes = {
         ...originalAttributes,
-        conversations: originalAttributes.conversation // set up attributes of the new task to link them to the original task in Flex Insights
-          ? originalAttributes.conversation
-          : { conversation_id: taskSid },
+        conversations, // set up attributes of the new task to link them to the original task in Flex Insights
         ignoreAgent, // update task attributes to ignore the agent who transferred the task
         targetSid, // update task attributes to include the required targetSid on the task (workerSid or a queueSid)
         transferTargetType,
       };
 
-      // Edit channel attributes so that original task won't cause issues with the transferred one
-      await setDummyChannel(context, {
-        mode,
-        ignoreAgent,
-        targetSid,
-        taskSid,
-      });
+      /**
+       * Check if is transfering a conversation.
+       * It might be better to accept an `isConversation` parameter.
+       * But for now, we can check if a conversation exists given a conversationId.
+       */
 
-      // Create New task
-      const newTask = await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks.create({
-          workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
-          taskChannel: originalTask.taskChannelUniqueName,
-          attributes: JSON.stringify(newAttributes),
-          priority: 100,
+      let isConversation = true;
+      let originalParticipantSid;
+      try {
+        const conversation = await client.conversations
+          .conversations(originalAttributes.conversationSid)
+          .fetch();
+        const participants = await conversation.participants().list();
+        originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
+        newAttributes.originalParticipantSid = originalParticipantSid;
+      } catch (err) {
+        isConversation = false;
+      }
+
+      let newTaskSid;
+      if (isConversation && transferTargetType === 'worker') {
+        // Get task queue
+        const taskQueues = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .taskQueues.list({ workerSid: targetSid });
+
+        const taskQueueSid = taskQueues[0].sid;
+
+        // Create invite to target worker
+        const invite = await client.flexApi.v1
+          .interaction(originalAttributes.flexInteractionSid)
+          .channels(originalAttributes.flexInteractionChannelSid)
+          .invites.create({
+            routing: {
+              properties: {
+                queue_sid: taskQueueSid,
+                worker_sid: targetSid,
+                workflow_sid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+                workspace_sid: context.TWILIO_WORKSPACE_SID,
+                attributes: newAttributes,
+                task_channel_unique_name: originalTask.taskChannelUniqueName,
+              },
+            },
+          });
+
+        newTaskSid = invite.routing.properties.sid;
+      } else if (isConversation && transferTargetType === 'queue') {
+        const invite = await client.flexApi.v1
+          .interaction(originalAttributes.flexInteractionSid)
+          .channels(originalAttributes.flexInteractionChannelSid)
+          .invites.create({
+            routing: {
+              properties: {
+                workflow_sid: context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+                workspace_sid: context.TWILIO_WORKSPACE_SID,
+                attributes: newAttributes,
+                task_channel_unique_name: originalTask.taskChannelUniqueName,
+              },
+            },
+          });
+
+        newTaskSid = invite.routing.properties.sid;
+      } else {
+        // Edit channel attributes so that original task won't cause issues with the transferred one
+        await setDummyChannel(context, {
+          mode,
+          ignoreAgent,
+          targetSid,
+          taskSid,
         });
+
+        // create New task
+        const newTask = await client.taskrouter
+          .workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks.create({
+            workflowSid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+            taskChannel: originalTask.taskChannelUniqueName,
+            attributes: JSON.stringify(newAttributes),
+            priority: 100,
+          });
+
+        newTaskSid = newTask.sid;
+      }
 
       // Increse the chat capacity for the target worker (if needed)
       await increaseChatCapacity(context, validationResult);
 
-      resolve(success({ taskSid: newTask.sid }));
+      resolve(success({ taskSid: newTaskSid }));
     } catch (err: any) {
       resolve(error500(err));
     }

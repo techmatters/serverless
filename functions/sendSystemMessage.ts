@@ -23,6 +23,10 @@ import {
   functionValidator as TokenValidator,
   send,
 } from '@tech-matters/serverless-helpers';
+import {
+  ConversationSid,
+  ChatChannelSid,
+} from './helpers/customChannels/customChannelToFlex.private';
 
 export type EnvVars = {
   ACCOUNT_SID: string;
@@ -33,11 +37,18 @@ export type EnvVars = {
 
 export type Body = (
   | {
-      channelSid: string;
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
       taskSid?: string;
     }
   | {
-      channelSid?: string;
+      channelSid?: ChatChannelSid;
+      conversationSid: ConversationSid;
+      taskSid?: string;
+    }
+  | {
+      channelSid?: ChatChannelSid;
+      conversationSid?: ConversationSid;
       taskSid: string;
     }
 ) & {
@@ -47,11 +58,11 @@ export type Body = (
 };
 
 export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) => {
-  const { taskSid, channelSid, message, from } = event;
+  const { taskSid, channelSid, conversationSid, message, from } = event;
 
   console.log('------ sendSystemMessage excecution ------');
 
-  if (!channelSid && !taskSid) {
+  if (!channelSid && !taskSid && !conversationSid) {
     return {
       status: 400,
       message: 'none of taskSid and channelSid provided, exactly one expected.',
@@ -65,9 +76,12 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
   const client = context.getTwilioClient();
 
   let channelSidToMessage = null;
+  let conversationSidToMessage = null;
 
   if (channelSid) {
     channelSidToMessage = channelSid;
+  } else if (conversationSid) {
+    conversationSidToMessage = conversationSid;
   } else if (taskSid) {
     const task = await client.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -75,24 +89,46 @@ export const sendSystemMessage = async (context: Context<EnvVars>, event: Body) 
       .fetch();
 
     const taskAttributes = JSON.parse(task.attributes);
-    const { channelSid: taskChannelSid } = taskAttributes;
+    const { channelSid: taskChannelSid, conversationSid: taskConversationSid } = taskAttributes;
 
     channelSidToMessage = taskChannelSid;
+    conversationSidToMessage = taskConversationSid;
   }
 
-  console.log(`Sending message "${message} to channel ${channelSidToMessage}"`);
+  if (conversationSidToMessage) {
+    console.log(`Adding message "${message} to conversation ${conversationSidToMessage}"`);
 
-  const messageResult = await context
-    .getTwilioClient()
-    .chat.services(context.CHAT_SERVICE_SID)
-    .channels(channelSidToMessage)
-    .messages.create({
-      body: message,
-      from,
-      xTwilioWebhookEnabled: 'true',
-    });
+    const messageResult = await context
+      .getTwilioClient()
+      .conversations.conversations(conversationSidToMessage)
+      .messages.create({
+        body: message,
+        author: from,
+        xTwilioWebhookEnabled: 'true',
+      });
 
-  return { status: 200, message: messageResult };
+    return { status: 200, message: messageResult };
+  }
+  if (channelSidToMessage) {
+    console.log(`Sending message "${message} to channel ${channelSidToMessage}"`);
+
+    const messageResult = await context
+      .getTwilioClient()
+      .chat.services(context.CHAT_SERVICE_SID)
+      .channels(channelSidToMessage)
+      .messages.create({
+        body: message,
+        from,
+        xTwilioWebhookEnabled: 'true',
+      });
+
+    return { status: 200, message: messageResult };
+  }
+  return {
+    status: 400,
+    message:
+      'Conversation or Chat Channel SID were not provided directly or specified on the provided task',
+  };
 };
 
 export type SendSystemMessageModule = {
