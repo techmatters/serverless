@@ -108,7 +108,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
       ParticipantsList,
     );
 
-    let messageAuthor: string | undefined;
+    // let messageAuthor: string | undefined;
 
     // check if it's the onMessageAdded event
     if (EventType === 'onMessageAdded') {
@@ -118,17 +118,17 @@ export const handler = async (context: Context, event: Body, callback: Serverles
         .messages(MessageSid)
         .fetch();
 
-      const participantsList = await context
-        .getTwilioClient()
-        .conversations.v1.conversations(ConversationSid)
-        .participants.list();
+      // const participantsList = await context
+      //   .getTwilioClient()
+      //   .conversations.v1.conversations(ConversationSid)
+      //   .participants.list();
 
-      participantsList.forEach((participant) => {
-        if (participant.sid !== conversationMessage.participantSid) {
-          // The message author has to be the participant receiving the message (counsellor) not the sender
-          messageAuthor = participant.identity;
-        }
-      });
+      // participantsList.forEach((participant) => {
+      //   if (participant.sid !== conversationMessage.participantSid) {
+      //     // The message author has to be the participant receiving the message (counsellor) not the sender
+      //     messageAuthor = participant.identity;
+      //   }
+      // });
 
       if (
         ParticipantSid === conversationMessage.participantSid &&
@@ -140,7 +140,7 @@ export const handler = async (context: Context, event: Body, callback: Serverles
 
         await sendConversationMessage(context, {
           conversationSid: ConversationSid,
-          author: messageAuthor ?? '',
+          author: 'Bot',
           messageText,
         });
       }
