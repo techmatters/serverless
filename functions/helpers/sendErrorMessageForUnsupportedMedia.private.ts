@@ -17,11 +17,9 @@
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
 export type ConversationSid = `CH${string}`;
-export type ParticipantSid = `MB${string}`;
 
 type SendErrorMessageForUnsupportedMediaEvent = {
   Body: string;
-  ParticipantSid: ParticipantSid;
   ConversationSid: ConversationSid;
   EventType: string;
   Media: Record<string, any>;
@@ -37,28 +35,21 @@ export const sendConversationMessage = async (
     author,
     messageText,
     messageAttributes,
-    participantSid,
   }: {
     conversationSid: ConversationSid;
     author: string;
     messageText: string;
-    messageAttributes?: Record<string, any>;
-    participantSid: ParticipantSid;
+    messageAttributes?: string;
   },
 ) =>
   context
     .getTwilioClient()
-    .conversations.conversations(conversationSid)
+    .conversations.conversations.get(conversationSid)
     .messages.create({
       body: messageText,
       author,
       xTwilioWebhookEnabled: 'true',
-      ...(messageAttributes && {
-        attributes: JSON.stringify({
-          ...(messageAttributes || {}),
-          participantSid,
-        }),
-      }),
+      ...(messageAttributes && { attributes: messageAttributes }),
     });
 
 const getTimeDifference = async (isoString: Date): Promise<string> => {
@@ -83,7 +74,7 @@ const getTimeDifference = async (isoString: Date): Promise<string> => {
 };
 
 export const sendErrorMessageForUnsupportedMedia = async (context: Context, event: Event) => {
-  const { EventType, Body, Media, ConversationSid, ParticipantSid, DateCreated } = event;
+  const { EventType, Body, Media, ConversationSid, DateCreated } = event;
 
   if (EventType === 'onMessageAdded' && !Body && !Media) {
     const messageTime = await getTimeDifference(DateCreated);
@@ -93,7 +84,6 @@ export const sendErrorMessageForUnsupportedMedia = async (context: Context, even
       conversationSid: ConversationSid,
       author: 'Bot',
       messageText,
-      participantSid: ParticipantSid,
     });
   }
 };
