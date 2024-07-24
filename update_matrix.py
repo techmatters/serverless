@@ -58,13 +58,13 @@ def main():
     github_sha = os.getenv('github_sha')
     github_actor = os.getenv('github_actor')
     github_branch = os.getenv('github_branch')
-    aws_region = os.getenv('aws_region')
+    # aws_region = os.getenv('aws_region')
 
     print("Environment variables loaded successfully.")
 
     hl_env = helpline + "_" + environment
 
-    new_row = [current_date, current_time, "serverless", hl_env , environments, github_ref, aws_region, github_actor, github_branch, github_sha]
+    new_row = [current_date, current_time, "serverless", hl_env , environments, github_ref, github_actor, github_branch, github_sha]
     append_row = sheet.append_row(new_row)
     print("Row added to Deploys sheet.")
 

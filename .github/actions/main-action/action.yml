@@ -200,8 +200,8 @@ runs:
         pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client gspread
     - name: Update Google Sheets
       env:
-        # GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
-        # GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         helpline: ${{ inputs.helpline-code }}
         environments: ${{ inputs.environment-code }}
         environment: ${{ inputs.environment }}
