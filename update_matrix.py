@@ -52,9 +52,7 @@ def main():
     current_time = datetime.now().strftime("%H:%M:%S")
 
     helpline = os.getenv('helpline')
-    environments = os.getenv('environments')
     environment = os.getenv('environment')
-    github_ref = os.getenv('github_ref')
     github_sha = os.getenv('github_sha')
     github_actor = os.getenv('github_actor')
     github_branch = os.getenv('github_branch')
@@ -64,7 +62,7 @@ def main():
 
     hl_env = helpline + "_" + environment
 
-    new_row = [current_date, current_time, "serverless", hl_env , environments, github_ref, github_actor, github_branch, github_sha]
+    new_row = [current_date, current_time, "serverless", hl_env, github_branch, github_actor, github_sha]
     append_row = sheet.append_row(new_row)
     print("Row added to Deploys sheet.")
 
