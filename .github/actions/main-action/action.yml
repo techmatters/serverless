@@ -126,6 +126,8 @@ runs:
         ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
         S3_BUCKET=${{ inputs.s3-bucket }}
         AWS_REGION=${{ inputs.aws-region }}
+        GOOGLE_SHEETS_CREDENTIALS=${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+        GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}
         TWILIO_SERVERLESS_API_CONCURRENCY=1
         EOT
       shell: bash
@@ -199,8 +201,8 @@ runs:
     - name: Update Google Sheets
       shell: bash
       env:
-        GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        # GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+        # GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         helpline: ${{ inputs.helpline-code }}
         environments: ${{ inputs.environment-code }}
         environment: ${{ inputs.environment }}
@@ -208,7 +210,7 @@ runs:
         github_sha: ${{ github.sha }}
         github_actor: ${{ github.triggering_actor }}
         github_branch: ${{ github.ref_name }}
-        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+        # aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         echo "${GOOGLE_SHEETS_CREDENTIALS}" > credentials.json
         python update_matrix
