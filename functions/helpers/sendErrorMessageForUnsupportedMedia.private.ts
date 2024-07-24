@@ -19,10 +19,10 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 export type ConversationSid = `CH${string}`;
 
 type SendErrorMessageForUnsupportedMediaEvent = {
-  Body: string;
+  Body?: string;
   ConversationSid: ConversationSid;
-  EventType: string;
-  Media: Record<string, any>;
+  EventType?: string;
+  Media?: Record<string, any>;
   DateCreated: Date;
 };
 
@@ -77,6 +77,7 @@ export const sendErrorMessageForUnsupportedMedia = async (context: Context, even
   const { EventType, Body, Media, ConversationSid, DateCreated } = event;
 
   if (EventType === 'onMessageAdded' && !Body && !Media) {
+    console.log('onMessageAdded is here', Media, Body, event);
     const messageTime = await getTimeDifference(DateCreated);
     const messageText = `Sorry, your reaction sent ${messageTime} ago could not be delivered. Please send another message.`;
 
