@@ -191,6 +191,8 @@ jobs:
           # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
           disable-operating-hours: ${{ (inputs.force_enable_operating_hours == 'true' || matrix.environment_code == 'PROD') && 'false' || 'true' }}
           send-slack-message: ${{ inputs.send_slack_message_per_deploy }}
+          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
   # Send Slack notifying success
   send-slack-message:
     # The type of runner that the job will run on

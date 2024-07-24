@@ -126,9 +126,9 @@ runs:
         ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
         S3_BUCKET=${{ inputs.s3-bucket }}
         AWS_REGION=${{ inputs.aws-region }}
-        GOOGLE_SHEETS_CREDENTIALS=${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
-        GOOGLE_SHEET_ID=${{ secrets.GOOGLE_SHEET_ID }}
         TWILIO_SERVERLESS_API_CONCURRENCY=1
+        GOOGLE_SHEETS_CREDENTIALS=${{ inputs.GOOGLE_SHEETS_CREDENTIALS }}
+        GOOGLE_SHEET_ID=${{ inputs.GOOGLE_SHEET_ID }}
         EOT
       shell: bash
       # Can be overridden in custom action
@@ -200,8 +200,8 @@ runs:
         pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client gspread
     - name: Update Google Sheets
       env:
-        GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
-        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        GOOGLE_SHEETS_CREDENTIALS: ${{ inputs.GOOGLE_SHEETS_CREDENTIALS }}
+        GOOGLE_SHEET_ID: ${{ inputs.GOOGLE_SHEET_ID }}
         helpline: ${{ inputs.helpline-code }}
         environments: ${{ inputs.environment-code }}
         environment: ${{ inputs.environment }}
