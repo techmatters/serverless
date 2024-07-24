@@ -71,7 +71,7 @@ inputs:
     description: 'The short (usually 2 character) upper case code used to identify the helpline internally, e.g. ZA, IN, BR.'
     required: true
   environment-code:
-    description: 'The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV'
+    description: 'The short upper case code used to identify the environment internally, e.g. staging, production, development'
     required: true
   environment:
     description: The environment to deploy to, e.g. staging, production, development (Yes, this is a duplicate of the above, but it's needed for the workflow to run... for now)

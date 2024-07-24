@@ -25,6 +25,6 @@ jobs:
     secrets: inherit
     with:
       helplines: '["AS"]'
-      environments: '["STG"]'
+      environments: '["staging"]'
       send_final_slack_message: false
 

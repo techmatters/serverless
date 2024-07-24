@@ -23,17 +23,17 @@ on:
         description: The short (usually 2 character) upper case code used to identify the helpline internally, e.g. ZA, IN, BR.
         required: true
       environment_code:
-        description: The short upper case code used to identify the environment internally, e.g. STG, PROD, DEV
+        description: The short upper case code used to identify the environment internally, e.g. staging, production, development
         required: true
         type: choice
-        default: STG
+        default: staging
         options:
-          - DEV
-          - STG
-          - PROD
+          - development
+          - staging
+          - production
       force_enable_operating_hours:
         type: boolean
-        description: Forces operating hours to be enforced for this deployment (by default they are only enforced in PROD)
+        description: Forces operating hours to be enforced for this deployment (by default they are only enforced in production)
   workflow_call:
     inputs:
       helpline_code:

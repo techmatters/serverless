@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TWILIO_SSM_PREFIX: ${{matrix.environment_code}}_TWILIO_${{matrix.helpline_code}}
-      FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'PROD' && 'production' || matrix.environment_code == 'STG' && 'staging' || 'development'}}
+      FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'production' && 'production' || matrix.environment_code == 'staging' && 'staging' || 'development'}}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -190,7 +190,7 @@ jobs:
           environment-code: ${{matrix.environment_code}}
           environment: ${{env.FULL_ENVIRONMENT_NAME}}
           # Set 'false' if the target environment is production OR the force_enable_operating_hours override option is checked - otherwise 'true'
-          disable-operating-hours: ${{ (inputs.force_enable_operating_hours == 'true' || matrix.environment_code == 'PROD') && 'false' || 'true' }}
+          disable-operating-hours: ${{ (inputs.force_enable_operating_hours == 'true' || matrix.environment_code == 'production') && 'false' || 'true' }}
           send-slack-message: ${{ inputs.send_slack_message_per_deploy }}
   # Send Slack notifying success
   send-slack-message:

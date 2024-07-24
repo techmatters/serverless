@@ -45,4 +45,4 @@ jobs:
     secrets: inherit
     with:
       helplines: ${{ needs.configure.outputs.target_helplines }}
-      environments: '[ "PROD" ]'
+      environments: '[ "production" ]'

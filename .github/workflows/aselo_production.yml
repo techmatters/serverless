@@ -23,6 +23,6 @@ jobs:
     secrets: inherit
     with:
       helplines: '["AS"]'
-      environments: '["PROD"]'
+      environments: '["production"]'
       send_final_slack_message: false
 
