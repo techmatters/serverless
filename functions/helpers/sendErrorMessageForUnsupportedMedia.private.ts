@@ -76,10 +76,12 @@ const getTimeDifference = async (isoString: Date): Promise<string> => {
 export const sendErrorMessageForUnsupportedMedia = async (context: Context, event: Event) => {
   const { EventType, Body, Media, ConversationSid, DateCreated } = event;
 
+  /* Valid message will have either a body/media. A message with no
+     body or media implies that there was an error sending such message
+  */
   if (EventType === 'onMessageAdded' && !Body && !Media) {
-    console.log('onMessageAdded is here', Media, Body, event);
     const messageTime = await getTimeDifference(DateCreated);
-    const messageText = `Sorry, your reaction sent ${messageTime} ago could not be delivered. Please send another message.`;
+    const messageText = `Sorry, the message sent ${messageTime} ago is unsupported and could not be delivered.`;
 
     await sendConversationMessage(context, {
       conversationSid: ConversationSid,
