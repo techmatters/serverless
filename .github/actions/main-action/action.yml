@@ -199,7 +199,6 @@ runs:
         python -m pip install --upgrade pip
         pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client gspread
     - name: Update Google Sheets
-      shell: bash
       env:
         # GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
         # GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
@@ -213,4 +212,4 @@ runs:
         # aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
       run: |
         echo "${GOOGLE_SHEETS_CREDENTIALS}" > credentials.json
-        python update_matrix
+        python update_matrix.py
