@@ -226,31 +226,3 @@ jobs:
           slack-message: '`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:.'
         env:
           SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
-  update-sheet:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.8'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client gspread
-      - name: Update Google Sheets
-        env:
-          GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-          helpline: ${{ inputs.helplines }}
-          environments: ${{ inputs.environments }}
-          environment: ${{ env.environment}}
-          github_ref: ${{ github.ref }}
-          github_sha: ${{ github.sha }}
-          github_actor: ${{ github.triggering_actor }}
-          github_branch: ${{ github.ref_name }}
-          aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
-        run: |
-          echo "${GOOGLE_SHEETS_CREDENTIALS}" > credentials.json
-          python update_matrix.py

@@ -184,3 +184,31 @@ runs:
         slack-message: "`[Serverless]` Deployment to `${{ env.helpline-name }}` from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
+    # Update Google Sheets
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client gspread
+    - name: Update Google Sheets
+      shell: bash
+      env:
+        GOOGLE_SHEETS_CREDENTIALS: ${{ secrets.GOOGLE_SHEETS_CREDENTIALS }}
+        GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        helpline: ${{ inputs.helpline-code }}
+        environments: ${{ inputs.environment-code }}
+        environment: ${{ inputs.environment }}
+        github_ref: ${{ github.ref }}
+        github_sha: ${{ github.sha }}
+        github_actor: ${{ github.triggering_actor }}
+        github_branch: ${{ github.ref_name }}
+        aws_region: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        echo "${GOOGLE_SHEETS_CREDENTIALS}" > credentials.json
+        python update_matrix
