@@ -155,12 +155,24 @@ const updateWarmVoiceTransferAttributes = async (
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
-const decreaseChatCapacity = async (context: Context<EnvVars>, workerSid: string) => {
+const decreaseChatCapacity = async (context: Context<EnvVars>, taskSid: string) => {
   const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
   const {
     feature_flags: { enable_backend_manual_pulling: enableBackendManualPulling },
   } = serviceConfig.attributes;
   if (enableBackendManualPulling) {
+    const task = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskSid);
+    const reservations = await task.reservations.list();
+    const workerSid = reservations.find((r) => r.reservationStatus === 'accepted')?.workerSid;
+
+    if (!workerSid) {
+      console.warn(`No worker found for task ${taskSid} to decrease chat capacity.`);
+      return;
+    }
+
     const { path } = Runtime.getFunctions().adjustChatCapacity;
     // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
     const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
@@ -181,7 +193,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       TaskChannelUniqueName: taskChannelUniqueName,
       TaskSid: taskSid,
       TaskAttributes: taskAttributesString,
-      WorkerSid: workerSid,
     } = event;
 
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
@@ -200,7 +211,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
-
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(originalTaskSid)
@@ -234,9 +244,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer to queue entering target queue...');
-      await decreaseChatCapacity(context, workerSid);
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+      await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
 
       await client.taskrouter
