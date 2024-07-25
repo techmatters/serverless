@@ -155,6 +155,25 @@ const updateWarmVoiceTransferAttributes = async (
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
+const decreaseChatCapacity = async (context: Context<EnvVars>, workerSid: string) => {
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const {
+    feature_flags: { enable_backend_manual_pulling: enableBackendManualPulling },
+  } = serviceConfig.attributes;
+  if (enableBackendManualPulling) {
+    const { path } = Runtime.getFunctions().adjustChatCapacity;
+    // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
+    const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
+
+    const body = {
+      workerSid,
+      adjustment: 'decrease',
+    } as const;
+
+    await adjustChatCapacity(context, body);
+  }
+};
+
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
     const {
@@ -215,21 +234,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     if (isChatTransferToQueueComplete(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling chat transfer to queue entering target queue...');
+      await decreaseChatCapacity(context, workerSid);
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
-
-      const { path } = Runtime.getFunctions().adjustChatCapacity;
-
-      // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
-      const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
-
-      const body = {
-        workerSid,
-        adjustment: 'decrease',
-      } as const;
-
-      await adjustChatCapacity(context, body);
 
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
