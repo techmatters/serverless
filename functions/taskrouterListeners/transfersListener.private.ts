@@ -29,6 +29,7 @@ import {
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
+import { AdjustChatCapacityType } from '../adjustChatCapacity';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
@@ -161,6 +162,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       TaskChannelUniqueName: taskChannelUniqueName,
       TaskSid: taskSid,
       TaskAttributes: taskAttributesString,
+      WorkerSid: workerSid,
     } = event;
 
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
@@ -216,6 +218,18 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
+
+      const { path } = Runtime.getFunctions().adjustChatCapacity;
+
+      // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
+      const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
+
+      const body = {
+        workerSid,
+        adjustment: 'decrease',
+      } as const;
+
+      await adjustChatCapacity(context, body);
 
       await client.taskrouter
         .workspaces(context.TWILIO_WORKSPACE_SID)
