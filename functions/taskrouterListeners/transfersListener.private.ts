@@ -246,6 +246,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       console.log('Handling chat transfer to queue entering target queue...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+
+      // We need to decrease chat capacity before completing the task, it until the task completed event introduces a race condition
+      // The worker can still be offered another task before capacity is reduced if we don't do it now
       await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
 
