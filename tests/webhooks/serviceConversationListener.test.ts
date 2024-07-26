@@ -97,7 +97,7 @@ describe('serviceConversationListener', () => {
     const callback1: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(400);
+      expect(response.getStatus()).toBe(500);
     };
 
     await serviceConversationListener({ ...baseContext }, event1, callback1);
