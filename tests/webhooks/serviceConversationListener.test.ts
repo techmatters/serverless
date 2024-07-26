@@ -19,9 +19,6 @@ import { Event as Body } from '../../functions/helpers/sendErrorMessageForUnsupp
 import { handler as serviceConversationListener } from '../../functions/webhooks/serviceConversationListener.protected';
 import helpers, { MockedResponse } from '../helpers';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const mockDocRemove = jest.fn((doc: string) => true);
-
 const baseContext = {
   getTwilioClient: (): any => ({
     conversations: {
@@ -50,9 +47,6 @@ describe('serviceConversationListener', () => {
   });
   afterAll(() => {
     helpers.teardown();
-  });
-  afterEach(() => {
-    mockDocRemove.mockClear();
   });
 
   test('Should return status 400 if Body, Media or EventType are undefined', async () => {
@@ -83,9 +77,7 @@ describe('serviceConversationListener', () => {
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
-
       expect(response.getStatus()).toBe(400);
-      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await serviceConversationListener(baseContext, event1, callback);
@@ -106,7 +98,6 @@ describe('serviceConversationListener', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(400);
-      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await serviceConversationListener({ ...baseContext }, event1, callback1);
@@ -123,7 +114,6 @@ describe('serviceConversationListener', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(500);
-      expect(mockDocRemove).not.toHaveBeenCalled();
     };
 
     await serviceConversationListener(baseContext, event2, callback2);
@@ -142,7 +132,6 @@ describe('serviceConversationListener', () => {
       expect(result).toBeDefined();
       const response = result as MockedResponse;
       expect(response.getStatus()).toBe(200);
-      expect(mockDocRemove).toHaveBeenCalled();
     };
 
     await serviceConversationListener(baseContext, event1, callback1);
