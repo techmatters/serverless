@@ -71,14 +71,19 @@ const getContactValueFromWebchat = (trigger: ChatTrigger) => {
   return preEngagementData.contactIdentifier;
 };
 
-const trimSpaces = (s: string) => s.replace(' ', '');
-
+/**
+ * IMPORTANT: keep up to date with flex-plugins/plugin-hrm-form/src/utils/task
+ */
+const trimSpaces = (s: string) => s.replaceAll(' ', '');
+const trimHyphens = (s: string) => s.replaceAll('-', '');
+const phoneNumberStandardization = (s: string) =>
+  [trimSpaces, trimHyphens].reduce((accum, f) => f(accum), s);
 type TransformIdentifierFunction = (c: string) => string;
 const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
-  voice: [trimSpaces],
-  sms: [trimSpaces],
-  whatsapp: [(s) => s.replace('whatsapp:', ''), trimSpaces],
-  modica: [(s) => s.replace('modica:', ''), trimSpaces],
+  voice: [phoneNumberStandardization],
+  sms: [phoneNumberStandardization],
+  whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
+  modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
   facebook: [(s) => s.replace('messenger:', '')],
   instagram: [],
   line: [],
