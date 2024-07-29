@@ -150,7 +150,7 @@ const updateWarmVoiceTransferAttributes = async (
 
 /**
  * Checks the event type to determine if the listener should handle the event or not.
- * If it returns true, the taskrouter will invoke this listener.
+ * If it returns true, the taskrouter will invoke this listener.\
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
@@ -191,15 +191,21 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      try {
-        await client.conversations.v1
-          .conversations(taskAttributes.conversationSid)
-          .participants(taskAttributes.originalParticipantSid)
-          .remove();
-      } catch (err) {
-        console.log(
-          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-        );
+      if (
+        taskAttributes.conversationSid &&
+        taskAttributes.originalParticipantSid &&
+        ['telegram', 'line', 'modica'].includes(taskAttributes.customChannelType?.toLowerCase())
+      ) {
+        try {
+          await client.conversations.v1
+            .conversations(taskAttributes.conversationSid)
+            .participants(taskAttributes.originalParticipantSid)
+            .remove();
+        } catch (err) {
+          console.log(
+            `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
+          );
+        }
       }
 
       console.log('Finished handling chat transfer accepted.');
