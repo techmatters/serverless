@@ -194,7 +194,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       if (
         taskAttributes.conversationSid &&
         taskAttributes.originalParticipantSid &&
-        ['telegram', 'line', 'modica'].includes(taskAttributes.customChannelType?.toLowerCase())
+        !['telegram', 'line', 'modica'].includes(taskAttributes.customChannelType?.toLowerCase())
       ) {
         try {
           await client.conversations.v1
