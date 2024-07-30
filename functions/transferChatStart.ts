@@ -36,6 +36,8 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
+const AGENT_CONVERSATION_ROLES = ['agent', 'supervisor'];
+
 export type Body = {
   taskSid?: string;
   targetSid?: string;
@@ -251,8 +253,18 @@ export const handler = TokenValidator(
         const conversation = await client.conversations
           .conversations(originalAttributes.conversationSid)
           .fetch();
+
+        // Find a participant that has an agent conversation role, this *should* be the original agent
+        const conversationRoleSids = (await client.conversations.roles.list())
+          .filter(
+            (r) => r.type === 'conversation' && AGENT_CONVERSATION_ROLES.includes(r.friendlyName),
+          )
+          .map((r) => r.sid);
         const participants = await conversation.participants().list();
-        originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
+
+        originalParticipantSid = participants.find((participant) =>
+          conversationRoleSids.includes(participant.roleSid),
+        );
         newAttributes.originalParticipantSid = originalParticipantSid;
       } catch (err) {
         isConversation = false;

@@ -191,23 +191,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      if (
-        taskAttributes.conversationSid &&
-        taskAttributes.originalParticipantSid &&
-        !['telegram', 'line', 'modica'].includes(taskAttributes.customChannelType?.toLowerCase())
-      ) {
-        try {
-          await client.conversations.v1
-            .conversations(taskAttributes.conversationSid)
-            .participants(taskAttributes.originalParticipantSid)
-            .remove();
-        } catch (err) {
-          console.log(
-            `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-          );
-        }
+      try {
+        await client.conversations.v1
+          .conversations(taskAttributes.conversationSid)
+          .participants(taskAttributes.originalParticipantSid)
+          .remove();
+      } catch (err) {
+        console.log(
+          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
+        );
       }
-
       console.log('Finished handling chat transfer accepted.');
       return;
     }
