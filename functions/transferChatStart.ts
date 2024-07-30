@@ -250,7 +250,7 @@ export const handler = TokenValidator(
       let isConversation = Boolean(flexInteractionSid && flexInteractionChannelSid);
       if (flexInteractionSid) {
         try {
-          const interactionChannelParticipants = await client.flexApi.interaction
+          const interactionChannelParticipants = await client.flexApi.v1.interaction
             .get(flexInteractionSid)
             .channels.get(flexInteractionChannelSid)
             .participants.list();
@@ -273,9 +273,9 @@ export const handler = TokenValidator(
         const taskQueueSid = taskQueues[0].sid;
 
         // Create invite to target worker
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        const invite = await client.flexApi.v1.interaction
+          .get(originalAttributes.flexInteractionSid)
+          .channels.get(originalAttributes.flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -291,9 +291,9 @@ export const handler = TokenValidator(
 
         newTaskSid = invite.routing.properties.sid;
       } else if (isConversation && transferTargetType === 'queue') {
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        const invite = await client.flexApi.v1.interaction
+          .get(originalAttributes.flexInteractionSid)
+          .channels.get(originalAttributes.flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {

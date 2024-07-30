@@ -141,9 +141,9 @@ const updateWarmVoiceTransferAttributes = async (
     },
   };
 
-  await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks(taskSid)
+  await client.taskrouter.workspaces
+    .get(context.TWILIO_WORKSPACE_SID)
+    .tasks.get(taskSid)
     .update({ attributes: JSON.stringify(updatedAttributes) });
 
   console.info(`Finished handling warm voice transfer ${transferStatus} with taskSid ${taskSid}.`);
@@ -181,9 +181,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
           reason: 'task transferred accepted',
@@ -219,9 +219,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
           reason: 'task transferred into queue',
@@ -267,10 +267,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
-
+      const workspace = client.taskrouter.workspaces.get(context.TWILIO_WORKSPACE_SID);
       const [originalTask, rejectedTask] = await Promise.all([
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).fetch(),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).fetch(),
+        workspace.tasks.get(originalTaskSid).fetch(),
+        workspace.tasks.get(taskSid).fetch(),
       ]);
 
       const { channelSid } = taskAttributes;
@@ -336,9 +336,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid, originalReservation } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .reservations(originalReservation)
         .update({ reservationStatus: 'completed' });
 

@@ -28,6 +28,7 @@ import { mock } from 'jest-mock-extended';
 import each from 'jest-each';
 
 import * as transfersListener from '../../functions/taskrouterListeners/transfersListener.private';
+import helpers from '../helpers';
 
 type Map<T> = {
   [key: string]: T;
@@ -47,7 +48,7 @@ type Task = {
 };
 
 type Workspace = {
-  tasks: (taskSid: string) => Task;
+  tasks: { get: (taskSid: string) => Task };
 };
 
 const defaultAttributes = {
@@ -124,11 +125,13 @@ const tasks: Map<Task> = {
 
 const workspaces: Map<Workspace> = {
   WSxxx: {
-    tasks: (taskSid: string): Task => {
-      const task = tasks[taskSid];
-      if (task) return task;
+    tasks: {
+      get: (taskSid: string): Task => {
+        const task = tasks[taskSid];
+        if (task) return task;
 
-      throw new Error('Task does not exists');
+        throw new Error('Task does not exists');
+      },
     },
   },
 };
@@ -141,15 +144,27 @@ const context = {
   ...mock<Context<EnvVars>>(),
   getTwilioClient: (): any => ({
     taskrouter: {
-      workspaces: (workspaceSID: string) => {
-        if (workspaces[workspaceSID]) return workspaces[workspaceSID];
+      workspaces: {
+        get: (workspaceSID: string) => {
+          if (workspaces[workspaceSID]) return workspaces[workspaceSID];
 
-        throw new Error('Workspace does not exists');
+          throw new Error('Workspace does not exists');
+        },
       },
     },
   }),
   TWILIO_WORKSPACE_SID: 'WSxxx',
 };
+
+beforeAll(() => {
+  const runtime = new helpers.MockRuntime({});
+  // eslint-disable-next-line no-underscore-dangle
+  runtime._addFunction(
+    'interaction/interactionChannelParticipants',
+    'functions/interaction/interactionChannelParticipants.private',
+  );
+  helpers.setup({}, runtime);
+});
 
 afterEach(() => {
   jest.clearAllMocks();
