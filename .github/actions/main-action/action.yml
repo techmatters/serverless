@@ -185,7 +185,7 @@ runs:
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
 
-    # Update deployment matrix with region as identifier
+    # Update deployment matrix
     - name: Update deployment matrix
       id: update-deployment-matrix
       uses: techmatters/flex-plugins/.github/actions/deployment-matrix@CHI-2829-deploy-matrix
