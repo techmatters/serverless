@@ -105,10 +105,10 @@ export const handler = TokenValidator(
     ) as PromiseRejectedResult[];
     failures.forEach((f) => console.warn(f.reason));
 
-    // This is a bit of a hack. Conversations which have been transferred between agents still have all the previous agents as participants of the interaction
-    // However they are in a state where their status cannot be transitioned, presumably because they are no longer active in the conversation.
+    // This is a bit of a hack. Conversations which have been transferred between agents should have all the previous agents removed as participants of the interaction
+    // However if they haven't for any reason, they are in a state where their status cannot be transitioned, presumably because they are no longer active in the conversation.
     // I can't see a good way to detect these in the API, so we assume if any of the agents are successfully transitioned, the 'current' agent has been transitioned and the operation can be considered successful.
-    // There are probably edge cases where this assumption isn't valid, so we should look to improve this in the future.
+    // There are probably edge cases where this assumption isn't valid, but this is itself working around an edge case so we would be into edge cases of edge cases there.
     if (failures.length < interactionAgentParticipants.length) {
       return resolve(
         success({
