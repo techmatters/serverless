@@ -36,8 +36,6 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-const AGENT_CONVERSATION_ROLES = ['agent', 'supervisor'];
-
 export type Body = {
   taskSid?: string;
   targetSid?: string;
@@ -247,25 +245,17 @@ export const handler = TokenValidator(
        * But for now, we can check if a conversation exists given a conversationId.
        */
 
-      let isConversation = true;
-      let originalParticipantSid;
+      let isConversation = Boolean(newAttributes.conversationSid);
+
       try {
-        const conversation = await client.conversations
-          .conversations(originalAttributes.conversationSid)
-          .fetch();
+        const interactionChannelParticipants = await client.flexApi.interaction
+          .get(originalAttributes.flexInteractionSid)
+          .channels.get(originalAttributes.flexInteractionChannelSid)
+          .participants.list();
 
-        // Find a participant that has an agent conversation role, this *should* be the original agent
-        const conversationRoleSids = (await client.conversations.roles.list())
-          .filter(
-            (r) => r.type === 'conversation' && AGENT_CONVERSATION_ROLES.includes(r.friendlyName),
-          )
-          .map((r) => r.sid);
-        const participants = await conversation.participants().list();
-
-        originalParticipantSid = participants.find((participant) =>
-          conversationRoleSids.includes(participant.roleSid),
-        );
-        newAttributes.originalParticipantSid = originalParticipantSid;
+        newAttributes.originalParticipantSid = interactionChannelParticipants.find(
+          (p) => p.type === 'agent',
+        )?.sid;
       } catch (err) {
         isConversation = false;
       }

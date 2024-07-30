@@ -29,6 +29,7 @@ import {
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
+import { TransitionAgentParticipants } from '../interaction/transitionAgentParticipants';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
@@ -191,16 +192,17 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      try {
-        await client.conversations.v1
-          .conversations(taskAttributes.conversationSid)
-          .participants(taskAttributes.originalParticipantSid)
-          .remove();
-      } catch (err) {
-        console.log(
-          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-        );
-      }
+
+      const { path } = Runtime.getFunctions()['interaction/transitionAgentParticipants'];
+      // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+      const transitionAgentParticipants: TransitionAgentParticipants = require(path);
+      await transitionAgentParticipants(
+        context.getTwilioClient(),
+        context.TWILIO_WORKSPACE_SID,
+        originalTaskSid,
+        'closed',
+        taskAttributes.originalParticipantSid,
+      );
 
       console.log('Finished handling chat transfer accepted.');
       return;
@@ -229,10 +231,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
        * If conversation, remove original participant from conversation.
        */
       try {
-        await client.conversations.v1
-          .conversations(taskAttributes.conversationSid)
-          .participants(taskAttributes.originalParticipantSid)
-          .remove();
+        const { path } = Runtime.getFunctions()['interaction/transitionAgentParticipants'];
+        // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+        const transitionAgentParticipants: TransitionAgentParticipants = require(path);
+        await transitionAgentParticipants(
+          context.getTwilioClient(),
+          context.TWILIO_WORKSPACE_SID,
+          originalTaskSid,
+          'closed',
+          taskAttributes.originalParticipantSid,
+        );
       } catch (err) {
         console.error(
           `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
