@@ -70,7 +70,13 @@ export const handler = TokenValidator(
       ).map((r) => r.sid),
     );
 
-    await adjustChatCapacity(context, { workerSid, adjustment: 'increase' });
+    const { status } = await adjustChatCapacity(context, {
+      workerSid,
+      adjustment: 'increaseUntilCapacityAvailable',
+    });
+    if (status !== 200) {
+      resolve(error400('Failed to provide available chat capacity'));
+    }
     const pullAttemptExpiry = Date.now() + PULL_ATTEMPT_TIMEOUT_MS;
 
     // Polling is much more self contained and less messy than event driven with the backend TaskRouter API

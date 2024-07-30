@@ -30,6 +30,7 @@ import {
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
 import { InteractionChannelParticipants } from '../interaction/interactionChannelParticipants.private';
+import { AdjustChatCapacityType } from '../adjustChatCapacity';
 
 export const eventTypes: EventType[] = [
   RESERVATION_ACCEPTED,
@@ -155,6 +156,37 @@ const updateWarmVoiceTransferAttributes = async (
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
+const decreaseChatCapacity = async (context: Context<EnvVars>, taskSid: string) => {
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const {
+    feature_flags: { enable_backend_manual_pulling: enableBackendManualPulling },
+  } = serviceConfig.attributes;
+  if (enableBackendManualPulling) {
+    const task = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskSid);
+    const reservations = await task.reservations.list();
+    const workerSid = reservations.find((r) => r.reservationStatus === 'accepted')?.workerSid;
+
+    if (!workerSid) {
+      console.warn(`No worker found for task ${taskSid} to decrease chat capacity.`);
+      return;
+    }
+
+    const { path } = Runtime.getFunctions().adjustChatCapacity;
+    // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
+    const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
+
+    const body = {
+      workerSid,
+      adjustment: 'decrease',
+    } as const;
+
+    await adjustChatCapacity(context, body);
+  }
+};
+
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
     const {
@@ -179,6 +211,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       console.log('Handling chat transfer accepted...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+
+      // We need to decrease chat capacity before completing the task, it until the task completed event introduces a race condition
+      // The worker can still be offered another task before capacity is reduced if we don't do it now
+      await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
 
       await client.taskrouter.workspaces
@@ -217,6 +253,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       console.log('Handling chat transfer to queue entering target queue...');
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
+
+      // We need to decrease chat capacity before completing the task, it until the task completed event introduces a race condition
+      // The worker can still be offered another task before capacity is reduced if we don't do it now
+      await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
 
       await client.taskrouter.workspaces

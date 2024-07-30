@@ -152,6 +152,15 @@ const context = {
         },
       },
     },
+    flexApi: {
+      configuration: {
+        get: () => ({
+          fetch: async () => ({
+            attributes: { feature_flags: {} },
+          }),
+        }),
+      },
+    },
   }),
   TWILIO_WORKSPACE_SID: 'WSxxx',
 };
