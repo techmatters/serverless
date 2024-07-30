@@ -117,6 +117,11 @@ const baseContext = {
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime({});
+  // eslint-disable-next-line no-underscore-dangle
+  runtime._addFunction(
+    'interaction/interactionChannelParticipants',
+    'functions/interaction/interactionChannelParticipants.private',
+  );
   helpers.setup({}, runtime);
 });
 

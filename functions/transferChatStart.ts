@@ -245,17 +245,22 @@ export const handler = TokenValidator(
        * But for now, we can check if a conversation exists given a conversationId.
        */
 
-      let isConversation = true;
-      let originalParticipantSid;
-      try {
-        const conversation = await client.conversations
-          .conversations(originalAttributes.conversationSid)
-          .fetch();
-        const participants = await conversation.participants().list();
-        originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
-        newAttributes.originalParticipantSid = originalParticipantSid;
-      } catch (err) {
-        isConversation = false;
+      const { flexInteractionSid, flexInteractionChannelSid } = originalAttributes;
+
+      let isConversation = Boolean(flexInteractionSid && flexInteractionChannelSid);
+      if (flexInteractionSid) {
+        try {
+          const interactionChannelParticipants = await client.flexApi.v1.interaction
+            .get(flexInteractionSid)
+            .channels.get(flexInteractionChannelSid)
+            .participants.list();
+
+          newAttributes.originalParticipantSid = interactionChannelParticipants.find(
+            (p) => p.type === 'agent',
+          )?.sid;
+        } catch (err) {
+          isConversation = false;
+        }
       }
 
       let newTaskSid;
@@ -268,9 +273,9 @@ export const handler = TokenValidator(
         const taskQueueSid = taskQueues[0].sid;
 
         // Create invite to target worker
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        const invite = await client.flexApi.v1.interaction
+          .get(originalAttributes.flexInteractionSid)
+          .channels.get(originalAttributes.flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -286,9 +291,9 @@ export const handler = TokenValidator(
 
         newTaskSid = invite.routing.properties.sid;
       } else if (isConversation && transferTargetType === 'queue') {
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        const invite = await client.flexApi.v1.interaction
+          .get(originalAttributes.flexInteractionSid)
+          .channels.get(originalAttributes.flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {

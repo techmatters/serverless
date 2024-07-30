@@ -29,6 +29,7 @@ import {
   TASK_QUEUE_ENTERED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { TransferMeta, ChatTransferTaskAttributes } from '../transfer/helpers.private';
+import { InteractionChannelParticipants } from '../interaction/interactionChannelParticipants.private';
 import { AdjustChatCapacityType } from '../adjustChatCapacity';
 
 export const eventTypes: EventType[] = [
@@ -141,9 +142,9 @@ const updateWarmVoiceTransferAttributes = async (
     },
   };
 
-  await client.taskrouter
-    .workspaces(context.TWILIO_WORKSPACE_SID)
-    .tasks(taskSid)
+  await client.taskrouter.workspaces
+    .get(context.TWILIO_WORKSPACE_SID)
+    .tasks.get(taskSid)
     .update({ attributes: JSON.stringify(updatedAttributes) });
 
   console.info(`Finished handling warm voice transfer ${transferStatus} with taskSid ${taskSid}.`);
@@ -215,9 +216,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       // The worker can still be offered another task before capacity is reduced if we don't do it now
       await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
           reason: 'task transferred accepted',
@@ -226,16 +228,17 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      try {
-        await client.conversations.v1
-          .conversations(taskAttributes.conversationSid)
-          .participants(taskAttributes.originalParticipantSid)
-          .remove();
-      } catch (err) {
-        console.log(
-          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-        );
-      }
+
+      const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
+      // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+      const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
+      await transitionAgentParticipants(
+        context.getTwilioClient(),
+        context.TWILIO_WORKSPACE_SID,
+        originalTaskSid,
+        'closed',
+        taskAttributes.originalParticipantSid,
+      );
 
       console.log('Finished handling chat transfer accepted.');
       return;
@@ -256,9 +259,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       await decreaseChatCapacity(context, originalTaskSid);
       const client = context.getTwilioClient();
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .update({
           assignmentStatus: 'completed',
           reason: 'task transferred into queue',
@@ -267,15 +270,23 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      try {
-        await client.conversations.v1
-          .conversations(taskAttributes.conversationSid)
-          .participants(taskAttributes.originalParticipantSid)
-          .remove();
-      } catch (err) {
-        console.error(
-          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-        );
+      if (taskAttributes.originalParticipantSid) {
+        try {
+          const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
+          // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+          const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
+          await transitionAgentParticipants(
+            context.getTwilioClient(),
+            context.TWILIO_WORKSPACE_SID,
+            originalTaskSid,
+            'closed',
+            taskAttributes.originalParticipantSid,
+          );
+        } catch (err) {
+          console.error(
+            `Error closing original participant ${taskAttributes.originalParticipantSid} from interaction channel ${taskAttributes.conversationSid}`,
+          );
+        }
       }
 
       console.log('Finished handling chat queue transfer initiated.');
@@ -296,10 +307,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
-
+      const workspace = client.taskrouter.workspaces.get(context.TWILIO_WORKSPACE_SID);
       const [originalTask, rejectedTask] = await Promise.all([
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(originalTaskSid).fetch(),
-        client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks(taskSid).fetch(),
+        workspace.tasks.get(originalTaskSid).fetch(),
+        workspace.tasks.get(taskSid).fetch(),
       ]);
 
       const { channelSid } = taskAttributes;
@@ -365,9 +376,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid, originalReservation } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      await client.taskrouter
-        .workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(originalTaskSid)
+      await client.taskrouter.workspaces
+        .get(context.TWILIO_WORKSPACE_SID)
+        .tasks.get(originalTaskSid)
         .reservations(originalReservation)
         .update({ reservationStatus: 'completed' });
 
