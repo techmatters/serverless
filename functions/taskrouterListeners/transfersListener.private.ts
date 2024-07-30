@@ -150,7 +150,7 @@ const updateWarmVoiceTransferAttributes = async (
 
 /**
  * Checks the event type to determine if the listener should handle the event or not.
- * If it returns true, the taskrouter will invoke this listener.\
+ * If it returns true, the taskrouter will invoke this listener.
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
@@ -201,6 +201,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
         );
       }
+
       console.log('Finished handling chat transfer accepted.');
       return;
     }
