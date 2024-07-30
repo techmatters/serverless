@@ -61,6 +61,12 @@ inputs:
   aselo-app-secret-key:
     description: 'AWS credentials for Aselo user'
     required: true
+  aws-access-key-id:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
   aws-region:
     description: 'AWS region where Aselo documents bucket is hosted'
     required: true
@@ -190,8 +196,8 @@ runs:
       id: update-deployment-matrix
       uses: techmatters/flex-plugins/.github/actions/deployment-matrix@CHI-2829-deploy-matrix
       with:
-        aws-access-key-id: ${{ inputs.aselo-app-secret-key }}
-        aws-secret-access-key: ${{ inputs.aselo-app-access-key}}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
         identifier: ${{ inputs.helpline-code }}
         environment: ${{ inputs.environment }}
