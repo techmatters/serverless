@@ -39,7 +39,7 @@ type Body = {
   request: { cookies: {}; headers: {} };
 };
 
-export const transitionAgentParticipants = async (
+const transitionAgentParticipants = async (
   client: ReturnType<Context<EnvVars>['getTwilioClient']>,
   twilioWorkspaceSid: string,
   taskSid: string,
@@ -109,6 +109,8 @@ export const transitionAgentParticipants = async (
   }
   return { errorType: 'Exception', errorMessage: failures[0].reason };
 };
+
+export default transitionAgentParticipants;
 
 /**
  * This function looks up a Flex interaction & interaction channel using the attributes of the provided Task.
