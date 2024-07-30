@@ -245,19 +245,22 @@ export const handler = TokenValidator(
        * But for now, we can check if a conversation exists given a conversationId.
        */
 
-      let isConversation = Boolean(newAttributes.conversationSid);
+      const { flexInteractionSid, flexInteractionChannelSid } = originalAttributes;
 
-      try {
-        const interactionChannelParticipants = await client.flexApi.interaction
-          .get(originalAttributes.flexInteractionSid)
-          .channels.get(originalAttributes.flexInteractionChannelSid)
-          .participants.list();
+      let isConversation = Boolean(flexInteractionSid && flexInteractionChannelSid);
+      if (flexInteractionSid) {
+        try {
+          const interactionChannelParticipants = await client.flexApi.interaction
+            .get(flexInteractionSid)
+            .channels.get(flexInteractionChannelSid)
+            .participants.list();
 
-        newAttributes.originalParticipantSid = interactionChannelParticipants.find(
-          (p) => p.type === 'agent',
-        )?.sid;
-      } catch (err) {
-        isConversation = false;
+          newAttributes.originalParticipantSid = interactionChannelParticipants.find(
+            (p) => p.type === 'agent',
+          )?.sid;
+        } catch (err) {
+          isConversation = false;
+        }
       }
 
       let newTaskSid;

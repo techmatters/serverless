@@ -230,21 +230,23 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       /**
        * If conversation, remove original participant from conversation.
        */
-      try {
-        const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
-        // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
-        const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
-        await transitionAgentParticipants(
-          context.getTwilioClient(),
-          context.TWILIO_WORKSPACE_SID,
-          originalTaskSid,
-          'closed',
-          taskAttributes.originalParticipantSid,
-        );
-      } catch (err) {
-        console.error(
-          `Error removing original participant ${taskAttributes.originalParticipantSid} from conversation ${taskAttributes.conversationSid}`,
-        );
+      if (taskAttributes.originalParticipantSid) {
+        try {
+          const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
+          // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+          const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
+          await transitionAgentParticipants(
+            context.getTwilioClient(),
+            context.TWILIO_WORKSPACE_SID,
+            originalTaskSid,
+            'closed',
+            taskAttributes.originalParticipantSid,
+          );
+        } catch (err) {
+          console.error(
+            `Error closing original participant ${taskAttributes.originalParticipantSid} from interaction channel ${taskAttributes.conversationSid}`,
+          );
+        }
       }
 
       console.log('Finished handling chat queue transfer initiated.');
