@@ -17,13 +17,13 @@
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import {
   EventType,
-  TASK_COMPLETED,
+  RESERVATION_COMPLETED,
   EventFields,
   TaskrouterListener,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { AdjustChatCapacityType } from '../adjustChatCapacity';
 
-export const eventTypes: EventType[] = [TASK_COMPLETED];
+export const eventTypes: EventType[] = [RESERVATION_COMPLETED];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
