@@ -158,7 +158,7 @@ async function increaseChatCapacity(
 
     const body = {
       workerSid: worker?.sid as string,
-      adjustment: 'increase',
+      adjustment: 'increaseUntilCapacityAvailable',
     } as const;
 
     await adjustChatCapacity(context, body);

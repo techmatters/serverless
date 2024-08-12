@@ -17,13 +17,14 @@
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import {
   EventType,
-  RESERVATION_WRAPUP,
+  RESERVATION_ACCEPTED,
+  RESERVATION_REJECTED,
   EventFields,
   TaskrouterListener,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import type { AdjustChatCapacityType } from '../adjustChatCapacity';
 
-export const eventTypes: EventType[] = [RESERVATION_WRAPUP];
+export const eventTypes: EventType[] = [RESERVATION_ACCEPTED, RESERVATION_REJECTED];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -61,7 +62,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const body = {
         workerSid,
-        adjustment: 'decrease',
+        adjustment: 'setTo1',
       } as const;
 
       await adjustChatCapacity(context, body);
