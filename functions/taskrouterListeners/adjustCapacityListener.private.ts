@@ -37,6 +37,13 @@ type EnvVars = {
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
+/**
+ * After a reservation is accepted, we reset the capacity to 1
+ * We only need to increase capacity temporarily to accept an additional task under certain circumstances like transfers and manual task pulls
+ * So since for 'regular' auto assigned tasks resetting to 1 is a noop, we can just always reset to 1 when any reservation is accepted / rejected
+ * @param context
+ * @param event
+ */
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   try {
     const {
@@ -59,7 +66,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
       const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
-
       const body = {
         workerSid,
         adjustment: 'setTo1',
