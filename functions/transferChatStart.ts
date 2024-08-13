@@ -278,8 +278,8 @@ export const handler = TokenValidator(
 
         // Create invite to target worker
         const invite = await client.flexApi.v1.interaction
-          .get(originalAttributes.flexInteractionSid)
-          .channels.get(originalAttributes.flexInteractionChannelSid)
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -301,9 +301,20 @@ export const handler = TokenValidator(
         console.info(
           `Transferring conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
         );
+        Object.entries({
+          flexInteractionSid,
+          flexInteractionChannelSid,
+          TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID:
+            context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+          TWILIO_WORKSPACE_SID: context.TWILIO_WORKSPACE_SID,
+          newAttributes,
+          taskChannelUniqueName: originalTask.taskChannelUniqueName,
+        }).forEach(([key, value]) => {
+          console.debug(`${key}: ${value}`);
+        });
         const invite = await client.flexApi.v1.interaction
-          .get(originalAttributes.flexInteractionSid)
-          .channels.get(originalAttributes.flexInteractionChannelSid)
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
