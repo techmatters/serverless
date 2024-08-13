@@ -32,6 +32,7 @@ type EnvVars = {
 
 export type Body = {
   workerSid?: string;
+  // 'increase' and 'decease' can be removed once backend manual pulling is enabled everywhere
   adjustment?: 'increase' | 'decrease' | 'increaseUntilCapacityAvailable' | 'setTo1';
   request: { cookies: {}; headers: {} };
 };
