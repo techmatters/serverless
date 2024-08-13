@@ -313,9 +313,7 @@ export const handler = TokenValidator(
           console.debug(`${key}:`, value);
         });
         console.debug('newAttributes:');
-        Object.entries({
-          newAttributes,
-        }).forEach(([key, value]) => {
+        Object.entries(newAttributes).forEach(([key, value]) => {
           console.debug(`${key}:`, value);
         });
         const invite = await client.flexApi.v1.interaction
