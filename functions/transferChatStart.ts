@@ -167,6 +167,7 @@ async function increaseChatCapacity(
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+    console.info('===== transferChatStart invocation =====');
     const client = context.getTwilioClient();
 
     const response = responseWithCors();
@@ -197,7 +198,7 @@ export const handler = TokenValidator(
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(taskSid)
         .fetch();
-
+      console.debug('Original task fetched', originalTask);
       const originalAttributes = JSON.parse(originalTask.attributes);
 
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
@@ -265,6 +266,9 @@ export const handler = TokenValidator(
 
       let newTaskSid;
       if (isConversation && transferTargetType === 'worker') {
+        console.info(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        );
         // Get task queue
         const taskQueues = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -290,7 +294,13 @@ export const handler = TokenValidator(
           });
 
         newTaskSid = invite.routing.properties.sid;
+        console.info(
+          `Transferred conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        );
       } else if (isConversation && transferTargetType === 'queue') {
+        console.info(
+          `Transferring conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
         const invite = await client.flexApi.v1.interaction
           .get(originalAttributes.flexInteractionSid)
           .channels.get(originalAttributes.flexInteractionChannelSid)
@@ -305,6 +315,9 @@ export const handler = TokenValidator(
             },
           });
 
+        console.info(
+          `Transferred conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
         newTaskSid = invite.routing.properties.sid;
       } else {
         // Edit channel attributes so that original task won't cause issues with the transferred one
