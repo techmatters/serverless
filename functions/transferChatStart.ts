@@ -310,7 +310,7 @@ export const handler = TokenValidator(
           newAttributes,
           taskChannelUniqueName: originalTask.taskChannelUniqueName,
         }).forEach(([key, value]) => {
-          console.debug(`${key}: ${value}`);
+          console.debug(`${key}:`, value);
         });
         const invite = await client.flexApi.v1.interaction
           .get(flexInteractionSid)
