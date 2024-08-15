@@ -123,7 +123,7 @@ export const adjustChatCapacity = async (
 
   if (body.adjustment === 'setTo1') {
     if (channel.configuredCapacity !== 1) {
-      await channel.update({ capacity: channel.configuredCapacity - 1 });
+      await channel.update({ capacity: 1 });
       // If configuredCapacity is already 1, send status 200 to avoid error on client side
       return { status: 200, message: 'Successfully reset channel capacity to 1' };
     }
