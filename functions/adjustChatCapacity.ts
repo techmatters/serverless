@@ -32,7 +32,8 @@ type EnvVars = {
 
 export type Body = {
   workerSid?: string;
-  adjustment?: 'increase' | 'decrease' | 'increaseUntilCapacityAvailable';
+  // 'increase' and 'decease' can be removed once backend manual pulling is enabled everywhere
+  adjustment?: 'increase' | 'decrease' | 'increaseUntilCapacityAvailable' | 'setTo1';
   request: { cookies: {}; headers: {} };
 };
 
@@ -118,6 +119,17 @@ export const adjustChatCapacity = async (
 
     // If configuredCapacity is already 1, send status 200 to avoid error on client side
     return { status: 200, message: 'Successfully decreased channel capacity' };
+  }
+
+  if (body.adjustment === 'setTo1') {
+    if (channel.configuredCapacity !== 1) {
+      await channel.update({ capacity: 1 });
+      // If configuredCapacity is already 1, send status 200 to avoid error on client side
+      return { status: 200, message: 'Successfully reset channel capacity to 1' };
+    }
+
+    // If configuredCapacity is already 1, send status 200 to avoid error on client side
+    return { status: 200, message: 'Channel capacity already 1, no adjustment made.' };
   }
 
   return { status: 400, message: 'Invalid adjustment argument' };

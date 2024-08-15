@@ -96,7 +96,7 @@ export const handler = TokenValidator(
         }
       }
     }
-    await adjustChatCapacity(context, { workerSid, adjustment: 'decrease' });
+    await adjustChatCapacity(context, { workerSid, adjustment: 'setTo1' });
     resolve(send(404)({ message: 'No task found to pull' }));
     return undefined;
   },

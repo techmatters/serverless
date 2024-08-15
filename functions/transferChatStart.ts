@@ -158,7 +158,7 @@ async function increaseChatCapacity(
 
     const body = {
       workerSid: worker?.sid as string,
-      adjustment: 'increase',
+      adjustment: 'increaseUntilCapacityAvailable',
     } as const;
 
     await adjustChatCapacity(context, body);
@@ -167,6 +167,7 @@ async function increaseChatCapacity(
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+    console.info('===== transferChatStart invocation =====');
     const client = context.getTwilioClient();
 
     const response = responseWithCors();
@@ -197,7 +198,7 @@ export const handler = TokenValidator(
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(taskSid)
         .fetch();
-
+      console.debug('Original task fetched', originalTask);
       const originalAttributes = JSON.parse(originalTask.attributes);
 
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
@@ -265,6 +266,9 @@ export const handler = TokenValidator(
 
       let newTaskSid;
       if (isConversation && transferTargetType === 'worker') {
+        console.info(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        );
         // Get task queue
         const taskQueues = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
@@ -274,8 +278,8 @@ export const handler = TokenValidator(
 
         // Create invite to target worker
         const invite = await client.flexApi.v1.interaction
-          .get(originalAttributes.flexInteractionSid)
-          .channels.get(originalAttributes.flexInteractionChannelSid)
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -290,10 +294,31 @@ export const handler = TokenValidator(
           });
 
         newTaskSid = invite.routing.properties.sid;
+        console.info(
+          `Transferred conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        );
       } else if (isConversation && transferTargetType === 'queue') {
+        console.info(
+          `Transferring conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
+        Object.entries({
+          flexInteractionSid,
+          flexInteractionChannelSid,
+          TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID:
+            context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+          TWILIO_WORKSPACE_SID: context.TWILIO_WORKSPACE_SID,
+          newAttributes,
+          taskChannelUniqueName: originalTask.taskChannelUniqueName,
+        }).forEach(([key, value]) => {
+          console.debug(`${key}:`, value);
+        });
+        console.debug('newAttributes:');
+        Object.entries(newAttributes).forEach(([key, value]) => {
+          console.debug(`${key}:`, value);
+        });
         const invite = await client.flexApi.v1.interaction
-          .get(originalAttributes.flexInteractionSid)
-          .channels.get(originalAttributes.flexInteractionChannelSid)
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -305,6 +330,9 @@ export const handler = TokenValidator(
             },
           });
 
+        console.info(
+          `Transferred conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
         newTaskSid = invite.routing.properties.sid;
       } else {
         // Edit channel attributes so that original task won't cause issues with the transferred one
