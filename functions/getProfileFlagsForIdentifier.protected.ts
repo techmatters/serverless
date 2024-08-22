@@ -56,9 +56,19 @@ const isVoiceTrigger = (obj: any): obj is VoiceTrigger =>
   obj && obj.call && typeof obj.call === 'object';
 
 export type Event = {
-  trigger: ChatTrigger | VoiceTrigger;
+  trigger: ChatTrigger | VoiceTrigger | ConversationTrigger;
   request: { cookies: {}; headers: {} };
+  channelType?: string;
 };
+
+type ConversationTrigger = {
+  conversation: {
+    Author: string;
+  };
+};
+
+const isConversationTrigger = (obj: any): obj is ConversationTrigger =>
+  typeof obj?.conversation === 'object';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -85,7 +95,7 @@ const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   web: [],
 };
 
-export const getIdentifier = (trigger: Event['trigger']): string => {
+export const getIdentifier = (trigger: Event['trigger'], channelType?: string): string => {
   if (isVoiceTrigger(trigger)) {
     return channelTransformations.voice.reduce((accum, f) => f(accum), trigger.call.From);
   }
@@ -100,6 +110,13 @@ export const getIdentifier = (trigger: Event['trigger']): string => {
     return channelTransformations[trigger.message.ChannelAttributes.channel_type].reduce(
       (accum, f) => f(accum),
       trigger.message.ChannelAttributes.from,
+    );
+  }
+
+  if (isConversationTrigger(trigger) && channelType) {
+    return channelTransformations[channelType].reduce(
+      (accum, f) => f(accum),
+      trigger.conversation.Author,
     );
   }
 
@@ -120,9 +137,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { hrm_base_url, hrm_api_version } = serviceConfig.attributes;
     const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
-    const { trigger } = event;
+    const { trigger, channelType } = event;
 
-    const identifier = getIdentifier(trigger);
+    const identifier = getIdentifier(trigger, channelType);
     const res = await axios.request({
       url: `${hrmBaseUrl}/profiles/identifier/${identifier}/flags`,
       method: 'get',
