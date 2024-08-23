@@ -13,7 +13,11 @@
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
 name: 'Te Guio Staging release custom action'
-description: 'Sets up environment variables related to non-standard additional features in use in the beta environment'
+description: 'Sets up environment variables related to non-standard additional features in use in the staging environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
 runs:
   using: "composite"
   steps:
