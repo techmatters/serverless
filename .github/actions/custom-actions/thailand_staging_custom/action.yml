@@ -49,11 +49,16 @@ runs:
       with:
         ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_100136349533502_Childline-TH-Staging"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
-    - name: Set helpline Instagram Flex Flow SID
+    - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "STG_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SID"
-        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
+    - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/instagram/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
    # Append LINE environment variables
     - name: Add LINE_STUDIO_FLOW_SID
       run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
@@ -74,6 +79,9 @@ runs:
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
       shell: bash
-    - name: Add INSTAGRAM_FLEX_FLOW_SID
-      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
+      run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash
