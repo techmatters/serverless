@@ -32,11 +32,6 @@ runs:
       with:
         ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_104423992367481_SafeSpot.Staging---JM"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
-    - name: Set helpline Instagram Flex Flow SID
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "STG_TWILIO_JM_INSTAGRAM_FLEX_FLOW_SID"
-        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -53,9 +48,6 @@ runs:
       shell: bash
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
-      shell: bash
-    - name: Add INSTAGRAM_FLEX_FLOW_SID
-      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_STUDIO_FLOW_SID
       run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
