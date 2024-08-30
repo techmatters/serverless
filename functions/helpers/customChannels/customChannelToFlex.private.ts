@@ -15,11 +15,13 @@
  */
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
+import type RestException from 'twilio/lib/base/RestException';
 
 export type ConversationSid = `CH${string}`;
 export type ChatChannelSid = `CH${string}`;
 
 const CONVERSATION_CLOSE_TIMEOUT = 'P3D'; // ISO 8601 duration format https://en.wikipedia.org/wiki/ISO_8601
+const TWILIO_ERROR_CODE_SYNC_DOCUMENT_NOT_FOUND = 20404; // https://www.twilio.com/docs/api/errors/20404
 
 /**
  * @deprecated
@@ -45,7 +47,11 @@ export const retrieveChannelFromUserChannelMap = async (
 
     return userChannelMap.data.activeChannelSid;
   } catch (err) {
-    return undefined;
+    const restException = err as RestException;
+    if (restException.code === TWILIO_ERROR_CODE_SYNC_DOCUMENT_NOT_FOUND) {
+      return undefined;
+    }
+    throw err;
   }
 };
 
