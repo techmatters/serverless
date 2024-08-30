@@ -26,7 +26,6 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
 
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { ChatChannelJanitor } from './helpers/chatChannelJanitor.private';
@@ -59,11 +58,11 @@ const getEndChatMessage = async (event: Body, context: Context): Promise<string>
 
   if (language) {
     try {
-      const response = await axios.get<Messages>(
+      const response = await fetch(
         `https://${context.DOMAIN_NAME}/translations/${language}/messages.json`,
       );
-      const translation = response.data;
-      const { EndChatMsg } = translation;
+      const translation = await response.json();
+      const { EndChatMsg } = translation as Messages;
       if (EndChatMsg) return EndChatMsg;
     } catch {
       console.warn(`Couldn't retrieve EndChatMsg message translation for ${language}`);

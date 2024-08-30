@@ -24,7 +24,6 @@ import {
   error400,
 } from '@tech-matters/serverless-helpers';
 import moment from 'moment-timezone';
-import axios from 'axios';
 
 type OperatingShift = { open: number; close: number };
 
@@ -131,10 +130,10 @@ const getClosedMessage = async (
 
   // Try to get the translated message
   try {
-    const response = await axios.get<Messages>(
+    const response = await fetch(
       `https://${context.DOMAIN_NAME}/translations/${language}/messages.json`,
     );
-    const translation = response.data;
+    const translation: Messages = await response.json();
 
     const message = translation[messageKey];
     if (message) return message;

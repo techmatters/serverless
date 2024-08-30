@@ -15,7 +15,6 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import axios from 'axios';
 import { handler as getTranslation, Body } from '../functions/getTranslation';
 
 import helpers, { MockedResponse } from './helpers';
@@ -25,7 +24,10 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
-jest.mock('axios');
+global.fetch = jest.fn();
+const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+
+afterEach(() => jest.clearAllMocks());
 
 const baseContext = {
   getTwilioClient: jest.fn() as any,
@@ -73,7 +75,7 @@ describe('getTranslation', () => {
   });
 
   test('Should return status 200', async () => {
-    jest.spyOn(axios, 'get').mockResolvedValue({ data: {} });
+    mockFetch.mockResolvedValue({ json: () => Promise.resolve({}) } as Response);
     const event: Body = { language: 'es', request: { cookies: {}, headers: {} } };
 
     const callback: ServerlessCallback = (err, result) => {
