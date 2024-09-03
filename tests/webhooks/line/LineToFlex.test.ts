@@ -53,7 +53,11 @@ let documents: any = {
 function documentsMock(doc: string) {
   return {
     fetch: async () => {
-      if (!documents[doc]) throw new Error('Document does not exists');
+      if (!documents[doc]) {
+        const err = new Error('Document does not exists');
+        (err as any).code = 20404; // Twilio not found code
+        throw err;
+      }
 
       return documents[doc];
     },
