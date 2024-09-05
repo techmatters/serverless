@@ -63,13 +63,12 @@ export const handler = TokenValidator(
       .fetch();
     if (
       !roles.includes('supervisor') &&
-      !(await task.reservations().list()).find((r) => r.workerSid !== workerSid)
+      !(await task.reservations().list()).find((r) => r.workerSid === workerSid)
     ) {
       // Only supervisors or workers that currently have a reservation on the task can transition agent participants
       return resolve(error403('You do not have permission to transition agent participants'));
     }
 
-    (await task.reservations().list()).find((r) => r.workerSid);
     try {
       const result = await transitionAgentParticipants(
         context.getTwilioClient(),

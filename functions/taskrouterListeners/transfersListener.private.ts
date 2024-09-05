@@ -141,7 +141,7 @@ const updateWarmVoiceTransferAttributes = async (
     },
   };
 
-  await client.taskrouter.workspaces
+  await client.taskrouter.v1.workspaces
     .get(context.TWILIO_WORKSPACE_SID)
     .tasks.get(taskSid)
     .update({ attributes: JSON.stringify(updatedAttributes) });
@@ -182,7 +182,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const client = context.getTwilioClient();
 
-      const originalTask = await client.taskrouter.workspaces
+      const originalTask = await client.taskrouter.v1.workspaces
         .get(context.TWILIO_WORKSPACE_SID)
         .tasks.get(originalTaskSid)
         .update({
@@ -221,7 +221,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const client = context.getTwilioClient();
 
-      await client.taskrouter.workspaces
+      await client.taskrouter.v1.workspaces
         .get(context.TWILIO_WORKSPACE_SID)
         .tasks.get(originalTaskSid)
         .update({
@@ -269,7 +269,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const { originalTask: originalTaskSid } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
-      const workspace = client.taskrouter.workspaces.get(context.TWILIO_WORKSPACE_SID);
+      const workspace = client.taskrouter.v1.workspaces.get(context.TWILIO_WORKSPACE_SID);
       const [originalTask, rejectedTask] = await Promise.all([
         workspace.tasks.get(originalTaskSid).fetch(),
         workspace.tasks.get(taskSid).fetch(),
@@ -338,7 +338,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const { originalTask: originalTaskSid, originalReservation } = taskAttributes.transferMeta;
       const client = context.getTwilioClient();
 
-      await client.taskrouter.workspaces
+      await client.taskrouter.v1.workspaces
         .get(context.TWILIO_WORKSPACE_SID)
         .tasks.get(originalTaskSid)
         .reservations(originalReservation)
