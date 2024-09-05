@@ -20,20 +20,16 @@ import {
   InteractionChannelParticipantListInstance,
   InteractionChannelParticipantStatus,
 } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
+import { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 
 export const transitionAgentParticipants = async (
   client: ReturnType<Context<any>['getTwilioClient']>,
   twilioWorkspaceSid: string,
-  taskSid: string,
+  task: TaskInstance,
   targetStatus: InteractionChannelParticipantStatus,
   interactionChannelParticipantSid?: string,
 ): Promise<string[] | { errorType: 'Validation' | 'Exception'; errorMessage: string }> => {
   console.log('==== transitionAgentParticipants ====');
-
-  const task = await client.taskrouter.workspaces
-    .get(twilioWorkspaceSid)
-    .tasks.get(taskSid)
-    .fetch();
   const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
 
   if (!flexInteractionSid || !flexInteractionChannelSid) {
