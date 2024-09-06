@@ -20,7 +20,7 @@ import {
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
 
-type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
+export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
 const isWorker = (tokenResult: TokenValidatorResponse) =>
   tokenResult.worker_sid && tokenResult.worker_sid.startsWith('WK');

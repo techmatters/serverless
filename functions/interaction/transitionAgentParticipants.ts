@@ -18,12 +18,14 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   bindResolve,
   error400,
+  error403,
   error500,
   functionValidator as TokenValidator,
   responseWithCors,
   success,
 } from '@tech-matters/serverless-helpers';
 import { InteractionChannelParticipantStatus } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
+import { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { InteractionChannelParticipants } from './interactionChannelParticipants.private';
 
 type EnvVars = {
@@ -35,6 +37,7 @@ type Body = {
   targetStatus: InteractionChannelParticipantStatus;
   interactionChannelParticipantSid?: string;
   request: { cookies: {}; headers: {} };
+  tokenResult: { worker_sid: string; roles: string[] };
 };
 
 /**
@@ -52,11 +55,25 @@ export const handler = TokenValidator(
     const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
     // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
     const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
+    const { worker_sid: workerSid, roles } = event.tokenResult;
+    const task: TaskInstance = await context
+      .getTwilioClient()
+      .taskrouter.v1.workspaces.get(context.TWILIO_WORKSPACE_SID)
+      .tasks.get(event.taskSid)
+      .fetch();
+    if (
+      !roles.includes('supervisor') &&
+      !(await task.reservations().list()).find((r) => r.workerSid === workerSid)
+    ) {
+      // Only supervisors or workers that currently have a reservation on the task can transition agent participants
+      return resolve(error403('You do not have permission to transition agent participants'));
+    }
+
     try {
       const result = await transitionAgentParticipants(
         context.getTwilioClient(),
         context.TWILIO_WORKSPACE_SID,
-        event.taskSid,
+        task,
         event.targetStatus,
         event.interactionChannelParticipantSid,
       );
