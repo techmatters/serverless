@@ -24,7 +24,6 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
 import type { ChannelCaptureHandlers } from './channelCapture/channelCaptureHandlers.private';
 import type { AWSCredentials } from './channelCapture/lexClient.private';
 import {
@@ -65,10 +64,10 @@ const getTriggerMessage = async (
   const { taskLanguage } = event;
   if (taskLanguage) {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `https://${context.DOMAIN_NAME}/translations/${taskLanguage}/postSurveyMessages.json`,
       );
-      const translation = response.data;
+      const translation = await response.json();
 
       console.log('translation', translation);
 

@@ -28,6 +28,9 @@ type SendErrorMessageForUnsupportedMediaEvent = {
 
 export type Event = SendErrorMessageForUnsupportedMediaEvent;
 
+const FALLBACK_ERROR_MESSAGE = 'Unsupported message type.';
+const ERROR_MESSAGE_TRANSLATION_KEY = 'UnsupportedMediaErrorMsg';
+
 export const sendConversationMessage = async (
   context: Context,
   {
@@ -52,36 +55,32 @@ export const sendConversationMessage = async (
       ...(messageAttributes && { attributes: messageAttributes }),
     });
 
-const getTimeDifference = async (isoString: Date): Promise<string> => {
-  const unitCheck = (count: number, unit: string) => (count > 1 ? `${unit}s` : unit);
-  // Create a new Date object from the ISO string
-  const givenDate = new Date(isoString);
-
-  // Get the current date and time
-  const currentDate = new Date();
-
-  // Calculate the difference in milliseconds
-  const differenceInMillis = currentDate.getTime() - givenDate.getTime();
-
-  // Convert the difference to seconds
-  const differenceInSeconds = Math.floor(differenceInMillis / 1000);
-  const differenceInMinutes = Math.floor(differenceInSeconds / 60);
-
-  // Determine whether to return the difference in seconds or minutes
-  return differenceInSeconds < 60
-    ? `${differenceInSeconds} ${unitCheck(differenceInSeconds, 'second')}`
-    : `${differenceInMinutes} ${unitCheck(differenceInMinutes, 'minute')}`;
-};
-
 export const sendErrorMessageForUnsupportedMedia = async (context: Context, event: Event) => {
-  const { EventType, Body, Media, ConversationSid, DateCreated } = event;
+  const { EventType, Body, Media, ConversationSid } = event;
 
   /* Valid message will have either a body/media. A message with no
      body or media implies that there was an error sending such message
   */
   if (EventType === 'onMessageAdded' && !Body && !Media) {
-    const messageTime = await getTimeDifference(DateCreated);
-    const messageText = `Sorry, the message sent ${messageTime} ago is unsupported and could not be delivered.`;
+    let messageText = FALLBACK_ERROR_MESSAGE;
+
+    const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+    const helplineLanguage = serviceConfig.attributes.helplineLanguage ?? 'en-US';
+
+    if (helplineLanguage) {
+      try {
+        const response = await fetch(
+          `https://${context.DOMAIN_NAME}/translations/${helplineLanguage}/messages.json`,
+        );
+        const translation = await response.json();
+        const { [ERROR_MESSAGE_TRANSLATION_KEY]: translatedMessage } = translation;
+        messageText = translatedMessage || messageText;
+      } catch {
+        console.warn(
+          `Couldn't retrieve ${ERROR_MESSAGE_TRANSLATION_KEY} message translation for ${helplineLanguage}`,
+        );
+      }
+    }
 
     await sendConversationMessage(context, {
       conversationSid: ConversationSid,
