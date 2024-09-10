@@ -37,7 +37,7 @@ type Body = {
   targetStatus: InteractionChannelParticipantStatus;
   interactionChannelParticipantSid?: string;
   request: { cookies: {}; headers: {} };
-  tokenResult: { worker_sid: string; roles: string[] };
+  TokenResult: { worker_sid: string; roles: string[] };
 };
 
 /**
@@ -55,7 +55,7 @@ export const handler = TokenValidator(
     const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
     // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
     const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
-    const { worker_sid: workerSid, roles } = event.tokenResult;
+    const { worker_sid: workerSid, roles } = event.TokenResult;
     const task: TaskInstance = await context
       .getTwilioClient()
       .taskrouter.v1.workspaces.get(context.TWILIO_WORKSPACE_SID)

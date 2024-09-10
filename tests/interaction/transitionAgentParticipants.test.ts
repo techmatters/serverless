@@ -145,7 +145,7 @@ describe('sid for valid task', () => {
         taskSid: 'WT123',
         targetStatus: 'wrapup',
         request: { headers: {}, cookies: {} },
-        tokenResult: { worker_sid: 'WKbob', roles: ['supervisor'] },
+        TokenResult: { worker_sid: 'WKbob', roles: ['supervisor'] },
       },
       callback,
     );
@@ -160,7 +160,7 @@ describe('sid for valid task', () => {
         taskSid: 'WT123',
         targetStatus: 'wrapup',
         request: { headers: {}, cookies: {} },
-        tokenResult: { worker_sid: 'WKworker_with_reservation', roles: ['agent'] },
+        TokenResult: { worker_sid: 'WKworker_with_reservation', roles: ['agent'] },
       },
       callback,
     );
@@ -175,7 +175,7 @@ describe('sid for valid task', () => {
         taskSid: 'WT123',
         targetStatus: 'wrapup',
         request: { headers: {}, cookies: {} },
-        tokenResult: { worker_sid: 'WKworker_with_reservation', roles: [] },
+        TokenResult: { worker_sid: 'WKworker_with_reservation', roles: [] },
       },
       callback,
     );
@@ -196,7 +196,7 @@ describe('sid for valid task', () => {
         taskSid: 'WT123',
         targetStatus: 'wrapup',
         request: { headers: {}, cookies: {} },
-        tokenResult: { worker_sid: 'WKbob', roles: ['agent'] },
+        TokenResult: { worker_sid: 'WKbob', roles: ['agent'] },
       },
       callback,
     );
