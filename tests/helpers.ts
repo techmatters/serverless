@@ -135,3 +135,8 @@ export default {
   restoreEnv
 };
 
+export type RecursivePartial<T> = T extends object
+  ? {
+    [P in keyof T]?: RecursivePartial<T[P]>;
+  }
+  : T;

@@ -48,7 +48,7 @@ const nonPostSurveyTaskAttributes = {
 
 const customChannelTaskAttributes = {
   channelSid: 'customChannelSid',
-  channelType: 'twitter',
+  channelType: 'line',
 };
 
 const nonCustomChannelTaskAttributes = {
@@ -65,7 +65,6 @@ const mockFetchFlexApiConfig = jest.fn(() => ({
   attributes: {
     feature_flags: {
       enable_post_survey: true,
-      backend_handled_chat_janitor: true,
     },
   },
 }));
@@ -76,6 +75,7 @@ const context = {
   }),
   CHAT_SERVICE_SID: 'CHxxx',
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
+  SYNC_SERVICE_SID: 'xxx',
 };
 
 beforeAll(() => {
@@ -247,44 +247,12 @@ describe('isDeactivateConversationOrchestration', () => {
       ),
     ),
   ).test(
-    'when enable_post_survey=false & backend_handled_chat_janitor=false, eventType $eventType with channelType $channelType, should not trigger janitor',
+    'when enable_post_survey=true, eventType $eventType with channelType $channelType, should not trigger janitor',
     async ({ channelType, eventType }) => {
       mockFetchFlexApiConfig.mockImplementationOnce(() => ({
         attributes: {
           feature_flags: {
             enable_post_survey: true,
-            backend_handled_chat_janitor: true,
-          },
-        },
-      }));
-      const event = {
-        ...mock<EventFields>(),
-        EventType: eventType as EventType,
-        TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
-        TaskChannelUniqueName: 'chat',
-      };
-      await janitorListener.handleEvent(context, event);
-
-      const { channelSid } = customChannelTaskAttributes;
-      expect(mockChannelJanitor).not.toHaveBeenCalledWith(context, { channelSid });
-    },
-  );
-
-  each(
-    // [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
-    [TASK_WRAPUP, TASK_COMPLETED].flatMap((eventType) =>
-      [...Object.values(AseloCustomChannels), 'web', 'sms', 'whatsapp', 'facebook'].map(
-        (channelType) => ({ channelType, eventType }),
-      ),
-    ),
-  ).test(
-    'when enable_post_survey=true & backend_handled_chat_janitor=true, eventType $eventType with channelType $channelType, should not trigger janitor',
-    async ({ channelType, eventType }) => {
-      mockFetchFlexApiConfig.mockImplementationOnce(() => ({
-        attributes: {
-          feature_flags: {
-            enable_post_survey: true,
-            backend_handled_chat_janitor: true,
           },
         },
       }));
@@ -309,13 +277,12 @@ describe('isDeactivateConversationOrchestration', () => {
         ),
     ),
   ).test(
-    'when enable_post_survey=false & backend_handled_chat_janitor=true, eventType $eventType with channelType $channelType, should trigger janitor',
+    'when enable_post_survey=false, eventType $eventType with channelType $channelType, should trigger janitor',
     async ({ channelType, eventType }) => {
       mockFetchFlexApiConfig.mockImplementationOnce(() => ({
         attributes: {
           feature_flags: {
             enable_post_survey: false,
-            backend_handled_chat_janitor: true,
           },
         },
       }));

@@ -15,8 +15,17 @@
  */
 
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
+import type RestException from 'twilio/lib/base/RestException';
+
+export type ConversationSid = `CH${string}`;
+export type ChatChannelSid = `CH${string}`;
+
+const CONVERSATION_CLOSE_TIMEOUT = 'P3D'; // ISO 8601 duration format https://en.wikipedia.org/wiki/ISO_8601
+const TWILIO_ERROR_CODE_SYNC_DOCUMENT_NOT_FOUND = 20404; // https://www.twilio.com/docs/api/errors/20404
 
 /**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
  * Looks in Sync Service for the userChannelMap named after uniqueUserName
  */
 export const retrieveChannelFromUserChannelMap = async (
@@ -28,7 +37,7 @@ export const retrieveChannelFromUserChannelMap = async (
     syncServiceSid: string;
     uniqueUserName: string;
   },
-): Promise<string | undefined> => {
+): Promise<ConversationSid | undefined> => {
   try {
     const userChannelMap = await context
       .getTwilioClient()
@@ -38,11 +47,35 @@ export const retrieveChannelFromUserChannelMap = async (
 
     return userChannelMap.data.activeChannelSid;
   } catch (err) {
-    return undefined;
+    const restException = err as RestException;
+    if (restException.code === TWILIO_ERROR_CODE_SYNC_DOCUMENT_NOT_FOUND) {
+      return undefined;
+    }
+    throw err;
   }
 };
 
+export const findExistingConversation = async (
+  context: Context,
+  identity: string,
+): Promise<ConversationSid | undefined> => {
+  const conversations = await context
+    .getTwilioClient()
+    .conversations.v1.participantConversations.list({ identity });
+  const existing = conversations.find((conversation) =>
+    ['active', 'inactive'].includes(conversation.conversationState),
+  );
+  if (existing) {
+    console.log(`Found existing conversation for ${identity}`, existing.conversationSid, existing);
+    return existing.conversationSid as ConversationSid;
+  }
+  console.log(`No existing conversation found for ${identity}`);
+  return undefined;
+};
+
 /**
+ * @deprecated
+ * The user channel map is not required in the new Conversations API, wich provides a built in way to look up conversation instances from sender IDs
  * Creates a user channel map in Sync Service to contain the sid of the new channel assigned for a user
  */
 export const createUserChannelMap = async (
@@ -69,7 +102,10 @@ export const createUserChannelMap = async (
 };
 
 /**
- * Sends a new message to the provided chat channel
+ * @deprecated
+ * We are replacing Twilio Programmable Chat with Twilio Conversations, so no new code should be written using this function.
+ * This function will be removed in the future.
+ * Use sendConversationMessage instead.
  */
 export const sendChatMessage = async (
   context: Context,
@@ -86,8 +122,8 @@ export const sendChatMessage = async (
     messageText: string;
     messageAttributes?: string;
   },
-) => {
-  const message = await context
+) =>
+  context
     .getTwilioClient()
     .chat.services(chatServiceSid)
     .channels(channelSid)
@@ -97,10 +133,39 @@ export const sendChatMessage = async (
       xTwilioWebhookEnabled: 'true',
       ...(messageAttributes && { attributes: messageAttributes }),
     });
+/**
+ * Sends a new message to the provided conversations channel
+ */
+export const sendConversationMessage = async (
+  context: Context,
+  {
+    conversationSid,
+    author,
+    messageText,
+    messageAttributes,
+  }: {
+    conversationSid: ConversationSid;
+    author: string;
+    messageText: string;
+    messageAttributes?: string;
+  },
+) =>
+  context
+    .getTwilioClient()
+    .conversations.conversations.get(conversationSid)
+    .messages.create({
+      body: messageText,
+      author,
+      xTwilioWebhookEnabled: 'true',
+      ...(messageAttributes && { attributes: messageAttributes }),
+    });
 
-  return message;
-};
-
+/**
+ * @deprecated
+ * We are replacing Twilio Programmable Chat with Twilio Conversations, so no new code should be using this function.
+ * This function will be removed in the future.
+ * Use removeConversation instead.
+ */
 export const removeChatChannel = async (
   context: Context,
   {
@@ -112,11 +177,20 @@ export const removeChatChannel = async (
   },
 ) => context.getTwilioClient().chat.services(chatServiceSid).channels(channelSid).remove();
 
+export const removeConversation = async (
+  context: Context,
+  {
+    conversationSid,
+  }: {
+    conversationSid: ConversationSid;
+  },
+) => context.getTwilioClient().conversations.conversations(conversationSid).remove();
+
 export enum AseloCustomChannels {
-  Twitter = 'twitter',
   Instagram = 'instagram',
   Line = 'line',
   Modica = 'modica',
+  Telegram = 'telegram',
 }
 
 export const isAseloCustomChannel = (s: unknown): s is AseloCustomChannels =>
@@ -126,15 +200,29 @@ type CreateFlexChannelParams = {
   flexFlowSid: string;
   chatServiceSid: string;
   channelType: AseloCustomChannels; // The chat channel being used
-  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. twitter:1234567)
+  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567)
   chatFriendlyName: string; // A name for the Flex channel (tipcally same as uniqueUserName)
   uniqueUserName: string; // Unique identifier for this user
-  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Twitter handle)
+  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Telegram handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   onChannelUpdatedWebhookUrl?: string; // The url that must be used as the onChannelUpdated event webhook. If not present, it defaults to https://${context.DOMAIN_NAME}/webhooks/FlexChannelUpdate
 };
 
+type CreateFlexConversationParams = {
+  studioFlowSid: string;
+  channelType: AseloCustomChannels; // The chat channel being used
+  uniqueUserName: string; // Unique identifier for this user
+  senderScreenName: string; // Friendly info to show to show in the Flex UI (like Telegram handle)
+  onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
+  conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
+  twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567)
+};
+
 /**
+ * @deprecated
+ * We are replacing Twilio Programmable Chat with Twilio Conversations, so no new code should be using this function.
+ * This function will be removed in the future.
+ * Use createFlexConversation instead.
  * Creates a new Flex chat channel in the provided Flex Flow and subscribes webhooks to it's events.
  * Adds to the channel attributes the provided twilioNumber used for routing.
  */
@@ -152,8 +240,6 @@ const createFlexChannel = async (
     onChannelUpdatedWebhookUrl,
   }: CreateFlexChannelParams,
 ) => {
-  // const twilioNumber = `${twitterUniqueNamePrefix}${forUserId}`;
-
   const client = context.getTwilioClient();
 
   const channel = await client.flexApi.channel.create({
@@ -175,7 +261,7 @@ const createFlexChannel = async (
       attributes: JSON.stringify({
         ...channelAttributes,
         channel_type: channelType,
-        senderScreenName, // TODO: in Twitter this is "twitterUserHandle". Rework that in the UI when we use this
+        senderScreenName,
         twilioNumber,
       }),
     });
@@ -210,6 +296,78 @@ const createFlexChannel = async (
   return channel.sid;
 };
 
+/**
+ * Creates a new Flex conversation in the provided Flex Flow and subscribes webhooks to it's events.
+ * Adds to the channel attributes the provided twilioNumber used for routing.
+ */
+const createConversation = async (
+  context: Context,
+  {
+    conversationFriendlyName,
+    channelType,
+    twilioNumber,
+    uniqueUserName,
+    senderScreenName,
+    onMessageSentWebhookUrl,
+    studioFlowSid,
+  }: CreateFlexConversationParams,
+): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
+  const client = context.getTwilioClient();
+
+  const conversationInstance = await client.conversations.conversations.create({
+    xTwilioWebhookEnabled: 'true',
+    friendlyName: conversationFriendlyName,
+    uniqueName: `${channelType}/${uniqueUserName}/${Date.now()}`,
+  });
+  const conversationSid = conversationInstance.sid as ConversationSid;
+
+  try {
+    const conversationContext = await client.conversations.conversations.get(conversationSid);
+    await conversationContext.participants.create({
+      identity: uniqueUserName,
+    });
+    const channelAttributes = JSON.parse((await conversationContext.fetch()).attributes);
+
+    console.log('channelAttributes prior to update', channelAttributes);
+
+    await conversationContext.update({
+      state: 'active',
+      timers: {
+        closed: CONVERSATION_CLOSE_TIMEOUT,
+      },
+      attributes: JSON.stringify({
+        ...channelAttributes,
+        channel_type: channelType,
+        channelType,
+        senderScreenName,
+        twilioNumber,
+      }),
+    });
+
+    await conversationContext.webhooks.create({
+      target: 'studio',
+      configuration: {
+        flowSid: studioFlowSid,
+        filters: ['onMessageAdded'],
+      },
+    });
+
+    /* const onMessageAdded = */
+    await conversationContext.webhooks.create({
+      target: 'webhook',
+      configuration: {
+        method: 'POST',
+        url: onMessageSentWebhookUrl,
+        filters: ['onMessageAdded'],
+      },
+    });
+  } catch (err) {
+    return { conversationSid, error: err as Error };
+  }
+
+  return { conversationSid };
+};
+
 type SendMessageToFlexParams = CreateFlexChannelParams & {
   syncServiceSid: string; // The Sync Service sid where user channel maps are stored
   messageText: string; // The body of the message to send
@@ -218,12 +376,23 @@ type SendMessageToFlexParams = CreateFlexChannelParams & {
   subscribedExternalId: string; // The id in the external chat system of the user that is subscribed to the webhook
 };
 
+type SendConversationMessageToFlexParams = Omit<CreateFlexConversationParams, 'twilioNumber'> & {
+  messageText: string; // The body of the message to send
+  senderExternalId: string; // The id in the external chat system of the user sending the message - accountSid if not provided
+  messageAttributes?: string; // [optional] The message attributes
+  customSubscribedExternalId?: string; // The id in the external chat system of the user that is subscribed to the webhook
+  customTwilioNumber?: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567) - will be <channnel>:<accountSid> if not provided
+};
+
 /**
+ * @deprecated - We are migrating to Twilio conversations, so no new code should be using this function.
+ * Use `sendConversationMessageToFlex` instead.
+ *
  * Given a uniqueUserName, tries to send a message to the active chat channel for this user.
  * To retrieve the channel we do a lookup on the user channel map stored in Sync Service.
  * If the channel or the map does not exists, we create it here.
  * The uniqueUserName is typacally '<channelType>:<unique identifier of the sender>'
- *   (e.g. if the message is sent by Twitter user 1234567, the uniqueUserName will be 'twitter:1234567')
+ *   (e.g. if the message is sent by Telegram user 1234567, the uniqueUserName will be 'telegram:1234567')
  */
 export const sendMessageToFlex = async (
   context: Context,
@@ -244,6 +413,7 @@ export const sendMessageToFlex = async (
     subscribedExternalId,
   }: SendMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
+  console.log('=== sendMessageToFlex ===');
   // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
   if (senderExternalId === subscribedExternalId) {
     return { status: 'ignored' };
@@ -258,7 +428,7 @@ export const sendMessageToFlex = async (
     });
 
     if (!channelSid) {
-      const newChannelSid = await createFlexChannel(context, {
+      channelSid = await createFlexChannel(context, {
         flexFlowSid,
         chatServiceSid,
         channelType,
@@ -270,7 +440,6 @@ export const sendMessageToFlex = async (
         onChannelUpdatedWebhookUrl,
       });
 
-      channelSid = newChannelSid;
       await createUserChannelMap(context, {
         syncServiceSid,
         uniqueUserName,
@@ -302,10 +471,80 @@ export const sendMessageToFlex = async (
 
   return { status: 'sent', response };
 };
+/**
+ * Given a uniqueUserName, tries to send a message to the active chat channel for this user.
+ * To retrieve the channel we do a lookup on the user channel map stored in Sync Service.
+ * If the channel or the map does not exists, we create it here.
+ * The uniqueUserName is typacally '<channelType>:<unique identifier of the sender>'
+ *   (e.g. if the message is sent by Telegram user 1234567, the uniqueUserName will be 'telegram:1234567')
+ */
+export const sendConversationMessageToFlex = async (
+  context: Context<{ ACCOUNT_SID: string }>,
+  {
+    studioFlowSid,
+    channelType,
+    customTwilioNumber,
+    uniqueUserName,
+    senderScreenName,
+    onMessageSentWebhookUrl,
+    messageText,
+    messageAttributes = undefined,
+    senderExternalId,
+    customSubscribedExternalId,
+    conversationFriendlyName,
+  }: SendConversationMessageToFlexParams,
+): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
+  const subscribedExternalId = customSubscribedExternalId || context.ACCOUNT_SID;
+  const twilioNumber = customTwilioNumber || `${channelType}:${subscribedExternalId}`;
+  // Do not send messages that were sent by the receiverId (account subscribed to the webhook), as they were either sent from Flex or from the specific UI of the chat system
+  console.log('=== sendConversationMessageToFlex ===');
+  if (senderExternalId === subscribedExternalId) {
+    return { status: 'ignored' };
+  }
+
+  let conversationSid = await findExistingConversation(context, uniqueUserName);
+
+  if (!conversationSid) {
+    const { conversationSid: newConversationSid, error } = await createConversation(context, {
+      studioFlowSid,
+      channelType,
+      twilioNumber,
+      uniqueUserName,
+      senderScreenName,
+      onMessageSentWebhookUrl,
+      conversationFriendlyName,
+    });
+
+    if (error) {
+      await removeConversation(context, {
+        conversationSid: newConversationSid,
+      });
+      throw error;
+    }
+
+    conversationSid = newConversationSid;
+  }
+
+  const response = await sendConversationMessage(context, {
+    conversationSid,
+    author: uniqueUserName,
+    messageText,
+    messageAttributes,
+  });
+
+  console.log('sendConversationMessageToFlex response:');
+  Object.entries(response).forEach(([key, value]) => {
+    console.log(`${key}:`, value);
+  });
+
+  return { status: 'sent', response };
+};
 
 export type ChannelToFlex = {
   sendMessageToFlex: typeof sendMessageToFlex;
+  sendConversationMessageToFlex: typeof sendConversationMessageToFlex;
   retrieveChannelFromUserChannelMap: typeof retrieveChannelFromUserChannelMap;
   AseloCustomChannels: typeof AseloCustomChannels;
   isAseloCustomChannel: typeof isAseloCustomChannel;
+  findExistingConversation: typeof findExistingConversation;
 };

@@ -29,15 +29,15 @@ import type { TransferMeta } from '../transfer/helpers.private';
 import type { PostSurveyInitHandler } from '../postSurveyInit';
 import type { AWSCredentials } from '../channelCapture/lexClient.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
-import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 
 export const eventTypes: EventType[] = [TASK_WRAPUP];
+
+const GLOBAL_DEFAULT_LANGUAGE = 'en-US';
 
 export type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
-  POST_SURVEY_BOT_CHAT_URL: string;
   HRM_STATIC_KEY: string;
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
@@ -47,14 +47,13 @@ export type EnvVars = AWSCredentials & {
 // TODO: unify this code with Flex codebase
 
 const getTaskLanguage = (helplineLanguage: string) => (taskAttributes: { language?: string }) =>
-  taskAttributes.language || helplineLanguage;
+  taskAttributes.language || helplineLanguage || GLOBAL_DEFAULT_LANGUAGE;
 // ================== //
 
 const isTriggerPostSurvey = (
   eventType: EventType,
   taskChannelUniqueName: string,
   taskAttributes: {
-    channelType?: string;
     transferMeta?: TransferMeta;
     isChatCaptureControl?: boolean;
   },
@@ -97,30 +96,31 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     if (isTriggerPostSurvey(eventType, taskChannelUniqueName, taskAttributes)) {
       console.log('Handling post survey trigger...');
       const client = context.getTwilioClient();
+      console.log('taskAttributes', taskAttributes);
 
       // This task is a candidate to trigger post survey. Check feature flags for the account.
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
       if (featureFlags.enable_post_survey) {
-        const channelToFlex = require(Runtime.getFunctions()[
-          'helpers/customChannels/customChannelToFlex'
-        ].path) as ChannelToFlex;
+        const { channelSid, conversationSid, channelType, customChannelType } = taskAttributes;
 
-        // TODO: Remove this once all accounts are migrated to Lex
-        // Only trigger post survey if handled by Lex or if is not a custom channel
-        if (featureFlags.enable_lex || !channelToFlex.isAseloCustomChannel(taskAttributes)) {
-          const { channelSid } = taskAttributes;
+        const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-          const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
+        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
+        const postSurveyInitHandler = require(handlerPath)
+          .postSurveyInitHandler as PostSurveyInitHandler;
+        await postSurveyInitHandler(context, {
+          channelSid,
+          conversationSid,
+          taskSid,
+          taskLanguage,
+          channelType: customChannelType || channelType,
+        });
 
-          const handlerPath = Runtime.getFunctions().postSurveyInit.path;
-          const postSurveyInitHandler = require(handlerPath)
-            .postSurveyInitHandler as PostSurveyInitHandler;
-
-          await postSurveyInitHandler(context, { channelSid, taskSid, taskLanguage });
-        }
         console.log('Finished handling post survey trigger.');
+      } else {
+        console.log('Bypassing post survey trigger - they are disabled');
       }
     }
     console.log('===== PostSurveyListener finished successfully =====');

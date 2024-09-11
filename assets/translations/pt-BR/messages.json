@@ -1,3 +1,5 @@
 {
-  "EndChatMsg": "O usuário saiu da conversa."
+  "EndChatMsg": "O usuário saiu da conversa.",
+  "UnsupportedMediaErrorMsg": "Desculpe, a mensagem que você acabou de enviar não é suportada e não pôde ser entregue."
 }
+

@@ -43,7 +43,7 @@ type ChatTrigger = {
     };
   };
 };
-const isChatTrigger = (obj: any): obj is VoiceTrigger =>
+const isChatTrigger = (obj: any): obj is ChatTrigger =>
   obj && obj.message && typeof obj.message === 'object';
 
 type VoiceTrigger = {
@@ -56,9 +56,19 @@ const isVoiceTrigger = (obj: any): obj is VoiceTrigger =>
   obj && obj.call && typeof obj.call === 'object';
 
 export type Event = {
-  trigger: ChatTrigger | VoiceTrigger;
+  trigger: ChatTrigger | VoiceTrigger | ConversationTrigger;
   request: { cookies: {}; headers: {} };
+  channelType?: string;
 };
+
+type ConversationTrigger = {
+  conversation: {
+    Author: string;
+  };
+};
+
+const isConversationTrigger = (obj: any): obj is ConversationTrigger =>
+  typeof obj?.conversation === 'object';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -71,21 +81,43 @@ const getContactValueFromWebchat = (trigger: ChatTrigger) => {
   return preEngagementData.contactIdentifier;
 };
 
-export const getIdentifier = (trigger: Event['trigger']) => {
+const trimSpaces = (s: string) => s.replace(' ', '');
+
+type TransformIdentifierFunction = (c: string) => string;
+const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
+  voice: [trimSpaces],
+  sms: [trimSpaces],
+  whatsapp: [(s) => s.replace('whatsapp:', ''), trimSpaces],
+  modica: [(s) => s.replace('modica:', ''), trimSpaces],
+  facebook: [(s) => s.replace('messenger:', '')],
+  instagram: [],
+  line: [],
+  web: [],
+};
+
+export const getIdentifier = (trigger: Event['trigger'], channelType?: string): string => {
   if (isVoiceTrigger(trigger)) {
-    return trigger.call.From;
+    return channelTransformations.voice.reduce((accum, f) => f(accum), trigger.call.From);
   }
 
   if (isChatTrigger(trigger)) {
-    if (trigger.message.ChannelAttributes.channel_type === 'facebook') {
-      return trigger.message.ChannelAttributes.from.replace('messenger:', '');
-    }
-    if (trigger.message.ChannelAttributes.channel_type === 'whatsapp') {
-      return trigger.message.ChannelAttributes.from.replace('whatsapp:', '');
-    }
+    // webchat is a special case since it does not only depends on channel but in the task attributes too
     if (trigger.message.ChannelAttributes.channel_type === 'web') {
       return getContactValueFromWebchat(trigger);
     }
+
+    // otherwise, return the "defaultFrom" with the transformations on the identifier corresponding to each channel
+    return channelTransformations[trigger.message.ChannelAttributes.channel_type].reduce(
+      (accum, f) => f(accum),
+      trigger.message.ChannelAttributes.from,
+    );
+  }
+
+  if (isConversationTrigger(trigger) && channelType) {
+    return channelTransformations[channelType].reduce(
+      (accum, f) => f(accum),
+      trigger.conversation.Author,
+    );
   }
 
   throw new Error('Trigger is none VoiceTrigger nor ChatTrigger');
@@ -105,12 +137,12 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { hrm_base_url, hrm_api_version } = serviceConfig.attributes;
     const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
-    const { trigger } = event;
+    const { trigger, channelType } = event;
 
-    const identifier = getIdentifier(trigger);
-    const res = await axios({
+    const identifier = getIdentifier(trigger, channelType);
+    const res = await axios.request({
       url: `${hrmBaseUrl}/profiles/identifier/${identifier}/flags`,
-      method: 'GET',
+      method: 'get',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Basic ${context.HRM_STATIC_KEY}`,

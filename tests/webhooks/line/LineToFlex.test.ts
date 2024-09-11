@@ -53,7 +53,11 @@ let documents: any = {
 function documentsMock(doc: string) {
   return {
     fetch: async () => {
-      if (!documents[doc]) throw new Error('Document does not exists');
+      if (!documents[doc]) {
+        const err = new Error('Document does not exists');
+        (err as any).code = 20404; // Twilio not found code
+        throw err;
+      }
 
       return documents[doc];
     },
@@ -102,6 +106,7 @@ const baseContext = {
   SYNC_SERVICE_SID: 'SYNC_SERVICE_SID',
   CHAT_SERVICE_SID: 'CHAT_SERVICE_SID',
   LINE_FLEX_FLOW_SID: 'LINE_FLEX_FLOW_SID',
+  LINE_STUDIO_FLOW_SID: 'LINE_STUDIO_FLOW_SID',
   PATH: '',
   SERVICE_SID: undefined,
   ENVIRONMENT_SID: undefined,
@@ -213,8 +218,8 @@ describe('LineToFlex', () => {
     {
       conditionDescription: 'the event has no destination property',
       event: { ...validEvent(), destination: undefined },
-      expectedStatus: 500,
-      expectedMessage: 'Missing destination property',
+      expectedStatus: 400,
+      expectedMessage: 'destination',
     },
     {
       conditionDescription: 'the flex flow identified in the LINE_FLEX_FLOW_SID does not exist',
@@ -252,8 +257,13 @@ describe('LineToFlex', () => {
       conditionDescription: 'sending multiple events',
       event: aggregateEvents(validEvent({}), validEvent({})),
       expectedStatus: 200,
-      expectedMessage:
-        'Message sent in channel line:sender_id.,Message sent in channel line:sender_id.',
+      expectedMessage: `${JSON.stringify({
+        status: 'sent',
+        response: 'Message sent in channel line:sender_id.',
+      })},${JSON.stringify({
+        status: 'sent',
+        response: 'Message sent in channel line:sender_id.',
+      })}`,
     },
     {
       conditionDescription: 'sending emoji',
@@ -279,7 +289,7 @@ describe('LineToFlex', () => {
       event,
       expectedStatus,
       expectedMessage,
-      flexFlowSid = 'TWITTER_FLEX_FLOW_SID',
+      flexFlowSid = 'LINE_FLEX_FLOW_SID',
       chatServiceSid = 'CHAT_SERVICE_SID',
     }) => {
       let response: MockedResponse | undefined;

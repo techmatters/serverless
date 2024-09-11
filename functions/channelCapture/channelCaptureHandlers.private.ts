@@ -17,15 +17,30 @@
  */
 import axios from 'axios';
 import type { Context } from '@twilio-labs/serverless-runtime-types/types';
-import type { ChannelInstance } from 'twilio/lib/rest/chat/v2/service/channel';
+import type {
+  ChannelInstance,
+  ChannelInstanceUpdateOptions,
+} from 'twilio/lib/rest/chat/v2/service/channel';
+import {
+  ConversationInstance,
+  ConversationInstanceUpdateOptions,
+} from 'twilio/lib/rest/conversations/v1/conversation';
+import type { WebhookListInstanceCreateOptions as ChannelWebhookOpts } from 'twilio/lib/rest/chat/v2/service/channel/webhook';
+import type { WebhookListInstanceCreateOptions as ConversationWebhookOpts } from 'twilio/lib/rest/conversations/v1/conversation/webhook';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
+import { MessageListInstanceCreateOptions as ConversationMessageListInstanceCreateOptions } from 'twilio/lib/rest/conversations/v1/conversation/message';
+import { MessageListInstanceCreateOptions as ChannelMessageListInstanceCreateOptions } from 'twilio/lib/rest/chat/v2/service/channel/message';
 import type { AWSCredentials, LexClient, LexMemory } from './lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
   BuildSurveyInsightsData,
   OneToManyConfigSpec,
 } from '../helpers/insightsService.private';
+import {
+  ChatChannelSid,
+  ConversationSid,
+} from '../helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = AWSCredentials & {
   TWILIO_WORKSPACE_SID: string;
@@ -52,6 +67,8 @@ export type CapturedChannelAttributes = {
   memoryAttribute?: string;
   releaseFlag?: string;
   chatbotCallbackWebhookSid: string;
+  isConversation: boolean;
+  channelType: string;
 };
 
 export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?: boolean }) =>
@@ -62,17 +79,24 @@ export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?
  * Capture handlers wrap the logic needed for capturing a channel: updating it's attributes, creating a control task, triggering a chatbot, etc
  */
 
-const getServiceUserIdentity = async (
-  channel: ChannelInstance,
+const getServiceUserIdentityOrParticipantId = async (
+  channel: ChannelInstance | ConversationInstance,
   channelAttributes: { [k: string]: string },
 ): Promise<MemberInstance['identity']> => {
+  if (channel instanceof ConversationInstance) {
+    if (!channelAttributes.participantSid) {
+      const participants = await channel.participants().list();
+      const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
+      const firstParticipant = participants.sort(sortByDateCreated)[0];
+      return firstParticipant.sid;
+    }
+    return channelAttributes.participantSid;
+  }
+
   // If there's no service user, find which is the first one and add it channel attributes (only occurs on first capture)
   if (!channelAttributes.serviceUserIdentity) {
-    console.log('Setting serviceUserIdentity');
     const members = await channel.members().list();
-    console.log('members: ', JSON.stringify(members));
     const firstMember = members.sort((a, b) => (a.dateCreated > b.dateCreated ? 1 : -1))[0];
-    console.log('firstMember: ', JSON.stringify(firstMember));
     return firstMember.identity;
   }
 
@@ -80,7 +104,7 @@ const getServiceUserIdentity = async (
 };
 
 const updateChannelWithCapture = async (
-  channel: ChannelInstance,
+  channel: ChannelInstance | ConversationInstance,
   attributes: CapturedChannelAttributes,
 ) => {
   const {
@@ -93,16 +117,23 @@ const updateChannelWithCapture = async (
     studioFlowSid,
     memoryAttribute,
     releaseFlag,
+    isConversation,
+    channelType,
   } = attributes;
 
   const channelAttributes = JSON.parse(channel.attributes);
 
-  const serviceUserIdentity = await getServiceUserIdentity(channel, channelAttributes);
+  const userIdentityOrParticipantId = await getServiceUserIdentityOrParticipantId(
+    channel,
+    channelAttributes,
+  );
 
-  return channel.update({
+  const newAttributes = {
     attributes: JSON.stringify({
       ...channelAttributes,
-      serviceUserIdentity,
+      channel_type: channelType,
+      serviceUserIdentity: userIdentityOrParticipantId,
+      participantSid: userIdentityOrParticipantId,
       // All of this can be passed as url params to the webhook instead
       capturedChannelAttributes: {
         userId,
@@ -111,12 +142,21 @@ const updateChannelWithCapture = async (
         controlTaskSid,
         chatbotCallbackWebhookSid,
         releaseType,
+        isConversation,
         ...(studioFlowSid && { studioFlowSid }),
         ...(releaseFlag && { releaseFlag }),
         ...(memoryAttribute && { memoryAttribute }),
       },
     }),
-  });
+  };
+
+  if (isConversation) {
+    return (channel as ConversationInstance).update(
+      newAttributes as ConversationInstanceUpdateOptions,
+    );
+  }
+
+  return (channel as ChannelInstance).update(newAttributes as ChannelInstanceUpdateOptions);
 };
 
 type CaptureChannelOptions = {
@@ -129,6 +169,8 @@ type CaptureChannelOptions = {
   studioFlowSid?: string; // (in Studio Flow, flow.flow_sid) The Studio Flow sid. Needed to trigger an API type execution once the channel is released.
   memoryAttribute?: string; // where in the task attributes we want to save the bot's memory (allows compatibility for multiple bots)
   releaseFlag?: string; // the flag we want to set true when the channel is released
+  isConversation: boolean;
+  channelType: string;
 };
 
 /**
@@ -136,7 +178,7 @@ type CaptureChannelOptions = {
  */
 const triggerWithUserMessage = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   {
     userId,
     botName,
@@ -147,6 +189,8 @@ const triggerWithUserMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
+    isConversation,
+    channelType,
   }: CaptureChannelOptions,
 ) => {
   const handlerPath = Runtime.getFunctions()['channelCapture/lexClient'].path;
@@ -160,17 +204,34 @@ const triggerWithUserMessage = async (
     inputText,
   });
 
-  const chatbotCallbackWebhook = await channel.webhooks().create({
+  const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
     configuration: {
       filters: ['onMessageSent'],
       method: 'POST',
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
-  });
+  };
 
-  // const updated =
-  await updateChannelWithCapture(channel, {
+  const conversationWebhook: ConversationWebhookOpts = {
+    target: 'webhook',
+    configuration: {
+      filters: ['onMessageAdded'],
+      method: 'POST',
+      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+    },
+  };
+
+  let webhook;
+  if (isConversation) {
+    webhook = await (channelOrConversation as ConversationInstance)
+      .webhooks()
+      .create(conversationWebhook);
+  } else {
+    webhook = await (channelOrConversation as ChannelInstance).webhooks().create(channelWebhook);
+  }
+
+  await updateChannelWithCapture(channelOrConversation, {
     userId,
     botName,
     botAlias,
@@ -179,7 +240,9 @@ const triggerWithUserMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
-    chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid: webhook.sid,
+    isConversation,
+    channelType,
   });
 
   // Bubble exception after the channel is updated because capture attributes are needed for the cleanup
@@ -189,12 +252,23 @@ const triggerWithUserMessage = async (
 
   const { lexResponse } = lexResult;
 
-  // Send message to trigger the recently created chatbot integration
-  await channel.messages().create({
+  const conversationMessage: ConversationMessageListInstanceCreateOptions = {
+    body: lexResponse.message,
+    author: 'Bot',
+    xTwilioWebhookEnabled: 'true',
+  };
+
+  const channelMessage: ChannelMessageListInstanceCreateOptions = {
     body: lexResponse.message,
     from: 'Bot',
     xTwilioWebhookEnabled: 'true',
-  });
+  };
+
+  if (isConversation) {
+    await (channelOrConversation as ConversationInstance).messages().create(conversationMessage);
+  } else {
+    await (channelOrConversation as ChannelInstance).messages().create(channelMessage);
+  }
 };
 
 /**
@@ -202,7 +276,7 @@ const triggerWithUserMessage = async (
  */
 const triggerWithNextMessage = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   {
     userId,
     botName,
@@ -213,25 +287,51 @@ const triggerWithNextMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
+    isConversation,
+    channelType,
   }: CaptureChannelOptions,
 ) => {
-  /** const messageResult = */
-  await channel.messages().create({
-    body: inputText,
-    xTwilioWebhookEnabled: 'true',
-  });
+  if (isConversation) {
+    await (channelOrConversation as ConversationInstance).messages().create({
+      body: inputText,
+      xTwilioWebhookEnabled: 'true',
+    });
+  } else {
+    await (channelOrConversation as ChannelInstance).messages().create({
+      body: inputText,
+      xTwilioWebhookEnabled: 'true',
+    });
+  }
 
-  const chatbotCallbackWebhook = await channel.webhooks().create({
+  const channelWebhook: ChannelWebhookOpts = {
     type: 'webhook',
     configuration: {
       filters: ['onMessageSent'],
       method: 'POST',
       url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
     },
-  });
+  };
+
+  const conversationWebhook: ConversationWebhookOpts = {
+    target: 'webhook',
+    configuration: {
+      filters: ['onMessageAdded'],
+      method: 'POST',
+      url: `https://${context.DOMAIN_NAME}/channelCapture/chatbotCallback`,
+    },
+  };
+
+  let webhook;
+  if (isConversation) {
+    webhook = await (channelOrConversation as ConversationInstance)
+      .webhooks()
+      .create(conversationWebhook);
+  } else {
+    webhook = await (channelOrConversation as ChannelInstance).webhooks().create(channelWebhook);
+  }
 
   // const updated =
-  await updateChannelWithCapture(channel, {
+  await updateChannelWithCapture(channelOrConversation, {
     userId,
     botName,
     botAlias,
@@ -240,12 +340,19 @@ const triggerWithNextMessage = async (
     studioFlowSid,
     releaseFlag,
     memoryAttribute,
-    chatbotCallbackWebhookSid: chatbotCallbackWebhook.sid,
+    chatbotCallbackWebhookSid: webhook.sid,
+    isConversation,
+    channelType,
   });
 };
 
-export type HandleChannelCaptureParams = {
-  channelSid: string; // The channel to capture (in Studio Flow, flow.channel.address)
+export type HandleChannelCaptureParams = (
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    }
+  | { conversationSid: ConversationSid; channelSid?: ChatChannelSid }
+) & {
   message: string; // The triggering message (in Studio Flow, trigger.message.Body)
   language: string; // (in Studio Flow, {{trigger.message.ChannelAttributes.pre_engagement_data.language | default: 'en-US'}} )
   botSuffix: string;
@@ -256,6 +363,7 @@ export type HandleChannelCaptureParams = {
   releaseFlag?: string; // The flag we want to set true in the channel attributes when the channel is released
   additionControlTaskAttributes?: string; // Optional attributes to include in the control task, in the string representation of a JSON
   controlTaskTTL?: number;
+  channelType: string;
 };
 
 type ValidationResult = { status: 'valid' } | { status: 'invalid'; error: string };
@@ -263,8 +371,8 @@ type ValidationResult = { status: 'valid' } | { status: 'invalid'; error: string
 const createValidationError = (error: string): ValidationResult => ({ status: 'invalid', error });
 
 const validateHandleChannelCaptureParams = (params: Partial<HandleChannelCaptureParams>) => {
-  if (!params.channelSid) {
-    return createValidationError('Missing channelSid');
+  if (!params.channelSid && !params.conversationSid) {
+    return createValidationError('No channelSid or conversationSid provided');
   }
   if (!params.message) {
     return createValidationError('Missing message');
@@ -298,15 +406,18 @@ const validateHandleChannelCaptureParams = (params: Partial<HandleChannelCapture
 
 export const handleChannelCapture = async (
   context: Context<EnvVars>,
-  params: Partial<HandleChannelCaptureParams>,
+  params: HandleChannelCaptureParams,
 ) => {
+  console.log('handleChannelCapture', params);
   const validationResult = validateHandleChannelCaptureParams(params);
   if (validationResult.status === 'invalid') {
+    console.error('Invalid params', validationResult.error);
     return { status: 'failure', validationResult } as const;
   }
 
   const {
     channelSid,
+    conversationSid,
     message,
     language,
     botSuffix,
@@ -317,47 +428,71 @@ export const handleChannelCapture = async (
     releaseFlag,
     additionControlTaskAttributes,
     controlTaskTTL,
+    channelType,
   } = params as HandleChannelCaptureParams;
 
   const parsedAdditionalControlTaskAttributes = additionControlTaskAttributes
     ? JSON.parse(additionControlTaskAttributes)
     : {};
-
-  const channel = await context
-    .getTwilioClient()
-    .chat.v2.services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .fetch();
-
-  const [, controlTask] = await Promise.all([
-    // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-    context
+  let controlTask: TaskInstance;
+  if (conversationSid) {
+    const conversationContext = await context
       .getTwilioClient()
-      .chat.services(context.CHAT_SERVICE_SID)
-      .channels(channelSid)
-      .webhooks.list()
-      .then((channelWebhooks) =>
-        channelWebhooks.map(async (w) => {
-          if (w.type === 'studio') {
-            await w.remove();
-          }
-        }),
-      ),
+      .conversations.v1.conversations(conversationSid);
     // Create control task to prevent channel going stale
-    context
+    controlTask = await context
       .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks.create({
         workflowSid: context.SURVEY_WORKFLOW_SID,
         taskChannel: 'survey',
         attributes: JSON.stringify({
           isChatCaptureControl: true,
-          channelSid,
+          conversationSid,
           ...parsedAdditionalControlTaskAttributes,
         }),
         timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
-      }),
-  ]);
+      });
+    const webhooks = await conversationContext.webhooks.list();
+    for (const webhook of webhooks) {
+      if (webhook.target === 'studio') {
+        // eslint-disable-next-line no-await-in-loop
+        await webhook.remove();
+      }
+    }
+  } else {
+    [, controlTask] = await Promise.all([
+      // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+      context
+        .getTwilioClient()
+        .chat.v2.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .webhooks.list()
+        .then((webhooks) =>
+          webhooks.map(async (w) => {
+            if (w.type === 'studio') {
+              await w.remove();
+            }
+          }),
+        ),
+
+      // Create control task to prevent channel going stale
+      context
+        .getTwilioClient()
+        .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks.create({
+          workflowSid: context.SURVEY_WORKFLOW_SID,
+          taskChannel: 'survey',
+          attributes: JSON.stringify({
+            isChatCaptureControl: true,
+            channelSid,
+            conversationSid,
+            ...parsedAdditionalControlTaskAttributes,
+          }),
+          timeout: controlTaskTTL || 45600, // 720 minutes or 12 hours
+        }),
+    ]);
+  }
 
   const { ENVIRONMENT, HELPLINE_CODE } = context;
   let languageSanitized = language.replace('-', '_'); // Lex doesn't accept '-'
@@ -369,6 +504,14 @@ export const handleChannelCapture = async (
 
   const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
 
+  const channelOrConversation: ChannelInstance | ConversationInstance = conversationSid
+    ? await context.getTwilioClient().conversations.conversations(conversationSid).fetch()
+    : await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .fetch();
+
   const options: CaptureChannelOptions = {
     botName,
     botAlias: 'latest', // Assume we always use the latest published version
@@ -377,16 +520,20 @@ export const handleChannelCapture = async (
     memoryAttribute,
     releaseFlag,
     inputText: message,
-    userId: channel.sid,
+    userId: channelOrConversation.sid,
     controlTaskSid: controlTask.sid,
+    isConversation: Boolean(conversationSid),
+    channelType,
   };
-
+  console.debug(
+    `Triggering chatbot, triggerType: ${triggerType}, channel / conversation: ${channelOrConversation.sid}`,
+  );
   if (triggerType === 'withUserMessage') {
-    await triggerWithUserMessage(context, channel, options);
+    await triggerWithUserMessage(context, channelOrConversation, options);
   }
 
   if (triggerType === 'withNextMessage') {
-    await triggerWithNextMessage(context, channel, options);
+    await triggerWithNextMessage(context, channelOrConversation, options);
   }
 
   return { status: 'success' } as const;
@@ -398,14 +545,24 @@ export const handleChannelCapture = async (
  */
 
 const createStudioFlowTrigger = async (
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   capturedChannelAttributes: CapturedChannelAttributes,
   controlTask: TaskInstance,
 ) => {
   // Canceling tasks triggers janitor (see functions/taskrouterListeners/janitorListener.private.ts), so we remove this one since is not needed
-  controlTask.remove();
+  await controlTask.remove();
+  const { isConversation } = capturedChannelAttributes;
 
-  return channel.webhooks().create({
+  if (isConversation) {
+    return (channelOrConversation as ConversationInstance).webhooks().create({
+      target: 'studio',
+      configuration: {
+        flowSid: capturedChannelAttributes.studioFlowSid,
+      },
+    });
+  }
+
+  return (channelOrConversation as ChannelInstance).webhooks().create({
     type: 'studio',
     configuration: {
       flowSid: capturedChannelAttributes.studioFlowSid,
@@ -456,10 +613,10 @@ const saveSurveyInHRM = async (
     taskId: controlTask.sid,
     data,
   };
-
-  await axios({
+  // Do NOT use axios.post, it will will clobber the Authorization header! https://github.com/axios/axios/issues/891
+  await axios.request({
+    method: 'post',
     url: `${hrmBaseUrl}/postSurveys`,
-    method: 'POST',
     data: JSON.stringify(body),
     headers: {
       'Content-Type': 'application/json',
@@ -519,7 +676,7 @@ const handlePostSurveyComplete = async (
 
 export const handleChannelRelease = async (
   context: Context<EnvVars>,
-  channel: ChannelInstance,
+  channelOrConversation: ChannelInstance | ConversationInstance,
   capturedChannelAttributes: CapturedChannelAttributes,
   memory: LexMemory,
 ) => {
@@ -531,7 +688,7 @@ export const handleChannelRelease = async (
     .fetch();
 
   if (capturedChannelAttributes.releaseType === 'triggerStudioFlow') {
-    await createStudioFlowTrigger(channel, capturedChannelAttributes, controlTask);
+    await createStudioFlowTrigger(channelOrConversation, capturedChannelAttributes, controlTask);
   }
 
   if (capturedChannelAttributes.releaseType === 'postSurveyComplete') {

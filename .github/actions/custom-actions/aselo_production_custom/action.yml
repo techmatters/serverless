@@ -22,28 +22,64 @@ runs:
   using: "composite"
   steps:
     # Line environment variables
-    - name: Set helpline Line Flex Flow SID
+    - name: Set helpline Line Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "PROD_TWILIO_AS_LINE_FLEX_FLOW_SID"
-        env_variable_name: "LINE_FLEX_FLOW_SID"
+        ssm_parameter: "/production/twilio/${{inputs.account-sid}}/line_studio_flow_sid"
+        env_variable_name: "LINE_STUDIO_FLOW_SID"
     - name: Set Line Channel Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "PROD_LINE_AS_CHANNEL_SECRET"
+        ssm_parameter: "/production/line/${{inputs.account-sid}}/channel_secret"
         env_variable_name: "LINE_CHANNEL_SECRET"
     - name: Set Line Channel Access Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "PROD_LINE_AS_CHANNEL_ACCESS_TOKEN"
+        ssm_parameter: "/production/line/${{inputs.account-sid}}/channel_access_token"
         env_variable_name: "LINE_CHANNEL_ACCESS_TOKEN"
+    - name: Set helpline Line Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/production/line/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "LINE_TWILIO_MESSAGING_MODE"
+
+      # Set Instagram variables
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_105642325869250_Aselo-Prod-Test"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+
     # Append environment variables
-    - name: Add LINE_FLEX_FLOW_SID
-      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+    - name: Add LINE_STUDIO_FLOW_SID
+      run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
       shell: bash
     - name: Add LINE_CHANNEL_SECRET
       run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
       shell: bash
     - name: Add LINE_CHANNEL_ACCESS_TOKEN
       run: echo "LINE_CHANNEL_ACCESS_TOKEN=${{ env.LINE_CHANNEL_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add LINE_TWILIO_MESSAGING_MODE
+      run: echo "LINE_TWILIO_MESSAGING_MODE=${{ env.LINE_TWILIO_MESSAGING_MODE }}" >> .env
+      shell: bash
+
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
       shell: bash

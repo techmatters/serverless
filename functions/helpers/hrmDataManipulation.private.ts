@@ -16,13 +16,12 @@
 
 import { get } from 'lodash';
 // eslint-disable-next-line prettier/prettier
-import type { AutopilotMemory } from '../postSurveyComplete.protected';
 import type { LexMemory } from '../channelCapture/lexClient.private';
 import type { OneToManyConfigSpec } from './insightsService.private';
 
 export type PostSurveyData = { [question: string]: string | number };
 
-type BotMemory = AutopilotMemory | LexMemory;
+type BotMemory = LexMemory;
 
 /**
  * Given a bot's memory returns a function to reduce over an array of OneToManyConfigSpec.

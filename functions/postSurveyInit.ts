@@ -24,86 +24,36 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
 import type { ChannelCaptureHandlers } from './channelCapture/channelCaptureHandlers.private';
 import type { AWSCredentials } from './channelCapture/lexClient.private';
+import {
+  ChatChannelSid,
+  ConversationSid,
+} from './helpers/customChannels/customChannelToFlex.private';
 
 type EnvVars = AWSCredentials & {
   CHAT_SERVICE_SID: string;
   TWILIO_WORKSPACE_SID: string;
   SURVEY_WORKFLOW_SID: string;
-  POST_SURVEY_BOT_CHAT_URL: string;
   HRM_STATIC_KEY: string;
   HELPLINE_CODE: string;
   ENVIRONMENT: string;
 };
 
-export type Body = {
-  channelSid?: string;
-  taskSid?: string;
-  taskLanguage?: string;
+export type Body = (
+  | {
+      channelSid: ChatChannelSid;
+      conversationSid?: ConversationSid;
+    }
+  | {
+      channelSid?: ChatChannelSid;
+      conversationSid: ConversationSid;
+    }
+) & {
+  taskSid: string;
+  taskLanguage: string;
+  channelType: string;
   request: { cookies: {}; headers: {} };
-};
-
-const createSurveyTask = async (
-  context: Context<EnvVars>,
-  event: Required<Pick<Body, 'channelSid' | 'taskSid'>> & Pick<Body, 'taskLanguage'>,
-) => {
-  const client = context.getTwilioClient();
-  const { channelSid, taskSid, taskLanguage } = event;
-
-  const taskAttributes = {
-    isSurveyTask: true,
-    channelSid,
-    contactTaskId: taskSid,
-    conversations: { conversation_id: taskSid },
-    language: taskLanguage, // if there's a task language, attach it to the post survey task
-  };
-
-  const surveyTask = await client.taskrouter.workspaces(context.TWILIO_WORKSPACE_SID).tasks.create({
-    workflowSid: context.SURVEY_WORKFLOW_SID,
-    taskChannel: 'survey',
-    attributes: JSON.stringify(taskAttributes),
-    timeout: 3600,
-  });
-
-  const channel = await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
-
-  // Add the surveyTask sid so we can retrieve it just by looking at the channel
-  await channel.update({
-    attributes: JSON.stringify({
-      ...JSON.parse(channel.attributes),
-      surveyTaskSid: surveyTask.sid,
-    }),
-  });
-
-  return surveyTask;
-};
-
-const triggerPostSurveyFlow = async (
-  context: Context<EnvVars>,
-  channelSid: string,
-  message: string,
-) => {
-  const client = context.getTwilioClient();
-
-  /** const messageResult = */
-  await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).messages.create({
-    body: message,
-    xTwilioWebhookEnabled: 'true',
-  });
-
-  return client.chat
-    .services(context.CHAT_SERVICE_SID)
-    .channels(channelSid)
-    .webhooks.create({
-      type: 'webhook',
-      configuration: {
-        filters: ['onMessageSent'],
-        method: 'POST',
-        url: context.POST_SURVEY_BOT_CHAT_URL,
-      },
-    });
 };
 
 const getTriggerMessage = async (
@@ -114,10 +64,10 @@ const getTriggerMessage = async (
   const { taskLanguage } = event;
   if (taskLanguage) {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `https://${context.DOMAIN_NAME}/translations/${taskLanguage}/postSurveyMessages.json`,
       );
-      const translation = response.data;
+      const translation = await response.json();
 
       console.log('translation', translation);
 
@@ -132,47 +82,49 @@ const getTriggerMessage = async (
 
 export const postSurveyInitHandler = async (
   context: Context<EnvVars>,
-  event: Required<Pick<Body, 'channelSid' | 'taskSid' | 'taskLanguage'>>,
+  event: Omit<Body, 'request'>,
 ) => {
-  const { channelSid, taskSid, taskLanguage } = event;
+  const { channelSid, conversationSid, taskSid, taskLanguage, channelType } = event;
 
   const triggerMessage = await getTriggerMessage(event, context);
 
-  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { enable_lex } = serviceConfig.attributes.feature_flags;
+  // eslint-disable-next-line import/no-dynamic-require, global-require
+  const channelCaptureHandlers = require(Runtime.getFunctions()[
+    'channelCapture/channelCaptureHandlers'
+  ].path) as ChannelCaptureHandlers;
 
-  if (enable_lex) {
-    // eslint-disable-next-line import/no-dynamic-require, global-require
-    const channelCaptureHandlers = require(Runtime.getFunctions()[
-      'channelCapture/channelCaptureHandlers'
-    ].path) as ChannelCaptureHandlers;
-
-    const result = await channelCaptureHandlers.handleChannelCapture(context, {
-      channelSid,
-      message: triggerMessage,
-      language: taskLanguage,
-      botSuffix: 'post_survey',
-      triggerType: 'withNextMessage',
-      releaseType: 'postSurveyComplete',
-      memoryAttribute: 'postSurvey',
-      releaseFlag: 'postSuveyComplete',
-      additionControlTaskAttributes: JSON.stringify({
-        isSurveyTask: true,
-        contactTaskId: taskSid,
-        conversations: { conversation_id: taskSid },
-        language: taskLanguage, // if there's a task language, attach it to the post survey task
-      }),
-      controlTaskTTL: 3600,
+  const commonProps = {
+    message: triggerMessage,
+    language: taskLanguage,
+    botSuffix: 'post_survey',
+    triggerType: 'withNextMessage',
+    releaseType: 'postSurveyComplete',
+    memoryAttribute: 'postSurvey',
+    releaseFlag: 'postSuveyComplete',
+    additionControlTaskAttributes: JSON.stringify({
+      isSurveyTask: true,
+      contactTaskId: taskSid,
+      conversations: { conversation_id: taskSid },
+      language: taskLanguage, // if there's a task language, attach it to the post survey task
+    }),
+    controlTaskTTL: 3600,
+    channelType,
+  } as const;
+  if (conversationSid) {
+    return channelCaptureHandlers.handleChannelCapture(context, {
+      conversationSid,
+      ...commonProps,
     });
-
-    return result;
+  }
+  if (channelSid) {
+    return channelCaptureHandlers.handleChannelCapture(context, {
+      channelSid,
+      ...commonProps,
+    });
   }
 
-  // Else, use legacy post survey
-  await createSurveyTask(context, { channelSid, taskSid, taskLanguage });
-  await triggerPostSurveyFlow(context, channelSid, triggerMessage);
-  return { status: 'success' } as const;
+  // Should never reach this point but TS struggles with the type narrowing
+  throw new Error('No channelSid or conversationSid provided');
 };
 
 export type PostSurveyInitHandler = typeof postSurveyInitHandler;
@@ -185,17 +137,13 @@ export const handler = TokenValidator(
     const resolve = bindResolve(callback)(response);
 
     try {
-      const { channelSid, taskSid, taskLanguage } = event;
+      const { channelSid, taskSid, taskLanguage, conversationSid } = event;
 
-      if (channelSid === undefined) return resolve(error400('channelSid'));
-      if (taskSid === undefined) return resolve(error400('taskSid'));
-      if (taskLanguage === undefined) return resolve(error400('taskLanguage'));
+      if (!channelSid && !conversationSid) return resolve(error400('channelSid / conversationSid'));
+      if (!taskSid) return resolve(error400('taskSid'));
+      if (!taskLanguage) return resolve(error400('taskLanguage'));
 
-      const result = await postSurveyInitHandler(context, {
-        channelSid,
-        taskSid,
-        taskLanguage,
-      });
+      const result = await postSurveyInitHandler(context, event);
 
       if (result.status === 'failure' && result.validationResult.status === 'invalid') {
         resolve(error400(result.validationResult.error));

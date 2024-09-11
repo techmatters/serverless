@@ -46,6 +46,7 @@ export const eventTypes: EventType[] = [
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  SYNC_SERVICE_SID: string;
 };
 
 // This applies to both pre-survey(isChatCaptureControl) and post-survey
@@ -79,10 +80,10 @@ const isHandledByOtherListener = (
     return true;
   }
 
-  const transferHelers = require(Runtime.getFunctions()['transfer/helpers']
+  const transferHelpers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
 
-  if (!transferHelers.hasTaskControl(taskSid, taskAttributes)) {
+  if (!transferHelpers.hasTaskControl(taskSid, taskAttributes)) {
     return true;
   }
 
@@ -155,18 +156,27 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     } = event;
 
     // The janitor is only be executed for chat based tasks
-    if (taskChannelUniqueName !== 'chat') return;
+    if (!['chat', 'survey'].includes(taskChannelUniqueName)) return;
 
     console.log(`===== Executing JanitorListener for event: ${eventType} =====`);
 
-    const taskAttributes = JSON.parse(taskAttributesString);
+    if (taskChannelUniqueName === 'survey' && eventType !== TASK_CANCELED) {
+      console.log(
+        'Survey tasks are only handled by the channel janitor on task cancelled events skipping this one.',
+        eventType,
+      );
+      return;
+    }
+
+    const taskAttributes = JSON.parse(taskAttributesString || '{}');
+    const { channelSid, conversationSid } = taskAttributes;
 
     if (isCleanupBotCapture(eventType, taskAttributes)) {
       await wait(3000); // wait 3 seconds just in case some bot message is pending
 
       const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
         .chatChannelJanitor as ChatChannelJanitor;
-      await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+      await chatChannelJanitor(context, { channelSid, conversationSid });
 
       console.log('Finished handling clean up.');
 
@@ -190,13 +200,15 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags } = serviceConfig.attributes;
 
-      // TODO: remove featureFlags.backend_handled_chat_janitor condition once all accounts are updated, since we want this code to be executed in all Flex instances once CHI-2202 is implemented and in place
-      if (!featureFlags.enable_post_survey && featureFlags.backend_handled_chat_janitor) {
+      if (!featureFlags.enable_post_survey) {
         console.log('Handling DeactivateConversationOrchestration...');
 
         const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor']
           .path).chatChannelJanitor as ChatChannelJanitor;
-        await chatChannelJanitor(context, { channelSid: taskAttributes.channelSid });
+        await chatChannelJanitor(context, {
+          channelSid,
+          conversationSid,
+        });
 
         console.log('Finished DeactivateConversationOrchestration.');
         return;

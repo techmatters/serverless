@@ -45,5 +45,6 @@ module.exports = {
     "object-curly-newline": "off",
     "function-paren-newline": "off",
     "linebreak-style": "off",
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
   },
 };

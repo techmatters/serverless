@@ -15,12 +15,13 @@
  */
 
 import each from 'jest-each';
-import axios from 'axios';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import helpers, { MockedResponse } from '../../helpers';
 import { handler as FlexToInstagram } from '../../../functions/webhooks/instagram/FlexToInstagram.protected';
 
-jest.mock('axios');
+global.fetch = jest.fn();
+
+const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
 const channels: { [x: string]: any } = {
   CHANNEL_SID: {
@@ -136,8 +137,7 @@ describe('FlexToInstagram', () => {
       expectedStatus,
       expectedMessage,
     }) => {
-      // @ts-ignore
-      (<jest.Mock>(<unknown>axios)).mockImplementation(endpointImpl);
+      mockFetch.mockImplementation(endpointImpl);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -182,10 +182,16 @@ describe('FlexToInstagram', () => {
   ]).test(
     'Should return status 200 success (ignored: $shouldBeIgnored) when $conditionDescription.',
     async ({ event, shouldBeIgnored }) => {
-      // @ts-ignore
-      axios.mockClear();
+      mockFetch.mockClear();
 
-      (<jest.Mock>(<unknown>axios)).mockImplementation(async () => ({ status: 200, data: 'OK' }));
+      mockFetch.mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: async () => Promise.resolve({}),
+        headers: {
+          some: 'header',
+        } as any,
+      } as Response);
       let response: MockedResponse | undefined;
       const callback: ServerlessCallback = (err, result) => {
         response = result as MockedResponse | undefined;
@@ -193,13 +199,13 @@ describe('FlexToInstagram', () => {
       await FlexToInstagram(baseContext, event, callback);
 
       if (shouldBeIgnored) {
-        expect(axios).not.toBeCalled();
+        expect(mockFetch).not.toHaveBeenCalled();
       } else {
-        expect(axios).toBeCalledWith(
+        expect(mockFetch).toBeCalledWith(
+          `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
           expect.objectContaining({
-            url: `https://graph.facebook.com/v19.0/me/messages?access_token=${baseContext.FACEBOOK_PAGE_ACCESS_TOKEN}`,
-            method: 'POST',
-            data: JSON.stringify({
+            method: 'post',
+            body: JSON.stringify({
               recipient: {
                 id: event.recipientId,
               },
@@ -218,7 +224,16 @@ describe('FlexToInstagram', () => {
       if (response) {
         expect({ status: response.getStatus(), body: response.getBody() }).toMatchObject({
           status: 200,
-          body: shouldBeIgnored ? expect.stringContaining('Ignored event.') : expect.anything(),
+          body: shouldBeIgnored
+            ? expect.stringContaining('Ignored event.')
+            : {
+                ok: true,
+                meta: {
+                  some: 'header',
+                },
+                resultCode: 200,
+                body: {},
+              },
         });
       }
     },

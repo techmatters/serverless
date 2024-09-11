@@ -15,10 +15,9 @@
  */
 
 import { get } from 'lodash';
-import type { AutopilotMemory } from '../postSurveyComplete.protected';
 import type { LexMemory } from '../channelCapture/lexClient.private';
 
-type BotMemory = AutopilotMemory | LexMemory;
+type BotMemory = LexMemory;
 
 type InsightsAttributes = {
   conversations?: { [key: string]: string | number };

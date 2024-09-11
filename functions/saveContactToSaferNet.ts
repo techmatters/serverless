@@ -97,9 +97,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Body> = async (
       .update(encodeURIComponent(payloadAsString))
       .digest('hex');
 
-    const saferNetResponse = await axios({
+    const saferNetResponse = await axios.request({
       url: SAFERNET_ENDPOINT,
-      method: 'POST',
+      method: 'post',
       data: JSON.parse(payloadAsString),
       headers: {
         'Content-Type': 'application/json',

@@ -15,9 +15,14 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  InteractionChannelParticipantInstance,
+  InteractionChannelParticipantListInstance,
+} from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
 import { handler as transferChatStart, Body } from '../functions/transferChatStart';
 
 import helpers, { MockedResponse } from './helpers';
+import MockedFunction = jest.MockedFunction;
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
@@ -85,7 +90,44 @@ let tasks: any[] = [
       return task;
     },
   },
+  {
+    sid: 'conversationTask',
+    taskChannelUniqueName: 'channel',
+    attributes: JSON.stringify({
+      conversationSid: 'CHxxx',
+      channelSid: 'CHxxx',
+      flexInteractionSid: 'KDxxx',
+      flexInteractionChannelSid: 'UOxxx',
+    }),
+    fetch: async () => tasks.find((t) => t.sid === 'conversationTask'),
+    update: async ({
+      attributes,
+      assignmentStatus,
+      reason,
+    }: {
+      attributes: string;
+      assignmentStatus: string;
+      reason: string;
+    }) => {
+      const task = tasks.find((t) => t.sid === 'conversationTask');
+      tasks = tasks.map((t) => {
+        if (t.sid === task.sid) {
+          return {
+            ...task,
+            attributes: attributes || task.attributes,
+            assignmentStatus: assignmentStatus || task.assignmentStatus,
+            reason: reason || task.reason,
+          };
+        }
+        return t;
+      });
+
+      return task;
+    },
+  },
 ];
+
+const originalTaskCount = tasks.length;
 
 const channels: { [x: string]: string[] } = {};
 
@@ -131,6 +173,10 @@ const workspaces: { [x: string]: any } = {
         },
       };
     },
+    taskQueues: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      list: (options: any) => [{ sid: 'TQxxx' }],
+    },
   },
 };
 
@@ -148,6 +194,18 @@ workspaces.WSxxx.tasks.create = async (options: any) => {
 
   return newTask;
 };
+
+const mockedCreateInvite = jest.fn().mockResolvedValue({
+  routing: {
+    properties: {
+      sid: 'newTaskSid',
+    },
+  },
+});
+
+const mockInteractionChannelParticipantList: MockedFunction<
+  InteractionChannelParticipantListInstance['list']
+> = jest.fn().mockResolvedValue([]);
 
 const baseContext = {
   getTwilioClient: (): any => ({
@@ -190,10 +248,50 @@ const baseContext = {
         throw new Error('Error retrieving chat service');
       },
     },
+    flexApi: {
+      v1: {
+        interaction: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          get: (interactionSid: string) => ({
+            channels: {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              get: (channelSid: string) => ({
+                invites: {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  create: mockedCreateInvite,
+                },
+                participants: {
+                  list: mockInteractionChannelParticipantList,
+                },
+              }),
+            },
+          }),
+        },
+      },
+    },
+    conversations: {
+      conversations: (conversationSid: string) => {
+        if (conversationSid) {
+          return {
+            fetch: async () =>
+              Promise.resolve({
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                participants: (participantSid: string) => ({
+                  list: async () =>
+                    Promise.resolve([{ sid: 'participantSid', identity: 'identity' }]),
+                }),
+              }),
+          };
+        }
+
+        throw new Error('Error retrieving conversation');
+      },
+    },
   }),
   DOMAIN_NAME: 'serverless',
   TWILIO_WORKSPACE_SID: 'WSxxx',
   TWILIO_CHAT_TRANSFER_WORKFLOW_SID: 'WWxxx',
+  TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID: 'WWyyy',
   CHAT_SERVICE_SID: 'ISxxx',
   PATH: 'PATH',
   SERVICE_SID: undefined,
@@ -209,10 +307,11 @@ afterAll(() => {
 
 beforeEach(() => {
   channels.channel = ['worker1'];
+  mockInteractionChannelParticipantList.mockClear();
 });
 
 afterEach(() => {
-  if (tasks.length > 2) tasks = tasks.slice(0, 2);
+  if (tasks.length > originalTaskCount) tasks = tasks.slice(0, originalTaskCount);
 });
 
 describe('transferChatStart (with maxMessageCapacity set)', () => {
@@ -355,7 +454,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       expect(response.getStatus()).toBe(200);
       expect(response.getBody()).toStrictEqual(expected);
       expect(originalTask).toStrictEqual(before[0]);
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
@@ -399,7 +498,7 @@ describe('transferChatStart (with maxMessageCapacity set)', () => {
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
       expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
@@ -483,13 +582,105 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
       expect(originalTask.attributes).toBe(expectedOldAttr);
       expect(originalTask.reason).toBe(undefined); // Task doesn't go to wrapping anymore
       expect(originalTask.assignmentStatus).toBe('assigned'); // Task doesn't go to wrapping anymore
-      expect(tasks).toHaveLength(3);
+      expect(tasks).toHaveLength(originalTaskCount + 1);
       expect(newTask).toHaveProperty('sid');
       expect(newTask.taskChannel).toBe(originalTask.taskChannelUniqueName);
       expect(newTask.wokflowSid).toBe(originalTask.wokflowSid);
       expect(newTask.attributes).toBe(expectedNewAttr);
       expect(channels.channel).toContain('worker1'); // Counselor is not being kicked anymore
       expect(channels.channel).toContain('worker2');
+    };
+
+    await transferChatStart(baseContext, event, callback);
+  });
+});
+
+describe('Conversations', () => {
+  beforeEach(() => {
+    mockInteractionChannelParticipantList.mockResolvedValue([
+      { sid: 'notParticipantSid', type: 'customer' } as InteractionChannelParticipantInstance,
+      { sid: 'participantSid', type: 'agent' } as InteractionChannelParticipantInstance,
+    ]);
+  });
+  test('Transfer to worker', async () => {
+    const event: Body = {
+      taskSid: 'conversationTask',
+      targetSid: 'WKxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      request: { cookies: {}, headers: {} },
+    };
+    let result: any;
+    const callback: ServerlessCallback = (err, cbResult) => {
+      result = cbResult;
+    };
+
+    await transferChatStart(baseContext, event, callback);
+    expect(result).toBeDefined();
+    const response = result as MockedResponse;
+    expect(response.getStatus()).toBe(200);
+    expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
+    expect(mockedCreateInvite).toHaveBeenCalledWith({
+      routing: {
+        properties: {
+          queue_sid: 'TQxxx',
+          worker_sid: 'WKxxx',
+          workflow_sid: baseContext.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+          workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
+          attributes: {
+            channelSid: 'CHxxx',
+            conversationSid: 'CHxxx',
+            conversations: {
+              conversation_id: 'conversationTask',
+            },
+            ignoreAgent: 'worker1',
+            originalParticipantSid: 'participantSid',
+            targetSid: 'WKxxx',
+            transferTargetType: 'worker',
+            flexInteractionChannelSid: 'UOxxx',
+            flexInteractionSid: 'KDxxx',
+          },
+          task_channel_unique_name: 'channel',
+        },
+      },
+    });
+  });
+  test('Transfer to queue', async () => {
+    const event: Body = {
+      taskSid: 'conversationTask',
+      targetSid: 'WQxxx',
+      ignoreAgent: 'worker1',
+      mode: 'COLD',
+      request: { cookies: {}, headers: {} },
+    };
+
+    const callback: ServerlessCallback = (err, result) => {
+      expect(result).toBeDefined();
+      const response = result as MockedResponse;
+      expect(response.getStatus()).toBe(200);
+      expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
+      expect(mockedCreateInvite).toHaveBeenCalledWith({
+        routing: {
+          properties: {
+            workflow_sid: baseContext.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+            workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
+            attributes: {
+              channelSid: 'CHxxx',
+              conversationSid: 'CHxxx',
+              conversations: {
+                conversation_id: 'conversationTask',
+              },
+              ignoreAgent: 'worker1',
+              originalParticipantSid: 'participantSid',
+              targetSid: 'WQxxx',
+              transferTargetType: 'queue',
+              flexInteractionChannelSid: 'UOxxx',
+              flexInteractionSid: 'KDxxx',
+            },
+            task_channel_unique_name: 'channel',
+          },
+        },
+      });
     };
 
     await transferChatStart(baseContext, event, callback);

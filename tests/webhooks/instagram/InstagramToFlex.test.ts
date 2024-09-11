@@ -16,7 +16,7 @@
 
 import each from 'jest-each';
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import {
   handler as InstagramToFlex,
   Body,
@@ -26,6 +26,7 @@ import helpers, { MockedResponse } from '../../helpers';
 const MOCK_CHANNEL_TYPE = 'instagram';
 const MOCK_SENDER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:sender_id`;
 const MOCK_OTHER_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:other_id`;
+const MOCK_ERROR_CHANNEL_SID = `${MOCK_CHANNEL_TYPE}:throw error`;
 
 const newChannel = (sid: string, messages: any[] = []) => ({
   attributes: '{}',
@@ -58,7 +59,14 @@ let documents: any = {
 function documentsMock(doc: string) {
   return {
     fetch: async () => {
-      if (!documents[doc]) throw new Error('Document does not exists');
+      if (doc === MOCK_ERROR_CHANNEL_SID) {
+        throw new Error('Error fetching document'); // Error other than key not found
+      }
+      if (!documents[doc]) {
+        const err = new Error('Document does not exists');
+        (err as any).code = 20404; // Twilio not found code
+        throw err;
+      }
 
       return documents[doc];
     },
@@ -289,6 +297,12 @@ describe('InstagramToFlex', () => {
       expectedToCreateChannel: MOCK_OTHER_CHANNEL_SID,
     },
     {
+      conditionDescription: 'sync service throwing errors',
+      event: validEventBody({ senderId: 'throw error' }),
+      expectedStatus: 500,
+      expectedMessage: 'Error fetching document',
+    },
+    {
       conditionDescription: 'deleting a message from an inactive conversation',
       event: validEventBody({ senderId: 'no_active_chat', isDeleted: true }),
       expectedStatus: 200,
@@ -382,6 +396,7 @@ describe('InstagramToFlex', () => {
       expectedStatus,
       expectedMessage,
       flexFlowSid = 'INSTAGRAM_FLEX_FLOW_SID',
+      studioFlowSid = 'INSTAGRAM_STUDIO_FLOW_SID',
       chatServiceSid = 'CHAT_SERVICE_SID',
       expectedToBeSentOnChannel,
       expectedToCreateChannel,
@@ -394,7 +409,12 @@ describe('InstagramToFlex', () => {
         response = result as MockedResponse | undefined;
       };
       await InstagramToFlex(
-        { ...baseContext, INSTAGRAM_FLEX_FLOW_SID: flexFlowSid, CHAT_SERVICE_SID: chatServiceSid },
+        {
+          ...baseContext,
+          INSTAGRAM_FLEX_FLOW_SID: flexFlowSid,
+          INSTAGRAM_STUDIO_FLOW_SID: studioFlowSid,
+          CHAT_SERVICE_SID: chatServiceSid,
+        },
         event,
         callback,
       );

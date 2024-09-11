@@ -1,4 +1,5 @@
 {
   "triggerMessage": "Antes de partir, ¿estaría dispuesto a responder algunas preguntas sobre el servicio que recibió hoy? Por favor, responda Sí o No.",
-  "postSurveyCompleteMessage": "Gracias por contactarnos. Por favor, contáctenos nuevamente si necesita más ayuda."
+  "postSurveyCompleteMessage": "Gracias por contactarnos. Por favor, contáctenos nuevamente si necesita más ayuda.",
+  "UnsupportedMediaErrorMsg": "Lo sentimos, el mensaje que acaba de enviar no es compatible y no se pudo entregar."
 }

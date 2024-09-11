@@ -30,7 +30,9 @@ jest.mock('@tech-matters/serverless-helpers', () => ({
   functionValidator: (handlerFn: any) => handlerFn,
 }));
 
-jest.mock('axios');
+jest.mock('axios', () => ({
+  request: jest.fn(),
+}));
 jest.mock('form-data', () =>
   jest.fn().mockImplementation(() => {
     const data: Record<string, any> = {
@@ -42,6 +44,8 @@ jest.mock('form-data', () =>
     return data;
   }),
 );
+
+const mockAxiosRequest = axios.request as jest.MockedFunction<typeof axios.request>;
 
 const baseContext = {
   getTwilioClient: (): any => ({}),
@@ -119,8 +123,7 @@ describe('selfReportToIWF', () => {
       user_age_range: '<13',
     };
 
-    // @ts-ignore
-    axios.mockImplementationOnce(async () => ({
+    mockAxiosRequest.mockImplementationOnce(async () => ({
       data: {
         result: 'OK',
         message: {
@@ -146,10 +149,10 @@ describe('selfReportToIWF', () => {
       }),
     );
 
-    expect(axios).toHaveBeenCalledWith(
+    expect(mockAxiosRequest).toHaveBeenCalledWith(
       expect.objectContaining({
+        method: 'post',
         url: baseContext.IWF_API_CASE_URL,
-        method: 'POST',
         data: expect.objectContaining(expectedFormData),
       }),
     );
@@ -179,10 +182,10 @@ describe('selfReportToIWF', () => {
       () => {},
     );
 
-    expect(axios).toHaveBeenCalledWith(
+    expect(mockAxiosRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: baseContext.IWF_API_CASE_URL,
-        method: 'POST',
+        method: 'post',
         data: expect.objectContaining(expectedFormData),
       }),
     );
