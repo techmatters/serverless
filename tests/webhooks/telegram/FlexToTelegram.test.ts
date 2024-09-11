@@ -30,22 +30,13 @@ const CH_TELEGRAM_CONVERSATION_SID = 'CH_TELEGRAM_CONVERSATION_SID';
 let baseContext: Context<{ TELEGRAM_FLEX_BOT_TOKEN: string }> = {} as Context<{
   TELEGRAM_FLEX_BOT_TOKEN: string;
 }>;
+const BASELINE_DATE = new Date('2000-01-01T00:00:00Z');
 
 let baseEvent: Body;
 let baseTwilioClient: RecursivePartial<Twilio> = {};
 let conversationContext: RecursivePartial<ConversationContext>;
 
 beforeAll(() => {
-  conversationContext = {
-    fetch: async () => ({
-      attributes: '{}',
-      sid: CH_TELEGRAM_CONVERSATION_SID,
-    }),
-    messages: {
-      create: jest.fn().mockImplementation(async () => ({ response: 'property' })),
-    },
-  };
-
   baseTwilioClient = {
     conversations: {
       v1: {
@@ -97,6 +88,15 @@ beforeEach(() => {
       }),
       sid: CH_TELEGRAM_CONVERSATION_SID,
     }),
+    participants: {
+      list: jest.fn().mockResolvedValue([
+        {
+          sid: 'not_flex_participant_id',
+          dateCreated: new Date(BASELINE_DATE.valueOf() + 1000).toISOString(),
+        },
+        { sid: 'flex_participant_id', dateCreated: BASELINE_DATE.toISOString() },
+      ]),
+    },
   };
 
   baseTwilioClient = {
@@ -156,7 +156,7 @@ each(testCases).test('Missing required properties in event - 400', async (prop: 
   expect(response.getStatus()).toBe(400);
 });
 
-test('API Source and event ParticipantSid same as conversation attributes participantSid - 200', async () => {
+test('API Source and event ParticipantSid same as sid of first participant added to convo - 200', async () => {
   const callback = jest.fn();
   await handler(baseContext, { ...baseEvent, ParticipantSid: 'flex_participant_id' }, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
@@ -164,7 +164,7 @@ test('API Source and event ParticipantSid same as conversation attributes partic
   expect(response.getStatus()).toBe(200);
 });
 
-test('API Source and event ParticipantSid same as conversation attributes participantSid - ignored (200)', async () => {
+test('API Source and event ParticipantSid same as sid of first participant added to convo - ignored (200)', async () => {
   const callback = jest.fn();
   await handler(baseContext, { ...baseEvent, ParticipantSid: 'flex_participant_id' }, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
@@ -172,7 +172,7 @@ test('API Source and event ParticipantSid same as conversation attributes partic
   expect(response.getStatus()).toBe(200);
 });
 
-test('API Source and event ParticipantSid different conversation attributes participantSid - sent (200)', async () => {
+test('API Source and event ParticipantSid different to sid of first participant added to convo - sent (200)', async () => {
   const callback = jest.fn();
   await handler(baseContext, baseEvent, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
@@ -180,7 +180,7 @@ test('API Source and event ParticipantSid different conversation attributes part
   expect(response.getStatus()).toBe(200);
 });
 
-test('SDK Source and event ParticipantSid same as conversation attributes participantSid - sent (200)', async () => {
+test('SDK Source and event ParticipantSid same as sid of first participant added to convo - sent (200)', async () => {
   const callback = jest.fn();
   await handler(
     baseContext,
@@ -191,7 +191,7 @@ test('SDK Source and event ParticipantSid same as conversation attributes partic
   verifyTelegramMessageRequestSent(response);
 });
 
-test('SDK Source and event ParticipantSid different conversation attributes participantSid - sent (200)', async () => {
+test('SDK Source and event ParticipantSid different to sid of first participant added to convo - sent (200)', async () => {
   const callback = jest.fn();
   await handler(baseContext, { ...baseEvent, Source: 'SDK' }, callback);
   const response: MockedResponse = callback.mock.calls[0][1];
