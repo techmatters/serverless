@@ -95,6 +95,7 @@ const isCleanupCustomChannel = (
   taskSid: string,
   taskAttributes: {
     channelType?: string;
+    customChannelType?: string;
     isChatCaptureControl?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
@@ -109,7 +110,9 @@ const isCleanupCustomChannel = (
   const channelToFlex = require(Runtime.getFunctions()['helpers/customChannels/customChannelToFlex']
     .path) as ChannelToFlex;
 
-  return channelToFlex.isAseloCustomChannel(taskAttributes.channelType);
+  return channelToFlex.isAseloCustomChannel(
+    taskAttributes.customChannelType || taskAttributes.channelType,
+  );
 };
 
 const isDeactivateConversationOrchestration = (
