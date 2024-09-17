@@ -79,10 +79,9 @@ const mockClient: RecursivePartial<Twilio> = {
         get: () => ({
           tasks: {
             get: () => ({
-              fetch: () =>
-                Promise.resolve({
-                  sid: 'WRxxx',
-                }),
+              reservations: {
+                list: () => Promise.resolve([{ sid: 'WRxxx' }]),
+              },
             }),
           },
         }),

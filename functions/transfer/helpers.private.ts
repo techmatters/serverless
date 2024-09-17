@@ -39,12 +39,17 @@ export const hasTaskControl = async (
     console.debug('hasTaskControl? Yes - Transfer has not started');
     return true;
   }
-  const task = await client.taskrouter.v1.workspaces.get(workspaceSid).tasks.get(taskSid).fetch();
-  const res = taskAttributes.transferMeta?.sidWithTaskControl === task.sid;
+  const reservations = await client.taskrouter.v1.workspaces
+    .get(workspaceSid)
+    .tasks.get(taskSid)
+    .reservations.list();
+  const res = Boolean(
+    reservations.find((r) => r.sid === taskAttributes.transferMeta?.sidWithTaskControl),
+  );
   console.debug(
-    `hasTaskControl? ${res ? 'Yes' : 'No'} - ${task.sid} (task.sid) === ${
+    `hasTaskControl? ${res ? 'Yes' : 'No'} - ${
       taskAttributes.transferMeta?.sidWithTaskControl
-    } (taskAttributes.transferMeta?.sidWithTaskControl)`,
+    } (taskAttributes.transferMeta?.sidWithTaskControl) IN (${reservations.map((r) => r.sid)})`,
   );
   return res;
 };
