@@ -30,6 +30,7 @@ import {
   TASK_COMPLETED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
+import { Twilio } from 'twilio';
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
 import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
@@ -44,6 +45,7 @@ export const eventTypes: EventType[] = [
 ];
 
 type EnvVars = {
+  TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
   SYNC_SERVICE_SID: string;
@@ -65,7 +67,9 @@ const isCleanupBotCapture = (
   return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
 };
 
-const isHandledByOtherListener = (
+const isHandledByOtherListener = async (
+  client: Twilio,
+  workspaceSid: string,
   taskSid: string,
   taskAttributes: {
     channelType?: string;
@@ -83,15 +87,13 @@ const isHandledByOtherListener = (
   const transferHelpers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
 
-  if (!transferHelpers.hasTaskControl(taskSid, taskAttributes)) {
-    return true;
-  }
-
-  return false;
+  return !(await transferHelpers.hasTaskControl(client, workspaceSid, taskSid, taskAttributes));
 };
 
-const isCleanupCustomChannel = (
+const isCleanupCustomChannel = async (
   eventType: EventType,
+  client: Twilio,
+  workspaceSid: string,
   taskSid: string,
   taskAttributes: {
     channelType?: string;
@@ -103,7 +105,7 @@ const isCleanupCustomChannel = (
     return false;
   }
 
-  if (isHandledByOtherListener(taskSid, taskAttributes)) {
+  if (await isHandledByOtherListener(client, workspaceSid, taskSid, taskAttributes)) {
     return false;
   }
 
@@ -115,8 +117,10 @@ const isCleanupCustomChannel = (
   );
 };
 
-const isDeactivateConversationOrchestration = (
+const isDeactivateConversationOrchestration = async (
   eventType: EventType,
+  client: Twilio,
+  workspaceSid: string,
   taskSid: string,
   taskAttributes: {
     channelType?: string;
@@ -131,7 +135,7 @@ const isDeactivateConversationOrchestration = (
     return false;
   }
 
-  if (isHandledByOtherListener(taskSid, taskAttributes)) {
+  if (await isHandledByOtherListener(client, workspaceSid, taskSid, taskAttributes)) {
     return false;
   }
 
@@ -157,6 +161,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       TaskSid: taskSid,
       TaskChannelUniqueName: taskChannelUniqueName,
     } = event;
+    const client = context.getTwilioClient();
 
     // The janitor is only be executed for chat based tasks
     if (!['chat', 'survey'].includes(taskChannelUniqueName)) return;
@@ -186,7 +191,15 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    if (isCleanupCustomChannel(eventType, taskSid, taskAttributes)) {
+    if (
+      await isCleanupCustomChannel(
+        eventType,
+        client,
+        context.TWILIO_WORKSPACE_SID,
+        taskSid,
+        taskAttributes,
+      )
+    ) {
       console.log('Handling clean up custom channel...');
 
       const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
@@ -197,9 +210,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       return;
     }
 
-    if (isDeactivateConversationOrchestration(eventType, taskSid, taskAttributes)) {
+    if (
+      await isDeactivateConversationOrchestration(
+        eventType,
+        client,
+        context.TWILIO_WORKSPACE_SID,
+        taskSid,
+        taskAttributes,
+      )
+    ) {
       // This task has reached a point where the channel should be deactivated, unless post survey is enabled
-      const client = context.getTwilioClient();
       const serviceConfig = await client.flexApi.configuration.get().fetch();
       const { feature_flags: featureFlags } = serviceConfig.attributes;
 

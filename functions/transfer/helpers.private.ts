@@ -13,6 +13,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
+import { Twilio } from 'twilio';
 
 export type TransferMeta = {
   mode: 'COLD' | 'WARM';
@@ -28,9 +29,18 @@ export type ChatTransferTaskAttributes = {
 const hasTransferStarted = (taskAttributes: ChatTransferTaskAttributes) =>
   Boolean(taskAttributes && taskAttributes.transferMeta);
 
-export const hasTaskControl = (taskSid: string, taskAttributes: ChatTransferTaskAttributes) =>
-  !hasTransferStarted(taskAttributes) ||
-  taskAttributes.transferMeta?.sidWithTaskControl === taskSid;
+export const hasTaskControl = async (
+  client: Twilio,
+  workspaceSid: string,
+  taskSid: string,
+  taskAttributes: ChatTransferTaskAttributes,
+) => {
+  if (!hasTransferStarted(taskAttributes)) {
+    return true;
+  }
+  const task = await client.taskrouter.v1.workspaces.get(workspaceSid).tasks.get(taskSid).fetch();
+  return taskAttributes.transferMeta?.sidWithTaskControl === task.sid;
+};
 
 export type TransferHelpers = {
   hasTaskControl: typeof hasTaskControl;

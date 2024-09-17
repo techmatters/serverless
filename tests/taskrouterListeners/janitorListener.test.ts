@@ -28,9 +28,10 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
 
 import each from 'jest-each';
+import { Twilio } from 'twilio';
 import * as janitorListener from '../../functions/taskrouterListeners/janitorListener.private';
 import { AseloCustomChannels } from '../../functions/helpers/customChannels/customChannelToFlex.private';
-import helpers from '../helpers';
+import helpers, { RecursivePartial } from '../helpers';
 
 const mockChannelJanitor = jest.fn();
 jest.mock('../../functions/helpers/chatChannelJanitor.private', () => ({
@@ -59,6 +60,7 @@ const nonCustomChannelTaskAttributes = {
 type EnvVars = {
   CHAT_SERVICE_SID: string;
   FLEX_PROXY_SERVICE_SID: string;
+  TWILIO_WORKSPACE_SID: string;
 };
 
 const mockFetchFlexApiConfig = jest.fn(() => ({
@@ -68,11 +70,30 @@ const mockFetchFlexApiConfig = jest.fn(() => ({
     },
   },
 }));
+
+const mockClient: RecursivePartial<Twilio> = {
+  flexApi: { configuration: { get: () => ({ fetch: mockFetchFlexApiConfig }) } },
+  taskrouter: {
+    v1: {
+      workspaces: {
+        get: () => ({
+          tasks: {
+            get: () => ({
+              fetch: () =>
+                Promise.resolve({
+                  sid: 'WRxxx',
+                }),
+            }),
+          },
+        }),
+      },
+    },
+  },
+};
+
 const context = {
   ...mock<Context<EnvVars>>(),
-  getTwilioClient: (): any => ({
-    flexApi: { configuration: { get: () => ({ fetch: mockFetchFlexApiConfig }) } },
-  }),
+  getTwilioClient: (): Twilio => mockClient as Twilio,
   CHAT_SERVICE_SID: 'CHxxx',
   FLEX_PROXY_SERVICE_SID: 'KCxxx',
   SYNC_SERVICE_SID: 'xxx',
