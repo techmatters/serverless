@@ -36,10 +36,17 @@ export const hasTaskControl = async (
   taskAttributes: ChatTransferTaskAttributes,
 ) => {
   if (!hasTransferStarted(taskAttributes)) {
+    console.debug('hasTaskControl? Yes - Transfer has not started');
     return true;
   }
   const task = await client.taskrouter.v1.workspaces.get(workspaceSid).tasks.get(taskSid).fetch();
-  return taskAttributes.transferMeta?.sidWithTaskControl === task.sid;
+  const res = taskAttributes.transferMeta?.sidWithTaskControl === task.sid;
+  console.debug(
+    `hasTaskControl? ${res ? 'Yes' : 'No'} - ${task.sid} (task.sid) === ${
+      taskAttributes.transferMeta?.sidWithTaskControl
+    } (taskAttributes.transferMeta?.sidWithTaskControl)`,
+  );
+  return res;
 };
 
 export type TransferHelpers = {

@@ -81,13 +81,24 @@ const isHandledByOtherListener = async (
   ].path) as ChannelCaptureHandlers;
 
   if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+    console.debug('isHandledByOtherListener? - Yes, isChatCaptureControl');
     return true;
   }
 
   const transferHelpers = require(Runtime.getFunctions()['transfer/helpers']
     .path) as TransferHelpers;
-
-  return !(await transferHelpers.hasTaskControl(client, workspaceSid, taskSid, taskAttributes));
+  const res = !(await transferHelpers.hasTaskControl(
+    client,
+    workspaceSid,
+    taskSid,
+    taskAttributes,
+  ));
+  if (res) {
+    console.debug('isHandledByOtherListener? - Yes, does not have task control', taskAttributes);
+  } else {
+    console.debug('isHandledByOtherListener? - No, not handled by other listener');
+  }
+  return res;
 };
 
 const isCleanupCustomChannel = async (
@@ -127,15 +138,18 @@ const isDeactivateConversationOrchestration = async (
     isChatCaptureControl?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
+  console.debug('isDeactivateConversationOrchestration?');
   if (
     ![TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].includes(
       eventType,
     )
   ) {
+    console.debug('isDeactivateConversationOrchestration? - No, wrong event type:', eventType);
     return false;
   }
 
   if (await isHandledByOtherListener(client, workspaceSid, taskSid, taskAttributes)) {
+    console.debug('isDeactivateConversationOrchestration? - No, handled by other listener');
     return false;
   }
 
