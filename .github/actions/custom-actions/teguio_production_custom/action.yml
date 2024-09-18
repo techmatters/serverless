@@ -45,8 +45,8 @@ runs:
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
       shell: bash
-    - name: Add INSTAGRAM_FLEX_FLOW_SID
-      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
       run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
