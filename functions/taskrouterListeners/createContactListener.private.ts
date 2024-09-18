@@ -63,7 +63,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         .addCustomerExternalId as AddCustomerExternalId;
       await addCustomerExternalId(context, event);
 
-      if (taskAttributes.channelType === 'web') {
+      if ((taskAttributes.customChannelType || taskAttributes.channelType) === 'web') {
         // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
         const addTaskHandlerPath =
           Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
