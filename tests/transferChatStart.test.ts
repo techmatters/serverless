@@ -623,7 +623,6 @@ describe('Conversations', () => {
     expect(mockedCreateInvite).toHaveBeenCalledWith({
       routing: {
         properties: {
-          queue_sid: 'TQxxx',
           worker_sid: 'WKxxx',
           workflow_sid: baseContext.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
           workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
