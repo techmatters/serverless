@@ -18,6 +18,11 @@ runs:
   using: "composite"
   steps:
     # Line environment variables
+    - name: Set helpline Line Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_TH_LINE_FLEX_FLOW_SID"
+        env_variable_name: "LINE_FLEX_FLOW_SID"
     - name: Set helpline Line Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -49,6 +54,11 @@ runs:
       with:
         ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_59591583805_Childline-Thailand-Foundation"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Flex Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "PROD_TWILIO_TH_INSTAGRAM_FLEX_FLOW_SID"
+        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -60,6 +70,9 @@ runs:
         ssm_parameter: "/production/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
    # Append LINE environment variables
+    - name: Add LINE_FLEX_FLOW_SID
+      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
+      shell: bash
     - name: Add LINE_STUDIO_FLOW_SID
       run: echo "LINE_STUDIO_FLOW_SID=${{ env.LINE_STUDIO_FLOW_SID }}" >> .env
       shell: bash
@@ -78,6 +91,9 @@ runs:
       shell: bash
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_FLEX_FLOW_SID
+      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_STUDIO_FLOW_SID
       run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
