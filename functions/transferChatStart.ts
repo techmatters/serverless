@@ -44,6 +44,9 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+// Only used for direct transfers of conversations, not programmable chat channels
+const DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME = 'Everyone';
+
 async function setDummyChannelToTask(
   context: Context<EnvVars>,
   sid: string,
@@ -270,13 +273,14 @@ export const handler = TokenValidator(
           `Transferring conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
         );
         // Get task queue
-        /*
         const taskQueues = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .taskQueues.list({ workerSid: targetSid });
 
-        const taskQueueSid = taskQueues[0].sid;
-        */
+        const taskQueueSid =
+          taskQueues.find((tq) => tq.friendlyName === DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME) ||
+          taskQueues[0].sid;
+
         // Create invite to target worker
         const invite = await client.flexApi.v1.interaction
           .get(flexInteractionSid)
@@ -284,7 +288,7 @@ export const handler = TokenValidator(
           .invites.create({
             routing: {
               properties: {
-                // queue_sid: taskQueueSid,
+                queue_sid: taskQueueSid,
                 worker_sid: targetSid,
                 workflow_sid: context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
                 workspace_sid: context.TWILIO_WORKSPACE_SID,
