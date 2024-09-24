@@ -14,6 +14,10 @@
 
 name: 'Childline Thailand Production release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in the thailand production environment'
+nputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
 runs:
   using: "composite"
   steps:
