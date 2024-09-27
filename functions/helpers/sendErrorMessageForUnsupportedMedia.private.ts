@@ -18,14 +18,15 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
 export type ConversationSid = `CH${string}`;
 
-type SendErrorMessageForUnsupportedMediaEvent = {
+type OnMessageAddedEvent = {
+  EventType: 'onMessageAdded';
   Body?: string;
   ConversationSid: ConversationSid;
   Media?: Record<string, any>;
   DateCreated: Date;
 };
 
-export type Event = SendErrorMessageForUnsupportedMediaEvent;
+export type Event = OnMessageAddedEvent;
 
 const FALLBACK_ERROR_MESSAGE = 'Unsupported message type.';
 const ERROR_MESSAGE_TRANSLATION_KEY = 'UnsupportedMediaErrorMsg';

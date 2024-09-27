@@ -72,7 +72,7 @@ describe('serviceConversationListener', () => {
       EventType: undefined,
       Media: {},
       DateCreated: new Date(),
-    };
+    } as any;
 
     const callback: ServerlessCallback = (err, result) => {
       expect(result).toBeDefined();
