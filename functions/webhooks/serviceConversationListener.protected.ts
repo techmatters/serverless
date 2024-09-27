@@ -15,7 +15,7 @@
  */
 
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500 } from '@tech-matters/serverless-helpers';
+import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
 import {
   Event,
   SendErrorMessageForUnsupportedMedia,
@@ -38,5 +38,6 @@ export const handler = async (context: Context, event: Event, callback: Serverle
       if (err instanceof Error) resolve(error500(err));
       else resolve(error500(new Error(String(err))));
     }
+    resolve(success(event));
   }
 };
