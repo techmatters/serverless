@@ -35,9 +35,9 @@ export const handler = async (context: Context, event: Event, callback: Serverle
       console.debug('New message, checking if we need to send error.');
       await sendErrorMessageForUnsupportedMedia(context, event);
     } catch (err) {
-      if (err instanceof Error) resolve(error500(err));
-      else resolve(error500(new Error(String(err))));
+      if (err instanceof Error) return resolve(error500(err));
+      return resolve(error500(new Error(String(err))));
     }
-    resolve(success(event));
   }
+  return resolve(success(event));
 };
