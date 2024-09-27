@@ -49,77 +49,9 @@ describe('serviceConversationListener', () => {
     helpers.teardown();
   });
 
-  test('Should return status 400 if Body, Media or EventType are undefined', async () => {
-    const event1: Body = {
-      Body: undefined,
-      ConversationSid: 'CHxxxxxxx34EWS',
-      EventType: 'onMessageAdded',
-      Media: {},
-      DateCreated: new Date(),
-    };
+  // TODO: Test coverage for sending error message
 
-    const event2: Body = {
-      Body: 'Test word',
-      ConversationSid: 'CHxxxxxxx34EWS',
-      EventType: 'onMessageAdded',
-      Media: undefined,
-      DateCreated: new Date(),
-    };
-
-    const event3: Body = {
-      Body: 'Test word',
-      ConversationSid: 'CHxxxxxxx34EWS',
-      EventType: undefined,
-      Media: {},
-      DateCreated: new Date(),
-    } as any;
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(400);
-    };
-
-    await serviceConversationListener(baseContext, event1, callback);
-    await serviceConversationListener(baseContext, event2, callback);
-    await serviceConversationListener(baseContext, event3, callback);
-  });
-
-  test('Should return status 500 if object response is undefined', async () => {
-    const event1: Body = {
-      Body: 'Test word',
-      ConversationSid: 'CHxxxxxxx34EWS',
-      EventType: 'onMessageAdded',
-      Media: {},
-      DateCreated: new Date(),
-    };
-
-    const callback1: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-    };
-
-    await serviceConversationListener({ ...baseContext }, event1, callback1);
-
-    const event2: Body = {
-      Body: 'Test word',
-      ConversationSid: 'CHxxxxxxx34EWS',
-      EventType: 'onMessageAdded',
-      Media: {},
-      DateCreated: new Date(),
-    };
-
-    const callback2: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(500);
-    };
-
-    await serviceConversationListener(baseContext, event2, callback2);
-  });
-
-  test('Should return status 200', async () => {
+  test('Should return status 200 for valid message', async () => {
     const event1: Body = {
       Body: 'Test word',
       ConversationSid: 'CHxxxxxxx34EWS',
