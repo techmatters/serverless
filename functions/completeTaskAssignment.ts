@@ -87,7 +87,7 @@ const closeTaskAssignment = async (
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
 const isSupervisor = (tokenResult: TokenValidatorResponse) =>
-  Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supoervisor');
+  Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
@@ -110,10 +110,14 @@ export const handler = TokenValidator(
         authToken,
       );
 
+      console.log('>>> tokenResult:', tokenResult);
       const isSupervisorToken = isSupervisor(tokenResult);
 
+      console.log('>>> isSupervisorToken:', isSupervisorToken);
       if (!isSupervisorToken) {
-        resolve(error400('Unauthorized: endpoint not open to non supervisors.'));
+        resolve(
+          error400(`Unauthorized: endpoint not open to non supervisors. ${isSupervisorToken}`),
+        );
         return;
       }
 
