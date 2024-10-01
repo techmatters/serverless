@@ -32,19 +32,8 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 } & { taskSid: string };
 
-// type TaskInstance = Awaited<
-//   ReturnType<
-//     ReturnType<
-//       ReturnType<ReturnType<Context['getTwilioClient']>['taskrouter']['workspaces']>['tasks']
-//     >['fetch']
-//   >
-// >;
-
 type ContactType = {
-  // action: string;
   taskSid: string;
-  // targetSid: string;
-  // finalTaskAttributes: TaskInstance['attributes'];
 };
 
 const isTaskAssigned = async (
@@ -59,11 +48,8 @@ const isTaskAssigned = async (
       .tasks(event.taskSid)
       .fetch();
 
-    console.log('>>> Task fetched:', event.taskSid, task.assignmentStatus);
-
     const { assignmentStatus } = task;
 
-    // if task is not assigned or task is not found, return false
     return assignmentStatus === 'assigned';
   } catch (err) {
     console.error('Error fetching task:', err);

@@ -15,6 +15,7 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 import '@twilio-labs/serverless-runtime-types';
+import { validator } from 'twilio-flex-token-validator';
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import {
   responseWithCors,
@@ -27,6 +28,8 @@ import {
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
+  ACCOUNT_SID: string;
+  AUTH_TOKEN: string;
 };
 
 type TaskInstance = Awaited<
@@ -46,6 +49,7 @@ type ContactComplete = {
 
 export type Body = {
   request: { cookies: {}; headers: {} };
+  Token?: string;
 } & ContactComplete;
 
 type AssignmentResult =
@@ -71,8 +75,6 @@ const closeTaskAssignment = async (
 
     const completedTask = await task.update({ assignmentStatus: 'completed' });
 
-    console.log('>>> Task fetched:', event.taskSid, completedTask);
-
     return { type: 'success', completedTask } as const;
   } catch (err) {
     return {
@@ -82,18 +84,43 @@ const closeTaskAssignment = async (
   }
 };
 
+export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
+
+const isSupervisor = (tokenResult: TokenValidatorResponse) =>
+  Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supoervisor');
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    console.log(event);
+    const accountSid = context.ACCOUNT_SID;
+    const authToken = context.AUTH_TOKEN;
+    const token = event.Token;
+
+    if (!token || token === undefined) {
+      resolve(error400('token'));
+      return;
+    }
 
     try {
+      const tokenResult: TokenValidatorResponse = await validator(
+        token as string,
+        accountSid,
+        authToken,
+      );
+
+      const isSupervisorToken = isSupervisor(tokenResult);
+
+      if (!isSupervisorToken) {
+        resolve(error400('Unauthorized: endpoint not open to non supervisors.'));
+        return;
+      }
+
       const { taskSid } = event;
 
       if (taskSid === undefined) {
-        resolve(error400('taskSid'));
+        resolve(error400('taskSid is undefined'));
         return;
       }
 
