@@ -43,7 +43,7 @@ export type Body = {
 type AssignmentResult =
   | {
       type: 'error';
-      payload: { message: string; attributes?: string };
+      payload: { message: string; assignmentStatus?: string };
     }
   | { type: 'success'; assignmentStatus: string };
 
@@ -54,10 +54,10 @@ type ContactType = {
   // finalTaskAttributes: TaskInstance['attributes'];
 };
 
-const readTaskAssignmentStatus = async (
+const isTaskAssigned = async (
   context: Context<EnvVars>,
   event: Required<Pick<ContactType, 'taskSid'>>,
-): Promise<AssignmentResult> => {
+): Promise<boolean> => {
   const client = context.getTwilioClient();
 
   try {
@@ -69,12 +69,12 @@ const readTaskAssignmentStatus = async (
     console.log('>>> Task fetched:', event.taskSid, task.assignmentStatus);
 
     const { assignmentStatus } = task;
-    return { type: 'success', assignmentStatus } as const;
+
+    // if task is not assigned or task is not found, return false
+    return assignmentStatus === 'assigned';
   } catch (err) {
-    return {
-      type: 'error',
-      payload: { message: String(err) },
-    };
+    console.error('Error fetching task:', err);
+    return false;
   }
 };
 
@@ -83,7 +83,7 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    console.log(event);
+    console.log('event', event);
 
     try {
       const { taskSid } = event;
@@ -93,7 +93,7 @@ export const handler = TokenValidator(
         return;
       }
 
-      const result = await readTaskAssignmentStatus(context, {
+      const result = await isTaskAssigned(context, {
         taskSid,
       });
 
