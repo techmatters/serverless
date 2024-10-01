@@ -40,13 +40,6 @@ export type Body = {
 //   >
 // >;
 
-type AssignmentResult =
-  | {
-      type: 'error';
-      payload: { message: string; assignmentStatus?: string };
-    }
-  | { type: 'success'; assignmentStatus: string };
-
 type ContactType = {
   // action: string;
   taskSid: string;
@@ -99,7 +92,7 @@ export const handler = TokenValidator(
 
       console.log('>>> checkTaskStatus Result:', result);
 
-      resolve(success(result));
+      resolve(success({ isAssigned: result }));
     } catch (err: any) {
       resolve(error500(err));
     }
