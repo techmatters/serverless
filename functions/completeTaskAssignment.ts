@@ -110,10 +110,8 @@ export const handler = TokenValidator(
         authToken,
       );
 
-      console.log('>>> tokenResult:', tokenResult);
       const isSupervisorToken = isSupervisor(tokenResult);
 
-      console.log('>>> isSupervisorToken:', isSupervisorToken);
       if (!isSupervisorToken) {
         resolve(
           error400(`Unauthorized: endpoint not open to non supervisors. ${isSupervisorToken}`),
@@ -130,10 +128,8 @@ export const handler = TokenValidator(
 
       const result = await closeTaskAssignment(context, {
         taskSid,
-        finalTaskAttributes: JSON.stringify({ status: 'closed' }),
+        finalTaskAttributes: JSON.stringify({}),
       });
-
-      console.log('>>> checkTaskStatus Result:', result);
 
       resolve(success(result));
     } catch (err: any) {
