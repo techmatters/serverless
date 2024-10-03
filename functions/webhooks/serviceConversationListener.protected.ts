@@ -15,24 +15,29 @@
  */
 
 import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { responseWithCors, bindResolve, error500 } from '@tech-matters/serverless-helpers';
+import { responseWithCors, bindResolve, error500, success } from '@tech-matters/serverless-helpers';
 import {
   Event,
   SendErrorMessageForUnsupportedMedia,
 } from '../helpers/sendErrorMessageForUnsupportedMedia.private';
 
 export const handler = async (context: Context, event: Event, callback: ServerlessCallback) => {
+  console.info(`===== Service Conversation Listener (event: ${event.EventType})=====`);
   const response = responseWithCors();
   const resolve = bindResolve(callback)(response);
-  // eslint-disable-next-line global-require,import/no-dynamic-require
-  const sendErrorMessageForUnsupportedMedia = require(Runtime.getFunctions()[
-    'helpers/sendErrorMessageForUnsupportedMedia'
-  ].path).sendErrorMessageForUnsupportedMedia as SendErrorMessageForUnsupportedMedia;
+  if (event.EventType === 'onMessageAdded') {
+    // eslint-disable-next-line global-require,import/no-dynamic-require
+    const sendErrorMessageForUnsupportedMedia = require(Runtime.getFunctions()[
+      'helpers/sendErrorMessageForUnsupportedMedia'
+    ].path).sendErrorMessageForUnsupportedMedia as SendErrorMessageForUnsupportedMedia;
 
-  try {
-    await sendErrorMessageForUnsupportedMedia(context, event);
-  } catch (err) {
-    if (err instanceof Error) resolve(error500(err));
-    else resolve(error500(new Error(String(err))));
+    try {
+      console.debug('New message, checking if we need to send error.');
+      await sendErrorMessageForUnsupportedMedia(context, event);
+    } catch (err) {
+      if (err instanceof Error) return resolve(error500(err));
+      return resolve(error500(new Error(String(err))));
+    }
   }
+  return resolve(success(event));
 };
