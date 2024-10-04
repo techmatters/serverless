@@ -50,7 +50,7 @@ const isTaskAssigned = async (
 
     const { assignmentStatus } = task;
 
-    return assignmentStatus === 'assigned';
+    return assignmentStatus === 'assigned' || assignmentStatus === 'wrapping';
   } catch (err) {
     console.error('Error fetching task:', err);
     return false;
@@ -75,8 +75,6 @@ export const handler = TokenValidator(
       const result = await isTaskAssigned(context, {
         taskSid,
       });
-
-      console.log('>>> checkTaskStatus Result:', result);
 
       resolve(success({ isAssigned: result }));
     } catch (err: any) {
