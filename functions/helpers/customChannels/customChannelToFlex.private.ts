@@ -215,6 +215,7 @@ type CreateFlexConversationParams = {
   senderScreenName: string; // Friendly info to show to show in the Flex UI (like Telegram handle)
   onMessageSentWebhookUrl: string; // The url that must be used as the onMessageSent event webhook.
   conversationFriendlyName: string; // A name for the Flex conversation (typically same as uniqueUserName)
+  useTestApi?: boolean; // [optional] If true, messages from flex will be sent to a test endpoint rather than the real 3rd party API.
   twilioNumber: string; // The target Twilio number (usually have the shape <channel>:<id>, e.g. telegram:1234567)
 };
 
@@ -310,6 +311,7 @@ const createConversation = async (
     senderScreenName,
     onMessageSentWebhookUrl,
     studioFlowSid,
+    useTestApi,
   }: CreateFlexConversationParams,
 ): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
   const client = context.getTwilioClient();
@@ -341,6 +343,7 @@ const createConversation = async (
         channelType,
         senderScreenName,
         twilioNumber,
+        useTestApi,
       }),
     });
 
@@ -492,6 +495,7 @@ export const sendConversationMessageToFlex = async (
     senderExternalId,
     customSubscribedExternalId,
     conversationFriendlyName,
+    useTestApi,
   }: SendConversationMessageToFlexParams,
 ): Promise<{ status: 'ignored' } | { status: 'sent'; response: any }> => {
   const subscribedExternalId = customSubscribedExternalId || context.ACCOUNT_SID;
@@ -513,6 +517,7 @@ export const sendConversationMessageToFlex = async (
       senderScreenName,
       onMessageSentWebhookUrl,
       conversationFriendlyName,
+      useTestApi,
     });
 
     if (error) {
