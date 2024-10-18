@@ -202,7 +202,8 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(new Error('Reached unexpected default case')));
+        return;
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
