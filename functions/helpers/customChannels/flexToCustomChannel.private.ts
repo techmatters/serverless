@@ -95,16 +95,10 @@ export const redirectConversationMessageToExternalChat = async (
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source, Author } = event;
   let shouldSend = false;
-  let useTestApi = false;
+  const client = context.getTwilioClient();
   if (Source === 'SDK') {
     shouldSend = true;
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
-    const client = context.getTwilioClient();
-    useTestApi =
-      JSON.parse(
-        (await client.conversations.v1.conversations.get(ConversationSid).fetch())?.attributes ??
-          {},
-      ).useTestApi ?? useTestApi;
     const participants = await client.conversations.v1.conversations
       .get(ConversationSid)
       .participants.list();
@@ -118,6 +112,11 @@ export const redirectConversationMessageToExternalChat = async (
       Boolean(firstParticipantSid) && ![Author, ParticipantSid].includes(firstParticipantSid);
   }
   if (shouldSend) {
+    const useTestApi =
+      JSON.parse(
+        (await client.conversations.v1.conversations.get(ConversationSid).fetch())?.attributes ??
+          {},
+      ).useTestApi ?? false;
     const response = await sendExternalMessage(recipientId, Body, useTestApi);
     if (response.ok) {
       return { status: 'sent', response };
