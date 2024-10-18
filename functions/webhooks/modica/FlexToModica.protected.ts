@@ -109,10 +109,18 @@ const sendMessageThroughModica =
       },
     );
 
+    const bodyText = await response.text();
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      body = bodyText;
+    }
+
     return {
       ok: response.ok,
       resultCode: response.status,
-      body: await response.json(),
+      body,
       meta: Object.fromEntries(Object.entries(response.headers)),
     };
   };
