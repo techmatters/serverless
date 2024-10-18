@@ -314,6 +314,9 @@ const createConversation = async (
     useTestApi,
   }: CreateFlexConversationParams,
 ): Promise<{ conversationSid: ConversationSid; error?: Error }> => {
+  if (useTestApi) {
+    console.info('useTestApi flag set. All outgoing messages will be sent to the test API.');
+  }
   const client = context.getTwilioClient();
 
   const conversationInstance = await client.conversations.conversations.create({
