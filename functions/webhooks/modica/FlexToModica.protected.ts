@@ -41,8 +41,8 @@ export type EnvVars = {
   MODICA_APP_NAME: string;
   MODICA_APP_PASSWORD: string;
   CHAT_SERVICE_SID: string;
-  MODICA_SEND_MESSAGE_URL: string;
-  MODICA_TEST_SEND_MESSAGE_URL: string;
+  MODICA_SEND_MESSAGE_URL?: string;
+  MODICA_TEST_SEND_MESSAGE_URL?: string;
 };
 
 export type Body = WebhookEvent & {
@@ -97,7 +97,7 @@ const sendMessageThroughModica =
     ).toString('base64');
     const response = await fetch(
       useTestApi
-        ? context.MODICA_TEST_SEND_MESSAGE_URL
+        ? context.MODICA_TEST_SEND_MESSAGE_URL!
         : context.MODICA_SEND_MESSAGE_URL || DEFAULT_MODICA_SEND_MESSAGE_URL,
       {
         method: 'POST',

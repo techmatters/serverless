@@ -102,7 +102,8 @@ export const redirectConversationMessageToExternalChat = async (
     const client = context.getTwilioClient();
     useTestApi =
       JSON.parse(
-        (await client.conversations.v1.conversations(ConversationSid).fetch())?.attributes ?? {},
+        (await client.conversations.v1.conversations.get(ConversationSid).fetch())?.attributes ??
+          {},
       ).useTestApi ?? useTestApi;
     const participants = await client.conversations.v1.conversations
       .get(ConversationSid)
