@@ -329,7 +329,6 @@ export const handler = TokenValidator(
               properties: {
                 workflow_sid: context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
                 workspace_sid: context.TWILIO_WORKSPACE_SID,
-                queue_sid: targetSid,
                 attributes: newAttributes,
                 task_channel_unique_name: originalTask.taskChannelUniqueName,
               },
