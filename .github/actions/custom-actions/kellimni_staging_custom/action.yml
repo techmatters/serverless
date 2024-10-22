@@ -51,12 +51,12 @@ runs:
       --data '{ "url": "${{ env.SERVERLESS_BASE_URL }}/webhooks/telegram/TelegramToFlex", "secret_token": "${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" }'
 
    # Append environment variables
-    - name: Add TELEGRAM_FLEX_BOT_TOKEN
-      run: echo "TELEGRAM_FLEX_BOT_TOKEN=${{ env.TELEGRAM_FLEX_BOT_TOKEN }}" >> .env
-      shell: bash
-    - name: Add TELEGRAM_BOT_API_SECRET_TOKEN
-      run: echo "TELEGRAM_BOT_API_SECRET_TOKEN=${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" >> .env
-      shell: bash
-    - name: Add TELEGRAM_STUDIO_FLOW_SID
-      run: echo "TELEGRAM_STUDIO_FLOW_SID=${{ env.TELEGRAM_STUDIO_FLOW_SID }}" >> .env
-      shell: bash
+  - name: Add TELEGRAM_FLEX_BOT_TOKEN
+    run: echo "TELEGRAM_FLEX_BOT_TOKEN=${{ env.TELEGRAM_FLEX_BOT_TOKEN }}" >> .env
+    shell: bash
+  - name: Add TELEGRAM_BOT_API_SECRET_TOKEN
+    run: echo "TELEGRAM_BOT_API_SECRET_TOKEN=${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" >> .env
+    shell: bash
+  - name: Add TELEGRAM_STUDIO_FLOW_SID
+    run: echo "TELEGRAM_STUDIO_FLOW_SID=${{ env.TELEGRAM_STUDIO_FLOW_SID }}" >> .env
+    shell: bash
