@@ -221,7 +221,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
       const client = context.getTwilioClient();
 
-      await client.taskrouter.v1.workspaces
+      const originalTask = await client.taskrouter.v1.workspaces
         .get(context.TWILIO_WORKSPACE_SID)
         .tasks.get(originalTaskSid)
         .update({
@@ -240,7 +240,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
           await transitionAgentParticipants(
             context.getTwilioClient(),
             context.TWILIO_WORKSPACE_SID,
-            originalTaskSid,
+            originalTask,
             'closed',
             taskAttributes.originalParticipantSid,
           );
