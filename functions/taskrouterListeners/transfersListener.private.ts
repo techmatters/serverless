@@ -247,6 +247,7 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
         } catch (err) {
           console.error(
             `Error closing original participant ${taskAttributes.originalParticipantSid} from interaction channel ${taskAttributes.conversationSid}`,
+            err,
           );
         }
       }
