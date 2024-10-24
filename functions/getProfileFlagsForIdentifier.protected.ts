@@ -95,8 +95,10 @@ const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
   facebook: [(s) => s.replace('messenger:', '')],
+  messenger: [(s) => s.replace('messenger:', '')],
   instagram: [],
   line: [],
+  telegram: [],
   web: [],
 };
 
@@ -119,6 +121,10 @@ export const getIdentifier = (trigger: Event['trigger'], channelType?: string): 
   }
 
   if (isConversationTrigger(trigger) && channelType) {
+    if (!channelTransformations[channelType] || !channelType) {
+      console.error(`Channel type ${channelType} is not supported`);
+      throw new Error(`Channel type ${channelType} is not supported`);
+    }
     return channelTransformations[channelType].reduce(
       (accum, f) => f(accum),
       trigger.conversation.Author,
