@@ -89,11 +89,12 @@ const trimHyphens = (s: string) => s.replaceAll('-', '');
 const phoneNumberStandardization = (s: string) =>
   [trimSpaces, trimHyphens].reduce((accum, f) => f(accum), s);
 type TransformIdentifierFunction = (c: string) => string;
-const channelTransformations: { [k in string]: TransformIdentifierFunction[] } = {
+const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   voice: [phoneNumberStandardization],
   sms: [phoneNumberStandardization],
   whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
+  facebook: [(s) => s.replace('messenger:', '')],
   messenger: [(s) => s.replace('messenger:', '')],
   instagram: [],
   line: [],
