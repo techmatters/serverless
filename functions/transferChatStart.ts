@@ -359,10 +359,10 @@ export const handler = TokenValidator(
           });
 
         newTaskSid = newTask.sid;
-      }
 
-      // Increse the chat capacity for the target worker (if needed)
-      await increaseChatCapacity(context, validationResult);
+        // Increse the chat capacity for the target worker (if needed)
+        await increaseChatCapacity(context, validationResult);
+      }
 
       resolve(success({ taskSid: newTaskSid }));
     } catch (err: any) {
