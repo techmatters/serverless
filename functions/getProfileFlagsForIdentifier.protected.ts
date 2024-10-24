@@ -89,14 +89,15 @@ const trimHyphens = (s: string) => s.replaceAll('-', '');
 const phoneNumberStandardization = (s: string) =>
   [trimSpaces, trimHyphens].reduce((accum, f) => f(accum), s);
 type TransformIdentifierFunction = (c: string) => string;
-const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
+const channelTransformations: { [k in string]: TransformIdentifierFunction[] } = {
   voice: [phoneNumberStandardization],
   sms: [phoneNumberStandardization],
   whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
-  facebook: [(s) => s.replace('messenger:', '')],
+  messenger: [(s) => s.replace('messenger:', '')],
   instagram: [],
   line: [],
+  telegram: [],
   web: [],
 };
 
@@ -119,6 +120,10 @@ export const getIdentifier = (trigger: Event['trigger'], channelType?: string): 
   }
 
   if (isConversationTrigger(trigger) && channelType) {
+    if (!channelTransformations[channelType] || !channelType) {
+      console.error(`Channel type ${channelType} is not supported`);
+      throw new Error(`Channel type ${channelType} is not supported`);
+    }
     return channelTransformations[channelType].reduce(
       (accum, f) => f(accum),
       trigger.conversation.Author,
