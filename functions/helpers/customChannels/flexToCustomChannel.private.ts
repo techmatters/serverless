@@ -45,7 +45,11 @@ export type WebhookEvent = ConversationWebhookEvent | ProgrammableChatWebhookEve
 type Params<T extends WebhookEvent, TResponse = any> = {
   event: T;
   recipientId: string;
-  sendExternalMessage: (recipientId: string, messageText: string) => Promise<TResponse>;
+  sendExternalMessage: (
+    recipientId: string,
+    messageText: string,
+    useTestApi?: boolean,
+  ) => Promise<TResponse>;
 };
 
 export const isConversationWebhookEvent = (
@@ -91,10 +95,10 @@ export const redirectConversationMessageToExternalChat = async (
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source, Author } = event;
   let shouldSend = false;
+  const client = context.getTwilioClient();
   if (Source === 'SDK') {
     shouldSend = true;
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
-    const client = context.getTwilioClient();
     const participants = await client.conversations.v1.conversations
       .get(ConversationSid)
       .participants.list();
@@ -108,7 +112,12 @@ export const redirectConversationMessageToExternalChat = async (
       Boolean(firstParticipantSid) && ![Author, ParticipantSid].includes(firstParticipantSid);
   }
   if (shouldSend) {
-    const response = await sendExternalMessage(recipientId, Body);
+    const useTestApi =
+      JSON.parse(
+        (await client.conversations.v1.conversations.get(ConversationSid).fetch())?.attributes ??
+          {},
+      ).useTestApi ?? false;
+    const response = await sendExternalMessage(recipientId, Body, useTestApi);
     if (response.ok) {
       return { status: 'sent', response };
     }

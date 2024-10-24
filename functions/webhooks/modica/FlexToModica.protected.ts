@@ -35,13 +35,14 @@ import {
   ProgrammableChatWebhookEvent,
 } from '../../helpers/customChannels/flexToCustomChannel.private';
 
-// This can be a candidate to be an environment variable
-const MODICA_SEND_MESSAGE_URL = 'https://api.modicagroup.com/rest/gateway/messages';
+const DEFAULT_MODICA_SEND_MESSAGE_URL = 'https://api.modicagroup.com/rest/gateway/messages';
 
 export type EnvVars = {
   MODICA_APP_NAME: string;
   MODICA_APP_PASSWORD: string;
   CHAT_SERVICE_SID: string;
+  MODICA_SEND_MESSAGE_URL?: string;
+  MODICA_TEST_SEND_MESSAGE_URL?: string;
 };
 
 export type Body = WebhookEvent & {
@@ -70,33 +71,56 @@ const sanitizeRecipientId = (recipientIdRaw: string) => {
 };
 
 const sendMessageThroughModica =
-  (context: Context<EnvVars>) => async (recipientId: string, messageText: string) => {
+  (context: Context<EnvVars>) =>
+  async (recipientId: string, messageText: string, useTestApi?: boolean) => {
     const payload = {
       destination: sanitizeRecipientId(recipientId),
       content: messageText,
     };
 
+    if (useTestApi && !context.MODICA_TEST_SEND_MESSAGE_URL) {
+      const message =
+        'useTestApi flag set for conversation but no test send API URL is configured (MODICA_TEST_SEND_MESSAGE_URL env var), so dropping message.';
+      console.info(message, payload);
+      return {
+        ok: true,
+        resultCode: 200,
+        body: {
+          message,
+        },
+        meta: {},
+      };
+    }
+
     const base64Credentials = Buffer.from(
       `${context.MODICA_APP_NAME}:${context.MODICA_APP_PASSWORD}`,
     ).toString('base64');
-
-    /**
-     * I was struggling to make this call to work with Axios,
-     * so I used node-fetch instead.
-     */
-    const response = await fetch(MODICA_SEND_MESSAGE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${base64Credentials}`,
+    const response = await fetch(
+      useTestApi
+        ? context.MODICA_TEST_SEND_MESSAGE_URL!
+        : context.MODICA_SEND_MESSAGE_URL || DEFAULT_MODICA_SEND_MESSAGE_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Basic ${base64Credentials}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
+
+    const bodyText = await response.text();
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      body = bodyText;
+    }
 
     return {
       ok: response.ok,
       resultCode: response.status,
-      body: await response.json(),
+      body,
       meta: Object.fromEntries(Object.entries(response.headers)),
     };
   };
@@ -178,7 +202,8 @@ export const handler = async (
         resolve(success('Ignored event.'));
         return;
       default:
-        throw new Error('Reached unexpected default case');
+        resolve(error500(new Error('Reached unexpected default case')));
+        return;
     }
   } catch (err) {
     if (err instanceof Error) resolve(error500(err));
