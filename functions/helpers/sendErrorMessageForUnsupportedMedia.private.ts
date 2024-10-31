@@ -18,15 +18,15 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 
 export type ConversationSid = `CH${string}`;
 
-type SendErrorMessageForUnsupportedMediaEvent = {
+type OnMessageAddedEvent = {
+  EventType: 'onMessageAdded';
   Body?: string;
   ConversationSid: ConversationSid;
-  EventType?: string;
   Media?: Record<string, any>;
   DateCreated: Date;
 };
 
-export type Event = SendErrorMessageForUnsupportedMediaEvent;
+export type Event = OnMessageAddedEvent;
 
 const FALLBACK_ERROR_MESSAGE = 'Unsupported message type.';
 const ERROR_MESSAGE_TRANSLATION_KEY = 'UnsupportedMediaErrorMsg';
@@ -56,17 +56,19 @@ export const sendConversationMessage = async (
     });
 
 export const sendErrorMessageForUnsupportedMedia = async (context: Context, event: Event) => {
-  const { EventType, Body, Media, ConversationSid } = event;
+  const { Body, Media, ConversationSid } = event;
 
   /* Valid message will have either a body/media. A message with no
      body or media implies that there was an error sending such message
   */
-  if (EventType === 'onMessageAdded' && !Body && !Media) {
+  if (!Body && !Media) {
+    console.debug('Message has no text body or media, sending error.', ConversationSid);
     let messageText = FALLBACK_ERROR_MESSAGE;
 
     const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
     const helplineLanguage = serviceConfig.attributes.helplineLanguage ?? 'en-US';
 
+    console.debug('Helpline language to send error message: ', helplineLanguage, ConversationSid);
     if (helplineLanguage) {
       try {
         const response = await fetch(
@@ -74,10 +76,13 @@ export const sendErrorMessageForUnsupportedMedia = async (context: Context, even
         );
         const translation = await response.json();
         const { [ERROR_MESSAGE_TRANSLATION_KEY]: translatedMessage } = translation;
+
+        console.debug('Translated error message: ', translatedMessage, ConversationSid);
         messageText = translatedMessage || messageText;
       } catch {
         console.warn(
           `Couldn't retrieve ${ERROR_MESSAGE_TRANSLATION_KEY} message translation for ${helplineLanguage}`,
+          ConversationSid,
         );
       }
     }
@@ -87,6 +92,7 @@ export const sendErrorMessageForUnsupportedMedia = async (context: Context, even
       author: 'Bot',
       messageText,
     });
+    console.info('Sent error message: ', messageText, ConversationSid);
   }
 };
 
