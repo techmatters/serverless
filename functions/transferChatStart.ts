@@ -281,6 +281,9 @@ export const handler = TokenValidator(
           taskQueues.find((tq) => tq.friendlyName === DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME) ||
           taskQueues[0].sid;
 
+        console.info(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} via queue ${taskQueueSid} and workflow ${context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID} by creating interaction invite.`,
+        );
         // Create invite to target worker
         const invite = await client.flexApi.v1.interaction
           .get(flexInteractionSid)
