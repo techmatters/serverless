@@ -269,8 +269,8 @@ export const handler = TokenValidator(
 
       let newTaskSid;
       if (isConversation && transferTargetType === 'worker') {
-        console.info(
-          `Transferring conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        console.debug(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} - looking up queues.`,
         );
         // Get task queue
         const taskQueues = await client.taskrouter
@@ -278,7 +278,7 @@ export const handler = TokenValidator(
           .taskQueues.list({ workerSid: targetSid });
 
         const taskQueueSid =
-          taskQueues.find((tq) => tq.friendlyName === DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME) ||
+          taskQueues.find((tq) => tq.friendlyName === DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME)?.sid ||
           taskQueues[0].sid;
 
         console.info(
