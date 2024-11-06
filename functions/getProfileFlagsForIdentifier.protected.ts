@@ -85,8 +85,10 @@ const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
   facebook: [(s) => s.replace('messenger:', '')],
-  instagram: [],
+  messenger: [(s) => s.replace('messenger:', '')],
+  instagram: [(s) => s.replace('instagram:', '')],
   line: [],
+  telegram: [],
   web: [],
 };
 
