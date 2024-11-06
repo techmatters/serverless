@@ -98,7 +98,7 @@ const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   messenger: [(s) => s.replace('messenger:', '')],
   instagram: [(s) => s.replace('instagram:', '')],
   line: [],
-  telegram: [],
+  telegram: [(s) => s.replace('telegram:', '')],
   web: [],
 };
 
