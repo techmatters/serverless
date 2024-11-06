@@ -96,9 +96,9 @@ const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
   facebook: [(s) => s.replace('messenger:', '')],
   messenger: [(s) => s.replace('messenger:', '')],
-  instagram: [],
+  instagram: [(s) => s.replace('instagram:', '')],
   line: [],
-  telegram: [],
+  telegram: [(s) => s.replace('telegram:', '')],
   web: [],
 };
 
