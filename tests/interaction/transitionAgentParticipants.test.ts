@@ -23,7 +23,7 @@ import {
   InteractionChannelParticipantContext,
   InteractionChannelParticipantInstance,
 } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
-import { Context } from '@twilio-labs/serverless-runtime-types/types';
+import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import { handler } from '../../functions/interaction/transitionAgentParticipants';
 import helpers, { RecursivePartial } from '../helpers';
 import MockedFunction = jest.MockedFunction;
@@ -41,6 +41,9 @@ const mockTaskFetch: MockedFunction<TaskContext['fetch']> = jest.fn().mockResolv
   attributes: JSON.stringify({
     flexInteractionSid: FLEX_INTERACTION_SID,
     flexInteractionChannelSid: FLEX_INTERACTION_CHANNEL_SID,
+  }),
+  reservations: () => ({
+    list: () => Promise.resolve([{ workerSid: 'WKworker_with_reservation' }]),
   }),
 });
 
@@ -93,8 +96,10 @@ const mockInteractionGet: MockedFunction<Twilio['flexApi']['v1']['interaction'][
 
 const mockTwilioClient: RecursivePartial<Twilio> = {
   taskrouter: {
-    workspaces: {
-      get: mockWorkspaceGet,
+    v1: {
+      workspaces: {
+        get: mockWorkspaceGet,
+      },
     },
   },
   flexApi: {
@@ -117,20 +122,31 @@ const baseContext = {
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime({});
+  // eslint-disable-next-line no-underscore-dangle
+  runtime._addFunction(
+    'interaction/interactionChannelParticipants',
+    'functions/interaction/interactionChannelParticipants.private',
+  );
   helpers.setup({}, runtime);
 });
 
 afterAll(() => {
   helpers.teardown();
-  jest.clearAllMocks();
 });
+
+afterEach(jest.clearAllMocks);
 
 describe('sid for valid task', () => {
   test('looks up task by specified sid', async () => {
     const callback = jest.fn();
     await handler(
       baseContext,
-      { taskSid: 'WT123', targetStatus: 'wrapup', request: { headers: {}, cookies: {} } },
+      {
+        taskSid: 'WT123',
+        targetStatus: 'wrapup',
+        request: { headers: {}, cookies: {} },
+        TokenResult: { worker_sid: 'WKbob', roles: ['supervisor'] },
+      },
       callback,
     );
     expect(mockTaskGet).toHaveBeenCalledWith('WT123');
@@ -140,7 +156,12 @@ describe('sid for valid task', () => {
     const callback = jest.fn();
     await handler(
       baseContext,
-      { taskSid: 'WT123', targetStatus: 'wrapup', request: { headers: {}, cookies: {} } },
+      {
+        taskSid: 'WT123',
+        targetStatus: 'wrapup',
+        request: { headers: {}, cookies: {} },
+        TokenResult: { worker_sid: 'WKworker_with_reservation', roles: ['agent'] },
+      },
       callback,
     );
     expect(mockInteractionGet).toHaveBeenCalledWith(FLEX_INTERACTION_SID);
@@ -150,7 +171,12 @@ describe('sid for valid task', () => {
     const callback = jest.fn();
     await handler(
       baseContext,
-      { taskSid: 'WT123', targetStatus: 'wrapup', request: { headers: {}, cookies: {} } },
+      {
+        taskSid: 'WT123',
+        targetStatus: 'wrapup',
+        request: { headers: {}, cookies: {} },
+        TokenResult: { worker_sid: 'WKworker_with_reservation', roles: [] },
+      },
       callback,
     );
     expect(mockInteractionChannelParticipantList).toHaveBeenCalled();
@@ -161,5 +187,26 @@ describe('sid for valid task', () => {
           .contexts[0] as InteractionChannelParticipantInstance
       ).type,
     ).toBe('agent');
+  });
+  test('called by worker without supervisor role or reservation on task - 403', async () => {
+    const callback: MockedFunction<ServerlessCallback> = jest.fn();
+    await handler(
+      baseContext,
+      {
+        taskSid: 'WT123',
+        targetStatus: 'wrapup',
+        request: { headers: {}, cookies: {} },
+        TokenResult: { worker_sid: 'WKbob', roles: ['agent'] },
+      },
+      callback,
+    );
+    expect(mockInteractionChannelParticipantList).not.toHaveBeenCalled();
+    expect(mockInteractionChannelParticipantUpdate).not.toHaveBeenCalled();
+    expect(callback).toHaveBeenCalledWith(
+      null,
+      expect.objectContaining({
+        _statusCode: 403,
+      }),
+    );
   });
 });

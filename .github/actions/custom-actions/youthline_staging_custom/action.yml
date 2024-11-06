@@ -33,11 +33,39 @@ runs:
       with:
         ssm_parameter: "/staging/modica/${{inputs.account-sid}}/app_password"
         env_variable_name: "MODICA_APP_PASSWORD"
-    - name: Set Modica Flex Flow Sid
+    - name: Set Modica Studio Flow Sid
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
-        env_variable_name: "MODICA_FLEX_FLOW_SID"
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/modica_studio_flow_sid"
+        env_variable_name: "MODICA_STUDIO_FLOW_SID"
+    - name: Set helpline Modica Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "MODICA_TWILIO_MESSAGING_MODE"
+
+# Set Instagram variables
+    - name: Set Aselo Facebook App Secret
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_APP_SECRET"
+        env_variable_name: "FACEBOOK_APP_SECRET"
+    - name: Set helpline Facebook Page Access Token
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_453194187877367_NZ-Staging"
+        env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
+    - name: Set helpline Instagram Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
+    - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/instagram/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
+
 
     # Append environment variables
     - name: Add MODICA_APP_NAME
@@ -46,6 +74,21 @@ runs:
     - name: Add MODICA_APP_PASSWORD
       run: echo "MODICA_APP_PASSWORD=${{ env.MODICA_APP_PASSWORD }}" >> .env
       shell: bash
-    - name: Add MODICA_FLEX_FLOW_SID
-      run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
+    - name: Add MODICA_STUDIO_FLOW_SID
+      run: echo "MODICA_STUDIO_FLOW_SID=${{ env.MODICA_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_TWILIO_MESSAGING_MODE
+      run: echo "MODICA_TWILIO_MESSAGING_MODE=${{ env.MODICA_TWILIO_MESSAGING_MODE }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_APP_SECRET
+      run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
+      shell: bash
+    - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
+      run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
+      run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash

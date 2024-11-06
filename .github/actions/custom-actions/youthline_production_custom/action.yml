@@ -38,7 +38,17 @@ runs:
       with:
         ssm_parameter: "/production/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
         env_variable_name: "MODICA_FLEX_FLOW_SID"
-
+    - name: Set Modica Studio Flow Sid
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/production/twilio/${{inputs.account-sid}}/modica_studio_flow_sid"
+        env_variable_name: "MODICA_STUDIO_FLOW_SID"
+    - name: Set helpline Modica Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/production/modica/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "MODICA_TWILIO_MESSAGING_MODE"
+    
     # Append environment variables
     - name: Add MODICA_APP_NAME
       run: echo "MODICA_APP_NAME=${{ env.MODICA_APP_NAME }}" >> .env
@@ -48,4 +58,10 @@ runs:
       shell: bash
     - name: Add MODICA_FLEX_FLOW_SID
       run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_STUDIO_FLOW_SID
+      run: echo "MODICA_STUDIO_FLOW_SID=${{ env.MODICA_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_TWILIO_MESSAGING_MODE
+      run: echo "MODICA_TWILIO_MESSAGING_MODE=${{ env.MODICA_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash

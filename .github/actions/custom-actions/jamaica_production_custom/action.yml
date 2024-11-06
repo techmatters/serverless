@@ -14,6 +14,10 @@
 
 name: 'SafeSpot Production release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in SafeSpot (JM) Production environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
 runs:
   using: "composite"
   steps:
@@ -33,6 +37,16 @@ runs:
       with:
         ssm_parameter: "PROD_TWILIO_JM_INSTAGRAM_FLEX_FLOW_SID"
         env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
+    - name: Set helpline Instagram Studio Flow SID
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/production/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
+    - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/production/instagram/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
     # Append environment variables
     - name: Add FACEBOOK_APP_SECRET
       run: echo "FACEBOOK_APP_SECRET=${{ env.FACEBOOK_APP_SECRET }}" >> .env
@@ -42,4 +56,10 @@ runs:
       shell: bash
     - name: Add INSTAGRAM_FLEX_FLOW_SID
       run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
+      run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
       shell: bash

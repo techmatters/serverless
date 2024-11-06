@@ -24,7 +24,6 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import axios from 'axios';
 
 export type Body = {
   language?: string;
@@ -44,10 +43,10 @@ export const handler = TokenValidator(
         return;
       }
 
-      const axiosResponse = await axios.get(
+      const fetchResponse = await fetch(
         `https://${context.DOMAIN_NAME}/translations/${language}/flexUI.json`,
       );
-      const translation = axiosResponse.data;
+      const translation = await fetchResponse.json();
 
       resolve(success(translation));
     } catch (err: any) {

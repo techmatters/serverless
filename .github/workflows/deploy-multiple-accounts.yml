@@ -184,7 +184,10 @@ jobs:
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
           aselo-app-access-key: $ASELO_APP_ACCESS_KEY
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
-          aws-region: $HELPLINE_AWS_REGION
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          helpline-aws-region: $HELPLINE_AWS_REGION
+          deployment-matrix-aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
           s3-bucket: $S3_BUCKET
           helpline-code: ${{matrix.helpline_code}}
           environment-code: ${{matrix.environment_code}}
@@ -222,7 +225,7 @@ jobs:
 
       - name: Slack Aselo channel
         id: slack
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
           slack-message: '`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:.'

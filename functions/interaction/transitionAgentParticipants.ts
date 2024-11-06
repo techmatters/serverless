@@ -18,11 +18,15 @@ import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-typ
 import {
   bindResolve,
   error400,
+  error403,
+  error500,
   functionValidator as TokenValidator,
   responseWithCors,
   success,
 } from '@tech-matters/serverless-helpers';
 import { InteractionChannelParticipantStatus } from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
+import { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
+import { InteractionChannelParticipants } from './interactionChannelParticipants.private';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -31,7 +35,9 @@ type EnvVars = {
 type Body = {
   taskSid: string;
   targetStatus: InteractionChannelParticipantStatus;
+  interactionChannelParticipantSid?: string;
   request: { cookies: {}; headers: {} };
+  TokenResult: { worker_sid: string; roles: string[] };
 };
 
 /**
@@ -45,47 +51,47 @@ export const handler = TokenValidator(
     console.log('==== transitionAgentParticipants ====');
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
-    const { taskSid, targetStatus } = event;
 
-    if (!taskSid) return resolve(error400('taskSid'));
-    if (!targetStatus) return resolve(error400('targetStatus'));
-
-    const client = context.getTwilioClient();
-    const task = await client.taskrouter.workspaces
-      .get(context.TWILIO_WORKSPACE_SID)
-      .tasks.get(taskSid)
+    const { path } = Runtime.getFunctions()['interaction/interactionChannelParticipants'];
+    // eslint-disable-next-line prefer-destructuring,global-require,import/no-dynamic-require
+    const { transitionAgentParticipants }: InteractionChannelParticipants = require(path);
+    const { worker_sid: workerSid, roles } = event.TokenResult;
+    const task: TaskInstance = await context
+      .getTwilioClient()
+      .taskrouter.v1.workspaces.get(context.TWILIO_WORKSPACE_SID)
+      .tasks.get(event.taskSid)
       .fetch();
-    const { flexInteractionSid, flexInteractionChannelSid } = JSON.parse(task.attributes);
-
-    if (!flexInteractionSid || !flexInteractionChannelSid) {
-      console.warn(
-        "transitionAgentParticipants called with a task without a flexInteractionSid or flexInteractionChannelSid set in it's attributes - is it being called with a Programmable Chat task?",
-        task.attributes,
-      );
-      return resolve(
-        error400(
-          "Task specified must have a flexInteractionSid and flexInteractionChannelSid set in it's attributes",
-        ),
-      );
+    if (
+      !roles.includes('supervisor') &&
+      !(await task.reservations().list()).find((r) => r.workerSid === workerSid)
+    ) {
+      // Only supervisors or workers that currently have a reservation on the task can transition agent participants
+      return resolve(error403('You do not have permission to transition agent participants'));
     }
-    const interactionParticipantContext = client.flexApi.v1.interaction
-      .get(flexInteractionSid)
-      .channels.get(flexInteractionChannelSid).participants;
-    const interactionAgentParticipants = (await interactionParticipantContext.list()).filter(
-      (p) => p.type === 'agent',
-    );
 
-    // Should only be 1, but just in case
-    await Promise.all(
-      interactionAgentParticipants.map((p) => {
-        console.log(
-          `Transitioning agent participant ${p.sid} to ${targetStatus}`,
-          p.interactionSid,
-          p.channelSid,
+    try {
+      const result = await transitionAgentParticipants(
+        context.getTwilioClient(),
+        context.TWILIO_WORKSPACE_SID,
+        task,
+        event.targetStatus,
+        event.interactionChannelParticipantSid,
+      );
+      if (Array.isArray(result)) {
+        return resolve(
+          success(
+            result.length
+              ? `Transitioned agents with interaction channel participant IDs: ${result}`
+              : 'No agent participants found in the interaction channel',
+          ),
         );
-        return p.update({ status: targetStatus });
-      }),
-    );
-    return resolve(success({ message: 'Transitioned agent participants' }));
+      }
+      if (result.errorType === 'Validation') {
+        return resolve(error400(result.errorMessage));
+      }
+      return resolve(error500(new Error(result.errorMessage)));
+    } catch (e) {
+      return resolve(error500(e as Error));
+    }
   },
 );

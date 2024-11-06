@@ -1,0 +1,62 @@
+# Copyright (C) 2021-2023 Technology Matters
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see https://www.gnu.org/licenses/.
+
+name: 'Kellimni MT Staging release custom action'
+description: 'Sets up environment variables related to non-standard additional features in use in the beta environment'
+inputs:
+  account-sid:
+    description: 'The Twilio Account SID for this account'
+    required: true
+runs:
+  using: "composite"
+  steps:
+# Telegram environment variables
+  - name: Set Telegram Flex Bot Token
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "/staging/telegram/${{inputs.account-sid}}/flex_bot_token"
+      env_variable_name: "TELEGRAM_FLEX_BOT_TOKEN"
+  - name: Set Telegram Bot Api Secret Token
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "/staging/telegram/${{inputs.account-sid}}/bot_api_secret_token"
+      env_variable_name: "TELEGRAM_BOT_API_SECRET_TOKEN"
+  - name: Set helpline Telegram Studio Flow SID
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/telegram_studio_flow_sid"
+      env_variable_name: "TELEGRAM_STUDIO_FLOW_SID"
+  - name: Set helpline serverless URL
+    uses: "marvinpinto/action-inject-ssm-secrets@latest"
+    with:
+      ssm_parameter: "/staging/serverless/${{inputs.account-sid}}/base_url"
+      env_variable_name: "SERVERLESS_BASE_URL"
+  - name: Set Telegram flex bot webhook
+    shell: bash
+    run: |
+      curl --request POST \
+      --header "Content-Type: application/json" \
+      --url "https://api.telegram.org/bot${{ env.TELEGRAM_FLEX_BOT_TOKEN }}/setWebhook" \
+      --data '{ "url": "${{ env.SERVERLESS_BASE_URL }}/webhooks/telegram/TelegramToFlex", "secret_token": "${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" }'
+
+   # Append environment variables
+  - name: Add TELEGRAM_FLEX_BOT_TOKEN
+    run: echo "TELEGRAM_FLEX_BOT_TOKEN=${{ env.TELEGRAM_FLEX_BOT_TOKEN }}" >> .env
+    shell: bash
+  - name: Add TELEGRAM_BOT_API_SECRET_TOKEN
+    run: echo "TELEGRAM_BOT_API_SECRET_TOKEN=${{ env.TELEGRAM_BOT_API_SECRET_TOKEN }}" >> .env
+    shell: bash
+  - name: Add TELEGRAM_STUDIO_FLOW_SID
+    run: echo "TELEGRAM_STUDIO_FLOW_SID=${{ env.TELEGRAM_STUDIO_FLOW_SID }}" >> .env
+    shell: bash
