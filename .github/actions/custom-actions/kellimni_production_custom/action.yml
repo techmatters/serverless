@@ -46,7 +46,7 @@ runs:
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
         ssm_parameter: "/production/instagram/${{inputs.account-sid}}/messaging_mode"
-        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"  
+        env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
 
     # Append environment variables
     - name: Add FACEBOOK_APP_SECRET
