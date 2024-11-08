@@ -71,9 +71,15 @@ const closeTaskAssignment = async (
       .tasks(event.taskSid)
       .fetch();
 
+    console.log(`>>> Task Before: ${task.sid} attributes: ${JSON.stringify(task.attributes)}`);
+
     await task.update({ attributes: event.finalTaskAttributes });
 
     const completedTask = await task.update({ assignmentStatus: 'completed' });
+
+    console.log(
+      `>>> Task After completing: ${completedTask.sid} attributes: ${JSON.stringify(completedTask.attributes)}`,
+    );
 
     return { type: 'success', completedTask } as const;
   } catch (err) {
@@ -130,6 +136,8 @@ export const handler = TokenValidator(
         taskSid,
         finalTaskAttributes: JSON.stringify({}),
       });
+
+      console.log('>>> closeTaskAssignment Result:', result);
 
       resolve(success(result));
     } catch (err: any) {
