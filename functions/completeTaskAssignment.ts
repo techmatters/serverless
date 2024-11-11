@@ -138,8 +138,6 @@ export const handler = TokenValidator(
         finalTaskAttributes: JSON.stringify({}),
       });
 
-      console.log('>>> closeTaskAssignment Result:', result);
-
       resolve(success(result));
     } catch (err: any) {
       resolve(error500(err));
