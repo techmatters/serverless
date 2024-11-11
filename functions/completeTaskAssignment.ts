@@ -70,35 +70,17 @@ const closeTaskAssignment = async (
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(event.taskSid)
       .fetch();
-
     const attributes = JSON.parse(task.attributes);
     const callSid = attributes?.call_sid;
 
-    const callBefore = await client.calls(callSid).fetch();
-
-    console.log(
-      `>>> Task Before: ${task.sid} attributes: ${JSON.stringify(task.attributes)}`,
-      { callSid },
-      `Call status After: ${callBefore}`,
-    );
-
-    // await task.update({ attributes: event.finalTaskAttributes });
-
+    // Ends the task for the worker and client for chat tasks, and only for the worker for voice tasks
     const completedTask = await task.update({
       assignmentStatus: 'completed',
       attributes: event.finalTaskAttributes,
     });
 
+    // Ends the call for the client for voice
     if (callSid) await client.calls(callSid).update({ status: 'completed' });
-
-    const callAfter = await client.calls(callSid).fetch();
-
-    console.log(
-      `>>> Task After completing: ${completedTask.sid} attributes: ${JSON.stringify(
-        completedTask.attributes,
-      )}`,
-      `Call status After: ${callAfter}`,
-    );
 
     return { type: 'success', completedTask } as const;
   } catch (err) {
