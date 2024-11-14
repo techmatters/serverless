@@ -72,17 +72,21 @@ const closeTaskAssignment = async (
       .fetch();
     const attributes = JSON.parse(task.attributes);
     const callSid = attributes?.call_sid;
+    // const conversationSid = attributes?.conversation_sid;
 
     // Ends the task for the worker and client for chat tasks, and only for the worker for voice tasks
-    const completedTask = await task.update({
-      assignmentStatus: 'completed',
+    const wrappingTask = await task.update({
+      assignmentStatus: 'wrapping',
       attributes: event.finalTaskAttributes,
     });
-
-    // Ends the call for the client for voice
+    const aftertask = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(event.taskSid)
+      .fetch();
+    console.log(`Task ${aftertask} with attributes ${aftertask.attributes} has been completed`);
     if (callSid) await client.calls(callSid).update({ status: 'completed' });
 
-    return { type: 'success', completedTask } as const;
+    return { type: 'success', completedTask: wrappingTask } as const;
   } catch (err) {
     return {
       type: 'error',
