@@ -80,18 +80,22 @@ const closeTaskAssignment = async (
       assignmentStatus: 'wrapping',
       attributes: event.finalTaskAttributes,
     });
+
     const aftertask = await client.taskrouter
       .workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks(event.taskSid)
       .fetch();
     console.log(`Task ${aftertask} with attributes ${aftertask.attributes} has been completed`);
+
     if (callSid) await client.calls(callSid).update({ status: 'completed' });
-    setTimeout(() => {
-      console.log('This will be executed in 10sec');
-    }, 10000);
+
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait for 10 seconds
+
     const completedTask = await task.update({
       assignmentStatus: 'completed',
     });
+
     return { type: 'success', completedTask } as const;
   } catch (err) {
     return {
