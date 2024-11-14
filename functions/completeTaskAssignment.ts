@@ -25,6 +25,7 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import { set } from 'lodash';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -75,7 +76,7 @@ const closeTaskAssignment = async (
     // const conversationSid = attributes?.conversation_sid;
 
     // Ends the task for the worker and client for chat tasks, and only for the worker for voice tasks
-    const wrappingTask = await task.update({
+    await task.update({
       assignmentStatus: 'wrapping',
       attributes: event.finalTaskAttributes,
     });
@@ -85,8 +86,13 @@ const closeTaskAssignment = async (
       .fetch();
     console.log(`Task ${aftertask} with attributes ${aftertask.attributes} has been completed`);
     if (callSid) await client.calls(callSid).update({ status: 'completed' });
-
-    return { type: 'success', completedTask: wrappingTask } as const;
+    setTimeout(() => {
+      console.log('This will be executed in 10sec');
+    }, 10000);
+    const completedTask = await task.update({
+      assignmentStatus: 'completed',
+    });
+    return { type: 'success', completedTask } as const;
   } catch (err) {
     return {
       type: 'error',
