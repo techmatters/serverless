@@ -36,10 +36,10 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { channelSid } = event;
+    const { channelSid, conversationSid } = event;
 
-    if (channelSid === undefined) {
-      resolve(error400('ChannelSid parameter is missing'));
+    if (channelSid === undefined && conversationSid === undefined) {
+      resolve(error400('none of and channelSid provided, exactly one expected.'));
       return;
     }
 
@@ -51,28 +51,57 @@ export const handler = async (
     const chatChannelJanitor = require(Runtime.getFunctions()['helpers/chatChannelJanitor'].path)
       .chatChannelJanitor as ChatChannelJanitor;
 
-    const channelWebhooks = await context
-      .getTwilioClient()
-      .chat.services(context.CHAT_SERVICE_SID)
-      .channels(channelSid)
-      .webhooks.list();
+    if (conversationSid) {
+      const conversationWebhooks = await context
+        .getTwilioClient()
+        .conversations.services(context.CHAT_SERVICE_SID)
+        .conversations(conversationSid)
+        .webhooks.list();
 
-    // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
-    await Promise.all(
-      channelWebhooks.map(async (w) => {
-        if (w.type === 'studio') {
-          await w.remove();
-        }
-      }),
-    );
+      // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+      await Promise.all(
+        conversationWebhooks.map(async (w) => {
+          if (w.target === 'studio') {
+            await w.remove();
+          }
+        }),
+      );
 
-    // Send message
-    const result = await sendSystemMessage(context, event);
+      // Send message
+      const result = await sendSystemMessage(context, event);
 
-    // Deactivate channel and proxy
-    await chatChannelJanitor(context, { channelSid });
+      // Deactivate channel and proxy
+      await chatChannelJanitor(context, { conversationSid });
 
-    resolve(send(result.status)(result.message));
+      resolve(send(result.status)(result.message));
+      return;
+    }
+    // TODO: remove once all accounts have been migrated to conversations
+    if (channelSid) {
+      const channelWebhooks = await context
+        .getTwilioClient()
+        .chat.services(context.CHAT_SERVICE_SID)
+        .channels(channelSid)
+        .webhooks.list();
+
+      // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
+      await Promise.all(
+        channelWebhooks.map(async (w) => {
+          if (w.type === 'studio') {
+            await w.remove();
+          }
+        }),
+      );
+
+      // Send message
+      const result = await sendSystemMessage(context, event);
+
+      // Deactivate channel and proxy
+      await chatChannelJanitor(context, { channelSid });
+
+      resolve(send(result.status)(result.message));
+      return;
+    }
   } catch (err: any) {
     resolve(error500(err));
   }
