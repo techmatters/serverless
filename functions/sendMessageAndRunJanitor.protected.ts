@@ -54,8 +54,7 @@ export const handler = async (
     if (conversationSid) {
       const conversationWebhooks = await context
         .getTwilioClient()
-        .conversations.services(context.CHAT_SERVICE_SID)
-        .conversations(conversationSid)
+        .conversations.v1.conversations(conversationSid)
         .webhooks.list();
 
       // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
