@@ -25,6 +25,7 @@ import {
   success,
   functionValidator as TokenValidator,
   error403,
+  send,
 } from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
@@ -92,14 +93,25 @@ export const handler = TokenValidator(
         resolve(error400('taskSid is undefined'));
         return;
       }
-
-      const result = await context
-        .getTwilioClient()
-        .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-        .tasks(event.taskSid)
-        .fetch();
-
-      resolve(success(result));
+      try {
+        const result = await context
+          .getTwilioClient()
+          .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(event.taskSid)
+          .fetch();
+        resolve(success(result));
+      } catch (err) {
+        const error = err as Error;
+        if (
+          error.message.match(
+            /The requested resource \/Workspaces\/WS[a-z0-9]+\/Tasks\/WT[a-z0-9]+ was not found/,
+          )
+        ) {
+          resolve(send(404)({ message: error.message }));
+          return;
+        }
+        resolve(error500(error));
+      }
     } catch (err: any) {
       resolve(error500(err));
     }
