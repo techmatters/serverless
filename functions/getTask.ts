@@ -1,4 +1,4 @@
-// Close task as a supervisor
+// Get task as a supervisor
 /**
  * Copyright (C) 2021-2023 Technology Matters
  * This program is free software: you can redistribute it and/or modify
@@ -53,49 +53,7 @@ export type Body = {
   Token?: string;
 } & ContactComplete;
 
-type AssignmentResult =
-  | {
-      type: 'error';
-      payload: { message: string; attributes?: string };
-    }
-  | { type: 'success'; completedTask: TaskInstance };
-
-const closeTaskAssignment = async (
-  context: Context<EnvVars>,
-  event: Required<Pick<ContactComplete, 'taskSid' | 'finalTaskAttributes'>>,
-): Promise<AssignmentResult> => {
-  const client = context.getTwilioClient();
-
-  try {
-    const task = await client.taskrouter
-      .workspaces(context.TWILIO_WORKSPACE_SID)
-      .tasks(event.taskSid)
-      .fetch();
-    const attributes = JSON.parse(task.attributes);
-    const callSid = attributes?.call_sid;
-
-    // Ends the task for the worker and client for chat tasks, and only for the worker for voice tasks
-    const completedTask = await task.update({
-      assignmentStatus: 'completed',
-      attributes: event.finalTaskAttributes,
-    });
-
-    // Ends the call for the client for voice
-    if (callSid) await client.calls(callSid).update({ status: 'completed' });
-
-    return { type: 'success', completedTask } as const;
-  } catch (err) {
-    return {
-      type: 'error',
-      payload: { message: String(err) },
-    };
-  }
-};
-
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
-
-const isSupervisor = (tokenResult: TokenValidatorResponse) =>
-  Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
@@ -118,7 +76,8 @@ export const handler = TokenValidator(
         authToken,
       );
 
-      const isSupervisorToken = isSupervisor(tokenResult);
+      const isSupervisorToken =
+        Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
 
       if (!isSupervisorToken) {
         resolve(
@@ -134,10 +93,11 @@ export const handler = TokenValidator(
         return;
       }
 
-      const result = await closeTaskAssignment(context, {
-        taskSid,
-        finalTaskAttributes: JSON.stringify({}),
-      });
+      const result = await context
+        .getTwilioClient()
+        .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+        .tasks(event.taskSid)
+        .fetch();
 
       resolve(success(result));
     } catch (err: any) {
