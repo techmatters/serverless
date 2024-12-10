@@ -36,11 +36,11 @@ type EnvVars = {
 /**
  * Fetch all taskrouter listeners from the listeners folder
  */
-const getListeners = () => {
+const getListeners = (): [string, TaskrouterListener][] => {
   const functionsMap = Runtime.getFunctions();
   const keys = Object.keys(functionsMap).filter((name) => name.includes(LISTENERS_FOLDER));
   const paths = keys.map((key) => functionsMap[key].path);
-  return paths.map((path) => require(path) as TaskrouterListener);
+  return paths.map((path) => [path, require(path) as TaskrouterListener]);
 };
 
 const runTaskrouterListeners = async (
@@ -52,8 +52,20 @@ const runTaskrouterListeners = async (
 
   await Promise.all(
     listeners
-      .filter((listener) => listener.shouldHandle(event))
-      .map((listener) => listener.handleEvent(context, event, callback)),
+      .filter(([, listener]) => listener.shouldHandle(event))
+      .map(async ([path, listener]) => {
+        console.debug(
+          `===== Executing listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
+        );
+        try {
+          await listener.handleEvent(context, event, callback);
+        } catch (err) {
+          console.error(`===== Listener at ${path} has failed, aborting =====`, err);
+        }
+        console.info(
+          `===== Successfully executed listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
+        );
+      }),
   );
 };
 
