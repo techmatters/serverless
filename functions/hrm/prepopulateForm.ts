@@ -42,8 +42,8 @@ enum FormInputType {
 
 type FormItemDefinition = {
   name: string;
-  unknownOption: string;
-  options: { value: string }[];
+  unknownOption?: string;
+  options?: { value: string }[];
   initialChecked?: boolean;
   initializeWithCurrent?: boolean;
 } & (
@@ -347,6 +347,24 @@ const populateInitialValues = async (contact: HrmContact, formDefinitionRootUrl:
       rawJson[formItemDefinition.name] = getInitialValue(formItemDefinition);
     }
   }
+  const helplineInformation = await loadConfigJson(formDefinitionRootUrl, 'HelplineInformation');
+  const defaultHelplineOption = (
+    helplineInformation.helplines.find((helpline: any) => helpline.default) ||
+    helplineInformation.helplines[0]
+  ).value;
+  Object.assign(contact.rawJson.contactlessTask, {
+    date: getInitialValue({
+      type: FormInputType.DateInput,
+      initializeWithCurrent: true,
+      name: 'date',
+    }),
+    time: getInitialValue({
+      type: FormInputType.TimeInput,
+      initializeWithCurrent: true,
+      name: 'time',
+    }),
+    helpline: defaultHelplineOption,
+  });
 };
 
 const populateContactSection = async (

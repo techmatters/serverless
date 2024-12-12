@@ -52,6 +52,7 @@ const BLANK_CONTACT: HrmContact = {
       date: '',
       time: '',
       createdOnBehalfOf: '',
+      helpline: '',
     },
     categories: {},
   },
