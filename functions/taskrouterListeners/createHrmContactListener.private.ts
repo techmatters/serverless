@@ -32,6 +32,7 @@ export const eventTypes: EventType[] = [RESERVATION_ACCEPTED];
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
+  HRM_STATIC_KEY: string;
 };
 
 // Temporarily copied to this repo, will share the flex types when we move them into the same repo
@@ -74,7 +75,10 @@ const BLANK_CONTACT: HrmContact = {
  */
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
-export const handleEvent = async ({ getTwilioClient }: Context<EnvVars>, event: EventFields) => {
+export const handleEvent = async (
+  { getTwilioClient, HRM_STATIC_KEY }: Context<EnvVars>,
+  event: EventFields,
+) => {
   const { TaskAttributes: taskAttributesString, TaskSid: taskSid, WorkerSid: workerSid } = event;
   const taskAttributes = taskAttributesString ? JSON.parse(taskAttributesString) : {};
   const { isContactlessTask, channelSid } = taskAttributes;
@@ -120,9 +124,13 @@ export const handleEvent = async ({ getTwilioClient }: Context<EnvVars>, event: 
   const prepopulatePath = Runtime.getFunctions()['hrm/prepopulateForm'].path;
   const prepopulate = require(prepopulatePath) as PrepopulateForm;
   await prepopulate(taskAttributes, contactForApi, formDefinitionsVersionUrl);
-  const options = {
+  const options: RequestInit = {
     method: 'POST',
     body: JSON.stringify(contactForApi),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${HRM_STATIC_KEY}`,
+    },
   };
   const response = await fetch(`${hrmBaseAccountUrl}/contacts`, options);
   const { id }: HrmContact = await response.json();

@@ -15,15 +15,49 @@
  */
 
 import { capitalize } from 'lodash';
+import { startOfDay, format } from 'date-fns';
 
 type MapperFunction = (options: string[]) => (value: string) => string;
 
+// When we move this into the flex repo we can depend on hrm-form-definitions for these types & enums
+enum FormInputType {
+  Input = 'input',
+  SearchInput = 'search-input',
+  NumericInput = 'numeric-input',
+  Email = 'email',
+  RadioInput = 'radio-input',
+  ListboxMultiselect = 'listbox-multiselect',
+  Select = 'select',
+  DependentSelect = 'dependent-select',
+  Checkbox = 'checkbox',
+  MixedCheckbox = 'mixed-checkbox',
+  Textarea = 'textarea',
+  DateInput = 'date-input',
+  TimeInput = 'time-input',
+  FileUpload = 'file-upload',
+  Button = 'button',
+  CopyTo = 'copy-to',
+  CustomContactComponent = 'custom-contact-component',
+}
+
 type FormItemDefinition = {
   name: string;
-  type: string;
   unknownOption: string;
   options: { value: string }[];
-};
+  initialChecked?: boolean;
+  initializeWithCurrent?: boolean;
+} & (
+  | {
+      type: Exclude<FormInputType, FormInputType.DependentSelect>;
+      defaultOption?: string;
+    }
+  | {
+      type: FormInputType.DependentSelect;
+      defaultOption: {
+        value: string;
+      };
+    }
+);
 
 type PrepopulateKeys = {
   preEngagement: {
@@ -49,9 +83,9 @@ type ChannelTypes =
 type HrmContactRawJson = {
   definitionVersion?: string;
   callType: string;
-  childInformation: Record<string, boolean | string>;
-  callerInformation: Record<string, boolean | string>;
-  caseInformation: Record<string, boolean | string>;
+  childInformation: Record<string, FormValue>;
+  callerInformation: Record<string, FormValue>;
+  caseInformation: Record<string, FormValue>;
   categories: Record<string, string[]>;
   contactlessTask: {
     channel: ChannelTypes;
@@ -75,7 +109,6 @@ export type HrmContact = {
   createdBy: string;
   helpline: string;
   taskId: `WT${string}` | null;
-  // taskReservationSid: string;
   profileId?: string;
   identifierId?: string;
   channel: ChannelTypes | 'default';
@@ -88,6 +121,52 @@ export type HrmContact = {
   channelSid: string;
   serviceSid: string;
   caseId?: string;
+};
+
+type FormValue = string | string[] | boolean | null;
+
+/**
+ * Utility functions to create initial state from definition
+ * @param {FormItemDefinition} def Definition for a single input of a Form
+ */
+const getInitialValue = (def: FormItemDefinition): FormValue => {
+  switch (def.type) {
+    case FormInputType.Input:
+    case FormInputType.NumericInput:
+    case FormInputType.Email:
+    case FormInputType.Textarea:
+    case FormInputType.FileUpload:
+      return '';
+    case FormInputType.DateInput: {
+      if (def.initializeWithCurrent) {
+        return format(startOfDay(new Date()), 'yyyy-MM-dd');
+      }
+      return '';
+    }
+    case FormInputType.TimeInput: {
+      if (def.initializeWithCurrent) {
+        return format(new Date(), 'HH:mm');
+      }
+
+      return '';
+    }
+    case FormInputType.RadioInput:
+      return def.defaultOption ?? '';
+    case FormInputType.ListboxMultiselect:
+      return [];
+    case FormInputType.Select:
+      if (def.defaultOption) return def.defaultOption;
+      return def.options && def.options[0] ? def.options[0].value : null;
+    case FormInputType.DependentSelect:
+      return def.defaultOption?.value;
+    case FormInputType.CopyTo:
+    case FormInputType.Checkbox:
+      return Boolean(def.initialChecked);
+    case 'mixed-checkbox':
+      return def.initialChecked === undefined ? 'mixed' : def.initialChecked;
+    default:
+      return null;
+  }
 };
 
 const mapAge =
@@ -215,18 +294,7 @@ const getValuesFromAnswers = (
   };
 };
 
-const loadedConfigJsons: Record<string, any> = {};
-
-const loadConfigJson = async (formDefinitionRootUrl: URL, section: string): Promise<any> => {
-  if (!loadedConfigJsons[section]) {
-    const url = `${formDefinitionRootUrl}/${section}.json`;
-    const response = await fetch(url);
-    loadedConfigJsons[section] = response.json();
-  }
-  return loadedConfigJsons[section];
-};
-
-export const getValuesFromPreEngagementData = (
+const getValuesFromPreEngagementData = (
   prepopulateKeys: string[],
   tabFormDefinition: FormItemDefinition[],
   preEngagementData: Record<string, string>,
@@ -248,6 +316,37 @@ export const getValuesFromPreEngagementData = (
     }
   });
   return values;
+};
+
+const loadedConfigJsons: Record<string, any> = {};
+
+const loadConfigJson = async (formDefinitionRootUrl: URL, section: string): Promise<any> => {
+  if (!loadedConfigJsons[section]) {
+    const url = `${formDefinitionRootUrl}/${section}.json`;
+    const response = await fetch(url);
+    loadedConfigJsons[section] = response.json();
+  }
+  return loadedConfigJsons[section];
+};
+
+const populateInitialValues = async (contact: HrmContact, formDefinitionRootUrl: URL) => {
+  const tabNamesAndRawJsonSections: [string, Record<string, FormValue>][] = [
+    ['CaseInformationTab', contact.rawJson.caseInformation],
+    ['ChildInformationTab', contact.rawJson.childInformation],
+    ['CallerInformationTab', contact.rawJson.callerInformation],
+  ];
+
+  const defintionsAndJsons: [FormItemDefinition[], Record<string, FormValue>][] = await Promise.all(
+    tabNamesAndRawJsonSections.map(async ([tabbedFormsSection, rawJsonSection]) => [
+      await loadConfigJson(formDefinitionRootUrl, `tabbedForms/${tabbedFormsSection}`),
+      rawJsonSection,
+    ]),
+  );
+  for (const [tabFormDefinition, rawJson] of defintionsAndJsons) {
+    for (const formItemDefinition of tabFormDefinition) {
+      rawJson[formItemDefinition.name] = getInitialValue(formItemDefinition);
+    }
+  }
 };
 
 const populateContactSection = async (
@@ -281,14 +380,13 @@ export const prepopulateForm = async (
 ): Promise<HrmContact> => {
   const { memory, preEngagementData, firstName, language } = taskAttributes;
   const answers = { ...memory, firstName, language };
-
+  await populateInitialValues(contact, formDefinitionRootUrl);
   if (!answers && !preEngagementData) return contact;
   const { preEngagement: preEngagementKeys, survey: surveyKeys }: PrepopulateKeys =
     await loadConfigJson(formDefinitionRootUrl, 'PrepopulateKeys');
 
   const isValidSurvey = Boolean(answers?.aboutSelf); // determines if the memory has valid values or if it was aborted
   const isAboutSelf = !answers || answers.aboutSelf === 'Yes';
-
   if (preEngagementData) {
     await populateContactSection(
       contact,
@@ -320,7 +418,7 @@ export const prepopulateForm = async (
     }
   }
 
-  if (answers && isValidSurvey) {
+  if (isValidSurvey) {
     if (isAboutSelf) {
       await populateContactSection(
         contact,
