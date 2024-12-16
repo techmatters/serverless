@@ -98,11 +98,11 @@ export const handleEvent = async (
     form_definitions_version_url: formDefinitionsVersionUrl,
     channelType,
     customChannelType,
-    feature_flags: { enable_backend_contact_creation: enableBackendContactCreation },
+    feature_flags: { enable_backend_hrm_contact_creation: enableBackendHrmContactCreation },
   } = serviceConfig.attributes;
-  if (!enableBackendContactCreation) {
+  if (!enableBackendHrmContactCreation) {
     console.debug(
-      `enable_backend_contact_creation is not set, the contact associated with task ${taskSid} will be created from Flex.`,
+      `enable_backend_hrm_contact_creation is not set, the contact associated with task ${taskSid} will be created from Flex.`,
     );
     return;
   }
