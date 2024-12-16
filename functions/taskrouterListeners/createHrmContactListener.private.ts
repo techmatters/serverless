@@ -123,8 +123,8 @@ export const handleEvent = async (
   };
 
   const prepopulatePath = Runtime.getFunctions()['hrm/prepopulateForm'].path;
-  const prepopulate = require(prepopulatePath) as PrepopulateForm;
-  await prepopulate(taskAttributes, contactForApi, formDefinitionsVersionUrl);
+  const { prepopulateForm } = require(prepopulatePath) as PrepopulateForm;
+  await prepopulateForm(taskAttributes, contactForApi, formDefinitionsVersionUrl);
   const options: RequestInit = {
     method: 'POST',
     body: JSON.stringify(contactForApi),

@@ -463,4 +463,4 @@ export const prepopulateForm = async (
   return contact;
 };
 
-export type PrepopulateForm = typeof prepopulateForm;
+export type PrepopulateForm = { prepopulateForm: typeof prepopulateForm };
