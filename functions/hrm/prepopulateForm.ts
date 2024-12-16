@@ -204,7 +204,8 @@ const mapGenericOption = (options: string[]) => (value: string) => {
 const getUnknownOption = (key: string, definition: FormItemDefinition[]) => {
   const inputDef = definition.find((e) => e.name === key);
 
-  if (inputDef && inputDef.type === 'select') {
+  // inputDef.options check needed whilst we use an el cheapo copy of the type, once we share the flex type it won't be needed
+  if (inputDef?.type === 'select' && inputDef.options) {
     const unknownOption = inputDef.unknownOption
       ? inputDef.options.find((e) => e.value === inputDef.unknownOption)
       : inputDef.options.find((e) => e.value === 'Unknown');
@@ -221,8 +222,10 @@ const getUnknownOption = (key: string, definition: FormItemDefinition[]) => {
  */
 const getSelectOptions = (key: string) => (definition: FormItemDefinition[]) => {
   const inputDef = definition.find((e) => e.name === key);
-
-  if (inputDef?.type === 'select') return inputDef.options.map((e) => e.value) || [];
+  // inputDef.options check needed whilst we use an el cheapo copy of the type, once we share the flex type it won't be needed
+  if (inputDef?.type === 'select' && inputDef.options) {
+    return inputDef.options.map((e) => e.value) || [];
+  }
 
   console.error(`getSelectOptions called with key ${key} but is a non-select input type.`);
   return [];
