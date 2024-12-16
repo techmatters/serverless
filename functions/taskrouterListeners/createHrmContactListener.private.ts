@@ -77,7 +77,7 @@ const BLANK_CONTACT: HrmContact = {
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (
-  { getTwilioClient, HRM_STATIC_KEY }: Context<EnvVars>,
+  { getTwilioClient, HRM_STATIC_KEY, TWILIO_WORKSPACE_SID }: Context<EnvVars>,
   event: EventFields,
 ) => {
   const { TaskAttributes: taskAttributesString, TaskSid: taskSid, WorkerSid: workerSid } = event;
@@ -89,7 +89,8 @@ export const handleEvent = async (
     return;
   }
 
-  const serviceConfig = await getTwilioClient().flexApi.configuration.get().fetch();
+  const client = getTwilioClient();
+  const serviceConfig = await client.flexApi.configuration.get().fetch();
 
   const {
     definitionVersion,
@@ -147,6 +148,14 @@ export const handleEvent = async (
   }
   const { id }: HrmContact = await response.json();
   console.info(`Created HRM contact with id ${id} for task ${taskSid}`);
+
+  const taskContext = client.taskrouter.v1.workspaces.get(TWILIO_WORKSPACE_SID).tasks.get(taskSid);
+  const currentTaskAttributes = (await taskContext.fetch()).attributes; // Less chance of race conditions if we fetch the task attributes again, still not the best...
+  const updatedAttributes = {
+    ...JSON.parse(currentTaskAttributes),
+    contactId: id.toString(),
+  };
+  await taskContext.update({ attributes: JSON.stringify(updatedAttributes) });
 };
 
 /**
