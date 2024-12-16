@@ -138,6 +138,13 @@ export const handleEvent = async (
     },
   };
   const response = await fetch(`${hrmBaseAccountUrl}/contacts`, options);
+  if (!response.ok) {
+    console.error(
+      `Failed to create HRM contact for task ${taskSid} - status: ${response.status} - ${response.statusText}`,
+      await response.text(),
+    );
+    return;
+  }
   const { id }: HrmContact = await response.json();
   console.info(`Created HRM contact with id ${id} for task ${taskSid}`);
 };
