@@ -74,20 +74,35 @@ const BLANK_CONTACT: HrmContact = {
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
  */
-export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
+export const shouldHandle = ({
+  TaskAttributes: taskAttributesString,
+  TaskSid: taskSid,
+  EventType: eventType,
+}: EventFields) => {
+  if (!eventTypes.includes(eventType)) return false;
+
+  const { isContactlessTask, transferTargetType } = JSON.parse(taskAttributesString ?? '{}');
+
+  if (isContactlessTask) {
+    console.debug(`Task ${taskSid} is a contactless task, contact was already created in Flex.`);
+    return false;
+  }
+
+  if (transferTargetType) {
+    console.debug(
+      `Task ${taskSid} was created to receive a ${transferTargetType} transfer. The original contact will be used so a new one will not be created.`,
+    );
+    return false;
+  }
+  return true;
+};
 
 export const handleEvent = async (
   { getTwilioClient, HRM_STATIC_KEY, TWILIO_WORKSPACE_SID }: Context<EnvVars>,
-  event: EventFields,
+  { TaskAttributes: taskAttributesString, TaskSid: taskSid, WorkerSid: workerSid }: EventFields,
 ) => {
-  const { TaskAttributes: taskAttributesString, TaskSid: taskSid, WorkerSid: workerSid } = event;
   const taskAttributes = taskAttributesString ? JSON.parse(taskAttributesString) : {};
-  const { isContactlessTask, channelSid } = taskAttributes;
-
-  if (isContactlessTask) {
-    console.debug(`Task ${taskSid} is a contactless task, skipping contact creation.`);
-    return;
-  }
+  const { channelSid } = taskAttributes;
 
   const client = getTwilioClient();
   const serviceConfig = await client.flexApi.configuration.get().fetch();
@@ -162,9 +177,9 @@ export const handleEvent = async (
  * The taskrouter callback expects that all taskrouter listeners return
  * a default object of type TaskrouterListener.
  */
-const transfersListener: TaskrouterListener = {
+const createHrmContactListener: TaskrouterListener = {
   shouldHandle,
   handleEvent,
 };
 
-export default transfersListener;
+export default createHrmContactListener;
