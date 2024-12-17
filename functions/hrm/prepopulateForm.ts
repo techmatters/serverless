@@ -384,7 +384,7 @@ const populateContactSection = async (
   ) => Record<string, string | boolean>,
 ) => {
   console.debug('Populating', tabbedFormsSection);
-  console.debug('Keys', keys);
+  console.debug('Keys', Array.from(keys));
   console.debug('Using Values', valuesToPopulate);
 
   if (keys.size > 0) {
