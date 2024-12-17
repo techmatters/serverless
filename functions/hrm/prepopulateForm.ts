@@ -80,9 +80,14 @@ type ChannelTypes =
   | 'line'
   | 'modica';
 
+const callTypes = {
+  child: 'Child calling about self',
+  caller: 'Someone calling about a child',
+};
+
 type HrmContactRawJson = {
   definitionVersion?: string;
-  callType: string;
+  callType: typeof callTypes[keyof typeof callTypes];
   childInformation: Record<string, FormValue>;
   callerInformation: Record<string, FormValue>;
   caseInformation: Record<string, FormValue>;
@@ -410,6 +415,10 @@ export const prepopulateForm = async (
 
   const isValidSurvey = Boolean(answers?.aboutSelf); // determines if the memory has valid values or if it was aborted
   const isAboutSelf = answers.aboutSelf === 'Yes';
+  if (isValidSurvey) {
+    // eslint-disable-next-line no-param-reassign
+    contact.rawJson.callType = isAboutSelf ? callTypes.child : callTypes.caller;
+  }
   if (preEngagementData) {
     await populateContactSection(
       contact.rawJson.caseInformation,
