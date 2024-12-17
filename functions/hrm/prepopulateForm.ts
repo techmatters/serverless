@@ -125,6 +125,33 @@ export type HrmContact = {
 
 type FormValue = string | string[] | boolean | null;
 
+// This hardcoded logic should be moved into the form definition JSON or some other configuration
+const MANDATORY_CHATBOT_FIELDS = ['age', 'gender', 'ethnicity'];
+
+const CUSTOM_MAPPERS: Record<string, MapperFunction> = {
+  age:
+    (ageOptions: string[]) =>
+    (age: string): string => {
+      const ageInt = parseInt(age, 10);
+
+      const maxAge = ageOptions.find((e) => e.includes('>'));
+
+      if (maxAge) {
+        const maxAgeInt = parseInt(maxAge.replace('>', ''), 10);
+
+        if (ageInt >= 0 && ageInt <= maxAgeInt) {
+          return ageOptions.find((o) => parseInt(o, 10) === ageInt) || 'Unknown';
+        }
+
+        if (ageInt > maxAgeInt) return maxAge;
+      } else {
+        console.error('Pre populate form error: no maxAge option provided.');
+      }
+
+      return 'Unknown';
+    },
+};
+
 /**
  * Utility functions to create initial state from definition
  * @param {FormItemDefinition} def Definition for a single input of a Form
@@ -168,28 +195,6 @@ const getInitialValue = (def: FormItemDefinition): FormValue => {
       return null;
   }
 };
-
-const mapAge =
-  (ageOptions: string[]) =>
-  (age: string): string => {
-    const ageInt = parseInt(age, 10);
-
-    const maxAge = ageOptions.find((e) => e.includes('>'));
-
-    if (maxAge) {
-      const maxAgeInt = parseInt(maxAge.replace('>', ''), 10);
-
-      if (ageInt >= 0 && ageInt <= maxAgeInt) {
-        return ageOptions.find((o) => parseInt(o, 10) === ageInt) || 'Unknown';
-      }
-
-      if (ageInt > maxAgeInt) return maxAge;
-    } else {
-      console.error('Pre populate form error: no maxAge option provided.');
-    }
-
-    return 'Unknown';
-  };
 
 const mapGenericOption = (options: string[]) => (value: string) => {
   const validOption = options.find((e) => e.toLowerCase() === value.toLowerCase());
@@ -267,43 +272,39 @@ const getAnswerOrUnknown = (
 };
 
 const getValuesFromAnswers = (
-  prepopulateKeys: string[],
+  prepopulateKeys: Set<string>,
   tabFormDefinition: FormItemDefinition[],
   answers: any,
 ): Record<string, string> => {
   // Get values from task attributes
   const { firstName, language } = answers;
 
-  // Get required values from bot's memory
-  const age = getAnswerOrUnknown(answers, 'age', tabFormDefinition, mapAge);
-  const gender = getAnswerOrUnknown(answers, 'gender', tabFormDefinition);
-
-  // This field is not required yet it's bundled here as if it were. Leaving it from now but should we move it to prepopulateKeys where it's used?
-  const ethnicity = getAnswerOrUnknown(answers, 'ethnicity', tabFormDefinition);
-
   // Get the customizable values from the bot's memory if there's any value (defined in PrepopulateKeys.json)
-  const customizableValues = prepopulateKeys.reduce((accum, key) => {
-    const value = getAnswerOrUnknown(answers, key, tabFormDefinition);
+  const customizableValues = Array.from(prepopulateKeys).reduce((accum, key) => {
+    const value = getAnswerOrUnknown(
+      answers,
+      key,
+      tabFormDefinition,
+      CUSTOM_MAPPERS[key] || mapGenericOption,
+    );
     return value ? { ...accum, [key]: value } : accum;
   }, {});
 
   return {
     ...(firstName && { firstName }),
-    ...(gender && { gender }),
-    ...(age && { age }),
-    ...(ethnicity && { ethnicity }),
     ...(language && { language: capitalize(language) }),
     ...customizableValues,
   };
 };
 
 const getValuesFromPreEngagementData = (
-  prepopulateKeys: string[],
+  prepopulateKeySet: Set<string>,
   tabFormDefinition: FormItemDefinition[],
   preEngagementData: Record<string, string>,
 ) => {
   // Get values from task attributes
   const values: Record<string, string | boolean> = {};
+  const prepopulateKeys = Array.from(prepopulateKeySet);
   tabFormDefinition.forEach((field: FormItemDefinition) => {
     if (prepopulateKeys.indexOf(field.name) > -1) {
       if (['mixed-checkbox', 'checkbox'].includes(field.type)) {
@@ -373,11 +374,11 @@ const populateInitialValues = async (contact: HrmContact, formDefinitionRootUrl:
 const populateContactSection = async (
   target: Record<string, FormValue>,
   valuesToPopulate: Record<string, string>,
-  keys: string[],
+  keys: Set<string>,
   formDefinitionRootUrl: URL,
   tabbedFormsSection: 'CaseInformationTab' | 'ChildInformationTab' | 'CallerInformationTab',
   converter: (
-    keys: string[],
+    keys: Set<string>,
     formTabDefinition: FormItemDefinition[],
     values: Record<string, string>,
   ) => Record<string, string | boolean>,
@@ -386,7 +387,7 @@ const populateContactSection = async (
   console.debug('Keys', keys);
   console.debug('Using Values', valuesToPopulate);
 
-  if (keys.length > 0) {
+  if (keys.size > 0) {
     const childInformationTabDefinition = await loadConfigJson(
       formDefinitionRootUrl,
       `tabbedForms/${tabbedFormsSection}`,
@@ -413,7 +414,7 @@ export const prepopulateForm = async (
     await populateContactSection(
       contact.rawJson.caseInformation,
       preEngagementData,
-      preEngagementKeys.CaseInformationTab,
+      new Set<string>(preEngagementKeys.CaseInformationTab),
       formDefinitionRootUrl,
       'CaseInformationTab',
       getValuesFromPreEngagementData,
@@ -423,7 +424,7 @@ export const prepopulateForm = async (
       await populateContactSection(
         contact.rawJson.childInformation,
         preEngagementData,
-        preEngagementKeys.ChildInformationTab,
+        new Set<string>(preEngagementKeys.ChildInformationTab),
         formDefinitionRootUrl,
         'ChildInformationTab',
         getValuesFromPreEngagementData,
@@ -432,7 +433,7 @@ export const prepopulateForm = async (
       await populateContactSection(
         contact.rawJson.callerInformation,
         preEngagementData,
-        preEngagementKeys.CallerInformationTab,
+        new Set<string>(preEngagementKeys.CallerInformationTab),
         formDefinitionRootUrl,
         'CallerInformationTab',
         getValuesFromPreEngagementData,
@@ -445,7 +446,7 @@ export const prepopulateForm = async (
       await populateContactSection(
         contact.rawJson.childInformation,
         answers,
-        surveyKeys.ChildInformationTab,
+        new Set<string>([...MANDATORY_CHATBOT_FIELDS, ...surveyKeys.ChildInformationTab]),
         formDefinitionRootUrl,
         'ChildInformationTab',
         getValuesFromAnswers,
@@ -454,7 +455,7 @@ export const prepopulateForm = async (
       await populateContactSection(
         contact.rawJson.callerInformation,
         answers,
-        surveyKeys.CallerInformationTab,
+        new Set<string>([...MANDATORY_CHATBOT_FIELDS, ...surveyKeys.CallerInformationTab]),
         formDefinitionRootUrl,
         'CallerInformationTab',
         getValuesFromAnswers,
