@@ -231,4 +231,4 @@ jobs:
           token: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
           payload: |
             channel: ${{ env.ASELO_DEPLOYS_CHANNEL_ID }}
-            text: "`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:."
+            text: '`[SERVERLESS PARALLEL DEPLOYMENT]` Serverless helplines ${{ inputs.helplines }} successfully deployed to the following environments: ${{ inputs.environments }} from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` with SHA ${{ github.sha }} :rocket:.'
