@@ -371,7 +371,7 @@ const populateInitialValues = async (contact: HrmContact, formDefinitionRootUrl:
 };
 
 const populateContactSection = async (
-  contact: HrmContact,
+  target: Record<string, FormValue>,
   valuesToPopulate: Record<string, string>,
   keys: string[],
   formDefinitionRootUrl: URL,
@@ -382,15 +382,16 @@ const populateContactSection = async (
     values: Record<string, string>,
   ) => Record<string, string | boolean>,
 ) => {
+  console.debug('Populating', tabbedFormsSection);
+  console.debug('Keys', keys);
+  console.debug('Using Values', valuesToPopulate);
+
   if (keys.length > 0) {
     const childInformationTabDefinition = await loadConfigJson(
       formDefinitionRootUrl,
       `tabbedForms/${tabbedFormsSection}`,
     );
-    Object.assign(
-      contact.rawJson.childInformation,
-      converter(keys, childInformationTabDefinition, valuesToPopulate),
-    );
+    Object.assign(target, converter(keys, childInformationTabDefinition, valuesToPopulate));
   }
 };
 
@@ -407,10 +408,10 @@ export const prepopulateForm = async (
     await loadConfigJson(formDefinitionRootUrl, 'PrepopulateKeys');
 
   const isValidSurvey = Boolean(answers?.aboutSelf); // determines if the memory has valid values or if it was aborted
-  const isAboutSelf = !answers || answers.aboutSelf === 'Yes';
+  const isAboutSelf = answers.aboutSelf === 'Yes';
   if (preEngagementData) {
     await populateContactSection(
-      contact,
+      contact.rawJson.caseInformation,
       preEngagementData,
       preEngagementKeys.CaseInformationTab,
       formDefinitionRootUrl,
@@ -420,7 +421,7 @@ export const prepopulateForm = async (
 
     if (!isValidSurvey || isAboutSelf) {
       await populateContactSection(
-        contact,
+        contact.rawJson.childInformation,
         preEngagementData,
         preEngagementKeys.ChildInformationTab,
         formDefinitionRootUrl,
@@ -429,7 +430,7 @@ export const prepopulateForm = async (
       );
     } else {
       await populateContactSection(
-        contact,
+        contact.rawJson.callerInformation,
         preEngagementData,
         preEngagementKeys.CallerInformationTab,
         formDefinitionRootUrl,
@@ -442,7 +443,7 @@ export const prepopulateForm = async (
   if (isValidSurvey) {
     if (isAboutSelf) {
       await populateContactSection(
-        contact,
+        contact.rawJson.childInformation,
         answers,
         surveyKeys.ChildInformationTab,
         formDefinitionRootUrl,
@@ -451,7 +452,7 @@ export const prepopulateForm = async (
       );
     } else {
       await populateContactSection(
-        contact,
+        contact.rawJson.callerInformation,
         answers,
         surveyKeys.CallerInformationTab,
         formDefinitionRootUrl,
