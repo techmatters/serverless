@@ -140,6 +140,8 @@ export const handleEvent = async (
     taskId: taskSid as HrmContact['taskId'],
     channelSid: channelSid ?? '',
     serviceSid: (channelSid && serviceConfig.chatServiceInstanceSid) ?? '',
+    // We set createdBy to the workerSid because the contact is 'created' by the worker who accepts the task
+    createdBy: workerSid as HrmContact['createdBy'],
   };
 
   const prepopulatePath = Runtime.getFunctions()['hrm/prepopulateForm'].path;
