@@ -48,39 +48,28 @@ const isCreateContactTask = (
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
-  try {
-    const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
+  const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
+  const taskAttributes = JSON.parse(taskAttributesString);
 
-    console.log(`===== Executing CreateContactListener for event: ${eventType} =====`);
-    const taskAttributes = JSON.parse(taskAttributesString);
+  if (isCreateContactTask(eventType, taskAttributes)) {
+    console.log('Handling create contact...');
 
-    if (isCreateContactTask(eventType, taskAttributes)) {
-      console.log('Handling create contact...');
+    // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
+    const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
+    const addCustomerExternalId = require(handlerPath)
+      .addCustomerExternalId as AddCustomerExternalId;
+    await addCustomerExternalId(context, event);
 
-      // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
-      const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
-      const addCustomerExternalId = require(handlerPath)
-        .addCustomerExternalId as AddCustomerExternalId;
-      await addCustomerExternalId(context, event);
-
-      if ((taskAttributes.customChannelType || taskAttributes.channelType) === 'web') {
-        // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
-        const addTaskHandlerPath =
-          Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
-        const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
-          .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
-        await addTaskSidToChannelAttributes(context, event);
-      }
-
-      console.log('Finished handling create contact.');
-      return;
+    if ((taskAttributes.customChannelType || taskAttributes.channelType) === 'web') {
+      // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
+      const addTaskHandlerPath =
+        Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
+      const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
+        .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
+      await addTaskSidToChannelAttributes(context, event);
     }
 
-    console.log('===== CreateContactListener finished successfully =====');
-  } catch (err) {
-    console.log('===== CreateContactListener has failed =====');
-    console.log(String(err));
-    throw err;
+    console.log('Finished handling create contact.');
   }
 };
 

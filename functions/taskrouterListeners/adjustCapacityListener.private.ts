@@ -45,41 +45,30 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
  * @param event
  */
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
-  try {
-    const {
-      EventType: eventType,
-      WorkerSid: workerSid,
-      TaskChannelUniqueName: taskChannelUniqueName,
-    } = event;
-    if (taskChannelUniqueName !== 'chat') return;
-    console.log(`===== Executing AdjustCapacityListener for event: ${eventType} =====`);
-    const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
-    const {
-      feature_flags: {
-        enable_manual_pulling: enabledManualPulling,
-        enable_backend_manual_pulling: enableBackendManualPulling,
-      },
-    } = serviceConfig.attributes;
+  const { WorkerSid: workerSid, TaskChannelUniqueName: taskChannelUniqueName } = event;
+  if (taskChannelUniqueName !== 'chat') return;
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const {
+    feature_flags: {
+      enable_manual_pulling: enabledManualPulling,
+      enable_backend_manual_pulling: enableBackendManualPulling,
+    },
+  } = serviceConfig.attributes;
 
-    if (enabledManualPulling && enableBackendManualPulling) {
-      const { path } = Runtime.getFunctions().adjustChatCapacity;
+  if (enabledManualPulling && enableBackendManualPulling) {
+    const { path } = Runtime.getFunctions().adjustChatCapacity;
 
-      // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
-      const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
-      const body = {
-        workerSid,
-        adjustment: 'setTo1',
-      } as const;
+    // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
+    const adjustChatCapacity: AdjustChatCapacityType = require(path).adjustChatCapacity;
+    const body = {
+      workerSid,
+      adjustment: 'setTo1',
+    } as const;
 
-      await adjustChatCapacity(context, body);
-      console.log('===== AdjustCapacityListener successful =====');
-    } else {
-      console.log('===== AdjustCapacityListener skipped - flag not enabled =====');
-    }
-  } catch (err) {
-    console.log('===== AdjustCapacityListener has failed =====');
-    console.log(String(err));
-    throw err;
+    const { status, message } = await adjustChatCapacity(context, body);
+    console.log(`===== AdjustCapacityListener completed: status ${status}, '${message}' =====`);
+  } else {
+    console.log('===== AdjustCapacityListener skipped - flag not enabled =====');
   }
 };
 

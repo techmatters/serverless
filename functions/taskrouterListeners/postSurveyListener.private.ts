@@ -81,53 +81,44 @@ const isTriggerPostSurvey = (
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
-  try {
-    const {
-      EventType: eventType,
-      TaskChannelUniqueName: taskChannelUniqueName,
-      TaskSid: taskSid,
-      TaskAttributes: taskAttributesString,
-    } = event;
+  const {
+    EventType: eventType,
+    TaskChannelUniqueName: taskChannelUniqueName,
+    TaskSid: taskSid,
+    TaskAttributes: taskAttributesString,
+  } = event;
 
-    console.log(`===== Executing PostSurveyListener for event: ${eventType} =====`);
+  const taskAttributes = JSON.parse(taskAttributesString);
 
-    const taskAttributes = JSON.parse(taskAttributesString);
+  if (isTriggerPostSurvey(eventType, taskChannelUniqueName, taskAttributes)) {
+    console.log('Handling post survey trigger...');
+    const client = context.getTwilioClient();
+    console.log('taskAttributes', taskAttributes);
 
-    if (isTriggerPostSurvey(eventType, taskChannelUniqueName, taskAttributes)) {
-      console.log('Handling post survey trigger...');
-      const client = context.getTwilioClient();
-      console.log('taskAttributes', taskAttributes);
+    // This task is a candidate to trigger post survey. Check feature flags for the account.
+    const serviceConfig = await client.flexApi.configuration.get().fetch();
+    const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
-      // This task is a candidate to trigger post survey. Check feature flags for the account.
-      const serviceConfig = await client.flexApi.configuration.get().fetch();
-      const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
+    if (featureFlags.enable_post_survey) {
+      const { channelSid, conversationSid, channelType, customChannelType } = taskAttributes;
 
-      if (featureFlags.enable_post_survey) {
-        const { channelSid, conversationSid, channelType, customChannelType } = taskAttributes;
+      const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
 
-        const taskLanguage = getTaskLanguage(helplineLanguage)(taskAttributes);
+      const handlerPath = Runtime.getFunctions().postSurveyInit.path;
+      const postSurveyInitHandler = require(handlerPath)
+        .postSurveyInitHandler as PostSurveyInitHandler;
+      await postSurveyInitHandler(context, {
+        channelSid,
+        conversationSid,
+        taskSid,
+        taskLanguage,
+        channelType: customChannelType || channelType,
+      });
 
-        const handlerPath = Runtime.getFunctions().postSurveyInit.path;
-        const postSurveyInitHandler = require(handlerPath)
-          .postSurveyInitHandler as PostSurveyInitHandler;
-        await postSurveyInitHandler(context, {
-          channelSid,
-          conversationSid,
-          taskSid,
-          taskLanguage,
-          channelType: customChannelType || channelType,
-        });
-
-        console.log('Finished handling post survey trigger.');
-      } else {
-        console.log('Bypassing post survey trigger - they are disabled');
-      }
+      console.log('Finished handling post survey trigger.');
+    } else {
+      console.log('Bypassing post survey trigger - they are disabled');
     }
-    console.log('===== PostSurveyListener finished successfully =====');
-  } catch (err) {
-    console.log('===== PostSurveyListener has failed =====');
-    console.log(String(err));
-    throw err;
   }
 };
 
