@@ -25,7 +25,7 @@ import {
   RESERVATION_ACCEPTED,
   TaskrouterListener,
 } from '@tech-matters/serverless-helpers/taskrouter';
-import { HrmContact, PrepopulateForm } from '../hrm/prepopulateForm';
+import { HrmContact, PrepopulateForm } from '../hrm/populateHrmContactFormFromTask';
 
 export const eventTypes: EventType[] = [RESERVATION_ACCEPTED];
 
@@ -129,7 +129,7 @@ export const handleEvent = async (
   console.debug('Creating HRM contact for task', taskSid);
   const hrmBaseAccountUrl = `${hrmBaseUrl}/${hrmApiVersion}/accounts/${serviceConfig.accountSid}`;
 
-  const contactForApi: HrmContact = {
+  const newContact: HrmContact = {
     ...BLANK_CONTACT,
     channel: (customChannelType || channelType) as HrmContact['channel'],
     rawJson: {
@@ -144,12 +144,16 @@ export const handleEvent = async (
     createdBy: workerSid as HrmContact['createdBy'],
   };
 
-  const prepopulatePath = Runtime.getFunctions()['hrm/prepopulateForm'].path;
-  const { prepopulateForm } = require(prepopulatePath) as PrepopulateForm;
-  await prepopulateForm(taskAttributes, contactForApi, formDefinitionsVersionUrl);
+  const prepopulatePath = Runtime.getFunctions()['hrm/populateHrmContactFormFromTask'].path;
+  const { populateHrmContactFormFromTask } = require(prepopulatePath) as PrepopulateForm;
+  const populatedContact = await populateHrmContactFormFromTask(
+    taskAttributes,
+    newContact,
+    formDefinitionsVersionUrl,
+  );
   const options: RequestInit = {
     method: 'POST',
-    body: JSON.stringify(contactForApi),
+    body: JSON.stringify(populatedContact),
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Basic ${HRM_STATIC_KEY}`,

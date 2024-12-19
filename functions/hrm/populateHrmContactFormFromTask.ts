@@ -401,7 +401,7 @@ const populateContactSection = async (
   }
 };
 
-export const prepopulateForm = async (
+export const populateHrmContactFormFromTask = async (
   taskAttributes: Record<string, any>,
   contact: HrmContact,
   formDefinitionRootUrl: URL,
@@ -474,4 +474,6 @@ export const prepopulateForm = async (
   return contact;
 };
 
-export type PrepopulateForm = { prepopulateForm: typeof prepopulateForm };
+export type PrepopulateForm = {
+  populateHrmContactFormFromTask: typeof populateHrmContactFormFromTask;
+};
