@@ -31,6 +31,12 @@ const LISTENERS_FOLDER = 'taskrouterListeners/';
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
+  DELEGATE_WEBHOOK_URL: string;
+  ACCOUNT_SID: string;
+};
+
+type EventFieldsWithRequest = EventFields & {
+  request: { headers: Record<string, string | string[]> };
 };
 
 /**
@@ -45,13 +51,13 @@ const getListeners = (): [string, TaskrouterListener][] => {
 
 const runTaskrouterListeners = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  event: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const listeners = getListeners();
 
-  await Promise.all(
-    listeners
+  await Promise.all([
+    ...listeners
       .filter(([, listener]) => listener.shouldHandle(event))
       .map(async ([path, listener]) => {
         console.debug(
@@ -66,12 +72,24 @@ const runTaskrouterListeners = async (
           `===== Successfully executed listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
         );
       }),
-  );
+    async () => {
+      if (context.DELEGATE_WEBHOOK_URL) {
+        return fetch(`${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`, {
+          method: 'POST',
+          headers: {
+            'X-Original-Webhook-Url': `https//:${context.DOMAIN_NAME}${context.PATH}`,
+            ...event.request.headers,
+          },
+        });
+      }
+      return Promise.resolve();
+    },
+  ]);
 };
 
 export const handler = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  event: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const response = responseWithCors();
