@@ -56,7 +56,7 @@ const runTaskrouterListeners = async (
 ) => {
   const listeners = getListeners();
   await Promise.all([
-    async () => {
+    () => {
       console.debug('Checking forwarding event to delegate webhook');
       if (context.DELEGATE_WEBHOOK_URL) {
         const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
@@ -84,11 +84,11 @@ const runTaskrouterListeners = async (
         } catch (err) {
           console.error(`===== Listener at ${path} has failed, aborting =====`, err);
         }
-        console.info(
-          `===== Successfully executed listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
-        );
       }),
   ]);
+  console.info(
+    `===== Successfully executed all listeners for event: ${event.EventType}, task: ${event.TaskSid} =====`,
+  );
 };
 
 export const handler = async (
