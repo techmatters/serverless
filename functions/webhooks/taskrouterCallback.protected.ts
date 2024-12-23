@@ -56,8 +56,20 @@ const runTaskrouterListeners = async (
 ) => {
   const listeners = getListeners();
 
-  await Promise.all([
-    ...listeners
+  if (context.DELEGATE_WEBHOOK_URL) {
+    const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
+    console.info('Forwarding event to delegate webhook:', delegateUrl);
+    // Fire and forget
+    fetch(delegateUrl, {
+      method: 'POST',
+      headers: {
+        'X-Original-Webhook-Url': `https//:${context.DOMAIN_NAME}${context.PATH}`,
+        ...event.request.headers,
+      },
+    });
+  }
+  await Promise.all(
+    listeners
       .filter(([, listener]) => listener.shouldHandle(event))
       .map(async ([path, listener]) => {
         console.debug(
@@ -72,21 +84,7 @@ const runTaskrouterListeners = async (
           `===== Successfully executed listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
         );
       }),
-    async () => {
-      if (context.DELEGATE_WEBHOOK_URL) {
-        const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
-        console.info('Forwarding event to delegate webhook:', delegateUrl);
-        return fetch(delegateUrl, {
-          method: 'POST',
-          headers: {
-            'X-Original-Webhook-Url': `https//:${context.DOMAIN_NAME}${context.PATH}`,
-            ...event.request.headers,
-          },
-        });
-      }
-      return Promise.resolve();
-    },
-  ]);
+  );
 };
 
 export const handler = async (
