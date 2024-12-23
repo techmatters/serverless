@@ -58,7 +58,7 @@ const runTaskrouterListeners = async (
   const delegatePromise: Promise<any> = Promise.resolve();
   if (context.DELEGATE_WEBHOOK_URL) {
     const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
-    console.info('Forwarding event to delegate webhook:', delegateUrl);
+    console.info('Forwarding event to delegate webhook:', delegateUrl, event);
     // Fire and forget
     return fetch(delegateUrl, {
       method: 'POST',
