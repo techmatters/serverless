@@ -51,21 +51,21 @@ const getListeners = (): [string, TaskrouterListener][] => {
 
 const runTaskrouterListeners = async (
   context: Context<EnvVars>,
-  event: EventFieldsWithRequest,
+  { request, ...event }: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const listeners = getListeners();
-  const delegatePromise: Promise<any> = Promise.resolve();
+  let delegatePromise: Promise<any> = Promise.resolve();
   if (context.DELEGATE_WEBHOOK_URL) {
     const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
     console.info('Forwarding event to delegate webhook:', delegateUrl, event);
     console.info('Forwarding event to delegate webhook:', JSON.stringify(event));
     // Fire and forget
-    return fetch(delegateUrl, {
+    delegatePromise = fetch(delegateUrl, {
       method: 'POST',
       headers: {
         'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
-        ...event.request.headers,
+        ...request.headers,
       },
       body: JSON.stringify(event),
     });
