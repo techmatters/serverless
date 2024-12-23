@@ -55,24 +55,22 @@ const runTaskrouterListeners = async (
   callback: ServerlessCallback,
 ) => {
   const listeners = getListeners();
+  const delegatePromise: Promise<any> = Promise.resolve();
+  if (context.DELEGATE_WEBHOOK_URL) {
+    const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
+    console.info('Forwarding event to delegate webhook:', delegateUrl);
+    // Fire and forget
+    return fetch(delegateUrl, {
+      method: 'POST',
+      headers: {
+        'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
+        ...event.request.headers,
+      },
+      body: JSON.stringify(event),
+    });
+  }
   await Promise.all([
-    () => {
-      console.debug('Checking forwarding event to delegate webhook');
-      if (context.DELEGATE_WEBHOOK_URL) {
-        const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
-        console.info('Forwarding event to delegate webhook:', delegateUrl);
-        // Fire and forget
-        return fetch(delegateUrl, {
-          method: 'POST',
-          headers: {
-            'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
-            ...event.request.headers,
-          },
-          body: JSON.stringify(event),
-        });
-      }
-      return Promise.resolve();
-    },
+    delegatePromise,
     ...listeners
       .filter(([, listener]) => listener.shouldHandle(event))
       .map(async ([path, listener]) => {
@@ -89,6 +87,7 @@ const runTaskrouterListeners = async (
   console.info(
     `===== Successfully executed all listeners for event: ${event.EventType}, task: ${event.TaskSid} =====`,
   );
+  return null;
 };
 
 export const handler = async (
