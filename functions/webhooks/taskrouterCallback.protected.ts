@@ -57,6 +57,7 @@ const runTaskrouterListeners = async (
   const listeners = getListeners();
   await Promise.all([
     async () => {
+      console.debug('Checking forwarding event to delegate webhook');
       if (context.DELEGATE_WEBHOOK_URL) {
         const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
         console.info('Forwarding event to delegate webhook:', delegateUrl);
