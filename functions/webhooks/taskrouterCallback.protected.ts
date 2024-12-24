@@ -60,15 +60,16 @@ const runTaskrouterListeners = async (
     const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
     console.info('Forwarding event to delegate webhook:', delegateUrl, event);
     console.info('Forwarding event to delegate webhook:', JSON.stringify(event));
+    console.info('Forwarding headers to delegate webhook:', JSON.stringify(request.headers));
     // Fire and forget
     delegatePromise = fetch(delegateUrl, {
       method: 'POST',
       headers: {
-        'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
         ...request.headers,
+        'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(event),
+      // body: JSON.stringify(event),
     });
   }
   await Promise.all([
