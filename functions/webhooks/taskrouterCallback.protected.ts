@@ -66,8 +66,9 @@ const runTaskrouterListeners = async (
       headers: {
         'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
         ...request.headers,
+        'Content-Type': 'application/json',
       },
-      body: '{}', // JSON.stringify(event),
+      body: JSON.stringify(event),
     });
   }
   await Promise.all([
