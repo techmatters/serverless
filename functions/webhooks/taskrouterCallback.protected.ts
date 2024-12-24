@@ -58,18 +58,22 @@ const runTaskrouterListeners = async (
   let delegatePromise: Promise<any> = Promise.resolve();
   if (context.DELEGATE_WEBHOOK_URL) {
     const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
-    console.info('Forwarding event to delegate webhook:', delegateUrl, event);
-    console.info('Forwarding event to delegate webhook:', JSON.stringify(event));
-    console.info('Forwarding headers to delegate webhook:', JSON.stringify(request.headers));
+    const forwardedHeaderEntries = Object.entries(request.headers).filter(
+      ([key]) => key.toLowerCase().startsWith('x-') || key.toLowerCase().startsWith('t-'),
+    );
+    const delegateHeaders = {
+      ...Object.fromEntries(forwardedHeaderEntries),
+      'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
+      'Content-Type': 'application/json',
+    };
+    console.info('Forwarding to delegate webhook:', delegateUrl);
+    console.info('event:', event);
+    console.debug('headers:', delegateHeaders);
     // Fire and forget
     delegatePromise = fetch(delegateUrl, {
       method: 'POST',
-      headers: {
-        ...request.headers,
-        'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
-        'Content-Type': 'application/json',
-      },
-      // body: JSON.stringify(event),
+      headers: delegateHeaders,
+      body: JSON.stringify(event),
     });
   }
   await Promise.all([
