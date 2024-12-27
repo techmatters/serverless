@@ -74,11 +74,6 @@ runs:
       with:
         ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_105220114492262_Aselo-Development"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
-    - name: Set helpline Instagram Flex Flow SID
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "DEV_TWILIO_AS_INSTAGRAM_FLEX_FLOW_SID"
-        env_variable_name: "INSTAGRAM_FLEX_FLOW_SID"
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -90,11 +85,6 @@ runs:
         ssm_parameter: "/development/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
     # Line environment variables
-    - name: Set helpline Line Flex Flow SID
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "DEV_TWILIO_AS_LINE_FLEX_FLOW_SID"
-        env_variable_name: "LINE_FLEX_FLOW_SID"
     - name: Set Line Channel Secret
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -126,11 +116,6 @@ runs:
       with:
         ssm_parameter: "/development/modica/${{inputs.account-sid}}/app_password"
         env_variable_name: "MODICA_APP_PASSWORD"
-    - name: Set Modica Flex Flow Sid
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "/development/twilio/${{inputs.account-sid}}/modica_flex_flow_sid"
-        env_variable_name: "MODICA_FLEX_FLOW_SID"
     - name: Set helpline Modica Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -203,17 +188,11 @@ runs:
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN }}" >> .env
       shell: bash
-    - name: Add INSTAGRAM_FLEX_FLOW_SID
-      run: echo "INSTAGRAM_FLEX_FLOW_SID=${{ env.INSTAGRAM_FLEX_FLOW_SID }}" >> .env
-      shell: bash
     - name: Add INSTAGRAM_STUDIO_FLOW_SID
       run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
       run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
-      shell: bash
-    - name: Add LINE_FLEX_FLOW_SID
-      run: echo "LINE_FLEX_FLOW_SID=${{ env.LINE_FLEX_FLOW_SID }}" >> .env
       shell: bash
     - name: Add LINE_CHANNEL_SECRET
       run: echo "LINE_CHANNEL_SECRET=${{ env.LINE_CHANNEL_SECRET }}" >> .env
@@ -233,9 +212,6 @@ runs:
     - name: Add MODICA_APP_PASSWORD
       run: echo "MODICA_APP_PASSWORD=${{ env.MODICA_APP_PASSWORD }}" >> .env
       shell: bash
-    - name: Add MODICA_FLEX_FLOW_SID
-      run: echo "MODICA_FLEX_FLOW_SID=${{ env.MODICA_FLEX_FLOW_SID }}" >> .env
-      shell: bash
     - name: Add MODICA_STUDIO_FLOW_SID
       run: echo "MODICA_STUDIO_FLOW_SID=${{ env.MODICA_STUDIO_FLOW_SID }}" >> .env
       shell: bash
@@ -254,4 +230,9 @@ runs:
 
     - name: Add MODICA_TEST_SEND_MESSAGE_URL
       run: echo "MODICA_TEST_SEND_MESSAGE_URL=${{ env.MODICA_TEST_SEND_MESSAGE_URL }}" >> .env
+      shell: bash
+
+
+    - name: Add DELEGATE_WEBHOOK_URL
+      run: echo "DELEGATE_WEBHOOK_URL=https://hrm-development.tl.techmatters.org/lambda/twilio/account-scoped" >> .env
       shell: bash
