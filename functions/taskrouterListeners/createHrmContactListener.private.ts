@@ -22,12 +22,14 @@ import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import {
   EventFields,
   EventType,
-  RESERVATION_ACCEPTED,
+  // RESERVATION_ACCEPTED,
   TaskrouterListener,
 } from '@tech-matters/serverless-helpers/taskrouter';
 import { HrmContact, PrepopulateForm } from '../hrm/populateHrmContactFormFromTask';
 
-export const eventTypes: EventType[] = [RESERVATION_ACCEPTED];
+export const eventTypes: EventType[] = [
+  /* RESERVATION_ACCEPTED */
+];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
