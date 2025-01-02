@@ -75,7 +75,9 @@ const trimSpaces = (s: string) => s.replace(' ', '');
 
 type TransformIdentifierFunction = (c: string) => string;
 const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
-  voice: [trimSpaces],
+  // If the Aselo Connector is being used, we might get a voice From that looks like
+  // 'sip:+2601234567@41.52.63.73'. This regexp should normalize the string.
+  voice: [(s) => s.includes('sip:') ? s.match(/sip:([^\@]+)/)?.[1] || '' : s, trimSpaces],
   sms: [trimSpaces],
   whatsapp: [(s) => s.replace('whatsapp:', ''), trimSpaces],
   modica: [(s) => s.replace('modica:', ''), trimSpaces],
