@@ -34,7 +34,7 @@ type EnvVars = {
 };
 
 export type Body = {
-  taskSid?: string;
+  // taskSid?: string;
   originalQueueSid?: string;
   targetSid?: string;
   request: { cookies: {}; headers: {} };
@@ -82,14 +82,14 @@ export const handler = TokenValidator(
         return;
       }
 
-      const { taskSid, originalQueueSid } = event;
+      const { originalQueueSid } = event;
 
       // Ensure taskSid is provided
-      if (taskSid === undefined) {
-        console.error('taskSid is undefined.');
-        resolve(error400('taskSid is undefined'));
-        return;
-      }
+      // if (taskSid === undefined) {
+      //   console.error('taskSid is undefined.');
+      //   resolve(error400('taskSid is undefined'));
+      //   return;
+      // }
 
       // Initialize Twilio TaskRouter client
       const taskRouterClient = context
