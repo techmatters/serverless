@@ -103,7 +103,6 @@ export const handler = TokenValidator(
       }
       console.log(`>>> Original Queue: ${originalQueue.friendlyName}, SID: ${originalQueue.sid}`);
 
-
       const workflows = await taskRouterClient.workflows.list();
       const masterWorkflow = workflows.find(
         (workflow) => workflow.friendlyName === 'Master Workflow',
@@ -118,8 +117,8 @@ export const handler = TokenValidator(
         return;
       }
 
-      const masterConfiguration = JSON.parse(masterWorkflow.configuration);
-      const transferConfiguration = JSON.parse(transferWorkflow.configuration);
+      const masterConfiguration = masterWorkflow.configuration;
+      const transferConfiguration = transferWorkflow.configuration;
       console.log('>>> masterWorkflow.configuration, ', masterConfiguration);
       console.log('>>> transferWorkflow.configuration, ', transferConfiguration);
       // Update the workflow to redirect tasks to the Switchboarding queue
