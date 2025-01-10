@@ -116,6 +116,15 @@ export const handler = TokenValidator(
         `>>> Switchboard Queue Found: ${switchboardQueue.friendlyName}, SID: ${switchboardQueue.sid}`,
       );
 
+      const originalQueue = queues.find((queue) => queue.sid === originalQueueSid);
+
+      if (!originalQueue) {
+        console.error('Original Queue not found.');
+        resolve(error400('Original Queue not found'));
+        return;
+      }
+      console.log(`>>> Original Queue: ${originalQueue.friendlyName}, SID: ${originalQueue.sid}`);
+
       // Update the workflow to redirect tasks to the Switchboarding queue
       await taskRouterClient
         .workflows(context.TWILIO_WORKFLOW_SID)
@@ -124,7 +133,7 @@ export const handler = TokenValidator(
             task_routing: {
               filters: [
                 {
-                  filter_friendly_name: 'Switchboarding',
+                  filter_friendly_name: 'Switchboard Queue',
                   expression: '1==1', // This will match all tasks
                   targets: [
                     {
