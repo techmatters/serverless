@@ -108,6 +108,16 @@ export const handler = TokenValidator(
         })),
       );
       const workflows = await taskRouterClient.workflows.list();
+      const masterWorkflow = workflows.find(
+        (workflow) => workflow.friendlyName === 'Master Workflow',
+      );
+
+      if (!masterWorkflow) {
+        console.error('Master Workflow not found.');
+        resolve(error400('Master Workflow not found'));
+        return;
+      }
+
       console.log(
         'Workflows:',
         workflows.map((workflow) => ({
@@ -141,7 +151,7 @@ export const handler = TokenValidator(
 
       // Update the workflow to redirect tasks to the Switchboarding queue
       await taskRouterClient
-        .workflows(context.TWILIO_WORKFLOW_SID)
+        .workflows(masterWorkflow.sid)
         .update({
           configuration: JSON.stringify({
             task_routing: {
