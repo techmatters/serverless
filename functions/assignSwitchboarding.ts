@@ -98,10 +98,24 @@ export const handler = TokenValidator(
 
       // Get list of queues and workflows
       const queues = await taskRouterClient.taskQueues.list();
-      const workflows = await taskRouterClient.workflows.list();
 
-      console.log('>>> Queues:', queues);
-      console.log('>>> Workflows:', workflows);
+      console.log(
+        'Queues:',
+        queues.map((queue) => ({
+          sid: queue.sid,
+          friendlyName: queue.friendlyName,
+          targetWorkers: queue.targetWorkers,
+        })),
+      );
+      const workflows = await taskRouterClient.workflows.list();
+      console.log(
+        'Workflows:',
+        workflows.map((workflow) => ({
+          sid: workflow.sid,
+          friendlyName: workflow.friendlyName,
+          configuration: workflow.configuration,
+        })),
+      );
 
       // Find the Switchboard Queue
       const switchboardQueue = queues.find((queue) => queue.friendlyName === 'Switchboard Queue');
