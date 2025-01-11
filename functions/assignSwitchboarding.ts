@@ -117,10 +117,12 @@ export const handler = TokenValidator(
         return;
       }
 
-      const masterConfiguration = masterWorkflow.configuration;
-      const transferConfiguration = transferWorkflow.configuration;
-      console.log('>>> masterWorkflow.configuration, ', masterConfiguration);
-      console.log('>>> transferWorkflow.configuration, ', transferConfiguration);
+      const masterConfiguration = JSON.stringify(masterWorkflow.configuration, null, 2);
+      const transferConfiguration = JSON.stringify(transferWorkflow.configuration, null, 2);
+
+      console.log(`>>> Master Workflow Configuration: ${masterConfiguration}`);
+      console.log(`>>> Transfer Workflow Configuration: ${transferConfiguration}`);
+
       // Update the workflow to redirect tasks to the Switchboarding queue
       // await taskRouterClient
       //   .workflows(masterWorkflow.sid)
