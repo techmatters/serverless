@@ -31,6 +31,12 @@ const LISTENERS_FOLDER = 'taskrouterListeners/';
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
+  DELEGATE_WEBHOOK_URL: string;
+  ACCOUNT_SID: string;
+};
+
+type EventFieldsWithRequest = EventFields & {
+  request: { headers: Record<string, string | string[]> };
 };
 
 /**
@@ -45,13 +51,34 @@ const getListeners = (): [string, TaskrouterListener][] => {
 
 const runTaskrouterListeners = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  { request, ...event }: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const listeners = getListeners();
-
-  await Promise.all(
-    listeners
+  let delegatePromise: Promise<any> = Promise.resolve();
+  if (context.DELEGATE_WEBHOOK_URL) {
+    const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
+    const forwardedHeaderEntries = Object.entries(request.headers).filter(
+      ([key]) => key.toLowerCase().startsWith('x-') || key.toLowerCase().startsWith('t-'),
+    );
+    const delegateHeaders = {
+      ...Object.fromEntries(forwardedHeaderEntries),
+      'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
+      'Content-Type': 'application/json',
+    };
+    console.info('Forwarding to delegate webhook:', delegateUrl);
+    console.info('event:', event);
+    console.debug('headers:', delegateHeaders);
+    // Fire and forget
+    delegatePromise = fetch(delegateUrl, {
+      method: 'POST',
+      headers: delegateHeaders,
+      body: JSON.stringify(event),
+    });
+  }
+  await Promise.all([
+    delegatePromise,
+    ...listeners
       .filter(([, listener]) => listener.shouldHandle(event))
       .map(async ([path, listener]) => {
         console.debug(
@@ -62,16 +89,17 @@ const runTaskrouterListeners = async (
         } catch (err) {
           console.error(`===== Listener at ${path} has failed, aborting =====`, err);
         }
-        console.info(
-          `===== Successfully executed listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
-        );
       }),
+  ]);
+  console.info(
+    `===== Successfully executed all listeners for event: ${event.EventType}, task: ${event.TaskSid} =====`,
   );
+  return null;
 };
 
 export const handler = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  event: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const response = responseWithCors();
