@@ -32,8 +32,6 @@ type Response = {
   updatedTask?: TaskInstance;
 };
 
-const TASK_CREATED_EVENT = 'task.created';
-
 const logAndReturnError = (
   taskSid: TaskInstance['sid'],
   workspaceSid: EnvVars['TWILIO_WORKSPACE_SID'],
@@ -51,14 +49,7 @@ export const addCustomerExternalId = async (
 ): Promise<Response> => {
   console.log('-------- addCustomerExternalId execution --------');
 
-  const { EventType, TaskSid } = event;
-
-  const isNewTask = EventType === TASK_CREATED_EVENT;
-
-  if (!isNewTask) {
-    return { message: `Event is not ${TASK_CREATED_EVENT}` };
-  }
-
+  const { TaskSid } = event;
   if (!event.TaskSid) throw new Error('TaskSid missing in event object');
 
   let task: TaskInstance;

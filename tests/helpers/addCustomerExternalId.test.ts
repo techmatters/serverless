@@ -126,12 +126,16 @@ test('Should return OK (modify live contact)', async () => {
   });
 });
 
-test('Should return status 200 (ignores other events)', async () => {
+test('Should return status 200 (accepts other events)', async () => {
   const event: Body = {
     EventType: 'other.event',
     TaskSid: 'live-contact',
   };
 
   const result = await addCustomerExternalId(baseContext, event);
-  expect(result.message).toBe('Event is not task.created');
+  expect(result.message).toBe('Task updated');
+  expect(JSON.parse(result.updatedTask!.attributes)).toEqual({
+    ...liveAttributes,
+    customers: { ...liveAttributes.customers, external_id: 'live-contact' },
+  });
 });
