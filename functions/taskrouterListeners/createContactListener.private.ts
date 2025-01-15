@@ -59,6 +59,9 @@ export const shouldHandle = (event: EventFields) => eventTypes.includes(event.Ev
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
   const taskAttributes = JSON.parse(taskAttributesString);
+  const flexConfig = await context.getTwilioClient().flexApi.v1.configuration.get().fetch();
+  const { feature_flags: featureFlags } = flexConfig.attributes;
+  if (featureFlags.lambda_task_created_handler) return;
   if (isTaskRequiringExternalId(taskAttributes)) {
     if (eventType === TASK_CREATED) {
       console.debug(
