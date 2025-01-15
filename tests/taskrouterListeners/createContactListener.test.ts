@@ -170,7 +170,7 @@ describe('Create contact', () => {
 
     await contactListener.handleEvent(context, event);
 
-    expect(addCustomerExternalIdMock).toHaveBeenCalledWith(context, event);
-    expect(addTaskSidToChannelAttributesMock).toHaveBeenCalledWith(context, event);
+    expect(addCustomerExternalIdMock).not.toHaveBeenCalledWith(context, event);
+    expect(addTaskSidToChannelAttributesMock).not.toHaveBeenCalledWith(context, event);
   });
 });
