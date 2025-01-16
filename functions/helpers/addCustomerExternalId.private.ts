@@ -38,8 +38,8 @@ const logAndReturnError = (
   step: 'fetch' | 'update',
   errorInstance: unknown,
 ) => {
-  const errorMessage = `Error at addCustomerExternalId: task with sid ${taskSid} does not exists in workspace ${workspaceSid} when trying to ${step} it.`;
-  console.info(errorMessage, errorInstance);
+  const errorMessage = `Error at addCustomerExternalId: task with sid ${taskSid} in workspace ${workspaceSid} when trying to ${step} it.`;
+  console.error(errorMessage, errorInstance);
   return { message: errorMessage };
 };
 
