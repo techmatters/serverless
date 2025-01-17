@@ -231,8 +231,3 @@ runs:
     - name: Add MODICA_TEST_SEND_MESSAGE_URL
       run: echo "MODICA_TEST_SEND_MESSAGE_URL=${{ env.MODICA_TEST_SEND_MESSAGE_URL }}" >> .env
       shell: bash
-
-
-    - name: Add DELEGATE_WEBHOOK_URL
-      run: echo "DELEGATE_WEBHOOK_URL=https://hrm-development.tl.techmatters.org/lambda/twilio/account-scoped" >> .env
-      shell: bash

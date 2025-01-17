@@ -56,8 +56,13 @@ const runTaskrouterListeners = async (
 ) => {
   const listeners = getListeners();
   let delegatePromise: Promise<any> = Promise.resolve();
-  if (context.DELEGATE_WEBHOOK_URL) {
-    const delegateUrl = `${context.DELEGATE_WEBHOOK_URL}/${context.ACCOUNT_SID}${context.PATH}`;
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const {
+    feature_flags: { enable_task_router_event_delegation: enableTaskRouterEventDelegation },
+    hrm_base_url: hrmBaseUrl,
+  } = serviceConfig.attributes;
+  if (enableTaskRouterEventDelegation) {
+    const delegateUrl = `${hrmBaseUrl}/lambda/twilio/account-scoped/${context.ACCOUNT_SID}${context.PATH}`;
     const forwardedHeaderEntries = Object.entries(request.headers).filter(
       ([key]) => key.toLowerCase().startsWith('x-') || key.toLowerCase().startsWith('t-'),
     );
