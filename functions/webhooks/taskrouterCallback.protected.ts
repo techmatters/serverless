@@ -73,7 +73,7 @@ const runTaskrouterListeners = async (
     };
     console.info('Forwarding to delegate webhook:', delegateUrl);
     console.info('event:', event);
-    console.debug('headers:', delegateHeaders);
+    console.debug('headers:', JSON.stringify(request.headers));
     // Fire and forget
     delegatePromise = fetch(delegateUrl, {
       method: 'POST',

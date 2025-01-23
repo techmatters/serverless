@@ -23,7 +23,9 @@ import {
 import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { mock } from 'jest-mock-extended';
 
+import { Twilio } from 'twilio';
 import * as contactListener from '../../functions/taskrouterListeners/createContactListener.private';
+import { RecursivePartial } from '../helpers';
 
 const functions = {
   'helpers/addCustomerExternalId': {
@@ -34,6 +36,18 @@ const functions = {
   },
 };
 global.Runtime.getFunctions = () => functions;
+
+const mockFetchFlexApiConfig = jest.fn();
+
+const mockClient: RecursivePartial<Twilio> = {
+  flexApi: {
+    v1: {
+      configuration: {
+        get: () => ({ fetch: mockFetchFlexApiConfig }),
+      },
+    },
+  },
+};
 
 const facebookTaskAttributes = {
   isContactlessTask: false,
@@ -55,10 +69,11 @@ type EnvVars = {
   CHAT_SERVICE_SID: string;
 };
 
-const context = {
+const context: Context<EnvVars> = {
   ...mock<Context<EnvVars>>(),
   TWILIO_WORKSPACE_SID: 'WSxxx',
   CHAT_SERVICE_SID: 'CHxxx',
+  getTwilioClient: () => mockClient as Twilio,
 };
 
 const addCustomerExternalIdMock = jest.fn();
@@ -77,6 +92,11 @@ beforeEach(() => {
       virtual: true,
     },
   );
+  mockFetchFlexApiConfig.mockResolvedValue({
+    attributes: {
+      feature_flags: {},
+    },
+  });
 });
 
 afterEach(() => {
@@ -123,7 +143,7 @@ describe('Create contact', () => {
     expect(addTaskSidToChannelAttributesMock).not.toHaveBeenCalled();
   });
 
-  test('task wrapup do not add customerExternalId', async () => {
+  test('other event than task created adds customerExternalId but does not add task SID to channel attributes', async () => {
     const event = {
       ...mock<EventFields>(),
       EventType: TASK_WRAPUP as EventType,
@@ -132,7 +152,25 @@ describe('Create contact', () => {
 
     await contactListener.handleEvent(context, event);
 
-    expect(addCustomerExternalIdMock).not.toHaveBeenCalled();
+    expect(addCustomerExternalIdMock).toHaveBeenCalled();
     expect(addTaskSidToChannelAttributesMock).not.toHaveBeenCalled();
+  });
+
+  test('does nothing if lambda_task_created_handler is set', async () => {
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_CREATED as EventType,
+      TaskAttributes: JSON.stringify(webTaskAttributes),
+    };
+    mockFetchFlexApiConfig.mockResolvedValue({
+      attributes: {
+        feature_flags: { lambda_task_created_handler: true },
+      },
+    });
+
+    await contactListener.handleEvent(context, event);
+
+    expect(addCustomerExternalIdMock).not.toHaveBeenCalledWith(context, event);
+    expect(addTaskSidToChannelAttributesMock).not.toHaveBeenCalledWith(context, event);
   });
 });
