@@ -94,12 +94,27 @@ export const handler = TokenValidator(
         return;
       }
       try {
-        const result = await context
+        const reservations = await context
+          .getTwilioClient()
+          .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+          .tasks(event.taskSid)
+          .reservations.list();
+
+        console.log('>>> getTask reservations', reservations);
+
+        reservations.forEach((reservation) => {
+          console.log('>>> getTask reservation', reservation);
+        });
+
+        const tasks = await context
           .getTwilioClient()
           .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(event.taskSid)
           .fetch();
-        resolve(success(result));
+
+        console.log('>>> tasks', tasks);
+
+        resolve(success(tasks));
       } catch (err) {
         const error = err as Error;
         if (
