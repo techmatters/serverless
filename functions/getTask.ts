@@ -103,18 +103,18 @@ export const handler = TokenValidator(
         console.log('>>> getTask reservations', reservations);
 
         reservations.forEach((reservation) => {
-          console.log('>>> getTask reservation', reservation);
+          console.log('>>> getTask reservation', reservation.sid);
         });
 
-        const tasks = await context
+        const task = await context
           .getTwilioClient()
           .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(event.taskSid)
           .fetch();
 
-        console.log('>>> tasks', tasks);
+        console.log('>>> task', task);
 
-        resolve(success(tasks));
+        resolve(success({ task, reservationSid: reservations[0].sid }));
       } catch (err) {
         const error = err as Error;
         if (
