@@ -123,7 +123,13 @@ export const handler = TokenValidator(
             /The requested resource \/Workspaces\/WS[a-z0-9]+\/Tasks\/WT[a-z0-9]+ was not found/,
           )
         ) {
-          resolve(send(404)({ message: error.message }));
+          resolve(
+            success({
+              task: undefined,
+              reservationSid: undefined,
+            }),
+          );
+          return;
         }
         resolve(error500(error));
       }
