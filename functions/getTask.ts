@@ -56,6 +56,21 @@ export type Body = {
 
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
+const getReservation = async (context: Context<EnvVars>, taskSid: string) => {
+  try {
+    const reservations = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskSid)
+      .reservations.list();
+
+    return reservations?.length > 0 ? reservations[0].sid : undefined;
+  } catch (err) {
+    console.error('Failed to fetch reservations:', err);
+    return undefined;
+  }
+};
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
@@ -84,39 +99,23 @@ export const handler = TokenValidator(
         resolve(
           error403(`Unauthorized: endpoint not open to non supervisors. ${isSupervisorToken}`),
         );
-        return;
       }
 
       const { taskSid } = event;
 
       if (taskSid === undefined) {
         resolve(error400('taskSid is undefined'));
-        return;
       }
+
       try {
-        const reservations = await context
-          .getTwilioClient()
-          .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(event.taskSid)
-          .reservations.list();
-
-        console.log('>>> getTask reservations', reservations);
-
-        reservations.forEach((reservation) => {
-          console.log('>>> getTask reservation', reservation.sid);
-        });
-
         const task = await context
           .getTwilioClient()
           .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
           .tasks(event.taskSid)
           .fetch();
 
-        const reservationIds = reservations.map((reservation) => reservation.sid);
-
-        console.log('>>> reservations', reservationIds);
-
-        resolve(success({ task, reservations: reservationIds }));
+        const reservationSid = await getReservation(context, event.taskSid);
+        resolve(success({ task, reservationSid }));
       } catch (err) {
         const error = err as Error;
         if (
@@ -125,12 +124,11 @@ export const handler = TokenValidator(
           )
         ) {
           resolve(send(404)({ message: error.message }));
-          return;
         }
         resolve(error500(error));
       }
-    } catch (err: any) {
-      resolve(error500(err));
+    } catch (err) {
+      resolve(error500(err as Error));
     }
   },
 );
