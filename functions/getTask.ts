@@ -25,7 +25,6 @@ import {
   success,
   functionValidator as TokenValidator,
   error403,
-  send,
 } from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
