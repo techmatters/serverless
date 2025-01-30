@@ -112,9 +112,11 @@ export const handler = TokenValidator(
           .tasks(event.taskSid)
           .fetch();
 
-        console.log('>>> task', task);
+        const reservationIds = reservations.map((reservation) => reservation.sid);
 
-        resolve(success({ task, reservationSid: reservations[0].sid }));
+        console.log('>>> reservations', reservationIds);
+
+        resolve(success({ task, reservations: reservationIds }));
       } catch (err) {
         const error = err as Error;
         if (
