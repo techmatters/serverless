@@ -114,7 +114,7 @@ export const handler = TokenValidator(
           .fetch();
 
         return resolve(success({ task, reservations }));
-      } catch (err) {
+      } catch (err: any) {
         const error = err as Error;
         if (
           error.message.match(
