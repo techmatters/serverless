@@ -25,6 +25,7 @@ import {
   success,
   functionValidator as TokenValidator,
   error403,
+  send,
 } from '@tech-matters/serverless-helpers';
 
 type EnvVars = {
@@ -55,7 +56,7 @@ export type Body = {
 
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
-const getReservation = async (context: Context<EnvVars>, taskSid: string) => {
+const getReservations = async (context: Context<EnvVars>, taskSid: string) => {
   try {
     const reservations = await context
       .getTwilioClient()
@@ -63,7 +64,11 @@ const getReservation = async (context: Context<EnvVars>, taskSid: string) => {
       .tasks(taskSid)
       .reservations.list();
 
-    return reservations?.length > 0 ? reservations[0].sid : undefined;
+    if (reservations.length === 0) {
+      console.info(`No reservations found for task ${taskSid}`);
+    }
+
+    return reservations;
   } catch (err) {
     console.error('Failed to fetch reservations:', err);
     return undefined;
@@ -75,13 +80,11 @@ export const handler = TokenValidator(
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const accountSid = context.ACCOUNT_SID;
-    const authToken = context.AUTH_TOKEN;
-    const token = event.Token;
+    const { ACCOUNT_SID: accountSid, AUTH_TOKEN: authToken } = context;
+    const { Token: token, taskSid } = event;
 
     if (!token) {
-      resolve(error400('token'));
-      return;
+      return resolve(error400('token'));
     }
 
     try {
@@ -90,31 +93,27 @@ export const handler = TokenValidator(
         accountSid,
         authToken,
       );
-
       const isSupervisorToken =
         Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
 
       if (!isSupervisorToken) {
-        resolve(
-          error403(`Unauthorized: endpoint not open to non supervisors. ${isSupervisorToken}`),
-        );
+        return resolve(error403('Unauthorized: endpoint not open to non supervisors.'));
       }
-
-      const { taskSid } = event;
 
       if (taskSid === undefined) {
-        resolve(error400('taskSid is undefined'));
+        return resolve(error400('taskSid is undefined'));
       }
+
+      const reservations = await getReservations(context, taskSid);
 
       try {
         const task = await context
           .getTwilioClient()
           .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(event.taskSid)
+          .tasks(taskSid)
           .fetch();
 
-        const reservationSid = await getReservation(context, event.taskSid);
-        resolve(success({ task, reservationSid }));
+        return resolve(success({ task, reservations }));
       } catch (err) {
         const error = err as Error;
         if (
@@ -122,18 +121,12 @@ export const handler = TokenValidator(
             /The requested resource \/Workspaces\/WS[a-z0-9]+\/Tasks\/WT[a-z0-9]+ was not found/,
           )
         ) {
-          resolve(
-            success({
-              task: undefined,
-              reservationSid: undefined,
-            }),
-          );
-          return;
+          return resolve(send(404)({ message: error.message, status: 404 }));
         }
-        resolve(error500(error));
+        return resolve(error500(error));
       }
     } catch (err) {
-      resolve(error500(err as Error));
+      return resolve(error500(err as Error));
     }
   },
 );
