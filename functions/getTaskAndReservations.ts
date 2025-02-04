@@ -56,18 +56,35 @@ export type Body = {
 
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
+const getReservations = async (context: Context<EnvVars>, taskSid: string) => {
+  try {
+    const reservations = await context
+      .getTwilioClient()
+      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(taskSid)
+      .reservations.list();
+
+    if (reservations.length === 0) {
+      console.info(`No reservations found for task ${taskSid}`);
+    }
+
+    return reservations;
+  } catch (err) {
+    console.error('Failed to fetch reservations:', err);
+    return undefined;
+  }
+};
+
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
     const response = responseWithCors();
     const resolve = bindResolve(callback)(response);
 
-    const accountSid = context.ACCOUNT_SID;
-    const authToken = context.AUTH_TOKEN;
-    const token = event.Token;
+    const { ACCOUNT_SID: accountSid, AUTH_TOKEN: authToken } = context;
+    const { Token: token, taskSid } = event;
 
     if (!token) {
-      resolve(error400('token'));
-      return;
+      return resolve(error400('token'));
     }
 
     try {
@@ -76,44 +93,40 @@ export const handler = TokenValidator(
         accountSid,
         authToken,
       );
-
       const isSupervisorToken =
         Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
 
       if (!isSupervisorToken) {
-        resolve(
-          error403(`Unauthorized: endpoint not open to non supervisors. ${isSupervisorToken}`),
-        );
-        return;
+        return resolve(error403('Unauthorized: endpoint not open to non supervisors.'));
       }
-
-      const { taskSid } = event;
 
       if (taskSid === undefined) {
-        resolve(error400('taskSid is undefined'));
-        return;
+        return resolve(error400('taskSid is undefined'));
       }
+
+      const reservations = await getReservations(context, taskSid);
+
       try {
-        const result = await context
+        const task = await context
           .getTwilioClient()
           .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
-          .tasks(event.taskSid)
+          .tasks(taskSid)
           .fetch();
-        resolve(success(result));
-      } catch (err) {
+
+        return resolve(success({ task, reservations }));
+      } catch (err: any) {
         const error = err as Error;
         if (
           error.message.match(
             /The requested resource \/Workspaces\/WS[a-z0-9]+\/Tasks\/WT[a-z0-9]+ was not found/,
           )
         ) {
-          resolve(send(404)({ message: error.message }));
-          return;
+          return resolve(send(404)({ message: error.message, status: 404 }));
         }
-        resolve(error500(error));
+        return resolve(error500(error));
       }
-    } catch (err: any) {
-      resolve(error500(err));
+    } catch (err) {
+      return resolve(error500(err as Error));
     }
   },
 );
