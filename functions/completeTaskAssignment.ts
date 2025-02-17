@@ -26,6 +26,7 @@ import {
   functionValidator as TokenValidator,
   error403,
 } from '@tech-matters/serverless-helpers';
+import { set } from 'lodash';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -73,15 +74,28 @@ const closeTaskAssignment = async (
       .fetch();
     const attributes = JSON.parse(task.attributes);
     const callSid = attributes?.call_sid;
+    // const conversationSid = attributes?.conversation_sid;
 
     // Ends the task for the worker and client for chat tasks, and only for the worker for voice tasks
-    const completedTask = await task.update({
-      assignmentStatus: 'completed',
+    await task.update({
+      assignmentStatus: 'wrapping',
       attributes: event.finalTaskAttributes,
     });
 
-    // Ends the call for the client for voice
+    const aftertask = await client.taskrouter
+      .workspaces(context.TWILIO_WORKSPACE_SID)
+      .tasks(event.taskSid)
+      .fetch();
+    console.log(`Task ${aftertask} with attributes ${aftertask.attributes} has been completed`);
+
     if (callSid) await client.calls(callSid).update({ status: 'completed' });
+
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait for 10 seconds
+
+    const completedTask = await task.update({
+      assignmentStatus: 'completed',
+    });
 
     return { type: 'success', completedTask } as const;
   } catch (err) {
