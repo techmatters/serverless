@@ -16,12 +16,12 @@
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
 import MockDate from 'mockdate';
-import axios from 'axios';
 import { handler as operatingHours, Body } from '../functions/operatingHours';
 
 import helpers, { MockedResponse } from './helpers';
 
-jest.mock('axios');
+global.fetch = jest.fn();
+const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 // I use a timestamp to make sure the date stays fixed to the ms
 
@@ -38,6 +38,8 @@ const baseContext = {
 const testday = 1617911935784; // timeOfDay: 21:58, dayOfWeek: 4, currentDate: '04/08/2021'
 const holiday = testday + 86400000; // timeOfDay: 21:58, dayOfWeek: 5, currentDate: '04/09/2021'
 const sunday = testday + 86400000 * 3; // timeOfDay: 21:58, dayOfWeek: 7, currentDate: '04/11/2021'
+
+afterEach(() => jest.clearAllMocks());
 
 describe('operatingHours', () => {
   describe('Legacy (includeMessageTextInResponse false)', () => {
@@ -473,12 +475,13 @@ describe('operatingHours', () => {
       });
 
       test('missing channel in office entry, defaults to root (closed without shifts)', async () => {
-        jest.spyOn(axios, 'get').mockResolvedValue({
-          data: {
-            status: 'closed',
-            message: 'The helpline is out of shift, please reach us later.',
-          },
-        });
+        mockFetch.mockResolvedValue({
+          json: () =>
+            Promise.resolve({
+              status: 'closed',
+              message: 'The helpline is out of shift, please reach us later.',
+            }),
+        } as Response);
 
         const event: Body = {
           channel: 'another',

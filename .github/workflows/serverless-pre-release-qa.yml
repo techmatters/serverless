@@ -39,7 +39,8 @@ jobs:
   run-e2e-tests:
     needs: build-and-deploy
 
-    runs-on: ubuntu-latest
+    # Pinned to v22 while https://github.com/microsoft/playwright/issues/30368 is addressed
+    runs-on: ubuntu-22.04
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -47,7 +48,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16.x'
+          node-version: '18.x'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -71,11 +72,8 @@ jobs:
         run: npm ci
         working-directory: ./flex-plugins/e2e-tests
 
-      - name: Setup dependencies for playwright/browsers
-        uses: microsoft/playwright-github-action@v1
-
       - name: Install Playwright CLI
-        run: npx playwright install
+        run: npx playwright install --with-deps chromium
         working-directory: ./flex-plugins/e2e-tests
 
       # Run E2E tests against actual E2E Flex instance

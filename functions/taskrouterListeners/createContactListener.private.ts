@@ -24,12 +24,13 @@ import {
   EventFields,
   EventType,
   TASK_CREATED,
+  TASK_UPDATED,
 } from '@tech-matters/serverless-helpers/taskrouter';
 
 import type { AddCustomerExternalId } from '../helpers/addCustomerExternalId.private';
 import type { AddTaskSidToChannelAttributes } from '../helpers/addTaskSidToChannelAttributes.private';
 
-export const eventTypes: EventType[] = [TASK_CREATED];
+export const eventTypes: EventType[] = [TASK_CREATED, TASK_UPDATED];
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -41,6 +42,14 @@ const isCreateContactTask = (
   taskAttributes: { isContactlessTask?: boolean },
 ) => eventType === TASK_CREATED && !taskAttributes.isContactlessTask;
 
+const isTaskRequiringExternalId = ({
+  isContactlessTask,
+  customers,
+}: {
+  isContactlessTask?: boolean;
+  customers?: { external_id?: string };
+}) => !isContactlessTask && !customers?.external_id;
+
 /**
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
@@ -48,39 +57,41 @@ const isCreateContactTask = (
 export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
-  try {
-    const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
-
-    console.log(`===== Executing CreateContactListener for event: ${eventType} =====`);
-    const taskAttributes = JSON.parse(taskAttributesString);
-
-    if (isCreateContactTask(eventType, taskAttributes)) {
-      console.log('Handling create contact...');
-
-      // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
-      const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
-      const addCustomerExternalId = require(handlerPath)
-        .addCustomerExternalId as AddCustomerExternalId;
-      await addCustomerExternalId(context, event);
-
-      if (taskAttributes.channelType === 'web') {
-        // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
-        const addTaskHandlerPath =
-          Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
-        const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
-          .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
-        await addTaskSidToChannelAttributes(context, event);
-      }
-
-      console.log('Finished handling create contact.');
-      return;
+  const { EventType: eventType, TaskAttributes: taskAttributesString } = event;
+  const taskAttributes = JSON.parse(taskAttributesString);
+  const flexConfig = await context.getTwilioClient().flexApi.v1.configuration.get().fetch();
+  const { feature_flags: featureFlags } = flexConfig.attributes;
+  if (featureFlags.lambda_task_created_handler) return;
+  if (isTaskRequiringExternalId(taskAttributes)) {
+    if (eventType === TASK_CREATED) {
+      console.debug(
+        `Task ${event.TaskSid} requires an external_id but doesn't have one on event: ${eventType}`,
+      );
+    } else {
+      console.warn(
+        `Task ${event.TaskSid} still requires an external_id but doesn't have one on event: ${eventType}, meaning one wasn't assigned on creation. Attempting to assign now`,
+      );
     }
 
-    console.log('===== CreateContactListener finished successfully =====');
-  } catch (err) {
-    console.log('===== CreateContactListener has failed =====');
-    console.log(String(err));
-    throw err;
+    // For offline contacts, this is already handled when the task is created in /assignOfflineContact function
+    const handlerPath = Runtime.getFunctions()['helpers/addCustomerExternalId'].path;
+    const addCustomerExternalId = require(handlerPath)
+      .addCustomerExternalId as AddCustomerExternalId;
+    await addCustomerExternalId(context, event);
+  }
+  if (isCreateContactTask(eventType, taskAttributes)) {
+    console.log('Handling create contact...');
+
+    if ((taskAttributes.customChannelType || taskAttributes.channelType) === 'web') {
+      // Add task sid to tasksSids channel attr so we can end the chat from webchat client (see endChat function)
+      const addTaskHandlerPath =
+        Runtime.getFunctions()['helpers/addTaskSidToChannelAttributes'].path;
+      const addTaskSidToChannelAttributes = require(addTaskHandlerPath)
+        .addTaskSidToChannelAttributes as AddTaskSidToChannelAttributes;
+      await addTaskSidToChannelAttributes(context, event);
+    }
+
+    console.log('Finished handling create contact.');
   }
 };
 

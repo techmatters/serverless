@@ -61,8 +61,17 @@ inputs:
   aselo-app-secret-key:
     description: 'AWS credentials for Aselo user'
     required: true
-  aws-region:
-    description: 'AWS region where Aselo documents bucket is hosted'
+  aws-access-key-id:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS credentials for Aselo user'
+    required: true
+  helpline-aws-region:
+    description: 'AWS region where the helpline documents bucket and Lex bots are hosted'
+    required: true
+  deployment-matrix-aws-region:
+    description: 'AWS region where SSM parameter storing the google sheets credentials for the deployment matrix is hosted'
     required: true
   s3-bucket:
     description: 'S3 bucket name where Aselo documents are stored'
@@ -125,7 +134,7 @@ runs:
         ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
         ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}
         S3_BUCKET=${{ inputs.s3-bucket }}
-        AWS_REGION=${{ inputs.aws-region }}
+        AWS_REGION=${{ inputs.helpline-aws-region }}
         TWILIO_SERVERLESS_API_CONCURRENCY=1
         EOT
       shell: bash
@@ -184,3 +193,17 @@ runs:
         slack-message: "`[Serverless]` Deployment to `${{ env.helpline-name }}` from ${{ github.ref_type }} `${{ github.ref_name }}` requested by `${{ github.triggering_actor }}` completed using workflow '${{ github.workflow }}' with SHA ${{ github.sha }} :rocket:."
       env:
         SLACK_BOT_TOKEN: ${{ env.GITHUB_ACTIONS_SLACK_BOT_TOKEN }}
+
+    # Update deployment matrix
+    - name: Update deployment matrix
+      id: update-deployment-matrix
+      uses: techmatters/flex-plugins/.github/actions/deployment-matrix@master
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.deployment-matrix-aws-region }}
+        identifier: ${{ inputs.helpline-code }}
+        environment: ${{ inputs.environment }}
+        service_repo: 'serverless'
+        version_tag: ${{ github.ref_name }}
+      

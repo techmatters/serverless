@@ -71,7 +71,7 @@ const baseContext = {
 
 const liveAttributes = { some: 'some', customers: { other: 1 } };
 
-const logSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
+const logSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
 beforeAll(() => {
   helpers.setup({});
@@ -91,7 +91,7 @@ test("Should log and return error (can't fetch task)", async () => {
   };
 
   const expectedError =
-    'Error at addCustomerExternalId: task with sid non-existing does not exists in workspace WSxxx when trying to fetch it.';
+    'Error at addCustomerExternalId: task with sid non-existing in workspace WSxxx when trying to fetch it.';
 
   const result = await addCustomerExternalId(baseContext, event);
   expect(result.message).toBe(expectedError);
@@ -105,7 +105,7 @@ test("Should log and return error (can't update task)", async () => {
   };
 
   const expectedError =
-    'Error at addCustomerExternalId: task with sid non-updateable does not exists in workspace WSxxx when trying to update it.';
+    'Error at addCustomerExternalId: task with sid non-updateable in workspace WSxxx when trying to update it.';
 
   const result = await addCustomerExternalId(baseContext, event);
   expect(result.message).toBe(expectedError);
@@ -126,12 +126,16 @@ test('Should return OK (modify live contact)', async () => {
   });
 });
 
-test('Should return status 200 (ignores other events)', async () => {
+test('Should return status 200 (accepts other events)', async () => {
   const event: Body = {
     EventType: 'other.event',
     TaskSid: 'live-contact',
   };
 
   const result = await addCustomerExternalId(baseContext, event);
-  expect(result.message).toBe('Event is not task.created');
+  expect(result.message).toBe('Task updated');
+  expect(JSON.parse(result.updatedTask!.attributes)).toEqual({
+    ...liveAttributes,
+    customers: { ...liveAttributes.customers, external_id: 'live-contact' },
+  });
 });

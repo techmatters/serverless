@@ -20,7 +20,7 @@ import {
   ServerlessFunctionSignature,
 } from '@twilio-labs/serverless-runtime-types/types';
 
-type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
+export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
 const isWorker = (tokenResult: TokenValidatorResponse) =>
   tokenResult.worker_sid && tokenResult.worker_sid.startsWith('WK');
@@ -64,7 +64,6 @@ export const functionValidator = <
     try {
       const tokenResult: TokenValidatorResponse = await validator(token, accountSid, authToken)
       const isGuestToken = !isWorker(tokenResult) || isGuest(tokenResult);
-
       if (isGuestToken && !options.allowGuestToken) {
         return failedResponse('Unauthorized: endpoint not open to guest tokens.');
       }

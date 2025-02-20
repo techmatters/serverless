@@ -438,12 +438,11 @@ export const handleChannelCapture = async (
   if (conversationSid) {
     const conversationContext = await context
       .getTwilioClient()
-      .conversations.conversations(conversationSid);
-    console.log('conversation state:', (await conversationContext.fetch()).state);
+      .conversations.v1.conversations(conversationSid);
     // Create control task to prevent channel going stale
     controlTask = await context
       .getTwilioClient()
-      .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID)
+      .taskrouter.v1.workspaces(context.TWILIO_WORKSPACE_SID)
       .tasks.create({
         workflowSid: context.SURVEY_WORKFLOW_SID,
         taskChannel: 'survey',
@@ -466,7 +465,7 @@ export const handleChannelCapture = async (
       // Remove the studio trigger webhooks to prevent this channel to trigger subsequent Studio flows executions
       context
         .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
+        .chat.v2.services(context.CHAT_SERVICE_SID)
         .channels(channelSid)
         .webhooks.list()
         .then((webhooks) =>
@@ -526,7 +525,9 @@ export const handleChannelCapture = async (
     isConversation: Boolean(conversationSid),
     channelType,
   };
-
+  console.debug(
+    `Triggering chatbot, triggerType: ${triggerType}, channel / conversation: ${channelOrConversation.sid}`,
+  );
   if (triggerType === 'withUserMessage') {
     await triggerWithUserMessage(context, channelOrConversation, options);
   }

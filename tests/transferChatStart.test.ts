@@ -15,9 +15,14 @@
  */
 
 import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
+import {
+  InteractionChannelParticipantInstance,
+  InteractionChannelParticipantListInstance,
+} from 'twilio/lib/rest/flexApi/v1/interaction/interactionChannel/interactionChannelParticipant';
 import { handler as transferChatStart, Body } from '../functions/transferChatStart';
 
 import helpers, { MockedResponse } from './helpers';
+import MockedFunction = jest.MockedFunction;
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
@@ -88,7 +93,12 @@ let tasks: any[] = [
   {
     sid: 'conversationTask',
     taskChannelUniqueName: 'channel',
-    attributes: '{"conversationSid":"CHxxx", "channelSid":"CHxxx"}',
+    attributes: JSON.stringify({
+      conversationSid: 'CHxxx',
+      channelSid: 'CHxxx',
+      flexInteractionSid: 'KDxxx',
+      flexInteractionChannelSid: 'UOxxx',
+    }),
     fetch: async () => tasks.find((t) => t.sid === 'conversationTask'),
     update: async ({
       attributes,
@@ -193,6 +203,10 @@ const mockedCreateInvite = jest.fn().mockResolvedValue({
   },
 });
 
+const mockInteractionChannelParticipantList: MockedFunction<
+  InteractionChannelParticipantListInstance['list']
+> = jest.fn().mockResolvedValue([]);
+
 const baseContext = {
   getTwilioClient: (): any => ({
     taskrouter: {
@@ -236,16 +250,23 @@ const baseContext = {
     },
     flexApi: {
       v1: {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        interaction: (interactionSid: string) => ({
+        interaction: {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          channels: (channelSid: string) => ({
-            invites: {
+          get: (interactionSid: string) => ({
+            channels: {
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              create: mockedCreateInvite,
+              get: (channelSid: string) => ({
+                invites: {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  create: mockedCreateInvite,
+                },
+                participants: {
+                  list: mockInteractionChannelParticipantList,
+                },
+              }),
             },
           }),
-        }),
+        },
       },
     },
     conversations: {
@@ -286,6 +307,7 @@ afterAll(() => {
 
 beforeEach(() => {
   channels.channel = ['worker1'];
+  mockInteractionChannelParticipantList.mockClear();
 });
 
 afterEach(() => {
@@ -574,6 +596,12 @@ describe('transferChatStart (without maxMessageCapacity set)', () => {
 });
 
 describe('Conversations', () => {
+  beforeEach(() => {
+    mockInteractionChannelParticipantList.mockResolvedValue([
+      { sid: 'notParticipantSid', type: 'customer' } as InteractionChannelParticipantInstance,
+      { sid: 'participantSid', type: 'agent' } as InteractionChannelParticipantInstance,
+    ]);
+  });
   test('Transfer to worker', async () => {
     const event: Body = {
       taskSid: 'conversationTask',
@@ -582,37 +610,40 @@ describe('Conversations', () => {
       mode: 'COLD',
       request: { cookies: {}, headers: {} },
     };
-
-    const callback: ServerlessCallback = (err, result) => {
-      expect(result).toBeDefined();
-      const response = result as MockedResponse;
-      expect(response.getStatus()).toBe(200);
-      expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
-      expect(mockedCreateInvite).toHaveBeenCalledWith({
-        routing: {
-          properties: {
-            queue_sid: 'TQxxx',
-            worker_sid: 'WKxxx',
-            workflow_sid: baseContext.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
-            workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
-            attributes: {
-              channelSid: 'CHxxx',
-              conversationSid: 'CHxxx',
-              conversations: {
-                conversation_id: 'conversationTask',
-              },
-              ignoreAgent: 'worker1',
-              originalParticipantSid: 'participantSid',
-              targetSid: 'WKxxx',
-              transferTargetType: 'worker',
-            },
-            task_channel_unique_name: 'channel',
-          },
-        },
-      });
+    let result: any;
+    const callback: ServerlessCallback = (err, cbResult) => {
+      result = cbResult;
     };
 
     await transferChatStart(baseContext, event, callback);
+    expect(result).toBeDefined();
+    const response = result as MockedResponse;
+    expect(response.getStatus()).toBe(200);
+    expect(response.getBody()).toStrictEqual({ taskSid: 'newTaskSid' });
+    expect(mockedCreateInvite).toHaveBeenCalledWith({
+      routing: {
+        properties: {
+          queue_sid: 'TQxxx',
+          worker_sid: 'WKxxx',
+          workflow_sid: baseContext.TWILIO_CHAT_TRANSFER_WORKFLOW_SID,
+          workspace_sid: baseContext.TWILIO_WORKSPACE_SID,
+          attributes: {
+            channelSid: 'CHxxx',
+            conversationSid: 'CHxxx',
+            conversations: {
+              conversation_id: 'conversationTask',
+            },
+            ignoreAgent: 'worker1',
+            originalParticipantSid: 'participantSid',
+            targetSid: 'WKxxx',
+            transferTargetType: 'worker',
+            flexInteractionChannelSid: 'UOxxx',
+            flexInteractionSid: 'KDxxx',
+          },
+          task_channel_unique_name: 'channel',
+        },
+      },
+    });
   });
   test('Transfer to queue', async () => {
     const event: Body = {
@@ -643,6 +674,8 @@ describe('Conversations', () => {
               originalParticipantSid: 'participantSid',
               targetSid: 'WQxxx',
               transferTargetType: 'queue',
+              flexInteractionChannelSid: 'UOxxx',
+              flexInteractionSid: 'KDxxx',
             },
             task_channel_unique_name: 'channel',
           },

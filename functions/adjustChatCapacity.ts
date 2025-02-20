@@ -24,6 +24,7 @@ import {
   send,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
+import { WorkerChannelInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/worker/workerChannel';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -31,8 +32,31 @@ type EnvVars = {
 
 export type Body = {
   workerSid?: string;
-  adjustment?: 'increase' | 'decrease';
+  // 'increase' and 'decease' can be removed once backend manual pulling is enabled everywhere
+  adjustment?: 'increase' | 'decrease' | 'increaseUntilCapacityAvailable' | 'setTo1';
   request: { cookies: {}; headers: {} };
+};
+
+const increaseChatCapacity = async (channel: WorkerChannelInstance, maxMessageCapacity: number) => {
+  if (channel.availableCapacityPercentage > 0) {
+    return {
+      result: { status: 412, message: 'Still have available capacity, no need to increase.' },
+      updatedChannel: channel,
+    };
+  }
+
+  if (!(channel.configuredCapacity < maxMessageCapacity)) {
+    return {
+      result: { status: 412, message: 'Reached the max capacity.' },
+      updatedChannel: channel,
+    };
+  }
+
+  const updatedChannel = await channel.update({ capacity: channel.configuredCapacity + 1 });
+  return {
+    result: { status: 200, message: 'Successfully increased channel capacity' },
+    updatedChannel,
+  };
 };
 
 export const adjustChatCapacity = async (
@@ -59,21 +83,33 @@ export const adjustChatCapacity = async (
   }
 
   const channels = await worker.workerChannels().list();
-  const channel = channels.find((c) => c.taskChannelUniqueName === 'chat');
+  let channel = channels.find((c) => c.taskChannelUniqueName === 'chat');
 
   if (!channel) return { status: 404, message: 'Could not find chat channel.' };
 
   if (body.adjustment === 'increase') {
-    if (channel.availableCapacityPercentage > 0) {
-      return { status: 412, message: 'Still have available capacity, no need to increase.' };
-    }
+    return (await increaseChatCapacity(channel, maxMessageCapacity)).result;
+  }
 
-    if (!(channel.configuredCapacity < maxMessageCapacity)) {
-      return { status: 412, message: 'Reached the max capacity.' };
+  if (body.adjustment === 'increaseUntilCapacityAvailable') {
+    let result: Awaited<ReturnType<typeof increaseChatCapacity>>['result'] = {
+      status: 200,
+      message: '',
+    };
+    while (result.status === 200) {
+      // eslint-disable-next-line no-await-in-loop
+      ({ result, updatedChannel: channel } = await increaseChatCapacity(
+        channel,
+        maxMessageCapacity,
+      ));
     }
-
-    await channel.update({ capacity: channel.configuredCapacity + 1 });
-    return { status: 200, message: 'Successfully increased channel capacity' };
+    if (
+      channel.configuredCapacity === maxMessageCapacity &&
+      channel.availableCapacityPercentage === 0
+    ) {
+      return { status: 412, message: 'Reached the max capacity with no available capacity.' };
+    }
+    return { status: 200, message: 'Adjusted chat capacity until there is capacity available' };
   }
 
   if (body.adjustment === 'decrease') {
@@ -83,6 +119,17 @@ export const adjustChatCapacity = async (
 
     // If configuredCapacity is already 1, send status 200 to avoid error on client side
     return { status: 200, message: 'Successfully decreased channel capacity' };
+  }
+
+  if (body.adjustment === 'setTo1') {
+    if (channel.configuredCapacity !== 1) {
+      await channel.update({ capacity: 1 });
+      // If configuredCapacity is already 1, send status 200 to avoid error on client side
+      return { status: 200, message: 'Successfully reset channel capacity to 1' };
+    }
+
+    // If configuredCapacity is already 1, send status 200 to avoid error on client side
+    return { status: 200, message: 'Channel capacity already 1, no adjustment made.' };
   }
 
   return { status: 400, message: 'Invalid adjustment argument' };

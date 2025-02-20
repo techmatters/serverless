@@ -35,6 +35,7 @@ export type Event = {
   source: string;
   destination: string;
   content: string;
+  useTestApi?: boolean;
 };
 
 export const handler = async (
@@ -48,7 +49,7 @@ export const handler = async (
   const resolve = bindResolve(callback)(response);
 
   try {
-    const { source, destination, content } = event;
+    const { source, destination, content, useTestApi } = event;
 
     // TODO: Investigate if Modica provides a way to check if the payload is valid.
 
@@ -79,6 +80,7 @@ export const handler = async (
         messageText,
         senderExternalId,
         customSubscribedExternalId: subscribedExternalId,
+        useTestApi,
       });
     } else {
       // eslint-disable-next-line no-await-in-loop

@@ -56,9 +56,19 @@ const isVoiceTrigger = (obj: any): obj is VoiceTrigger =>
   obj && obj.call && typeof obj.call === 'object';
 
 export type Event = {
-  trigger: ChatTrigger | VoiceTrigger;
+  trigger: ChatTrigger | VoiceTrigger | ConversationTrigger;
   request: { cookies: {}; headers: {} };
+  channelType?: string;
 };
+
+type ConversationTrigger = {
+  conversation: {
+    Author: string;
+  };
+};
+
+const isConversationTrigger = (obj: any): obj is ConversationTrigger =>
+  typeof obj?.conversation === 'object';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
@@ -71,23 +81,28 @@ const getContactValueFromWebchat = (trigger: ChatTrigger) => {
   return preEngagementData.contactIdentifier;
 };
 
-const trimSpaces = (s: string) => s.replace(' ', '');
-
+/**
+ * IMPORTANT: keep up to date with flex-plugins/plugin-hrm-form/src/utils/task
+ */
+const trimSpaces = (s: string) => s.replaceAll(' ', '');
+const trimHyphens = (s: string) => s.replaceAll('-', '');
+const phoneNumberStandardization = (s: string) =>
+  [trimSpaces, trimHyphens].reduce((accum, f) => f(accum), s);
 type TransformIdentifierFunction = (c: string) => string;
 const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
-  // If the Aselo Connector is being used, we might get a voice From that looks like
-  // 'sip:+2601234567@41.52.63.73'. This regexp should normalize the string.
-  voice: [(s) => s.includes('sip:') ? s.match(/sip:([^\@]+)/)?.[1] || '' : s, trimSpaces],
-  sms: [trimSpaces],
-  whatsapp: [(s) => s.replace('whatsapp:', ''), trimSpaces],
-  modica: [(s) => s.replace('modica:', ''), trimSpaces],
+  voice: [phoneNumberStandardization],
+  sms: [phoneNumberStandardization],
+  whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
+  modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
   facebook: [(s) => s.replace('messenger:', '')],
-  instagram: [],
+  messenger: [(s) => s.replace('messenger:', '')],
+  instagram: [(s) => s.replace('instagram:', '')],
   line: [],
+  telegram: [(s) => s.replace('telegram:', '')],
   web: [],
 };
 
-export const getIdentifier = (trigger: Event['trigger']): string => {
+export const getIdentifier = (trigger: Event['trigger'], channelType?: string): string => {
   if (isVoiceTrigger(trigger)) {
     return channelTransformations.voice.reduce((accum, f) => f(accum), trigger.call.From);
   }
@@ -102,6 +117,17 @@ export const getIdentifier = (trigger: Event['trigger']): string => {
     return channelTransformations[trigger.message.ChannelAttributes.channel_type].reduce(
       (accum, f) => f(accum),
       trigger.message.ChannelAttributes.from,
+    );
+  }
+
+  if (isConversationTrigger(trigger) && channelType) {
+    if (!channelTransformations[channelType] || !channelType) {
+      console.error(`Channel type ${channelType} is not supported`);
+      throw new Error(`Channel type ${channelType} is not supported`);
+    }
+    return channelTransformations[channelType].reduce(
+      (accum, f) => f(accum),
+      trigger.conversation.Author,
     );
   }
 
@@ -122,9 +148,9 @@ export const handler: ServerlessFunctionSignature<EnvVars, Event> = async (
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const { hrm_base_url, hrm_api_version } = serviceConfig.attributes;
     const hrmBaseUrl = `${hrm_base_url}/${hrm_api_version}/accounts/${serviceConfig.accountSid}`;
-    const { trigger } = event;
+    const { trigger, channelType } = event;
 
-    const identifier = getIdentifier(trigger);
+    const identifier = getIdentifier(trigger, channelType);
     const res = await axios.request({
       url: `${hrmBaseUrl}/profiles/identifier/${identifier}/flags`,
       method: 'get',

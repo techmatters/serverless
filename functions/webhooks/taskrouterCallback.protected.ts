@@ -31,35 +31,80 @@ const LISTENERS_FOLDER = 'taskrouterListeners/';
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
   CHAT_SERVICE_SID: string;
+  DELEGATE_WEBHOOK_URL: string;
+  ACCOUNT_SID: string;
+};
+
+type EventFieldsWithRequest = EventFields & {
+  request: { headers: Record<string, string | string[]> };
 };
 
 /**
  * Fetch all taskrouter listeners from the listeners folder
  */
-const getListeners = () => {
+const getListeners = (): [string, TaskrouterListener][] => {
   const functionsMap = Runtime.getFunctions();
   const keys = Object.keys(functionsMap).filter((name) => name.includes(LISTENERS_FOLDER));
   const paths = keys.map((key) => functionsMap[key].path);
-  return paths.map((path) => require(path) as TaskrouterListener);
+  return paths.map((path) => [path, require(path) as TaskrouterListener]);
 };
 
 const runTaskrouterListeners = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  { request, ...event }: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const listeners = getListeners();
-
-  await Promise.all(
-    listeners
-      .filter((listener) => listener.shouldHandle(event))
-      .map((listener) => listener.handleEvent(context, event, callback)),
+  let delegatePromise: Promise<any> = Promise.resolve();
+  const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+  const {
+    feature_flags: { enable_task_router_event_delegation: enableTaskRouterEventDelegation },
+    hrm_base_url: hrmBaseUrl,
+  } = serviceConfig.attributes;
+  if (enableTaskRouterEventDelegation) {
+    const delegateUrl = `${hrmBaseUrl}/lambda/twilio/account-scoped/${context.ACCOUNT_SID}${context.PATH}`;
+    const forwardedHeaderEntries = Object.entries(request.headers).filter(
+      ([key]) => key.toLowerCase().startsWith('x-') || key.toLowerCase().startsWith('t-'),
+    );
+    const delegateHeaders = {
+      ...Object.fromEntries(forwardedHeaderEntries),
+      'X-Original-Webhook-Url': `https://${context.DOMAIN_NAME}${context.PATH}`,
+      'Content-Type': 'application/json',
+    };
+    console.info('Forwarding to delegate webhook:', delegateUrl);
+    console.info('event:', event);
+    console.debug('headers:', JSON.stringify(request.headers));
+    // Fire and forget
+    delegatePromise = fetch(delegateUrl, {
+      method: 'POST',
+      headers: delegateHeaders,
+      body: JSON.stringify(event),
+    });
+  }
+  await Promise.all([
+    delegatePromise,
+    ...listeners
+      .filter(([, listener]) => listener.shouldHandle(event))
+      .map(async ([path, listener]) => {
+        console.debug(
+          `===== Executing listener at ${path} for event: ${event.EventType}, task: ${event.TaskSid} =====`,
+        );
+        try {
+          await listener.handleEvent(context, event, callback);
+        } catch (err) {
+          console.error(`===== Listener at ${path} has failed, aborting =====`, err);
+        }
+      }),
+  ]);
+  console.info(
+    `===== Successfully executed all listeners for event: ${event.EventType}, task: ${event.TaskSid} =====`,
   );
+  return null;
 };
 
 export const handler = async (
   context: Context<EnvVars>,
-  event: EventFields,
+  event: EventFieldsWithRequest,
   callback: ServerlessCallback,
 ) => {
   const response = responseWithCors();

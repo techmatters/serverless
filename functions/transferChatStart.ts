@@ -44,6 +44,9 @@ export type Body = {
   request: { cookies: {}; headers: {} };
 };
 
+// Only used for direct transfers of conversations, not programmable chat channels
+const DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME = 'Everyone';
+
 async function setDummyChannelToTask(
   context: Context<EnvVars>,
   sid: string,
@@ -158,7 +161,7 @@ async function increaseChatCapacity(
 
     const body = {
       workerSid: worker?.sid as string,
-      adjustment: 'increase',
+      adjustment: 'increaseUntilCapacityAvailable',
     } as const;
 
     await adjustChatCapacity(context, body);
@@ -167,6 +170,7 @@ async function increaseChatCapacity(
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
+    console.info('===== transferChatStart invocation =====');
     const client = context.getTwilioClient();
 
     const response = responseWithCors();
@@ -197,7 +201,7 @@ export const handler = TokenValidator(
         .workspaces(context.TWILIO_WORKSPACE_SID)
         .tasks(taskSid)
         .fetch();
-
+      console.debug('Original task fetched', originalTask);
       const originalAttributes = JSON.parse(originalTask.attributes);
 
       const transferTargetType = targetSid.startsWith('WK') ? 'worker' : 'queue';
@@ -245,32 +249,45 @@ export const handler = TokenValidator(
        * But for now, we can check if a conversation exists given a conversationId.
        */
 
-      let isConversation = true;
-      let originalParticipantSid;
-      try {
-        const conversation = await client.conversations
-          .conversations(originalAttributes.conversationSid)
-          .fetch();
-        const participants = await conversation.participants().list();
-        originalParticipantSid = participants.find((participant) => participant.identity)?.sid;
-        newAttributes.originalParticipantSid = originalParticipantSid;
-      } catch (err) {
-        isConversation = false;
+      const { flexInteractionSid, flexInteractionChannelSid } = originalAttributes;
+
+      let isConversation = Boolean(flexInteractionSid && flexInteractionChannelSid);
+      if (flexInteractionSid) {
+        try {
+          const interactionChannelParticipants = await client.flexApi.v1.interaction
+            .get(flexInteractionSid)
+            .channels.get(flexInteractionChannelSid)
+            .participants.list();
+
+          newAttributes.originalParticipantSid = interactionChannelParticipants.find(
+            (p) => p.type === 'agent',
+          )?.sid;
+        } catch (err) {
+          isConversation = false;
+        }
       }
 
       let newTaskSid;
       if (isConversation && transferTargetType === 'worker') {
+        console.debug(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} - looking up queues.`,
+        );
         // Get task queue
         const taskQueues = await client.taskrouter
           .workspaces(context.TWILIO_WORKSPACE_SID)
           .taskQueues.list({ workerSid: targetSid });
 
-        const taskQueueSid = taskQueues[0].sid;
+        const taskQueueSid =
+          taskQueues.find((tq) => tq.friendlyName === DIRECT_TRANSFER_QUEUE_FRIENDLY_NAME)?.sid ||
+          taskQueues[0].sid;
 
+        console.info(
+          `Transferring conversations task ${taskSid} to worker ${targetSid} via queue ${taskQueueSid} and workflow ${context.TWILIO_CHAT_TRANSFER_WORKFLOW_SID} by creating interaction invite.`,
+        );
         // Create invite to target worker
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        const invite = await client.flexApi.v1.interaction
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -285,10 +302,31 @@ export const handler = TokenValidator(
           });
 
         newTaskSid = invite.routing.properties.sid;
+        console.info(
+          `Transferred conversations task ${taskSid} to worker ${targetSid} by creating interaction invite.`,
+        );
       } else if (isConversation && transferTargetType === 'queue') {
-        const invite = await client.flexApi.v1
-          .interaction(originalAttributes.flexInteractionSid)
-          .channels(originalAttributes.flexInteractionChannelSid)
+        console.info(
+          `Transferring conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
+        Object.entries({
+          flexInteractionSid,
+          flexInteractionChannelSid,
+          TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID:
+            context.TWILIO_CONVERSATIONS_CHAT_TRANSFER_WORKFLOW_SID,
+          TWILIO_WORKSPACE_SID: context.TWILIO_WORKSPACE_SID,
+          newAttributes,
+          taskChannelUniqueName: originalTask.taskChannelUniqueName,
+        }).forEach(([key, value]) => {
+          console.debug(`${key}:`, value);
+        });
+        console.debug('newAttributes:');
+        Object.entries(newAttributes).forEach(([key, value]) => {
+          console.debug(`${key}:`, value);
+        });
+        const invite = await client.flexApi.v1.interaction
+          .get(flexInteractionSid)
+          .channels.get(flexInteractionChannelSid)
           .invites.create({
             routing: {
               properties: {
@@ -300,6 +338,9 @@ export const handler = TokenValidator(
             },
           });
 
+        console.info(
+          `Transferred conversations task ${taskSid} to queue ${targetSid} by creating interaction invite.`,
+        );
         newTaskSid = invite.routing.properties.sid;
       } else {
         // Edit channel attributes so that original task won't cause issues with the transferred one
@@ -321,10 +362,10 @@ export const handler = TokenValidator(
           });
 
         newTaskSid = newTask.sid;
-      }
 
-      // Increse the chat capacity for the target worker (if needed)
-      await increaseChatCapacity(context, validationResult);
+        // Increse the chat capacity for the target worker (if needed)
+        await increaseChatCapacity(context, validationResult);
+      }
 
       resolve(success({ taskSid: newTaskSid }));
     } catch (err: any) {

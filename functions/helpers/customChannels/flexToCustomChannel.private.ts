@@ -45,7 +45,11 @@ export type WebhookEvent = ConversationWebhookEvent | ProgrammableChatWebhookEve
 type Params<T extends WebhookEvent, TResponse = any> = {
   event: T;
   recipientId: string;
-  sendExternalMessage: (recipientId: string, messageText: string) => Promise<TResponse>;
+  sendExternalMessage: (
+    recipientId: string,
+    messageText: string,
+    useTestApi?: boolean,
+  ) => Promise<TResponse>;
 };
 
 export const isConversationWebhookEvent = (
@@ -91,22 +95,29 @@ export const redirectConversationMessageToExternalChat = async (
 ): Promise<RedirectResult> => {
   const { Body, ConversationSid, EventType, ParticipantSid, Source, Author } = event;
   let shouldSend = false;
+  const client = context.getTwilioClient();
   if (Source === 'SDK') {
     shouldSend = true;
   } else if (Source === 'API' && EventType === 'onMessageAdded') {
-    const client = context.getTwilioClient();
-    const conversation = await client.conversations.v1.conversations.get(ConversationSid).fetch();
-    const { attributes: attributesString } = conversation;
-    const attributes = JSON.parse(attributesString);
+    const participants = await client.conversations.v1.conversations
+      .get(ConversationSid)
+      .participants.list();
 
-    const { participantSid } = attributes;
+    const sortByDateCreated = (a: any, b: any) => (a.dateCreated > b.dateCreated ? 1 : -1);
+    const firstParticipantSid = participants.sort(sortByDateCreated)[0]?.sid;
 
     // Redirect bot, system or third participant, but not self
     // conversation participantSid is being set to Author in Instagram convos for some reason?
-    shouldSend = participantSid && ![Author, ParticipantSid].includes(participantSid);
+    shouldSend =
+      Boolean(firstParticipantSid) && ![Author, ParticipantSid].includes(firstParticipantSid);
   }
   if (shouldSend) {
-    const response = await sendExternalMessage(recipientId, Body);
+    const useTestApi =
+      JSON.parse(
+        (await client.conversations.v1.conversations.get(ConversationSid).fetch())?.attributes ??
+          {},
+      ).useTestApi ?? false;
+    const response = await sendExternalMessage(recipientId, Body, useTestApi);
     if (response.ok) {
       return { status: 'sent', response };
     }
