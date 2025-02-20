@@ -88,9 +88,12 @@ const trimSpaces = (s: string) => s.replaceAll(' ', '');
 const trimHyphens = (s: string) => s.replaceAll('-', '');
 const phoneNumberStandardization = (s: string) =>
   [trimSpaces, trimHyphens].reduce((accum, f) => f(accum), s);
+// If the Aselo Connector is being used, we might get a voice From that looks like
+// 'sip:+2601234567@41.52.63.73'. This regexp should normalize the string.
+const aseloConnectorNormalization = (s: string) => s.match(/sip:([^@]+)/)?.[1] || s;
 type TransformIdentifierFunction = (c: string) => string;
 const channelTransformations: { [k: string]: TransformIdentifierFunction[] } = {
-  voice: [phoneNumberStandardization],
+  voice: [aseloConnectorNormalization, phoneNumberStandardization],
   sms: [phoneNumberStandardization],
   whatsapp: [(s) => s.replace('whatsapp:', ''), phoneNumberStandardization],
   modica: [(s) => s.replace('modica:', ''), phoneNumberStandardization],
