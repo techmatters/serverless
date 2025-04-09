@@ -307,6 +307,18 @@ export const postText = async (
     userId: string;
   },
 ) => {
+  console.log(
+    JSON.stringify({
+      botLanguage,
+      botSuffix,
+      enableLexV2,
+      environment,
+      helplineCode,
+      inputText,
+      userId,
+    }),
+  );
+
   try {
     if (enableLexV2) {
       const result = await LexV2.getBotName(credentials, {
@@ -322,19 +334,23 @@ export const postText = async (
 
       const { botAliasId, botId, localeId } = result.botDetails;
 
-      return await LexV2.postText(credentials, {
+      const res = await LexV2.postText(credentials, {
         botAliasId,
         botId,
         inputText,
         localeId,
         sessionId: userId,
       });
+      console.log(JSON.stringify(res));
+      return res;
     }
 
     const botName = LexV1.getBotName({ botLanguage, botSuffix, environment, helplineCode });
     const botAlias = 'latest'; // Assume we always use the latest published version
 
-    return await LexV1.postText(credentials, { botAlias, botName, inputText, userId });
+    const res = await LexV1.postText(credentials, { botAlias, botName, inputText, userId });
+    console.log(JSON.stringify(res));
+    return res;
   } catch (error) {
     return {
       status: 'failure',
