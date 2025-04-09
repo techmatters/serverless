@@ -539,7 +539,7 @@ export const handleChannelCapture = async (
     : await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
 
   const serviceConfig = await client.flexApi.configuration.get().fetch();
-  const enableLexV2 = Boolean(serviceConfig.attributes.enable_lex_v2);
+  const enableLexV2 = Boolean(serviceConfig.attributes.feature_flags.enable_lex_v2);
 
   const options: CaptureChannelOptions = {
     enableLexV2,
