@@ -231,18 +231,16 @@ const getBotNameV2 = async (
   },
 ) => {
   try {
-    const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY, AWS_REGION } = credentials;
+    const { ASELO_APP_ACCESS_KEY, ASELO_APP_SECRET_KEY } = credentials;
 
-    AWS.config.update({
+    const ssmParamName = `/${environment}/serverless/bots/${helplineCode}_${botLanguage}_${botSuffix}`;
+    const SSM = new AWS.SSM({
+      region: 'us-east-1',
       credentials: {
         accessKeyId: ASELO_APP_ACCESS_KEY,
         secretAccessKey: ASELO_APP_SECRET_KEY,
       },
-      region: AWS_REGION,
     });
-
-    const ssmParamName = `/${environment}/serverless/bots/${helplineCode}_${botLanguage}_${botSuffix}`;
-    const SSM = new AWS.SSM();
     const botDetailsParam = await SSM.getParameter({
       Name: ssmParamName,
       WithDecryption: true,

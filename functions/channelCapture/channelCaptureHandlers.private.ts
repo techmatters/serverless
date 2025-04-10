@@ -543,8 +543,8 @@ export const handleChannelCapture = async (
 
   const options: CaptureChannelOptions = {
     enableLexV2,
-    environment: ENVIRONMENT,
-    helplineCode: HELPLINE_CODE,
+    environment: ENVIRONMENT.toLowerCase(),
+    helplineCode: HELPLINE_CODE.toLowerCase(),
     botSuffix,
     botLanguage: languageSanitized.toLowerCase(),
     releaseType,
