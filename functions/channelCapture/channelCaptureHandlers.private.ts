@@ -279,18 +279,20 @@ const triggerWithUserMessage = async (
   for (const message of messages) {
     if (isConversation) {
       // eslint-disable-next-line no-await-in-loop
-      await (channelOrConversation as ConversationInstance).messages().create({
+      const res = await (channelOrConversation as ConversationInstance).messages().create({
         body: message,
         author: 'Bot',
         xTwilioWebhookEnabled: 'true',
       });
+      console.log(res);
     } else {
       // eslint-disable-next-line no-await-in-loop
-      await (channelOrConversation as ChannelInstance).messages().create({
+      const res = await (channelOrConversation as ChannelInstance).messages().create({
         body: message,
         from: 'Bot',
         xTwilioWebhookEnabled: 'true',
       });
+      console.log(res);
     }
   }
 };
