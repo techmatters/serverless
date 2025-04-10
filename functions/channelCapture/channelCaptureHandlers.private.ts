@@ -269,33 +269,31 @@ const triggerWithUserMessage = async (
 
   const { lexResponse, lexVersion } = lexResult;
 
-  const messages: string[] = [];
+  let messages: string[] = [];
   if (lexVersion === 'v1') {
     messages.push(lexResponse.message || '');
   } else if (lexVersion === 'v2') {
-    console.log('>>>> lexResponse.messages', lexResponse.messages);
-    messages.concat(lexResponse.messages!.map((m) => m.content || ''));
+    if (!lexResponse.messages) {
+      throw new Error('Lex response does not includes messages');
+    }
+    messages = messages.concat(lexResponse.messages.map((m) => m.content || ''));
   }
-
-  console.log('>>>> messages', messages);
 
   for (const message of messages) {
     if (isConversation) {
       // eslint-disable-next-line no-await-in-loop
-      const res = await (channelOrConversation as ConversationInstance).messages().create({
+      await (channelOrConversation as ConversationInstance).messages().create({
         body: message,
         author: 'Bot',
         xTwilioWebhookEnabled: 'true',
       });
-      console.log(res);
     } else {
       // eslint-disable-next-line no-await-in-loop
-      const res = await (channelOrConversation as ChannelInstance).messages().create({
+      await (channelOrConversation as ChannelInstance).messages().create({
         body: message,
         from: 'Bot',
         xTwilioWebhookEnabled: 'true',
       });
-      console.log(res);
     }
   }
 };
