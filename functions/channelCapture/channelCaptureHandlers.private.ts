@@ -272,9 +272,12 @@ const triggerWithUserMessage = async (
   const messages: string[] = [];
   if (lexVersion === 'v1') {
     messages.push(lexResponse.message || '');
-  } else if (lexVersion === 'v2' && lexResponse.messages) {
-    messages.concat(lexResponse.messages.map((m) => m.content || ''));
+  } else if (lexVersion === 'v2') {
+    console.log('>>>> lexResponse.messages', lexResponse.messages);
+    messages.concat(lexResponse.messages!.map((m) => m.content || ''));
   }
+
+  console.log('>>>> messages', messages);
 
   for (const message of messages) {
     if (isConversation) {
