@@ -174,11 +174,11 @@ export const handler = async (
       }
 
       // TODO: unify with functions/channelCapture/channelCaptureHandlers.private.ts
-      const messages: string[] = [];
+      let messages: string[] = [];
       if (lexVersion === 'v1') {
         messages.push(lexResponse.message || '');
       } else if (lexVersion === 'v2' && lexResponse.messages) {
-        messages.concat(lexResponse.messages.map((m) => m.content || ''));
+        messages = messages.concat(lexResponse.messages.map((m) => m.content || ''));
       }
 
       // TODO: unify with functions/channelCapture/channelCaptureHandlers.private.ts
