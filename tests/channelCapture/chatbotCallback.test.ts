@@ -34,8 +34,11 @@ const defaultChannel = {
     channelSid: 'CH123',
     serviceUserIdentity: 'serviceUserIdentity',
     capturedChannelAttributes: {
-      botName: 'botName',
-      botAlias: 'latest',
+      botLanguage: 'botLanguage',
+      botSuffix: 'botSuffix',
+      enableLexV2: false,
+      environment: 'environment',
+      helplineCode: 'helplineCode',
       localeId: 'en_US',
       userId: 'CH123',
       controlTaskSid: 'WT123',
@@ -162,6 +165,7 @@ describe('chatbotCallback', () => {
       async () =>
         ({
           status: 'success',
+          lexVersion: 'v1',
           lexResponse: {
             dialogState: 'ElicitIntent',
             message: 'Some response from Lex',
@@ -173,8 +177,11 @@ describe('chatbotCallback', () => {
     await chatbotCallback(context as any, event, () => {});
 
     expect(postTextSpy).toHaveBeenCalledWith(context, {
-      botName: 'botName',
-      botAlias: 'latest',
+      botLanguage: 'botLanguage',
+      botSuffix: 'botSuffix',
+      enableLexV2: false,
+      environment: 'environment',
+      helplineCode: 'helplineCode',
       userId: 'CH123',
       inputText: event.Body,
     });
@@ -217,6 +224,7 @@ describe('chatbotCallback', () => {
         async () =>
           ({
             status: 'success',
+            lexVersion: 'v1',
             lexResponse: {
               dialogState,
               message: 'Some response from Lex',
@@ -235,14 +243,20 @@ describe('chatbotCallback', () => {
       await chatbotCallback(context as any, event, () => {});
 
       expect(postTextSpy).toHaveBeenCalledWith(context, {
-        botName: 'botName',
-        botAlias: 'latest',
+        botLanguage: 'botLanguage',
+        botSuffix: 'botSuffix',
+        enableLexV2: false,
+        environment: 'environment',
+        helplineCode: 'helplineCode',
         userId: 'CH123',
         inputText: event.Body,
       });
       expect(deleteSessionSpy).toHaveBeenCalledWith(context, {
-        botName: 'botName',
-        botAlias: 'latest',
+        botLanguage: 'botLanguage',
+        botSuffix: 'botSuffix',
+        enableLexV2: false,
+        environment: 'environment',
+        helplineCode: 'helplineCode',
         userId: 'CH123',
       });
       expect(updateChannelSpy).toHaveBeenCalledWith({
