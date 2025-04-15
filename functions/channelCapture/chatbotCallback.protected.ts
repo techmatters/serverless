@@ -129,11 +129,17 @@ export const handler = async (
       const capturedChannelAttributes =
         channelAttributes.capturedChannelAttributes as CapturedChannelAttributes;
 
+      const { botLanguage, botSuffix, enableLexV2, environment, helplineCode, userId } =
+        capturedChannelAttributes;
+
       const lexResult = await lexClient.postText(context, {
-        botName: capturedChannelAttributes.botName,
-        botAlias: capturedChannelAttributes.botAlias,
-        userId: capturedChannelAttributes.userId,
+        botLanguage,
+        botSuffix,
+        enableLexV2,
+        environment,
+        helplineCode,
         inputText: Body,
+        userId,
       });
 
       if (lexResult.status === 'failure') {
@@ -150,9 +156,9 @@ export const handler = async (
         throw lexResult.error;
       }
 
-      const { lexResponse } = lexResult;
+      const { lexResponse, lexVersion } = lexResult;
       // If the session ended, we should unlock the channel to continue the Studio Flow
-      if (lexClient.isEndOfDialog(lexResponse.dialogState)) {
+      if (lexClient.isEndOfDialog({ enableLexV2, lexResponse })) {
         const { chatbotCallbackCleanup } = require(Runtime.getFunctions()[
           'channelCapture/chatbotCallbackCleanup'
         ].path) as ChatbotCallbackCleanupModule;
@@ -162,23 +168,36 @@ export const handler = async (
           conversation,
           channel,
           channelAttributes,
-          memory: lexResponse.slots,
+          memory: lexClient.getBotMemory({ enableLexV2, lexResponse }),
           lexClient,
         });
       }
 
-      if (conversation) {
-        await conversation.messages().create({
-          body: lexResponse.message,
-          author: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
-      } else {
-        await channel?.messages().create({
-          body: lexResponse.message,
-          from: 'Bot',
-          xTwilioWebhookEnabled: 'true',
-        });
+      // TODO: unify with functions/channelCapture/channelCaptureHandlers.private.ts
+      let messages: string[] = [];
+      if (lexVersion === 'v1') {
+        messages.push(lexResponse.message || '');
+      } else if (lexVersion === 'v2' && lexResponse.messages) {
+        messages = messages.concat(lexResponse.messages.map((m) => m.content || ''));
+      }
+
+      // TODO: unify with functions/channelCapture/channelCaptureHandlers.private.ts
+      for (const message of messages) {
+        if (conversation) {
+          // eslint-disable-next-line no-await-in-loop
+          await conversation.messages().create({
+            body: message,
+            author: 'Bot',
+            xTwilioWebhookEnabled: 'true',
+          });
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          await channel?.messages().create({
+            body: message,
+            from: 'Bot',
+            xTwilioWebhookEnabled: 'true',
+          });
+        }
       }
 
       resolve(success('All messages sent :)'));

@@ -29,8 +29,6 @@ import type { WebhookListInstanceCreateOptions as ChannelWebhookOpts } from 'twi
 import type { WebhookListInstanceCreateOptions as ConversationWebhookOpts } from 'twilio/lib/rest/conversations/v1/conversation/webhook';
 import type { TaskInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/task';
 import { MemberInstance } from 'twilio/lib/rest/ipMessaging/v2/service/channel/member';
-import { MessageListInstanceCreateOptions as ConversationMessageListInstanceCreateOptions } from 'twilio/lib/rest/conversations/v1/conversation/message';
-import { MessageListInstanceCreateOptions as ChannelMessageListInstanceCreateOptions } from 'twilio/lib/rest/chat/v2/service/channel/message';
 import type { AWSCredentials, LexClient, LexMemory } from './lexClient.private';
 import type { BuildDataObject, PostSurveyData } from '../helpers/hrmDataManipulation.private';
 import type {
@@ -58,9 +56,12 @@ const releaseTypes = ['triggerStudioFlow', 'postSurveyComplete'] as const;
 export type ReleaseTypes = typeof releaseTypes[number];
 
 export type CapturedChannelAttributes = {
+  enableLexV2: boolean;
   userId: string;
-  botName: string;
-  botAlias: string;
+  environment: string;
+  helplineCode: string;
+  botLanguage: string;
+  botSuffix: string;
   controlTaskSid: string;
   releaseType: ReleaseTypes;
   studioFlowSid?: string;
@@ -108,9 +109,12 @@ const updateChannelWithCapture = async (
   attributes: CapturedChannelAttributes,
 ) => {
   const {
+    enableLexV2,
     userId,
-    botName,
-    botAlias,
+    environment,
+    helplineCode,
+    botLanguage,
+    botSuffix,
     controlTaskSid,
     chatbotCallbackWebhookSid,
     releaseType,
@@ -136,9 +140,12 @@ const updateChannelWithCapture = async (
       participantSid: userIdentityOrParticipantId,
       // All of this can be passed as url params to the webhook instead
       capturedChannelAttributes: {
+        enableLexV2,
         userId,
-        botName,
-        botAlias,
+        environment,
+        helplineCode,
+        botLanguage,
+        botSuffix,
         controlTaskSid,
         chatbotCallbackWebhookSid,
         releaseType,
@@ -160,8 +167,11 @@ const updateChannelWithCapture = async (
 };
 
 type CaptureChannelOptions = {
-  botName: string;
-  botAlias: string;
+  enableLexV2: boolean;
+  environment: string;
+  helplineCode: string;
+  botLanguage: string;
+  botSuffix: string;
   inputText: string;
   userId: string;
   controlTaskSid: string;
@@ -180,9 +190,12 @@ const triggerWithUserMessage = async (
   context: Context<EnvVars>,
   channelOrConversation: ChannelInstance | ConversationInstance,
   {
+    enableLexV2,
     userId,
-    botName,
-    botAlias,
+    environment,
+    helplineCode,
+    botSuffix,
+    botLanguage,
     inputText,
     controlTaskSid,
     releaseType,
@@ -198,10 +211,13 @@ const triggerWithUserMessage = async (
 
   // trigger Lex first, in order to reduce the time between the creating the webhook and sending the message
   const lexResult = await lexClient.postText(context, {
-    botName,
-    botAlias,
-    userId,
+    botLanguage,
+    botSuffix,
+    enableLexV2,
+    environment,
+    helplineCode,
     inputText,
+    userId,
   });
 
   const channelWebhook: ChannelWebhookOpts = {
@@ -232,9 +248,12 @@ const triggerWithUserMessage = async (
   }
 
   await updateChannelWithCapture(channelOrConversation, {
+    enableLexV2,
     userId,
-    botName,
-    botAlias,
+    environment,
+    helplineCode,
+    botLanguage,
+    botSuffix,
     controlTaskSid,
     releaseType,
     studioFlowSid,
@@ -250,24 +269,34 @@ const triggerWithUserMessage = async (
     throw lexResult.error;
   }
 
-  const { lexResponse } = lexResult;
+  const { lexResponse, lexVersion } = lexResult;
 
-  const conversationMessage: ConversationMessageListInstanceCreateOptions = {
-    body: lexResponse.message,
-    author: 'Bot',
-    xTwilioWebhookEnabled: 'true',
-  };
+  let messages: string[] = [];
+  if (lexVersion === 'v1') {
+    messages.push(lexResponse.message || '');
+  } else if (lexVersion === 'v2') {
+    if (!lexResponse.messages) {
+      throw new Error('Lex response does not includes messages');
+    }
+    messages = messages.concat(lexResponse.messages.map((m) => m.content || ''));
+  }
 
-  const channelMessage: ChannelMessageListInstanceCreateOptions = {
-    body: lexResponse.message,
-    from: 'Bot',
-    xTwilioWebhookEnabled: 'true',
-  };
-
-  if (isConversation) {
-    await (channelOrConversation as ConversationInstance).messages().create(conversationMessage);
-  } else {
-    await (channelOrConversation as ChannelInstance).messages().create(channelMessage);
+  for (const message of messages) {
+    if (isConversation) {
+      // eslint-disable-next-line no-await-in-loop
+      await (channelOrConversation as ConversationInstance).messages().create({
+        body: message,
+        author: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      await (channelOrConversation as ChannelInstance).messages().create({
+        body: message,
+        from: 'Bot',
+        xTwilioWebhookEnabled: 'true',
+      });
+    }
   }
 };
 
@@ -278,9 +307,12 @@ const triggerWithNextMessage = async (
   context: Context<EnvVars>,
   channelOrConversation: ChannelInstance | ConversationInstance,
   {
+    enableLexV2,
     userId,
-    botName,
-    botAlias,
+    environment,
+    helplineCode,
+    botLanguage,
+    botSuffix,
     inputText,
     controlTaskSid,
     releaseType,
@@ -332,9 +364,12 @@ const triggerWithNextMessage = async (
 
   // const updated =
   await updateChannelWithCapture(channelOrConversation, {
+    enableLexV2,
     userId,
-    botName,
-    botAlias,
+    environment,
+    helplineCode,
+    botLanguage,
+    botSuffix,
     controlTaskSid,
     releaseType,
     studioFlowSid,
@@ -502,19 +537,21 @@ export const handleChannelCapture = async (
     languageSanitized = languageSanitized.replace(/\d/g, '');
   }
 
-  const botName = `${ENVIRONMENT}_${HELPLINE_CODE.toLowerCase()}_${languageSanitized}_${botSuffix}`;
+  const client = context.getTwilioClient();
 
   const channelOrConversation: ChannelInstance | ConversationInstance = conversationSid
-    ? await context.getTwilioClient().conversations.conversations(conversationSid).fetch()
-    : await context
-        .getTwilioClient()
-        .chat.services(context.CHAT_SERVICE_SID)
-        .channels(channelSid)
-        .fetch();
+    ? await client.conversations.conversations(conversationSid).fetch()
+    : await client.chat.services(context.CHAT_SERVICE_SID).channels(channelSid).fetch();
+
+  const serviceConfig = await client.flexApi.configuration.get().fetch();
+  const enableLexV2 = Boolean(serviceConfig.attributes.feature_flags.enable_lex_v2);
 
   const options: CaptureChannelOptions = {
-    botName,
-    botAlias: 'latest', // Assume we always use the latest published version
+    enableLexV2,
+    environment: ENVIRONMENT.toLowerCase(),
+    helplineCode: HELPLINE_CODE.toLowerCase(),
+    botSuffix,
+    botLanguage: languageSanitized.toLowerCase(),
     releaseType,
     studioFlowSid,
     memoryAttribute,
