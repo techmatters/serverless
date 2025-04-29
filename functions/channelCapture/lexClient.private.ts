@@ -102,16 +102,16 @@ const deleteSessionV1 = async (
 };
 
 const getBotNameV1 = ({
-  botLanguage,
+  botLanguageV1,
   botSuffix,
   environment,
   helplineCode,
 }: {
   environment: string;
   helplineCode: string;
-  botLanguage: string;
+  botLanguageV1: string;
   botSuffix: string;
-}) => `${environment}_${helplineCode}_${botLanguage}_${botSuffix}`;
+}) => `${environment}_${helplineCode}_${botLanguageV1}_${botSuffix}`;
 
 export const LexV1 = {
   postText: postTextV1,
@@ -289,6 +289,7 @@ export const postText = async (
   credentials: AWSCredentials,
   {
     botLanguage,
+    botLanguageV1,
     botSuffix,
     enableLexV2,
     environment,
@@ -300,6 +301,7 @@ export const postText = async (
     environment: string;
     helplineCode: string;
     botLanguage: string;
+    botLanguageV1: string;
     botSuffix: string;
     inputText: string;
     userId: string;
@@ -330,7 +332,7 @@ export const postText = async (
       return res;
     }
 
-    const botName = LexV1.getBotName({ botLanguage, botSuffix, environment, helplineCode });
+    const botName = LexV1.getBotName({ botLanguageV1, botSuffix, environment, helplineCode });
     const botAlias = 'latest'; // Assume we always use the latest published version
 
     const res = await LexV1.postText(credentials, { botAlias, botName, inputText, userId });
@@ -347,6 +349,7 @@ export const deleteSession = async (
   credentials: AWSCredentials,
   {
     botLanguage,
+    botLanguageV1,
     botSuffix,
     enableLexV2,
     environment,
@@ -357,6 +360,7 @@ export const deleteSession = async (
     environment: string;
     helplineCode: string;
     botLanguage: string;
+    botLanguageV1: string;
     botSuffix: string;
     userId: string;
   },
@@ -384,7 +388,7 @@ export const deleteSession = async (
       });
     }
 
-    const botName = LexV1.getBotName({ botLanguage, botSuffix, environment, helplineCode });
+    const botName = LexV1.getBotName({ botLanguageV1, botSuffix, environment, helplineCode });
     const botAlias = 'latest'; // Assume we always use the latest published version
 
     return await LexV1.deleteSession(credentials, { botAlias, botName, userId });
