@@ -127,23 +127,23 @@ export const handler = TokenValidator(
       const masterWorkflow = workflows.find(
         (workflow) => workflow.friendlyName === 'Master Workflow',
       );
-      if (!masterWorkflow) {
-        console.error('Master Workflow not found');
-        resolve(error400('Master Workflow not found parameter not provided'));
-        return;
-      }
+      // if (!masterWorkflow) {
+      //   console.error('Master Workflow not found');
+      //   resolve(error400('Master Workflow not found parameter not provided'));
+      //   return;
+      // }
 
-      // Check for Transfer Workflow
+      // // Check for Transfer Workflow
       const transferWorkflow = workflows.find((workflow) => workflow.friendlyName === 'Transfers');
-      if (!transferWorkflow) {
-        console.error('Transfers Workflow not found');
-        resolve(error400('Transfers Workflow not found parameter not provided'));
-        return;
-      }
+      // if (!transferWorkflow) {
+      //   console.error('Transfers Workflow not found');
+      //   resolve(error400('Transfers Workflow not found parameter not provided'));
+      //   return;
+      // }
 
       // Both workflows found, proceed
-      const masterConfiguration = JSON.stringify(masterWorkflow.configuration, null, 2);
-      const transferConfiguration = JSON.stringify(transferWorkflow.configuration, null, 2);
+      const masterConfiguration = JSON.stringify(masterWorkflow?.configuration, null, 2);
+      const transferConfiguration = JSON.stringify(transferWorkflow?.configuration, null, 2);
 
       console.log(`>>> Master Workflow Configuration: ${masterConfiguration}`);
       console.log(`>>> Transfer Workflow Configuration: ${transferConfiguration}`);
