@@ -110,6 +110,7 @@ export const handler = TokenValidator(
       const transferWorkflow = workflows.find(
         (workflow) => workflow.friendlyName === 'Queue Transfers Workflow',
       );
+      console.log(`>>> Workflows: ${JSON.stringify(workflows, null, 2)}`);
 
       if (!masterWorkflow || !transferWorkflow) {
         console.error(`Workflow not found: ${masterWorkflow}, ${transferWorkflow}`);
