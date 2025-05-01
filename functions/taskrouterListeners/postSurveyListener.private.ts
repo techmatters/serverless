@@ -78,8 +78,7 @@ const isTriggerPostSurvey = (
  * Checks the event type to determine if the listener should handle the event or not.
  * If it returns true, the taskrouter will invoke this listener.
  */
-export const shouldHandle = () => false;
-// export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
+export const shouldHandle = (event: EventFields) => eventTypes.includes(event.EventType);
 
 export const handleEvent = async (context: Context<EnvVars>, event: EventFields) => {
   const {
