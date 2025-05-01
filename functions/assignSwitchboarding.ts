@@ -104,20 +104,44 @@ export const handler = TokenValidator(
       console.log(`>>> Original Queue: ${originalQueue.friendlyName}, SID: ${originalQueue.sid}`);
 
       const workflows = await taskRouterClient.workflows.list();
+
+      // Log each workflow individually with key properties
+      console.log('>>> Workflows Information:');
+      workflows.forEach((workflow, index) => {
+        console.log(`\n>>> Workflow ${index + 1}:`);
+        console.log(`>>> Friendly Name: ${workflow.friendlyName}`);
+        console.log(`>>> Assignment Callback URL: ${workflow.assignmentCallbackUrl || 'N/A'}`);
+        console.log(`>>> Task Reservation Timeout: ${workflow.taskReservationTimeout}`);
+        try {
+          // Parse configuration to log it in a readable way
+          const config = JSON.parse(workflow.configuration);
+          console.log(
+            `>>> Configuration Summary: ${JSON.stringify(config, null, 2).substring(0, 500)}...`,
+          );
+        } catch (e) {
+          console.log(`>>> Configuration (raw): ${workflow.configuration}`);
+        }
+      });
+
+      // Check for Master Workflow
       const masterWorkflow = workflows.find(
         (workflow) => workflow.friendlyName === 'Master Workflow',
       );
-      const transferWorkflow = workflows.find(
-        (workflow) => workflow.friendlyName === 'Queue Transfers Workflow',
-      );
-      console.log(`>>> Workflows: ${JSON.stringify(workflows, null, 2)}`);
-
-      if (!masterWorkflow || !transferWorkflow) {
-        console.error(`Workflow not found: ${masterWorkflow}, ${transferWorkflow}`);
-        resolve(error400('Workflow not found'));
+      if (!masterWorkflow) {
+        console.error('Master Workflow not found');
+        resolve(error400('Master Workflow not found parameter not provided'));
         return;
       }
 
+      // Check for Transfer Workflow
+      const transferWorkflow = workflows.find((workflow) => workflow.friendlyName === 'Transfers');
+      if (!transferWorkflow) {
+        console.error('Transfers Workflow not found');
+        resolve(error400('Transfers Workflow not found parameter not provided'));
+        return;
+      }
+
+      // Both workflows found, proceed
       const masterConfiguration = JSON.stringify(masterWorkflow.configuration, null, 2);
       const transferConfiguration = JSON.stringify(transferWorkflow.configuration, null, 2);
 
