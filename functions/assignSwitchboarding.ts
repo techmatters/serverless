@@ -34,14 +34,77 @@ type EnvVars = {
 
 export type Body = {
   originalQueueSid?: string;
+  operation?: 'enable' | 'disable' | 'status';
   request: { cookies: {}; headers: {} };
   Token: string;
 };
 
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
+type SwitchboardingState = {
+  isEnabled: boolean;
+  originalQueueSid?: string;
+  originalQueueName?: string;
+  enabledBy?: string;
+  enabledAt?: string;
+};
+
+const switchboardingState: SwitchboardingState = {
+  isEnabled: false,
+};
+
 const isSupervisor = (tokenResult: TokenValidatorResponse) =>
   Array.isArray(tokenResult.roles) && tokenResult.roles.includes('supervisor');
+
+/**
+ * Adds a filter to the workflow configuration to redirect calls from originalQueue to switchboardQueue
+ * except for calls that have been transferred (to avoid bouncing)
+ */
+function addSwitchboardingFilter(
+  config: any,
+  originalQueueSid: string,
+  switchboardQueueSid: string,
+): any {
+  // Clone the configuration to avoid modifying the original
+  const updatedConfig = JSON.parse(JSON.stringify(config));
+
+  // Add a new filter at the top of the filter chain to redirect to switchboard
+  // This filter should check if:
+  // 1. The task is targeting the original queue
+  // 2. The task is not a transfer (check transferMeta or other attributes)
+  const switchboardingFilter = {
+    filter_friendly_name: 'Switchboarding Active Filter',
+    expression: `task.taskQueueSid == "${originalQueueSid}" AND !task.transferMeta`,
+    targets: [
+      {
+        queue: switchboardQueueSid,
+        expression: 'worker.available == true', // Only route to available workers
+        priority: 100, // High priority
+        skip_if: 'task.transferMeta', // Skip if it's a transfer
+      },
+    ],
+  };
+
+  // Insert the new filter at the beginning of the task_routing.filters array
+  updatedConfig.task_routing.filters.unshift(switchboardingFilter);
+
+  return updatedConfig;
+}
+
+/**
+ * Removes the switchboarding filter from the workflow configuration
+ */
+function removeSwitchboardingFilter(config: any): any {
+  // Clone the configuration to avoid modifying the original
+  const updatedConfig = JSON.parse(JSON.stringify(config));
+
+  // Remove the switchboarding filter (identified by its friendly name)
+  updatedConfig.task_routing.filters = updatedConfig.task_routing.filters.filter(
+    (filter: any) => filter.filter_friendly_name !== 'Switchboarding Active Filter',
+  );
+
+  return updatedConfig;
+}
 
 export const handler = TokenValidator(
   async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
@@ -52,7 +115,6 @@ export const handler = TokenValidator(
     const authToken = context.AUTH_TOKEN;
     const { Token: token } = event;
 
-    // Check for token presence
     if (!token) {
       console.error('Token is missing in the request.');
       resolve(error400('token'));
@@ -60,14 +122,12 @@ export const handler = TokenValidator(
     }
 
     try {
-      // Validate the token
       const tokenResult: TokenValidatorResponse = await validator(
         token as string,
         accountSid,
         authToken,
       );
 
-      // Check if the user has supervisor role
       const isSupervisorToken = isSupervisor(tokenResult);
       console.log(`Is Supervisor Token: ${isSupervisorToken}`);
 
@@ -79,14 +139,12 @@ export const handler = TokenValidator(
         return;
       }
 
-      const { originalQueueSid } = event;
+      const { originalQueueSid, operation = 'status' } = event;
 
-      // Initialize Twilio TaskRouter client
       const taskRouterClient = context
         .getTwilioClient()
         .taskrouter.workspaces(context.TWILIO_WORKSPACE_SID);
 
-      // Get list of queues and workflows
       const queues = await taskRouterClient.taskQueues.list();
 
       const switchboardQueue = queues.find((queue) => queue.friendlyName === 'Switchboard Queue');
@@ -95,61 +153,120 @@ export const handler = TokenValidator(
         resolve(error400('Switchboard Queue not found'));
         return;
       }
+
+      if (operation === 'status') {
+        console.log('Returning switchboarding status');
+        resolve(success(switchboardingState));
+        return;
+      }
+
+      if (!originalQueueSid) {
+        console.error('Original Queue SID is required for enable/disable operations.');
+        resolve(error400('Original Queue SID is required'));
+        return;
+      }
+
       const originalQueue = queues.find((queue) => queue.sid === originalQueueSid);
       if (!originalQueue) {
         console.error('Original Queue not found.');
         resolve(error400('Original Queue not found'));
         return;
       }
+      console.log(
+        `>>> Switchboard Queue: ${switchboardQueue.friendlyName}, SID: ${switchboardQueue.sid}`,
+      );
       console.log(`>>> Original Queue: ${originalQueue.friendlyName}, SID: ${originalQueue.sid}`);
 
       const workflows = await taskRouterClient.workflows.list();
 
-      // Log each workflow individually with key properties
-      console.log('>>> Workflows Information:');
-      workflows.forEach((workflow, index) => {
-        console.log(`\n>>> Workflow ${index + 1}:`);
-        console.log(`>>> Friendly Name: ${workflow.friendlyName}`);
-        console.log(`>>> Assignment Callback URL: ${workflow.assignmentCallbackUrl || 'N/A'}`);
-        console.log(`>>> Task Reservation Timeout: ${workflow.taskReservationTimeout}`);
-        try {
-          // Parse configuration to log it in a readable way
-          const config = JSON.parse(workflow.configuration);
-          console.log(
-            `>>> Configuration Summary: ${JSON.stringify(config, null, 2).substring(0, 500)}...`,
-          );
-        } catch (e) {
-          console.log(`>>> Configuration (raw): ${workflow.configuration}`);
-        }
-      });
-
-      // Check for Master Workflow
       const masterWorkflow = workflows.find(
         (workflow) => workflow.friendlyName === 'Master Workflow',
       );
-      // if (!masterWorkflow) {
-      //   console.error('Master Workflow not found');
-      //   resolve(error400('Master Workflow not found parameter not provided'));
-      //   return;
-      // }
 
-      // // Check for Transfer Workflow
-      const transferWorkflow = workflows.find((workflow) => workflow.friendlyName === 'Transfers');
-      // if (!transferWorkflow) {
-      //   console.error('Transfers Workflow not found');
-      //   resolve(error400('Transfers Workflow not found parameter not provided'));
-      //   return;
-      // }
+      if (!masterWorkflow) {
+        console.error('Master Workflow not found');
+        resolve(error400('Master Workflow not found'));
+        return;
+      }
+      console.log(
+        `>>> Master Workflow: ${masterWorkflow.friendlyName}, SID: ${masterWorkflow.sid}`,
+      );
 
-      // Both workflows found, proceed
-      const masterConfiguration = JSON.stringify(masterWorkflow?.configuration, null, 2);
-      const transferConfiguration = JSON.stringify(transferWorkflow?.configuration, null, 2);
+      if (operation === 'enable') {
+        console.log('Enabling switchboarding mode...');
+        if (
+          switchboardingState.isEnabled &&
+          switchboardingState.originalQueueSid === originalQueueSid
+        ) {
+          console.log('Switchboarding is already enabled for this queue.');
+          resolve(
+            success({
+              message: 'Switchboarding is already active for this queue',
+              state: switchboardingState,
+            }),
+          );
+          return;
+        }
 
-      console.log(`>>> Master Workflow Configuration: ${masterConfiguration}`);
-      console.log(`>>> Transfer Workflow Configuration: ${transferConfiguration}`);
+        const masterConfig = JSON.parse(masterWorkflow.configuration);
 
-      const result = 'Switchboarding mode enabled';
-      resolve(success(result));
+        const updatedMasterConfig = addSwitchboardingFilter(
+          masterConfig,
+          originalQueue.sid,
+          switchboardQueue.sid,
+        );
+
+        await taskRouterClient.workflows(masterWorkflow.sid).update({
+          configuration: JSON.stringify(updatedMasterConfig),
+        });
+
+        console.log('Switchboarding mode enabled');
+        resolve(
+          success({
+            message: 'Switchboarding mode enabled',
+            state: {
+              isEnabled: true,
+              originalQueueSid,
+              originalQueueName: originalQueue.friendlyName,
+              enabledBy: tokenResult.worker_sid,
+              enabledAt: new Date().toISOString(),
+            },
+          }),
+        );
+      } else if (operation === 'disable') {
+        console.log('Disabling switchboarding mode...');
+        if (!switchboardingState.isEnabled) {
+          console.log('Switchboarding is not currently enabled.');
+          resolve(
+            success({
+              message: 'Switchboarding is not currently active',
+              state: switchboardingState,
+            }),
+          );
+          return;
+        }
+
+        const masterConfig = JSON.parse(masterWorkflow.configuration);
+        const updatedMasterConfig = removeSwitchboardingFilter(masterConfig);
+
+        await taskRouterClient.workflows(masterWorkflow.sid).update({
+          configuration: JSON.stringify(updatedMasterConfig),
+        });
+
+        console.log('Switchboarding mode disabled');
+        resolve(
+          success({
+            message: 'Switchboarding mode disabled',
+            state: {
+              isEnabled: false,
+              originalQueueSid: undefined,
+              originalQueueName: undefined,
+              enabledBy: undefined,
+              enabledAt: undefined,
+            },
+          }),
+        );
+      }
     } catch (err: any) {
       console.error('Error in handler:', err);
       resolve(error500(err));
