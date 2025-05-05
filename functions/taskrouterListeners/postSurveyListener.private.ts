@@ -99,6 +99,13 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     const serviceConfig = await client.flexApi.configuration.get().fetch();
     const { feature_flags: featureFlags, helplineLanguage } = serviceConfig.attributes;
 
+    if (featureFlags.enable_lambda_post_survey_processing) {
+      console.debug(
+        'enable_lambda_post_survey_processing is set, the post survey handler will be process in twilio lambda.',
+      );
+      return;
+    }
+
     if (featureFlags.enable_post_survey) {
       const { channelSid, conversationSid, channelType, customChannelType } = taskAttributes;
 
