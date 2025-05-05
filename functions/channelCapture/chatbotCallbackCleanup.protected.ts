@@ -118,7 +118,7 @@ export const chatbotCallbackCleanup = async ({
     }
   };
 
-  const { botLanguage, botSuffix, enableLexV2, environment, helplineCode, userId } =
+  const { botLanguage, botLanguageV1, botSuffix, enableLexV2, environment, helplineCode, userId } =
     capturedChannelAttributes;
 
   const shouldDeleteSession = botLanguage && botSuffix && environment && helplineCode && userId;
@@ -128,6 +128,7 @@ export const chatbotCallbackCleanup = async ({
     shouldDeleteSession &&
       lexClient.deleteSession(context, {
         botLanguage,
+        botLanguageV1,
         botSuffix,
         enableLexV2,
         environment,
