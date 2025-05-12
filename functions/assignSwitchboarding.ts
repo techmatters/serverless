@@ -202,8 +202,8 @@ export const handler = TokenValidator(
         return;
       }
 
-      const { originalQueueSid, operation = 'status' } = event;
-      console.log(`>>> 2. EVENT: ${JSON.stringify(event)}`);
+      const { originalQueueSid, operation } = event;
+      console.log(`>>> 2. event:, operation: ${operation}, originalQueueSid: ${originalQueueSid}`);
 
       const client = context.getTwilioClient();
       const syncServiceSid = context.SYNC_SERVICE_SID;
