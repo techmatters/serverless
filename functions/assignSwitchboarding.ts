@@ -83,7 +83,16 @@ async function getSwitchboardState(
   syncServiceSid: string,
 ): Promise<SwitchboardingState> {
   const document = await getSwitchboardStateDocument(client, syncServiceSid);
-  return document.data;
+
+  const state = document.data || {};
+
+  return {
+    isEnabled: state.isEnabled === undefined ? false : state.isEnabled,
+    originalQueueSid: state.originalQueueSid,
+    originalQueueName: state.originalQueueName,
+    enabledBy: state.enabledBy,
+    enabledAt: state.enabledAt,
+  };
 }
 
 /**
@@ -194,7 +203,7 @@ export const handler = TokenValidator(
       }
 
       const { originalQueueSid, operation = 'status' } = event;
-      console.log(`>>> 2. OPERATION: Request operation is ${operation}`);
+      console.log(`>>> 2. EVENT: ${JSON.stringify(event)}`);
 
       const client = context.getTwilioClient();
       const syncServiceSid = context.SYNC_SERVICE_SID;
@@ -217,7 +226,12 @@ export const handler = TokenValidator(
       if (operation === 'status') {
         console.log('>>> 4. STATUS: Retrieving current switchboarding status');
         const switchboardingState = await getSwitchboardState(client, syncServiceSid);
-        console.log(`>>> 4a. STATUS: Current state - isEnabled: ${switchboardingState.isEnabled}`);
+        console.log(
+          `>>> 4a. STATUS: Current state - isEnabled: ${
+            switchboardingState.isEnabled === undefined ? false : switchboardingState.isEnabled
+          }`,
+        );
+        console.log('>>> 4b. STATUS: Full switchboard state:', JSON.stringify(switchboardingState));
         resolve(success(switchboardingState));
         return;
       }
