@@ -145,7 +145,6 @@ function addSwitchboardingFilter(
         queue: switchboardQueueSid,
         expression: 'worker.available == true', // Only route to available workers
         priority: 100, // High priority
-        skip_if: 'task.transferMeta != null', // Skip if it's a transfer
       },
     ],
   };
