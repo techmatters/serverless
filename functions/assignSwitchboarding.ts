@@ -132,44 +132,33 @@ function addSwitchboardingFilter(
   originalQueueSid: string,
   switchboardQueueSid: string,
 ): any {
-  // Clone the configuration to avoid modifying the original
   const updatedConfig = JSON.parse(JSON.stringify(config));
 
-  // Add a new filter at the top of the filter chain to redirect to switchboard
-  // This improved filter will:
-  // 1. Identify tasks that should go to the original queue
-  // 2. Mark them with attributes needed for switchboarding
-  // 3. Route them to the switchboard queue with proper attributes
-  // 4. Exclude tasks that are transfers or already handled
+  const filterName = `Switchboard Workflow - ${originalQueueSid}`;
+  console.log(`Adding switchboarding filter: ${filterName}`);
+
   const switchboardingFilter = {
-    filter_friendly_name: 'Switchboard Workflow',
+    filter_friendly_name: filterName,
     expression:
       'task.transferMeta == null AND task.switchboardingHandled == null AND task.switchboardingTransferExempt == null',
     targets: [
       {
         queue: switchboardQueueSid,
-        expression: 'worker.available == true', // Only route to available workers
-        priority: 100, // High priority
-        // For tasks that would normally go to the original queue, redirect them
+        expression: 'worker.available == true',
+        priority: 100,
         target_expression: `DEFAULT_TARGET_QUEUE_SID == '${originalQueueSid}'`,
-        // Add task attributes to help the Switchboard Workflow process it correctly
         task_attributes: {
           originalQueueSid,
           needsSwitchboarding: true,
           taskQueueSid: switchboardQueueSid,
+          switchboardingActive: true,
         },
       },
     ],
   };
 
-  // log the corrent filters
-  console.log('>>> Current filters:', updatedConfig.task_routing.filters);
-
   // Insert the new filter at the beginning of the task_routing.filters array
   updatedConfig.task_routing.filters.unshift(switchboardingFilter);
-
-  // log the updated filters
-  console.log('>>> Updated filters:', updatedConfig.task_routing.filters);
 
   return updatedConfig;
 }
@@ -216,12 +205,34 @@ async function moveTaskToQueue(
     const task = await client.taskrouter.workspaces(workspaceSid).tasks(taskSid).fetch();
     const currentAttributes = JSON.parse(task.attributes);
 
-    // Merge in any additional attributes
+    // Prepare switchboarding attributes based on whether moving to/from switchboard queue
+    const switchboardingAttributes = {
+      // If moving to the switchboard queue
+      ...(additionalAttributes.needsSwitchboarding
+        ? {
+            switchboardingActive: true,
+            switchboardingHandled: null, // Clear any previous handling flag
+          }
+        : {}),
+      // If moving from the switchboard queue back to original queue
+      ...(additionalAttributes.switchboardingHandled
+        ? {
+            switchboardingActive: false,
+            needsSwitchboarding: false,
+            switchboardingHandled: true,
+          }
+        : {}),
+    };
+
+    // Merge in all attributes
     const updatedAttributes = {
       ...currentAttributes,
       ...additionalAttributes,
+      ...switchboardingAttributes,
       taskQueueSid: targetQueueSid,
     };
+
+    console.log(`>>> Task ${taskSid} attributes update:`, JSON.stringify(updatedAttributes));
 
     // Update the task with new attributes and move it to the new queue
     await client.taskrouter
@@ -284,9 +295,21 @@ function removeSwitchboardingFilter(config: any): any {
   // Clone the configuration to avoid modifying the original
   const updatedConfig = JSON.parse(JSON.stringify(config));
 
-  // Remove the switchboarding filter (identified by its friendly name)
+  // Get the current filters for logging
+  console.log(
+    '>>> Current filters before removal:',
+    updatedConfig.task_routing.filters.map((filter: any) => filter.filter_friendly_name),
+  );
+
+  // Remove the switchboarding filters (identified by partial friendly name match)
   updatedConfig.task_routing.filters = updatedConfig.task_routing.filters.filter(
-    (filter: any) => filter.filter_friendly_name !== 'Switchboard Workflow',
+    (filter: any) => !filter.filter_friendly_name.startsWith('Switchboard Workflow'),
+  );
+
+  // Log the filters after removal
+  console.log(
+    '>>> Filters after removal:',
+    updatedConfig.task_routing.filters.map((filter: any) => filter.filter_friendly_name),
   );
 
   return updatedConfig;
