@@ -134,17 +134,28 @@ function addSwitchboardingFilter(
   const updatedConfig = JSON.parse(JSON.stringify(config));
 
   // Add a new filter at the top of the filter chain to redirect to switchboard
-  // This filter should check if:
-  // 1. The task is targeting the original queue
-  // 2. The task is not a transfer (check transferMeta or other attributes)
+  // This improved filter will:
+  // 1. Identify tasks that should go to the original queue
+  // 2. Mark them with attributes needed for switchboarding
+  // 3. Route them to the switchboard queue with proper attributes
+  // 4. Exclude tasks that are transfers or already handled
   const switchboardingFilter = {
     filter_friendly_name: 'Switchboarding Active Filter',
-    expression: `task.taskQueueSid == "${originalQueueSid}" AND task.transferMeta == null`,
+    expression:
+      '!has(task.transferMeta) AND !has(task.switchboardingHandled) AND !has(task.switchboardingTransferExempt)',
     targets: [
       {
         queue: switchboardQueueSid,
         expression: 'worker.available == true', // Only route to available workers
         priority: 100, // High priority
+        // For tasks that would normally go to the original queue, redirect them
+        target_expression: `DEFAULT_TARGET_QUEUE_SID == '${originalQueueSid}'`,
+        // Add task attributes to help the Switchboard Workflow process it correctly
+        task_attributes: {
+          originalQueueSid,
+          needsSwitchboarding: true,
+          taskQueueSid: switchboardQueueSid,
+        },
       },
     ],
   };
