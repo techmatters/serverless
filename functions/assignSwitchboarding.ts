@@ -90,7 +90,8 @@ async function getSwitchboardState(
   const state = document.data || {};
 
   return {
-    isSwitchboardingActive: state.isSwitchboardingActive === undefined ? false : state.isSwitchboardingActive,
+    isSwitchboardingActive:
+      state.isSwitchboardingActive === undefined ? false : state.isSwitchboardingActive,
     queueSid: state.queueSid,
     queueName: state.queueName,
     startTime: state.startTime,
@@ -231,7 +232,9 @@ export const handler = TokenValidator(
         const switchboardingState = await getSwitchboardState(client, syncServiceSid);
         console.log(
           `>>> 4a. STATUS: Current state - isEnabled: ${
-            switchboardingState.isSwitchboardingActive === undefined ? false : switchboardingState.isSwitchboardingActive
+            switchboardingState.isSwitchboardingActive === undefined
+              ? false
+              : switchboardingState.isSwitchboardingActive
           }`,
         );
         console.log('>>> 4b. STATUS: Full switchboard state:', JSON.stringify(switchboardingState));
@@ -365,7 +368,28 @@ export const handler = TokenValidator(
       }
     } catch (err: any) {
       console.error('>>> Error in switchboarding handler:', err);
-      resolve(error500(err));
+
+      // Enhanced error logging with details
+      console.error('>>> Error details:', {
+        message: err.message,
+        code: err.code,
+        status: err.status,
+        stack: err.stack,
+      });
+
+      // More specific error responses based on error type
+      if (err.message && err.message.includes('workflow')) {
+        console.error('>>> Workflow configuration error:', err);
+      } else if (err.message && err.message.includes('sync')) {
+        console.error('>>> Sync document error:', err);
+      } else if (
+        err.status === 403 ||
+        (err.message && err.message.toLowerCase().includes('permission'))
+      ) {
+        console.error('>>> Permission error:', err);
+      } else {
+        console.error('>>> Generic error:', err);
+      }
     }
     console.log('>>> Switchboarding handler completed');
   },
