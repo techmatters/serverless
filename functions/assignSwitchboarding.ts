@@ -20,6 +20,7 @@ import {
   responseWithCors,
   bindResolve,
   error400,
+  error500,
   success,
   functionValidator as TokenValidator,
   error403,
@@ -138,13 +139,13 @@ function addSwitchboardingFilter(
   // 2. The task is not a transfer (check transferMeta or other attributes)
   const switchboardingFilter = {
     filter_friendly_name: 'Switchboarding Active Filter',
-    expression: `task.taskQueueSid == "${originalQueueSid}" AND NOT(isnotnull(task.transferMeta))`,
+    expression: `task.taskQueueSid == "${originalQueueSid}" AND task.transferMeta == null`,
     targets: [
       {
         queue: switchboardQueueSid,
         expression: 'worker.available == true', // Only route to available workers
         priority: 100, // High priority
-        skip_if: 'isnotnull(task.transferMeta)', // Skip if it's a transfer
+        skip_if: 'task.transferMeta != null', // Skip if it's a transfer
       },
     ],
   };
