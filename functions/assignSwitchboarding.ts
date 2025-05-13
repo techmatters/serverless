@@ -139,7 +139,7 @@ function addSwitchboardingFilter(
   // 2. The task is not a transfer (check transferMeta or other attributes)
   const switchboardingFilter = {
     filter_friendly_name: 'Switchboarding Active Filter',
-    expression: `task.taskQueueSid == "${originalQueueSid}" AND !task.transferMeta`,
+    expression: `task.taskQueueSid == "${originalQueueSid}" AND (task.transferMeta == null OR task.transferMeta == undefined)`,
     targets: [
       {
         queue: switchboardQueueSid,
