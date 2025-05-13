@@ -140,9 +140,9 @@ function addSwitchboardingFilter(
   // 3. Route them to the switchboard queue with proper attributes
   // 4. Exclude tasks that are transfers or already handled
   const switchboardingFilter = {
-    filter_friendly_name: 'Switchboarding Workflow',
+    filter_friendly_name: 'Switchboard Workflow',
     expression:
-      '!has(task.transferMeta) AND !has(task.switchboardingHandled) AND !has(task.switchboardingTransferExempt)',
+      'task.transferMeta == null AND task.switchboardingHandled == null AND task.switchboardingTransferExempt == null',
     targets: [
       {
         queue: switchboardQueueSid,
@@ -160,8 +160,14 @@ function addSwitchboardingFilter(
     ],
   };
 
+  // log the corrent filters
+  console.log('>>> Current filters:', updatedConfig.task_routing.filters);
+
   // Insert the new filter at the beginning of the task_routing.filters array
   updatedConfig.task_routing.filters.unshift(switchboardingFilter);
+
+  // log the updated filters
+  console.log('>>> Updated filters:', updatedConfig.task_routing.filters);
 
   return updatedConfig;
 }
