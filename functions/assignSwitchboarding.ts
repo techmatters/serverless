@@ -35,7 +35,7 @@ type EnvVars = {
 
 export type Body = {
   originalQueueSid?: string;
-  operation?: 'enable' | 'disable' | 'status';
+  operation: 'enable' | 'disable' | 'status';
   request: { cookies: {}; headers: {} };
   Token: string;
 };
@@ -43,17 +43,20 @@ export type Body = {
 export type TokenValidatorResponse = { worker_sid?: string; roles?: string[] };
 
 type SwitchboardingState = {
-  isEnabled: boolean;
-  originalQueueSid?: string;
-  originalQueueName?: string;
-  enabledBy?: string;
-  enabledAt?: string;
+  isSwitchboardingActive: boolean; // Using the frontend naming for consistency
+  queueSid?: string;
+  queueName?: string;
+  supervisorWorkerSid?: string;
+  startTime?: string;
 };
 
-// Sync document constants
 const SWITCHBOARD_DOCUMENT_NAME = 'switchboard-state';
 const DEFAULT_SWITCHBOARD_STATE: SwitchboardingState = {
-  isEnabled: false,
+  isSwitchboardingActive: false,
+  queueSid: undefined,
+  queueName: undefined,
+  startTime: undefined,
+  supervisorWorkerSid: undefined,
 };
 
 /**
@@ -87,11 +90,11 @@ async function getSwitchboardState(
   const state = document.data || {};
 
   return {
-    isEnabled: state.isEnabled === undefined ? false : state.isEnabled,
-    originalQueueSid: state.originalQueueSid,
-    originalQueueName: state.originalQueueName,
-    enabledBy: state.enabledBy,
-    enabledAt: state.enabledAt,
+    isSwitchboardingActive: state.isSwitchboardingActive === undefined ? false : state.isSwitchboardingActive,
+    queueSid: state.queueSid,
+    queueName: state.queueName,
+    startTime: state.startTime,
+    supervisorWorkerSid: state.supervisorWorkerSid,
   };
 }
 
@@ -228,7 +231,7 @@ export const handler = TokenValidator(
         const switchboardingState = await getSwitchboardState(client, syncServiceSid);
         console.log(
           `>>> 4a. STATUS: Current state - isEnabled: ${
-            switchboardingState.isEnabled === undefined ? false : switchboardingState.isEnabled
+            switchboardingState.isSwitchboardingActive === undefined ? false : switchboardingState.isSwitchboardingActive
           }`,
         );
         console.log('>>> 4b. STATUS: Full switchboard state:', JSON.stringify(switchboardingState));
@@ -273,8 +276,8 @@ export const handler = TokenValidator(
         console.log('>>> 7. ENABLE: Enabling switchboarding mode');
         const switchboardingState = await getSwitchboardState(client, syncServiceSid);
         if (
-          switchboardingState.isEnabled &&
-          switchboardingState.originalQueueSid === originalQueueSid
+          switchboardingState.isSwitchboardingActive &&
+          switchboardingState.queueSid === originalQueueSid
         ) {
           console.log('>>> 7b. ENABLE: Switchboarding is already enabled for this queue');
           resolve(
@@ -304,11 +307,11 @@ export const handler = TokenValidator(
 
         console.log('>>> 9. STATE UPDATE: Updating switchboarding state in Sync');
         const updatedState = await updateSwitchboardState(client, syncServiceSid, {
-          isEnabled: true,
-          originalQueueSid,
-          originalQueueName: originalQueue.friendlyName,
-          enabledBy: tokenResult.worker_sid,
-          enabledAt: new Date().toISOString(),
+          isSwitchboardingActive: true,
+          queueSid: originalQueueSid,
+          queueName: originalQueue.friendlyName,
+          supervisorWorkerSid: tokenResult.worker_sid,
+          startTime: new Date().toISOString(),
         });
 
         console.log('>>> 9a. STATE UPDATE: Switchboarding mode successfully enabled');
@@ -321,7 +324,7 @@ export const handler = TokenValidator(
       } else if (operation === 'disable') {
         console.log('>>> 7. DISABLE: Disabling switchboarding mode');
         const switchboardingState = await getSwitchboardState(client, syncServiceSid);
-        if (!switchboardingState.isEnabled) {
+        if (!switchboardingState.isSwitchboardingActive) {
           console.log('>>> 7c. DISABLE: Switchboarding is not currently enabled');
           resolve(
             success({
@@ -345,11 +348,11 @@ export const handler = TokenValidator(
 
         console.log('>>> 9. STATE UPDATE: Updating switchboarding state in Sync');
         const updatedState = await updateSwitchboardState(client, syncServiceSid, {
-          isEnabled: false,
-          originalQueueSid: undefined,
-          originalQueueName: undefined,
-          enabledBy: undefined,
-          enabledAt: undefined,
+          isSwitchboardingActive: false,
+          queueSid: undefined,
+          queueName: undefined,
+          supervisorWorkerSid: undefined,
+          startTime: undefined,
         });
 
         console.log('>>> 9a. STATE UPDATE: Switchboarding mode successfully disabled');
