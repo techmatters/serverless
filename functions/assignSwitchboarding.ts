@@ -144,7 +144,7 @@ function addSwitchboardingFilter(
     targets: [
       {
         queue: switchboardQueueSid,
-        expression: 'worker.available == true',
+        expression: '1==1',
         priority: 100,
         target_expression: `DEFAULT_TARGET_QUEUE_SID == '${originalQueueSid}'`,
         task_attributes: {
@@ -157,7 +157,6 @@ function addSwitchboardingFilter(
     ],
   };
 
-  // Insert the new filter at the beginning of the task_routing.filters array
   updatedConfig.task_routing.filters.unshift(switchboardingFilter);
 
   return updatedConfig;
@@ -173,14 +172,11 @@ async function findTasksInQueue(
   assignmentStatus: string = 'pending',
 ): Promise<any[]> {
   try {
-    console.log(`>>> Finding ${assignmentStatus} tasks in queue ${queueSid}`);
-    // Get all tasks with the specific status in the queue
     const tasks = await client.taskrouter.workspaces(workspaceSid).tasks.list({
       assignmentStatus,
       taskQueueSid: queueSid,
     });
 
-    console.log(`>>> Found ${tasks.length} ${assignmentStatus} tasks in queue ${queueSid}`);
     return tasks;
   } catch (err) {
     console.error(`>>> Error finding ${assignmentStatus} tasks in queue:`, err);
@@ -189,7 +185,8 @@ async function findTasksInQueue(
 }
 
 /**
- * Moves a task from one queue to another
+ * Moves a task from one queue to another 
+ * Note that this is not working as intended
  */
 async function moveTaskToQueue(
   client: any,
@@ -199,19 +196,14 @@ async function moveTaskToQueue(
   additionalAttributes: Record<string, any> = {},
 ): Promise<void> {
   try {
-    console.log(`>>> Moving task ${taskSid} to queue ${targetQueueSid}`);
-
-    // First get the task to get its current attributes
     const task = await client.taskrouter.workspaces(workspaceSid).tasks(taskSid).fetch();
     const currentAttributes = JSON.parse(task.attributes);
-
-    // Prepare switchboarding attributes based on whether moving to/from switchboard queue
     const switchboardingAttributes = {
       // If moving to the switchboard queue
       ...(additionalAttributes.needsSwitchboarding
         ? {
             switchboardingActive: true,
-            switchboardingHandled: null, // Clear any previous handling flag
+            switchboardingHandled: null,
           }
         : {}),
       // If moving from the switchboard queue back to original queue
@@ -232,8 +224,6 @@ async function moveTaskToQueue(
       taskQueueSid: targetQueueSid,
     };
 
-    console.log(`>>> Task ${taskSid} attributes update:`, JSON.stringify(updatedAttributes));
-
     // Update the task with new attributes and move it to the new queue
     await client.taskrouter
       .workspaces(workspaceSid)
@@ -243,9 +233,8 @@ async function moveTaskToQueue(
         taskQueueSid: targetQueueSid,
       });
 
-    console.log(`>>> Successfully moved task ${taskSid} to queue ${targetQueueSid}`);
   } catch (err) {
-    console.error('>>> Error moving task to queue:', err);
+    console.error('Error moving task to queue:', err);
     throw err;
   }
 }
@@ -265,25 +254,18 @@ async function moveWaitingTasks(
     const waitingTasks = await findTasksInQueue(client, workspaceSid, sourceQueueSid, 'pending');
 
     if (waitingTasks.length === 0) {
-      console.log(`>>> No waiting tasks found in queue ${sourceQueueSid} to move`);
+      console.log(`No waiting tasks found in queue ${sourceQueueSid} to move`);
       return 0;
     }
 
-    console.log(
-      `>>> Moving ${waitingTasks.length} waiting tasks from ${sourceQueueSid} to ${targetQueueSid}`,
-    );
-
-    // Create an array of promises for all task moves (to process them in parallel)
     const movePromises = waitingTasks.map((task) =>
       moveTaskToQueue(client, workspaceSid, task.sid, targetQueueSid, additionalAttributes),
     );
-
-    // Wait for all move operations to complete in parallel
     await Promise.all(movePromises);
 
     return waitingTasks.length;
   } catch (err) {
-    console.error('>>> Error moving waiting tasks:', err);
+    console.error('Error moving waiting tasks:', err);
     throw err;
   }
 }
@@ -292,24 +274,10 @@ async function moveWaitingTasks(
  * Removes the switchboarding filter from the workflow configuration
  */
 function removeSwitchboardingFilter(config: any): any {
-  // Clone the configuration to avoid modifying the original
   const updatedConfig = JSON.parse(JSON.stringify(config));
 
-  // Get the current filters for logging
-  console.log(
-    '>>> Current filters before removal:',
-    updatedConfig.task_routing.filters.map((filter: any) => filter.filter_friendly_name),
-  );
-
-  // Remove the switchboarding filters (identified by partial friendly name match)
   updatedConfig.task_routing.filters = updatedConfig.task_routing.filters.filter(
     (filter: any) => !filter.filter_friendly_name.startsWith('Switchboard Workflow'),
-  );
-
-  // Log the filters after removal
-  console.log(
-    '>>> Filters after removal:',
-    updatedConfig.task_routing.filters.map((filter: any) => filter.filter_friendly_name),
   );
 
   return updatedConfig;
@@ -343,15 +311,12 @@ async function handleEnableOperation(
   tokenResult: TokenValidatorResponse,
   resolve: (response: any) => void,
 ) {
-  console.log('Enabling switchboarding mode');
   const switchboardingState = await getSwitchboardState(client, syncServiceSid);
 
-  // Check if already enabled for this queue
   if (
     switchboardingState.isSwitchboardingActive &&
     switchboardingState.queueSid === originalQueue.sid
   ) {
-    console.log('Switchboarding is already enabled for this queue');
     resolve(
       success({
         message: 'Switchboarding is already active for this queue',
@@ -361,8 +326,6 @@ async function handleEnableOperation(
     return;
   }
 
-  // Update workflow configuration
-  console.log('Updating Master Workflow configuration');
   const masterConfig = JSON.parse(masterWorkflow.configuration);
   const updatedMasterConfig = addSwitchboardingFilter(
     masterConfig,
@@ -390,11 +353,9 @@ async function handleEnableOperation(
     console.log(`Successfully moved ${movedCount} tasks to switchboard queue`);
   } catch (moveErr) {
     console.error('Failed to move waiting tasks:', moveErr);
-    // Continue with enabling switchboarding even if moving tasks fails
   }
 
-  // Update state in Sync
-  console.log('Updating switchboarding state');
+  // Update switchboard state in Twilio Sync
   const updatedState = await updateSwitchboardState(client, syncServiceSid, {
     isSwitchboardingActive: true,
     queueSid: originalQueue.sid,
@@ -403,7 +364,6 @@ async function handleEnableOperation(
     startTime: new Date().toISOString(),
   });
 
-  console.log('Switchboarding mode successfully enabled');
   resolve(
     success({
       message: 'Switchboarding mode enabled',
@@ -473,7 +433,6 @@ async function handleDisableOperation(
   }
 
   // Update state in Sync
-  console.log('Updating switchboarding state');
   const updatedState = await updateSwitchboardState(client, syncServiceSid, {
     isSwitchboardingActive: false,
     queueSid: undefined,
@@ -482,7 +441,6 @@ async function handleDisableOperation(
     startTime: undefined,
   });
 
-  console.log('Switchboarding mode successfully disabled');
   resolve(
     success({
       message: 'Switchboarding mode disabled',
@@ -539,13 +497,11 @@ export const handler = TokenValidator(
         return;
       }
 
-      // Handle status operation
       if (operation === 'status') {
         await handleStatusOperation(client, syncServiceSid, resolve);
         return;
       }
 
-      // For enable/disable operations, originalQueueSid is required
       if (!originalQueueSid) {
         console.error('Original Queue SID is required for enable/disable operations');
         resolve(error400('Original Queue SID is required'));
