@@ -185,7 +185,7 @@ async function findTasksInQueue(
 }
 
 /**
- * Moves a task from one queue to another 
+ * Moves a task from one queue to another
  * Note that this is not working as intended
  */
 async function moveTaskToQueue(
@@ -232,7 +232,6 @@ async function moveTaskToQueue(
         attributes: JSON.stringify(updatedAttributes),
         taskQueueSid: targetQueueSid,
       });
-
   } catch (err) {
     console.error('Error moving task to queue:', err);
     throw err;
