@@ -41,13 +41,8 @@ runs:
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_mainland_studio_flow_sid"
-        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID_MAINLAND"
-    - name: Set helpline Instagram Studio Flow SID
-      uses: "marvinpinto/action-inject-ssm-secrets@latest"
-      with:
-        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_zanzibar_studio_flow_sid"
-        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID_ZANZIBAR"
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
     - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
@@ -65,11 +60,8 @@ runs:
     - name: Add FACEBOOK_PAGE_ACCESS_TOKEN_ZANZIBAR
       run: echo "FACEBOOK_PAGE_ACCESS_TOKEN_ZANZIBAR=${{ env.FACEBOOK_PAGE_ACCESS_TOKEN_ZANZIBAR }}" >> .env
       shell: bash
-    - name: Add INSTAGRAM_STUDIO_FLOW_SID_MAINLAND
-      run: echo "INSTAGRAM_STUDIO_FLOW_SID_MAINLAND=${{ env.INSTAGRAM_STUDIO_FLOW_SID_MAINLAND }}" >> .env
-      shell: bash
-    - name: Add INSTAGRAM_STUDIO_FLOW_SID_ZANZIBAR
-      run: echo "INSTAGRAM_STUDIO_FLOW_SID_ZANZIBAR=${{ env.INSTAGRAM_STUDIO_FLOW_SID_ZANZIBAR }}" >> .env
+    - name: Add INSTAGRAM_STUDIO_FLOW_SID
+      run: echo "INSTAGRAM_STUDIO_FLOW_SID=${{ env.INSTAGRAM_STUDIO_FLOW_SID }}" >> .env
       shell: bash
     - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
       run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
