@@ -12,7 +12,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-name: 'C Sema Staging release custom action'
+name: 'C Sema Production release custom action'
 description: 'Sets up environment variables related to non-standard additional features in use in the staging environment'
 inputs:
   account-sid:
@@ -31,7 +31,7 @@ runs:
     - name: Set helpline Facebook Page Access Token
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_565233119996327_Aselo-TZ-Staging"
+        ssm_parameter: "FACEBOOK_PAGE_ACCESS_TOKEN_151504668210452_C-Sema"
         env_variable_name: "FACEBOOK_PAGE_ACCESS_TOKEN"
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
