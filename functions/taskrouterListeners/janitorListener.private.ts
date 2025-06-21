@@ -110,9 +110,15 @@ const isCleanupCustomChannel = async (
     channelType?: string;
     customChannelType?: string;
     isChatCaptureControl?: boolean;
+    switchboardInProgress?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
   if (![TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].includes(eventType)) {
+    return false;
+  }
+
+  if (taskAttributes.switchboardInProgress) {
+    console.debug('isDeactivateConversationOrchestration? - No, switchboard in progress');
     return false;
   }
 
@@ -136,6 +142,7 @@ const isDeactivateConversationOrchestration = async (
   taskAttributes: {
     channelType?: string;
     isChatCaptureControl?: boolean;
+    switchboardInProgress?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
   console.debug('isDeactivateConversationOrchestration?');
@@ -145,6 +152,11 @@ const isDeactivateConversationOrchestration = async (
     )
   ) {
     console.debug('isDeactivateConversationOrchestration? - No, wrong event type:', eventType);
+    return false;
+  }
+
+  if (taskAttributes.switchboardInProgress) {
+    console.debug('isDeactivateConversationOrchestration? - No, switchboard in progress');
     return false;
   }
 
