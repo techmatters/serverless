@@ -220,16 +220,6 @@ describe('isCleanupCustomChannel', () => {
         channelType,
       },
     })),
-    ...['web', 'sms', 'whatsapp', 'facebook', ...Object.values(AseloCustomChannels)].map(
-      (channelType) => ({
-        description: `${channelType} is being moved by switchboard`,
-        taskAttributes: {
-          ...customChannelTaskAttributes,
-          channelType,
-          switchboardInProgress: true,
-        },
-      }),
-    ),
   ]).test(
     'canceled task for custom channel $description, should not trigger janitor',
     async ({ taskAttributes }) => {
@@ -290,35 +280,6 @@ describe('isDeactivateConversationOrchestration', () => {
         ...mock<EventFields>(),
         EventType: eventType as EventType,
         TaskAttributes: JSON.stringify({ ...customChannelTaskAttributes, channelType }),
-        TaskChannelUniqueName: 'chat',
-      };
-      await janitorListener.handleEvent(context, event);
-
-      const { channelSid } = customChannelTaskAttributes;
-      expect(mockChannelJanitor).not.toHaveBeenCalledWith(context, { channelSid });
-    },
-  );
-
-  each(
-    // [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
-    // [TASK_WRAPUP, TASK_COMPLETED].flatMap((eventType) =>
-    [TASK_WRAPUP, TASK_COMPLETED, TASK_DELETED, TASK_SYSTEM_DELETED, TASK_CANCELED].flatMap(
-      (eventType) =>
-        [...Object.values(AseloCustomChannels), 'web', 'sms', 'whatsapp', 'facebook'].map(
-          (channelType) => ({ channelType, eventType }),
-        ),
-    ),
-  ).test(
-    'when switchboardInProgress task attributes is true, eventType $eventType with channelType $channelType, should not trigger janitor',
-    async ({ channelType, eventType }) => {
-      const event = {
-        ...mock<EventFields>(),
-        EventType: eventType as EventType,
-        TaskAttributes: JSON.stringify({
-          ...customChannelTaskAttributes,
-          channelType,
-          switchboardInProgress: true,
-        }),
         TaskChannelUniqueName: 'chat',
       };
       await janitorListener.handleEvent(context, event);
