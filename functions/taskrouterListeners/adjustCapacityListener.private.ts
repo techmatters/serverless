@@ -49,13 +49,10 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
   if (taskChannelUniqueName !== 'chat') return;
   const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
   const {
-    feature_flags: {
-      enable_manual_pulling: enabledManualPulling,
-      enable_backend_manual_pulling: enableBackendManualPulling,
-    },
+    feature_flags: { enable_manual_pulling: enabledManualPulling },
   } = serviceConfig.attributes;
 
-  if (enabledManualPulling && enableBackendManualPulling) {
+  if (enabledManualPulling) {
     const { path } = Runtime.getFunctions().adjustChatCapacity;
 
     // eslint-disable-next-line global-require,import/no-dynamic-require,prefer-destructuring
