@@ -41,7 +41,7 @@ runs:
     - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/prodcution/instagram/${{inputs.account-sid}}/messaging_mode"
+        ssm_parameter: "/production/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
 
     # Append environment variables
