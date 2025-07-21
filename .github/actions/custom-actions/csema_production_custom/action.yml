@@ -13,7 +13,7 @@
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
 name: 'C Sema Production release custom action'
-description: 'Sets up environment variables related to non-standard additional features in use in the staging environment'
+description: 'Sets up environment variables related to non-standard additional features in use in the production environment'
 inputs:
   account-sid:
     description: 'The Twilio Account SID for this account'
@@ -36,12 +36,12 @@ runs:
     - name: Set helpline Instagram Studio Flow SID
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
+        ssm_parameter: "/production/twilio/${{inputs.account-sid}}/instagram_studio_flow_sid"
         env_variable_name: "INSTAGRAM_STUDIO_FLOW_SID"
     - name: Set helpline Instagram Flex Messaging Mode (Programmable Chat or Conversations)
       uses: "marvinpinto/action-inject-ssm-secrets@latest"
       with:
-        ssm_parameter: "/staging/instagram/${{inputs.account-sid}}/messaging_mode"
+        ssm_parameter: "/prodcution/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
 
     # Append environment variables
