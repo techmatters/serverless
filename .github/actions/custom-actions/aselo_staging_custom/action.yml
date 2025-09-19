@@ -94,6 +94,32 @@ runs:
         ssm_parameter: "/staging/instagram/${{inputs.account-sid}}/messaging_mode"
         env_variable_name: "INSTAGRAM_TWILIO_MESSAGING_MODE"
 
+    # Modica environment variables
+    - name: Set Modica App Name
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/app_name"
+        env_variable_name: "MODICA_APP_NAME"
+    - name: Set Modica App Password
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/app_password"
+        env_variable_name: "MODICA_APP_PASSWORD"
+    - name: Set Modica Studio Flow Sid
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/twilio/${{inputs.account-sid}}/modica_studio_flow_sid"
+        env_variable_name: "MODICA_STUDIO_FLOW_SID"
+    - name: Set helpline Modica Flex Messaging Mode (Programmable Chat or Conversations)
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/messaging_mode"
+        env_variable_name: "MODICA_TWILIO_MESSAGING_MODE"
+    - name: Set test API URL
+      uses: "marvinpinto/action-inject-ssm-secrets@latest"
+      with:
+        ssm_parameter: "/staging/modica/${{inputs.account-sid}}/test_send_message_url"
+        env_variable_name: "MODICA_TEST_SEND_MESSAGE_URL"
 
     # Append environment variables
     - name: Add TELEGRAM_FLEX_BOT_TOKEN
@@ -128,5 +154,20 @@ runs:
       shell: bash
     - name: Add INSTAGRAM_TWILIO_MESSAGING_MODE
       run: echo "INSTAGRAM_TWILIO_MESSAGING_MODE=${{ env.INSTAGRAM_TWILIO_MESSAGING_MODE }}" >> .env
+      shell: bash
+    - name: Add MODICA_APP_NAME
+      run: echo "MODICA_APP_NAME=${{ env.MODICA_APP_NAME }}" >> .env
+      shell: bash
+    - name: Add MODICA_APP_PASSWORD
+      run: echo "MODICA_APP_PASSWORD=${{ env.MODICA_APP_PASSWORD }}" >> .env
+      shell: bash
+    - name: Add MODICA_STUDIO_FLOW_SID
+      run: echo "MODICA_STUDIO_FLOW_SID=${{ env.MODICA_STUDIO_FLOW_SID }}" >> .env
+      shell: bash
+    - name: Add MODICA_TWILIO_MESSAGING_MODE
+      run: echo "MODICA_TWILIO_MESSAGING_MODE=${{ env.MODICA_TWILIO_MESSAGING_MODE }}" >> .env
+      shell: bash
+    - name: Add MODICA_TEST_SEND_MESSAGE_URL
+      run: echo "MODICA_TEST_SEND_MESSAGE_URL=${{ env.MODICA_TEST_SEND_MESSAGE_URL }}" >> .env
       shell: bash
 
