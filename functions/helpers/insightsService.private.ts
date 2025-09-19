@@ -15,7 +15,8 @@
  */
 
 import { get } from 'lodash';
-import type { LexMemory } from '../channelCapture/lexClient.private';
+
+type LexMemory = { [q: string]: string | number };
 
 type BotMemory = LexMemory;
 
