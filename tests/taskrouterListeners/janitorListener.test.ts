@@ -108,10 +108,6 @@ beforeAll(() => {
     'helpers/customChannels/customChannelToFlex',
     'functions/helpers/customChannels/customChannelToFlex.private',
   );
-  runtime._addFunction(
-    'channelCapture/channelCaptureHandlers',
-    'functions/channelCapture/channelCaptureHandlers.private',
-  );
   runtime._addFunction('transfer/helpers', 'functions/transfer/helpers.private');
   helpers.setup({}, runtime);
 });

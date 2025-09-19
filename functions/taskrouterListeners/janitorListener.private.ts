@@ -33,8 +33,10 @@ import {
 import { Twilio } from 'twilio';
 import type { ChatChannelJanitor } from '../helpers/chatChannelJanitor.private';
 import type { ChannelToFlex } from '../helpers/customChannels/customChannelToFlex.private';
-import type { ChannelCaptureHandlers } from '../channelCapture/channelCaptureHandlers.private';
 import type { ChatTransferTaskAttributes, TransferHelpers } from '../transfer/helpers.private';
+
+export const isChatCaptureControlTask = (taskAttributes: { isChatCaptureControl?: boolean }) =>
+  Boolean(taskAttributes.isChatCaptureControl);
 
 export const eventTypes: EventType[] = [
   TASK_CANCELED,
@@ -60,11 +62,7 @@ const isCleanupBotCapture = (
     return false;
   }
 
-  const channelCaptureHandlers = require(Runtime.getFunctions()[
-    'channelCapture/channelCaptureHandlers'
-  ].path) as ChannelCaptureHandlers;
-
-  return channelCaptureHandlers.isChatCaptureControlTask(taskAttributes);
+  return isChatCaptureControlTask(taskAttributes);
 };
 
 const isHandledByOtherListener = async (
@@ -76,11 +74,7 @@ const isHandledByOtherListener = async (
     isChatCaptureControl?: boolean;
   } & ChatTransferTaskAttributes,
 ) => {
-  const channelCaptureHandlers = require(Runtime.getFunctions()[
-    'channelCapture/channelCaptureHandlers'
-  ].path) as ChannelCaptureHandlers;
-
-  if (channelCaptureHandlers.isChatCaptureControlTask(taskAttributes)) {
+  if (isChatCaptureControlTask(taskAttributes)) {
     console.debug('isHandledByOtherListener? - Yes, isChatCaptureControl');
     return true;
   }
