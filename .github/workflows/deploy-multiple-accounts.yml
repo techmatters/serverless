@@ -53,7 +53,7 @@ jobs:
       TWILIO_SSM_PREFIX: ${{matrix.environment_code}}_TWILIO_${{matrix.helpline_code}}
       FULL_ENVIRONMENT_NAME: ${{matrix.environment_code == 'PROD' && 'production' || matrix.environment_code == 'STG' && 'staging' || 'development'}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
