@@ -50,7 +50,7 @@
     "typescript": "^4.7.4"
   },
   "engines": {
-    "node": "^16.0"
+    "node": "^18.0"
   },
   "dependencies": {
     "@tech-matters/serverless-helpers": "3.0.5",
