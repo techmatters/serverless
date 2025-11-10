@@ -49,9 +49,6 @@ inputs:
   flex-proxy-service-sid:
     description: 'Flex Proxy Service SID'
     required: true
-  hrm-static-key:
-    description: 'HRM static key to make HRM calls'
-    required: true
   survey-workflow-sid:
     description: 'Survey Workflow SID'
     required: true
@@ -129,7 +126,6 @@ runs:
         CHAT_SERVICE_SID=${{ inputs.chat-service-sid }}
         OPERATING_INFO_KEY=${{ inputs.operating-info-key }}
         FLEX_PROXY_SERVICE_SID=${{ inputs.flex-proxy-service-sid }}
-        HRM_STATIC_KEY=${{ inputs.hrm-static-key }}
         SURVEY_WORKFLOW_SID=${{ inputs.survey-workflow-sid }}
         ASELO_APP_ACCESS_KEY=${{ inputs.aselo-app-access-key }}
         ASELO_APP_SECRET_KEY=${{ inputs.aselo-app-secret-key }}

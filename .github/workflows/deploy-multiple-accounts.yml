@@ -117,11 +117,6 @@ jobs:
         with:
           ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_FLEX_PROXY_SERVICE_SID
           env_variable_name: FLEX_PROXY_SERVICE_SID
-      - name: Set HRM static key to make HRM calls
-        uses: marvinpinto/action-inject-ssm-secrets@latest
-        with:
-          ssm_parameter: ${{env.TWILIO_SSM_PREFIX}}_HRM_STATIC_KEY
-          env_variable_name: HRM_STATIC_KEY
       - name: Set Survey Workflow SID
         uses: marvinpinto/action-inject-ssm-secrets@latest
         with:
@@ -180,7 +175,6 @@ jobs:
           chat-service-sid: $CHAT_SERVICE_SID
           operating-info-key: $OPERATING_INFO_KEY
           flex-proxy-service-sid: $FLEX_PROXY_SERVICE_SID
-          hrm-static-key: $HRM_STATIC_KEY
           survey-workflow-sid: $SURVEY_WORKFLOW_SID
           aselo-app-access-key: $ASELO_APP_ACCESS_KEY
           aselo-app-secret-key: $ASELO_APP_SECRET_KEY
