@@ -56,14 +56,14 @@ const wait = (ms: number): Promise<void> =>
 
 const cleanUpTask = async (task: TaskInstance, message: string) => {
   const { attributes } = task;
-  const taskRemoved = await task.remove();
+  // const taskRemoved = await task.remove();
 
   return {
     type: 'error',
     payload: {
       status: 500,
       message,
-      taskRemoved,
+      taskRemoved: false,
       attributes,
     },
   } as const;
@@ -185,7 +185,7 @@ const assignOfflineContact = async (
     taskChannel: 'default',
     attributes: JSON.stringify(queueRequiredTaskAttributes),
     priority: 100,
-    timeout: 120, // 2 minutes should be more than enough.
+    // timeout: 120, // 2 minutes should be more than enough.
   });
 
   const newTaskAttributes = JSON.parse(newTask.attributes);
