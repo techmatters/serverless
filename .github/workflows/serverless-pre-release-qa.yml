@@ -83,7 +83,7 @@ jobs:
 
       # Upload artifacts
       # TODO: this is not working and cant tell why :(
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
 
         with:
           name: test-artifacts
