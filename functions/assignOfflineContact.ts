@@ -127,7 +127,7 @@ const assignToOfflineWorker = async (
 
   await targetWorker.update({
     activitySid: availableActivity[0].sid,
-    attributes: JSON.stringify({ ...previousAttributes, waitingOfflineContact: true }), // waitingOfflineContact is used to avoid other tasks to be assigned during this window of time (workflow rules)
+    attributes: JSON.stringify({ ...previousAttributes, waitingOfflineContact: true, keepAvailable: true }), // waitingOfflineContact is used to avoid other tasks to be assigned during this window of time (workflow rules), keepAvailable is used to prevent custom worker status handler to set offline the worker during this interval
   });
 
   const result = await assignToAvailableWorker(event, newTask);
