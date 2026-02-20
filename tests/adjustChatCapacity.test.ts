@@ -13,16 +13,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
+import { adjustChatCapacity, Body as HandlerBody } from '../functions/adjustChatCapacity.private';
 
-import { ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import { handler as adjustChatCapacity, Body } from '../functions/adjustChatCapacity';
-
-import helpers, { MockedResponse } from './helpers';
+import helpers from './helpers';
 
 jest.mock('@tech-matters/serverless-helpers', () => ({
   ...jest.requireActual('@tech-matters/serverless-helpers'),
   functionValidator: (handlerFn: any) => handlerFn,
 }));
+
+type Body = Required<Pick<HandlerBody, 'adjustment' | 'workerSid'>>;
 
 const runTestSuite = (maxMessageCapacity: number | string) => {
   let workerChannel = {
@@ -95,55 +95,36 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       helpers.teardown();
     });
 
-    test('Should return status 400', async () => {
+    test('Should throw with incomplete data', async () => {
       const workerSid = 'worker123';
       // const adjustment = 'increase';
-      const event1 = { request: { cookies: {}, headers: {} } };
-      const event2 = { ...event1, workerSid };
-
-      const events = [event1, event2];
-
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(400);
-      };
-
-      await Promise.all(events.map((e) => adjustChatCapacity(baseContext, e, callback)));
+      const event1 = {};
+      const event2 = { workerSid };
+      await expect(adjustChatCapacity(baseContext, event1 as Body)).rejects.toThrow();
+      await expect(adjustChatCapacity(baseContext, event2 as Body)).resolves.toStrictEqual({
+        status: 400,
+        message: 'Invalid adjustment argument',
+      });
     });
 
-    test('Should return status 500', async () => {
+    test("Should throw if worker doesn't exist", async () => {
       const event: Body = {
         workerSid: 'non-existing',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(500);
-        expect(response.getBody().message).toContain('Non existing worker');
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      await expect(adjustChatCapacity(baseContext, event)).rejects.toThrow();
     });
 
     test('Should return status 200 (increase)', async () => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(2);
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(200);
+      expect(workerChannel.configuredCapacity).toStrictEqual(2);
     });
 
     test('Should return status 200 (effectively decrease)', async () => {
@@ -153,17 +134,11 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'decrease',
-        request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(1);
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(200);
+      expect(workerChannel.configuredCapacity).toStrictEqual(1);
     });
 
     test('Should return status 200 (do nothing instead of decrease)', async () => {
@@ -173,17 +148,11 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'decrease',
-        request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(200);
-        expect(workerChannel.configuredCapacity).toStrictEqual(1);
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(200);
+      expect(workerChannel.configuredCapacity).toStrictEqual(1);
     });
 
     test('Should return status 412 (Still have available capacity, no need to increase)', async () => {
@@ -193,19 +162,11 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(412);
-        expect(response.getBody().message).toContain(
-          'Still have available capacity, no need to increase',
-        );
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status, message } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(412);
+      expect(message).toContain('Still have available capacity, no need to increase');
     });
 
     test('Should return status 412 (Reached the max capacity)', async () => {
@@ -215,20 +176,14 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'worker123',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      await adjustChatCapacity(baseContext, event, () => {});
+      await adjustChatCapacity(baseContext, event);
       expect(workerChannel.configuredCapacity).toStrictEqual(2);
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(412);
-        expect(response.getBody().message).toContain('Reached the max capacity');
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status, message } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(412);
+      expect(message).toContain('Reached the max capacity');
     });
 
     test('Should return status 404 (Could not find worker)', async () => {
@@ -238,19 +193,13 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'nonExisting',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      await adjustChatCapacity(baseContext, event, () => {});
+      await adjustChatCapacity(baseContext, event);
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(404);
-        expect(response.getBody().message).toContain('Could not find worker');
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status, message } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(404);
+      expect(message).toContain('Could not find worker');
     });
 
     test('Should return status 404 (Could not find chat channel)', async () => {
@@ -259,42 +208,29 @@ const runTestSuite = (maxMessageCapacity: number | string) => {
       const event: Body = {
         workerSid: 'withoutChannel',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
-
-      await adjustChatCapacity(baseContext, event, () => {});
+      await adjustChatCapacity(baseContext, event);
       expect(workerChannel.configuredCapacity).toStrictEqual(2);
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(404);
-        expect(response.getBody().message).toContain('Could not find chat channel');
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status, message } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(404);
+      expect(message).toContain('Could not find chat channel');
     });
 
     test('Should return status 409 (Worker does not have a "maxMessageCapacity" attribute, can\'t adjust capacity.)', async () => {
       const event: Body = {
         workerSid: 'withoutAttr',
         adjustment: 'increase',
-        request: { cookies: {}, headers: {} },
       };
 
-      await adjustChatCapacity(baseContext, event, () => {});
+      await adjustChatCapacity(baseContext, event);
       expect(workerChannel.configuredCapacity).toStrictEqual(2);
 
-      const callback: ServerlessCallback = (err, result) => {
-        expect(result).toBeDefined();
-        const response = result as MockedResponse;
-        expect(response.getStatus()).toBe(409);
-        expect(response.getBody().message).toContain(
-          `Worker ${event.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
-        );
-      };
-
-      await adjustChatCapacity(baseContext, event, callback);
+      const { status, message } = await adjustChatCapacity(baseContext, event);
+      expect(status).toBe(409);
+      expect(message).toContain(
+        `Worker ${event.workerSid} does not have a "maxMessageCapacity" attribute, can't adjust capacity.`,
+      );
     });
   });
 };

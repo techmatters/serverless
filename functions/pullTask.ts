@@ -23,7 +23,7 @@ import {
   send,
   success,
 } from '@tech-matters/serverless-helpers';
-import { AdjustChatCapacityType } from './adjustChatCapacity';
+import { AdjustChatCapacityType } from './adjustChatCapacity.private';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;

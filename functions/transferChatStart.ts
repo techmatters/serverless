@@ -27,7 +27,7 @@ import {
   success,
   functionValidator as TokenValidator,
 } from '@tech-matters/serverless-helpers';
-import type { AdjustChatCapacityType } from './adjustChatCapacity';
+import type { AdjustChatCapacityType } from './adjustChatCapacity.private';
 
 type EnvVars = {
   TWILIO_WORKSPACE_SID: string;
