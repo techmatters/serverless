@@ -22,7 +22,7 @@ import {
   EventFields,
   TaskrouterListener,
 } from '@tech-matters/serverless-helpers/taskrouter';
-import type { AdjustChatCapacityType } from '../adjustChatCapacity';
+import type { AdjustChatCapacityType } from '../adjustChatCapacity.private';
 
 export const eventTypes: EventType[] = [RESERVATION_ACCEPTED, RESERVATION_REJECTED];
 

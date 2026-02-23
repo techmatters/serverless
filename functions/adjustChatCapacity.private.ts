@@ -15,15 +15,7 @@
  */
 
 import '@twilio-labs/serverless-runtime-types';
-import { Context, ServerlessCallback } from '@twilio-labs/serverless-runtime-types/types';
-import {
-  responseWithCors,
-  bindResolve,
-  error400,
-  error500,
-  send,
-  functionValidator as TokenValidator,
-} from '@tech-matters/serverless-helpers';
+import { Context } from '@twilio-labs/serverless-runtime-types/types';
 import { WorkerChannelInstance } from 'twilio/lib/rest/taskrouter/v1/workspace/worker/workerChannel';
 
 type EnvVars = {
@@ -136,25 +128,3 @@ export const adjustChatCapacity = async (
 };
 
 export type AdjustChatCapacityType = typeof adjustChatCapacity;
-
-export const handler = TokenValidator(
-  async (context: Context<EnvVars>, event: Body, callback: ServerlessCallback) => {
-    const response = responseWithCors();
-    const resolve = bindResolve(callback)(response);
-
-    const { workerSid, adjustment } = event;
-
-    try {
-      if (workerSid === undefined) return resolve(error400('workerSid'));
-      if (adjustment === undefined) return resolve(error400('adjustment'));
-
-      const validBody = { workerSid, adjustment };
-
-      const { status, message } = await adjustChatCapacity(context, validBody);
-
-      return resolve(send(status)({ message, status }));
-    } catch (err: any) {
-      return resolve(error500(err));
-    }
-  },
-);
