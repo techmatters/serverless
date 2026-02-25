@@ -49,8 +49,18 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
   if (taskChannelUniqueName !== 'chat') return;
   const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
   const {
-    feature_flags: { enable_manual_pulling: enabledManualPulling },
+    feature_flags: {
+      enable_manual_pulling: enabledManualPulling,
+      use_twilio_lambda_adjust_capacity: useTwilioLambdaAdjustCapacity,
+    },
   } = serviceConfig.attributes;
+
+  if (useTwilioLambdaAdjustCapacity) {
+    console.log(
+      '===== AdjustCapacityListener skipped - use_twilio_lambda_adjust_capacity flag is enabled =====',
+    );
+    return;
+  }
 
   if (enabledManualPulling) {
     const { path } = Runtime.getFunctions().adjustChatCapacity;

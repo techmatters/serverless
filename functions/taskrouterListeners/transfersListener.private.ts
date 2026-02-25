@@ -166,6 +166,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
 
     console.log(`===== Executing TransfersListener for event: ${eventType} =====`);
 
+    const serviceConfig = await context.getTwilioClient().flexApi.configuration.get().fetch();
+    const { feature_flags: featureFlags } = serviceConfig.attributes;
+
+    if (featureFlags.use_twilio_lambda_transfers) {
+      console.log(
+        '===== TransfersListener skipped - use_twilio_lambda_transfers flag is enabled =====',
+      );
+      return;
+    }
+
     const taskAttributes = JSON.parse(taskAttributesString);
     Object.entries(taskAttributes).forEach(([key, value]) => {
       console.log('Task attribute:', key, value);

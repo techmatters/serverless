@@ -416,3 +416,89 @@ describe('Voice transfers', () => {
     },
   );
 });
+
+describe('use_twilio_lambda_transfers feature flag', () => {
+  const mockFetchFlexConfig = jest.fn();
+
+  const contextWithFeatureFlag = {
+    ...mock<Context<EnvVars>>(),
+    getTwilioClient: (): any => ({
+      taskrouter: {
+        v1: {
+          workspaces: {
+            get: (workspaceSID: string) => {
+              if (workspaces[workspaceSID]) return workspaces[workspaceSID];
+              throw new Error('Workspace does not exists');
+            },
+          },
+        },
+      },
+      flexApi: {
+        configuration: {
+          get: () => ({ fetch: mockFetchFlexConfig }),
+        },
+      },
+    }),
+    TWILIO_WORKSPACE_SID: 'WSxxx',
+  };
+
+  test('when use_twilio_lambda_transfers=true, handler is skipped', async () => {
+    mockFetchFlexConfig.mockResolvedValueOnce({
+      attributes: { feature_flags: { use_twilio_lambda_transfers: true } },
+    });
+
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_ACCEPTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
+    };
+
+    await transfersListener.handleEvent(contextWithFeatureFlag, event);
+
+    expect(tasks['original-task'].update).not.toHaveBeenCalled();
+  });
+
+  test('when use_twilio_lambda_transfers=false, handler executes normally', async () => {
+    mockFetchFlexConfig.mockResolvedValueOnce({
+      attributes: { feature_flags: { use_twilio_lambda_transfers: false } },
+    });
+
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_ACCEPTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
+    };
+
+    await transfersListener.handleEvent(contextWithFeatureFlag, event);
+
+    expect(tasks['original-task'].update).toHaveBeenCalledWith({
+      assignmentStatus: 'completed',
+      reason: 'task transferred accepted',
+    });
+  });
+
+  test('when use_twilio_lambda_transfers is not set, handler executes normally', async () => {
+    mockFetchFlexConfig.mockResolvedValueOnce({
+      attributes: { feature_flags: {} },
+    });
+
+    const event = {
+      ...mock<EventFields>(),
+      EventType: RESERVATION_ACCEPTED as EventType,
+      TaskChannelUniqueName: 'chat',
+      TaskSid: 'second-task',
+      TaskAttributes: JSON.stringify({ ...defaultAttributes, transferTargetType: 'worker' }),
+    };
+
+    await transfersListener.handleEvent(contextWithFeatureFlag, event);
+
+    expect(tasks['original-task'].update).toHaveBeenCalledWith({
+      assignmentStatus: 'completed',
+      reason: 'task transferred accepted',
+    });
+  });
+});

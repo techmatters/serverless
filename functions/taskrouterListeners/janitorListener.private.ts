@@ -171,6 +171,16 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     } = event;
     const client = context.getTwilioClient();
 
+    const serviceConfig = await client.flexApi.configuration.get().fetch();
+    const { feature_flags: featureFlags } = serviceConfig.attributes;
+
+    if (featureFlags.use_twilio_lambda_janitor) {
+      console.log(
+        '===== JanitorListener skipped - use_twilio_lambda_janitor flag is enabled =====',
+      );
+      return;
+    }
+
     // The janitor is only be executed for chat based tasks
     if (!['chat', 'survey'].includes(taskChannelUniqueName)) return;
 
@@ -228,9 +238,6 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
       )
     ) {
       // This task has reached a point where the channel should be deactivated, unless post survey is enabled
-      const serviceConfig = await client.flexApi.configuration.get().fetch();
-      const { feature_flags: featureFlags } = serviceConfig.attributes;
-
       if (!featureFlags.enable_post_survey) {
         console.log('Handling DeactivateConversationOrchestration...');
 

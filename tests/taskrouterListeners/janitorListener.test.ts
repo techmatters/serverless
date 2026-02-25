@@ -315,3 +315,72 @@ describe('isDeactivateConversationOrchestration', () => {
     },
   );
 });
+
+describe('use_twilio_lambda_janitor feature flag', () => {
+  test('when use_twilio_lambda_janitor=true, janitor is skipped entirely', async () => {
+    mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+      attributes: {
+        feature_flags: {
+          enable_post_survey: false,
+          use_twilio_lambda_janitor: true,
+        },
+      },
+    }));
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_WRAPUP as EventType,
+      TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
+      TaskChannelUniqueName: 'chat',
+    };
+    await janitorListener.handleEvent(context, event);
+
+    expect(mockChannelJanitor).not.toHaveBeenCalled();
+  });
+
+  test('when use_twilio_lambda_janitor=false, janitor executes normally', async () => {
+    mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+      attributes: {
+        feature_flags: {
+          enable_post_survey: false,
+          use_twilio_lambda_janitor: false,
+        },
+      },
+    }));
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_WRAPUP as EventType,
+      TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
+      TaskChannelUniqueName: 'chat',
+    };
+    await janitorListener.handleEvent(context, event);
+
+    const { channelSid } = nonPostSurveyTaskAttributes;
+    expect(mockChannelJanitor).toHaveBeenCalledWith(context, {
+      channelSid,
+      conversationSid: undefined,
+    });
+  });
+
+  test('when use_twilio_lambda_janitor is not set, janitor executes normally', async () => {
+    mockFetchFlexApiConfig.mockImplementationOnce(() => ({
+      attributes: {
+        feature_flags: {
+          enable_post_survey: false,
+        },
+      },
+    }));
+    const event = {
+      ...mock<EventFields>(),
+      EventType: TASK_WRAPUP as EventType,
+      TaskAttributes: JSON.stringify(nonPostSurveyTaskAttributes),
+      TaskChannelUniqueName: 'chat',
+    };
+    await janitorListener.handleEvent(context, event);
+
+    const { channelSid } = nonPostSurveyTaskAttributes;
+    expect(mockChannelJanitor).toHaveBeenCalledWith(context, {
+      channelSid,
+      conversationSid: undefined,
+    });
+  });
+});
