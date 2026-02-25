@@ -170,7 +170,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     const { feature_flags: featureFlags } = serviceConfig.attributes;
 
     if (featureFlags.use_twilio_lambda_transfers) {
-      console.log('===== TransfersListener skipped - use_twilio_lambda_transfers flag is enabled =====');
+      console.log(
+        '===== TransfersListener skipped - use_twilio_lambda_transfers flag is enabled =====',
+      );
       return;
     }
 

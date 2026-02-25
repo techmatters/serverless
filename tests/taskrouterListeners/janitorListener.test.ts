@@ -355,7 +355,10 @@ describe('use_twilio_lambda_janitor feature flag', () => {
     await janitorListener.handleEvent(context, event);
 
     const { channelSid } = nonPostSurveyTaskAttributes;
-    expect(mockChannelJanitor).toHaveBeenCalledWith(context, { channelSid, conversationSid: undefined });
+    expect(mockChannelJanitor).toHaveBeenCalledWith(context, {
+      channelSid,
+      conversationSid: undefined,
+    });
   });
 
   test('when use_twilio_lambda_janitor is not set, janitor executes normally', async () => {
@@ -375,6 +378,9 @@ describe('use_twilio_lambda_janitor feature flag', () => {
     await janitorListener.handleEvent(context, event);
 
     const { channelSid } = nonPostSurveyTaskAttributes;
-    expect(mockChannelJanitor).toHaveBeenCalledWith(context, { channelSid, conversationSid: undefined });
+    expect(mockChannelJanitor).toHaveBeenCalledWith(context, {
+      channelSid,
+      conversationSid: undefined,
+    });
   });
 });

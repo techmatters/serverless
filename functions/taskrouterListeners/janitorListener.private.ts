@@ -175,7 +175,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
     const { feature_flags: featureFlags } = serviceConfig.attributes;
 
     if (featureFlags.use_twilio_lambda_janitor) {
-      console.log('===== JanitorListener skipped - use_twilio_lambda_janitor flag is enabled =====');
+      console.log(
+        '===== JanitorListener skipped - use_twilio_lambda_janitor flag is enabled =====',
+      );
       return;
     }
 

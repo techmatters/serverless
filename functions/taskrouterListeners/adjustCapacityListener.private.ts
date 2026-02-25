@@ -56,7 +56,9 @@ export const handleEvent = async (context: Context<EnvVars>, event: EventFields)
   } = serviceConfig.attributes;
 
   if (useTwilioLambdaAdjustCapacity) {
-    console.log('===== AdjustCapacityListener skipped - use_twilio_lambda_adjust_capacity flag is enabled =====');
+    console.log(
+      '===== AdjustCapacityListener skipped - use_twilio_lambda_adjust_capacity flag is enabled =====',
+    );
     return;
   }
 

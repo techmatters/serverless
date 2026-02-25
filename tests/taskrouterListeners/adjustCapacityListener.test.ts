@@ -52,6 +52,7 @@ const context = {
 
 beforeAll(() => {
   const runtime = new helpers.MockRuntime(context);
+  // eslint-disable-next-line no-underscore-dangle
   runtime._addFunction('adjustChatCapacity', 'functions/adjustChatCapacity.private');
   helpers.setup({}, runtime);
 });
