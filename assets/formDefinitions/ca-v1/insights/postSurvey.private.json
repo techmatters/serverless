@@ -6,17 +6,27 @@
   },
   {
     "insightsObject": "conversations",
-    "attributeName": "conversation_attribute_10",
-    "questions": ["wouldRecommend"]
+    "attributeName": "in_business_hours",
+    "questions": ["feelBetter"]
   },
   {
     "insightsObject": "conversations",
     "attributeName": "followed_by",
-    "questions": ["supportNeeds"]
+    "questions": ["contactAgain"]
   },
   {
     "insightsObject": "conversations",
     "attributeName": "preceded_by",
-    "questions": ["shareResponse"]
+    "questions": ["wasRespected"]
+  },
+    {
+    "insightsObject": "conversations",
+    "attributeName": "language",
+    "questions": ["age"]
+  },
+  {
+    "insightsObject": "conversations",
+    "attributeName": "content",
+    "questions": ["identity"]
   }
 ]
